@@ -1,0 +1,44 @@
+.container-fluid img {
+  height:auto;
+  width:100%;
+  border-radius:15%;
+  text-align:center;
+}
+
+.container-fluid .row{
+  margin:auto;
+  text-align:center;
+}
+
+h2{
+  text-align:center;
+  margin-top:10px;
+}
+p {
+  text-align:center;
+}
+.col-lg-6{
+  margin-top:40px;
+  margin-bottom:40px;
+}
+.quote{
+  font-size:32px;
+  background-color: #75CFFD ;
+   padding: 50px;
+  border: 1px solid #A375FD;
+}
+
+@media (max-width: 810px) {
+	.row img{
+		height: 50%! important;
+	}
+  h2{
+    font-size:25px;
+  }
+  .row h3{
+    font-size:20px;
+  }
+  .quote{
+    font-size:20px;
+  }
+}

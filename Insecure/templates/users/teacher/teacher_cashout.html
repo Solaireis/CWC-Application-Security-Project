@@ -1,0 +1,154 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+{% endblock %}
+{% block title %}Teacher Cash Out | CourseFinity{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+	<div class="row" style="margin-top:30px;">
+		<div class="col-lg-3 merge-boxes">
+			<div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+				<h4><span class="fs-4">My Account</span></h4>
+				<hr>
+				<ul class="nav nav-pills flex-column mb-auto">
+					<li class="nav-item">
+						<a href="/user_profile" class="nav-link text-white">
+							Profile
+						</a>
+					</li>
+                    <li class="nav-item">
+                        <a href="/cashout_preference" class="nav-link text-white">
+                            Cashout Preferences
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/teacher_cashout" class="nav-link text-white active-custom">
+                          Cashing Out
+                        </a>
+                    </li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-9 merge-boxes">
+			<div id="right-user">
+				<div class="container">
+					<div class="row">
+						<h3>Earning Details for {{ monthYear }}</h3>
+
+						{% if cashoutVerification == "Not Verified" %}
+						<div>
+							<div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+								<div>
+									<i class="bi bi-info-circle"></i>
+								</div>
+								<div>
+									{% if cashoutPreference == "Email" %}
+										As you have not validated your email address, <strong>we are not sure whether it is legitimate</strong>.
+										There is a possibility cashout may not be successful; you may want to consider validating/changing it.
+									{% elif cashoutPreference == "Phone" %}
+										While your phone number is formatted correctly, <strong>we are not sure whether it is legitimate</strong>.
+										There is a possibility cashout may not be successful; you may want to consider changing it.
+									{% endif %}
+								</div>
+								<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+							</div>
+						</div>
+						{% endif %}
+
+						<div class="table-responsive">
+							<table class="table">
+								<tr>
+									<td><h6>Earnings from your courses for this month:</h6></td>
+									<td><h6>USD$ {{ initialEarnings }}</h6></td>
+								</tr>
+								<tr>
+									<td>
+										<h6><a href="#" onclick="return false;" class="profile_copy_text" data-bs-toggle="tooltip" data-bs-placement="top" title="Why commissions? Commissions are the ones that help maintain CouseFinity to stay afloat and we really appreciate your efforts for being a teacher!">Commissions:</a></h6>
+										{% if commission == "0%" %}
+										(You have 0% commission for <span class="text-danger">{{ remainingDays }}</span>)
+										{% endif %}
+									</td>
+									<td><h6>{{ commission }}</h6></td>
+								</tr>
+								{% if accumulatedEarnings != "0.00" %}
+								<tr>
+									<td><h6>Accumulated earnings from past months:</h6></td>
+									<td><h6>{{ accumulatedEarnings }}</h6></td>
+								</tr>
+								{% endif %}
+								<tr>
+									<td><h6>Total revenue (after commission):</h6></td>
+									<td><h6>USD$ {{ totalEarned }}</h6></td>
+								</tr>
+								<tr>
+									<td><h6>Cashout Contact Method:</h6></td>
+									<td><h6>{{ cashoutContact }}</h6></td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<h6 class="text-danger">Do remember to cash out at the end of each month!</h6>
+										<h6 class="text-danger">If you had forgotten, the commission will be calculated based on the total revenue at that point including the accumulated earnings!</h6>
+									</td>
+								</tr>
+							</table>
+						</div>
+						{% if accumulatedCollect %}
+						<form action="" method="POST">
+							<input type="hidden" name="typeOfCollection" value="collectingAccumulated">
+							<button type="Submit" class="cashout_button btn-primary btn btn-lg">Cash out</button>
+						</form>
+						{% elif lastDayOfMonth and totalEarnedInt > 0 %}
+						<form action="" method="POST">
+							<input type="hidden" name="typeOfCollection" value="collectingAll">
+							<button type="Submit" class="cashout_button btn-primary btn btn-lg">Cash out</button>
+						</form>
+						{% elif lastDayOfMonth and totalEarnedInt <= 0 %}
+						<button type="button" class="cashout_button btn-primary btn btn-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Sorry, you have already collected your revenue or you did not earn any this month!">Cash Out</button>
+						{% else %}
+						<button type="button" class="cashout_button btn-primary btn btn-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="Sorry, you can only cash out at the end of each month or if you have accumulated revenue from past months!">Cash Out</button>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<script>
+			var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+			alertModal.show();
+		</script>
+		{% endif %}
+	{% endwith %}
+	<script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+{% endblock %}

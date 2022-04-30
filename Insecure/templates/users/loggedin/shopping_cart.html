@@ -1,0 +1,223 @@
+<!--Template by Wei Ren-->
+
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/shopping_card_payment.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+{% endblock %}
+{% block title %}Shopping Cart | CourseFinity{% endblock %}
+
+{% from "includes/_formHelper.html" import render_field %}
+
+{% block content %}
+<div id="shopping-title">
+    <h4>Shopping Cart</h4>
+    <hr>
+</div>
+{% if courseList != [] %}
+<div class="row g-0">
+
+    <div class="col"> <!--col-8 if PayPal exists -->
+
+        {% if courseAddedTitle != None %}
+            {% if status == "Success" %}
+            <div>
+                <div class="alert-div alert alert-info alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div>
+                        Course Titled '{{ courseAddedTitle }}' Added to Cart
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            {% elif status == "Already in Cart" %}
+            <div>
+                <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-exclamation-circle"></i>
+                    </div>
+                    <div>
+                        Course Titled '{{ courseAddedTitle }}' Already In Cart
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            {% elif status == "Already Purchased" %}
+            <div>
+                <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-exclamation-circle"></i>
+                    </div>
+                    <div>
+                        Course Titled '{{ courseAddedTitle }}' Already Purchased
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            {% elif status == "Own Course" %}
+            <div>
+                <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {% for course in courseList %}
+
+        <!--Remove Course from Cart Form-->
+        <form id="{{ course['courseID'] }}" method="post">
+
+            <!-- Hidden Form Fields, because Jinja2 hates curly braces in curly braces -->
+            {% set courseID = course['courseID'] %}
+            {{ render_field(form.courseID, value = courseID) }}
+        </form>
+
+        <!--Course Info-->
+        <div class="card">
+            <div class="card-body">
+                <div class="row g-0">
+                    <div class="col">
+                        <img src= "{{ course['courseThumbnail'] }}" class="card-img" alt="Course Thumbnail">
+                    </div>
+                    <div class="col">
+                        <div class="information">
+                            <p class="text-center">
+                                <a class="d-inline-flex align-items-center" href="{{ course['courseOwnerLink'] }}">
+                                    <span>{{ course['courseOwnerUsername'] }}</span>&nbsp;
+                                    <img src="{{ course['courseOwnerProfile'] }}" alt="Course Creator Profile">
+                                </a>
+                                <br>
+                                <span class="fw-bold">{{ course['courseType'] }}: US${{ course['coursePricePaying'] }}</span>
+                            </a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="card-body text">
+                <h5 class="card-title"><a href="/course/{{ course['courseID'] }}">{{ course['courseTitle'] }}</a><i class="fas fa-times" onclick="removeCourse('{{ course['courseID'] }}')"></i></h5>
+                <p class="card-text">{{ course['courseDescription'] }}</p>
+            </div>
+
+        </div>
+
+        {% endfor %}
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="paypalErrorModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="paypalErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="paypalErrorModalLabel">Transaction Cancelled</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <h6>Your transaction appears to have been cancelled.</h6>
+              <h6 class="text-danger">Please make sure your subtotal is less than $1000.</h6>
+              <h6>If that is not the case, please perform the following and try again:</h6>
+                  <ul class="mb-0">
+                      <li>Clearing your cache.</li>
+                      <li>Turning off your ad blocker.</li>
+                  </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Checkout Complete Form-->
+    <div class="col-4">
+        <form id="paypal-complete" method="post">
+            {{ render_field(checkoutForm.checkoutComplete) }}
+            {{ render_field(checkoutForm.checkoutTiming) }}
+            {{ render_field(checkoutForm.checkoutOrderID) }}
+            {{ render_field(checkoutForm.checkoutPayerID) }}
+        </form>
+
+        <div id="paypal-container">
+            <div class="subtotal">
+                <p id="hidden-subtotal">{{ subtotal }}</p>
+                {% if shoppingCartLen == 1 %}
+                    <h5>Subtotal: US ${{ subtotal }}</h5>
+                {% else %}
+                    <h5>Subtotal ({{ shoppingCartLen }} items): US ${{ subtotal }}</h5>
+                {% endif %}
+            </div>
+
+            <!-- Set up a container element for the button -->
+            <div id="paypal-button-container"></div>
+
+        </div>
+    </div>
+</div>
+
+
+{% else %}
+
+    {% if courseAddedTitle != None %}
+        {% if status == "Already Purchased" %}
+        <div class="div d-flex justify-content-center">
+            <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    Course Titled '{{ courseAddedTitle }}' Already Purchased
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% elif status == "Own Course" %}
+        <div class="div d-flex justify-content-center">
+            <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-circle"></i>
+                </div>
+                <div>
+                    Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    <div class="empty-cart">
+        <a href="/"><i class="fas fa-cart-plus"></i></a>
+        <p>Seems like there isn't anything here. Continue Shopping?</p>
+    </div>
+
+{% endif %}
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<script src="{{ url_for('static', filename='scripts/shopping_card.js') }}"></script>
+{% if courseList != [] %}
+<!--Paypal API-->
+<script src="https://www.paypal.com/sdk/js?client-id=AUTh83JMz8mLNGNzpzJRJSbSLUAEp7oe1ieGGqYCmVXpq427DeSVElkHnc0tt70b8gHlWg4yETnLLu1s&debug=false"></script>
+<script src="{{ url_for('static', filename='scripts/paypal_checkout.js') }}"></script>
+<!--
+Format for PayPal link: Include the PayPal JavaScript SDK; replace
+"test" with your own sandbox Business account app client ID.
+
+<script src="https://www.paypal.com/sdk/js?client-id=test"></script>                                      -->
+{% endif %}
+
+{% endblock %}

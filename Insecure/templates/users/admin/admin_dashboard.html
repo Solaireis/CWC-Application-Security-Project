@@ -1,0 +1,147 @@
+{% extends "admin_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block title %}Admin Dashboard | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container container_margin">
+    <div class="row">
+        <div class="col-lg-3 merge-boxes">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+                <h4><span class="fs-4">Admin Dashboard</span></h4>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/admin_dashboard" class="nav-link text-white active-custom">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin_profile" class="nav-link text-white">
+                            Account Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/user_management/page/1" class="nav-link text-white">
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/support_ticket_management/0" class="nav-link text-white">
+                            Support Ticket Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-9 merge-boxes">
+            <div id="right-user">
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="canvasWrapper">
+                                <canvas id="totalUserChart"></canvas>
+                            </div>
+                            <br>
+                            <div class=d-inline>
+                                <p class="float-start">Last updated (in 24hr format): {{ lastUpdated }}</p>
+                                <br>
+                                <a class="float-end" href="/{{ figureFilename }}" download>Download graph in png format</a>
+                            </div>
+                            <br>
+                            <div class="d-inline">
+                                <a class="float-end" href="/{{ csvFilePath }}" download>Download graph data in csv format</a>
+                            </div>
+                            <br>
+                            <div class="d-inline">
+                                <a class="float-end" href="/{{ userDataCSVFilePath }}" download>Download all users data in csv format</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha512-TW5s0IT/IppJtu76UbysrBH9Hy/5X41OTAbQuffZFU6lQ1rdcLHzpU5BzVvr/YFykoiMYZVWlr/PX1mDcfM9Qg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script>
+        // function from https://stackoverflow.com/questions/5796718/html-entity-decode
+        var decodeEntities = (function() {
+            // this prevents any overhead from creating the object each time
+            var element = document.createElement("div");
+
+            function decodeHTMLEntities (str) {
+                if(str && typeof str === "string") {
+                // strip script/html tags
+                str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, "");
+                str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, "");
+                element.innerHTML = str;
+                str = element.textContent;
+                element.textContent = "";
+                }
+
+                return str;
+            }
+
+            return decodeHTMLEntities;
+        })();
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // formatting the incorrectly parsed data from python to a correctly parsed data label
+            let chart = document.getElementById("totalUserChart").getContext("2d");
+            let pythonData = "{{ xAxisData }}";
+            let dataForChartString = decodeEntities(pythonData);
+            let dataForChart = dataForChartString.replaceAll("'","");
+            dataForChart = dataForChart.replace("[", "")
+            dataForChart = dataForChart.replace("]", "")
+            dataForChart = dataForChart.split(",")
+       
+            console.log(dataForChart);
+            let lineChart = new Chart(chart, {
+                type:"line", // available types of charts: bar, horizontalBar, pie, line, doughnut, radar, polarArea
+                data: {
+                    labels: dataForChart,
+                    datasets: [{
+                        label: "Total Number of Users",
+                        data: {{ yAxisData }},
+                        backgroundColor: "#009DF8",
+                        borderWidth: 3,
+                        borderColor: "#009DF8",
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            ticks: {
+                                precision: 0 // make y-axis to show whole numbers
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                        display: true,
+                        text: "Total Userbase by Day",
+                        font: {
+                            size: 24
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: "bottom",
+                            labels: {
+                                fontColor: "#212529",
+                            }
+                        }
+                    }
+                }
+            });
+        }); 
+    </script>
+{% endblock %}

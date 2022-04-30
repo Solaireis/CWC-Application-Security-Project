@@ -1,0 +1,43 @@
+{% extends "guest_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block title %}Sign Up | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col">
+            <div class="bg-dark p-4 rounded" id="userForm">
+                <form action="" method="POST" class="row g-3">
+                    <h4 class="text-white">Join us and start learning!</h4>
+                    <div class="col-12 text-white">
+                        {{ render_field(form.username, class="form-control") }}
+                        {% if username_duplicates %}<div class="text-danger"><strong>Username is already taken</strong></div>{% endif %}
+                    </div>
+                    <div class="col-12 text-white">
+                        {{ render_field(form.email, class="form-control") }}
+                        {% if email_duplicates %}<div class="text-danger"><strong>Email is already used</strong></div>{% endif %}
+                        {% if emailInvalid %}<div class="text-danger"><strong>Please enter a valid email address</strong></div>{% endif %}
+                    </div>
+                    <div class="col-12 text-white">
+                        {{ render_field(form.password, class="form-control") }}
+                    </div>       
+                    <div class="col-12 text-white">
+                        {{ render_field(form.cfm_password, class="form-control") }}
+                        {% if pwd_were_not_matched %}<div class="text-danger"><strong>Passwords entered were not the same</strong></div>{% endif %}
+                    </div>               
+                    <div class="col-12">
+                        <button type="submit" value="Submit" class="btn btn-colour text-white float-end">Sign Up</button>
+                    </div>
+                </form>
+                <hr class="mt-4 text-white">
+                <div class="col-12">
+                    <p class="text-center mb-0 text-white">Already a registered user?</p>
+                    <p class="text-center mb-0"><a class="text-white fw-bold" href="/login">Login here!</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

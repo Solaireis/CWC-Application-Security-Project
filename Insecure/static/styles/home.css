@@ -1,0 +1,19 @@
+.thumbnails{
+  height:auto;
+  width:100%;
+}
+
+#recommendations {
+  margin-bottom: 0;
+  margin-top: 30px;
+}
+
+.become_headings {
+  margin-top: 100px;
+}
+
+@media (max-width: 768px) {
+  .become_headings {
+    margin-top: 50px;
+  }
+}

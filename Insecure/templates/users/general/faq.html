@@ -1,0 +1,62 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/policy.css') }}">{% endblock %}
+{% block title %}Community Guidelines | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container policy text-break">
+
+    <h3>How Does CourseFinity Work? FAQ</h3>
+
+    <p>Last Updated: 12 February 2022</p>
+
+    <p>CourseFinity's mission is to create new possibilities for people and organizations everywhere. Our global marketplace features an extensive, multi-language library, which includes a huge range of courses taught by real-world experts. You can take courses across a wide range of categories, some of which include: business & entrepreneurship, programming, academics, the arts, health & fitness, language, music and much more!</p>
+
+    <p>Below are answers to some of the frequently asked questions we receive about how CourseFinity works.</p>
+
+    <li><a href="#What_do_CourseFinity_courses_include">What do CourseFinity courses include?</a></li>
+    <li><a href="#How_do_I_take_a_CourseFinity_course">How do I take a CourseFinity Course?</a></li>
+    <li><a href="#Do_I_have_to_start_my_CourseFinity_course_at_a_certain_time_And_how_long_do_I_have_to_complete_it">Do I have to start my CourseFinity course at a certain time? And how long do I have to complete it?</a></li>
+    <li><a href="#How_can_I_pay_for_a_course">How can I pay for a course?</a></li>
+    <li><a href="#What_if_I_don’t_like_a_course_I_purchased">What if I don’t like a course I purchased?</a></li>
+    <li><a href="#Where_can_I_go_for_help">Where can I go for help?</a></li>
+
+    <h5 class="mt-3" id="What_do_CourseFinity_courses_include">What do CourseFinity courses include?</h5>
+    <p>Each CourseFinity course is created, owned and managed by the instructor(s). The foundation of each CourseFinity course are its lectures videos, which usually contain slides and/or text.</p>
+
+    <p>In addition, for those who sign up for Zoom lessons, instructors can add resources and various types of practice activities, as a way to enhance the learning experience of students.</p>
+
+    <h5 id="How_do_I_take_a_CourseFinity_course">How do I take a CourseFinity course?</h5>
+    <p>CourseFinity video courses are entirely on-demand. You can begin the course whenever you like, and there are no deadlines to complete it.</p>
+
+    <p>CourseFinity courses can be accessed from several different devices and platforms, including desktop, laptop, and via mobile.</p>
+
+    <p>After you enroll in a course, you can begin to access the course by logging in and navigating to your <a href="/purchasehistory/0">Purchase History</a> page.</p>
+
+    <p>For Zoom lessons, you would need to have the Zoom App pre-downloaded and a valid Zoom Account. Again, the Zoom Meeting Link can be accessed in the <a href="/purchasehistory/0">Purchase History</a> page.</p>
+
+    <h5 id="Do_I_have_to_start_my_CourseFinity_course_at_a_certain_time_And_how_long_do_I_have_to_complete_it">Do I have to start my CourseFinity course at a certain time? And how long do I have to complete it?</h5>
+    <p>As noted above, there are no deadlines to begin or complete the course. Even after you complete the course you will continue to have access to it, provided that your account’s in good standing, and CourseFinity continues to have a license to the course.</p>
+
+    <p>As for Zoom Lessons, since the teacher follows a strict schedule, all lessons will have to be attended at the stimulated timings. Except in <a href="/teacher_handbook">special cases</a>, the teacher is not obliged to provide extra lessons to users. If you believe you are entitled to extra lessons after consulting the Teacher's Handbook, please make arrangements with the teacher to do so.</p>
+
+    <p>If not possible, please <a href="/contact_us">contact us</a> to solve this issue immediateky.</p>
+
+    <h5 id="How_can_I_pay_for_a_course">How can I pay for a course?</h5>
+    <p>CourseFinity's payment system is powered by PayPal, which also supports credit and debit cards not registered with PayPal, though standard charges may apply. More information on PayPal's charging system can be found <a href="https://www.paypal.com/us/webapps/mpp/paypal-fees">here</a>.</p>
+
+    <h5 id="What_if_I_don’t_like_a_course_I_purchased">What if I don’t like a course I purchased?</h5>
+    <p>Unfortunately, once a course has been purchased, a refund is no longer possible. As such, please ensure that you are satisfied with the course you want.</p>
+
+    <h5 id="Where_can_I_go_for_help">Where can I go for help?</h5>
+    <p>If you bought a video course and find issues with it, you can voice out your concerns by leaving a course review for the teacher.</p>
+
+    <p>Alternatively, if the issue is not course specific and cannot be found here, our <a href="/contact_us">Support Team</a> is always happy to help!</p>
+
+{% endblock %}

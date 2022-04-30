@@ -1,0 +1,175 @@
+
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block title %}Edit Cashout Preference | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+<div class="container container_margin">
+    <div class="row">
+        <div class="col-lg-3 merge-boxes">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+                <h4><span class="fs-4">My Account</span></h4>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/user_profile" class="nav-link text-white">
+                            Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/cashout_preference" class="nav-link text-white active-custom">
+                            Cashout Preferences
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/teacher_cashout" class="nav-link text-white">
+                          Cashing Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-9 merge-boxes">
+            <div id="right-user">
+                <div class="container">
+                    <div class="row">
+
+                        <div id="edit" class="card">
+                            <h4 class="card-title margin-top">Edit Cashout Preferences</h4>
+                            <div class="card-body">
+
+                                <div class="col form-check form-check-inline">
+                                    <label class="form-check-label" for="cashoutPreference-Phone">Phone</label>
+                                    {% if renderedInfo['Preference'] == "Phone" %}
+                                    <input class="form-check-input" id="cashoutPreference-Phone" name="cashoutPreference" type="radio" value="Phone" checked onclick="toggle('phone')">
+                                    {% else %}
+                                    <input class="form-check-input" id="cashoutPreference-Phone" name="cashoutPreference" type="radio" value="Phone" onclick="toggle('phone')">
+                                    {% endif %}
+                                </div>
+
+                                <div class="col form-check form-check-inline">
+                                    <label class="form-check-label" for="cashoutPreference-Email">Email</label>
+                                    {% if renderedInfo['Preference'] == "Email" %}
+                                    <input class="form-check-input" id="cashoutPreference-Email" name="cashoutPreference" type="radio" value="Phone" checked onclick="toggle('email')">
+                                    {% else %}
+                                    <input class="form-check-input" id="cashoutPreference-Email" name="cashoutPreference" type="radio" value="Phone" onclick="toggle('email')">
+                                    {% endif %}
+                                </div>
+
+                                <form action="" method="POST" id="edit-form">
+
+                                    {{ cashoutForm.cashoutPreference }}
+
+                                    <div class="row" id="phone">
+                                        <div class="col-md-6 margin-top margin-top2">
+                                            {{ cashoutForm.countryCode.label }}
+                                            {% if phoneError == True %}
+                                            <div class="text-danger small strong"><h6>Invalid Phone Number</h6></div>
+                                            {% endif %}
+
+                                            <select class="form-control" id="countryCode" name="countryCode">
+                                                {{ cashoutForm.countryCode.label }}
+                                                {% for choice in cashoutForm.countryCode %}
+                                                    {% set label = choice.label.text %}
+                                                    {% set value = choice.data %}
+                                                    {% if choice.data == renderedInfo['Country Code'] %}
+                                                        <option value="{{ value }}" selected>{{ label }}</option>
+                                                    {% else %}
+                                                        <option value="{{ value }}">{{ label }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 margin-top margin-top2">
+                                            {{ cashoutForm.phoneNumber.label }}
+                                            {% set phoneNumber = renderedInfo['Phone Number'] %}
+                                            {{ cashoutForm.phoneNumber(class="form-control", value=phoneNumber) }}
+                                        </div>
+                                    </div>
+
+                                    <div class="row" id="email">
+                                        <div class="col-md-6 margin-top margin-top2">
+                                            <label for="emailAddress">Email:</label>
+                                            <div class="text-danger small strong"><h6>Email can be changed in Profile Settings</h6></div>
+                                            <input id="emailAddress" class="form-control" type="text" value="{{ renderedInfo['Email'] }}" disabled>
+                                        </div>
+                                    </div>
+
+                                {% if renderedInfo['Phone Number'] != "" %}
+                                {{ cashoutForm.deleteInfo() }}
+                                {% endif %}
+
+                                </form>
+
+
+                                <a href="/cashout_preference"><button class="btn btn-warning margin-top margin-top2 float-end">Cancel</button></a>
+                                {% if renderedInfo['Phone Number'] != "" %}
+                                {{ cashoutForm.deleteInfo() }}
+                                <button id="remove" onclick="phoneRemove()" class="btn btn-danger margin-top margin-top2 float-end">Delete</button>
+                                {% endif %}
+                                <button onclick="submit()" class="btn btn-success margin-top margin-top2 float-end">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    function submit() {
+        document.getElementById("edit-form").submit();
+    }
+
+    function phoneRemove() {
+        document.getElementById("deleteInfo").value = true;
+        submit();
+    }
+
+    function toggle(preference) {
+        var phoneElement = document.getElementById('phone');
+        var emailElement = document.getElementById('email');
+        var preferenceField = document.getElementById('cashoutPreference');
+        {% if renderedInfo['Phone Number'] != "" %}
+        var deleteButton = document.getElementById('remove');
+        {% endif %}
+        if (preference == "phone" && document.getElementById('cashoutPreference-Phone').checked) {
+            phoneElement.style.display = "flex";
+            emailElement.style.display = "none";
+            preferenceField.value = "Phone";
+            {% if renderedInfo['Phone Number'] != "" %}
+            deleteButton.style.display = "inline-block";
+            {% endif %}
+
+        }
+
+        else if (preference == "email" && document.getElementById('cashoutPreference-Email').checked) {
+            phoneElement.style.display = "none";
+            emailElement.style.display = "flex";
+            preferenceField.value = "Email";
+            {% if renderedInfo['Phone Number'] != "" %}
+            deleteButton.style.display = "none";
+            {% endif %}
+        }
+    }
+
+    {% if renderedInfo['Preference'] == "Phone" %}
+        document.onload = toggle('phone');
+    {% elif renderedInfo['Preference'] == "Email" %}
+        document.onload = toggle('email');
+    {% endif %}
+
+
+</script>
+{% endblock %}

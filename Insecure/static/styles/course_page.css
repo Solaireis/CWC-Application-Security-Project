@@ -1,0 +1,32 @@
+.course_info_left {
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.no_padding {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.course_card {
+    margin: 5px 15px;
+}
+
+.course_structure_title {
+    margin: 5px 15px;
+}
+
+.user_profile {
+    border-radius: 50%;
+    width: 125px;
+    height: auto;
+    padding: 15px;
+}
+
+.td_cells_min_width {
+    min-width: 900px;
+}
+
+.td_cells_min_width_reviews {
+    min-width: 600px;
+}

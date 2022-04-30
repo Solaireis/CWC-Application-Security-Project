@@ -1,0 +1,79 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+{% endblock %}
+{% block title %}Add a Payment Method | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+{% if invalidCardType %}
+<div class="modal fade" id="invalidCardTypeModal" tabindex="-1" aria-labelledby="invalidCardTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="invalidCardTypeModalLabel">We are sorry!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>We only accept Mastercard, Visa or American Express cards.</h6>
+                <h6>Sorry for the inconvenience caused.</h6>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col">
+            <div class="bg-dark p-4 rounded" id="userForm">
+                <form action="" method="POST" class="row g-3">
+                    <h4 class="text-white">Add a payment method</h4>
+                    <div class="col-md-12 flex-wrap">
+                        <div class="accepted_cards">
+                            <img src="{{ url_for('static', filename='images/payment/visa.svg') }}" alt="Visa logo" class="payment_logo">
+                            <img src="{{ url_for('static', filename='images/payment/mastercard.svg') }}" alt="Mastercard logo" class="payment_logo">
+                            <img src="{{ url_for('static', filename='images/payment/american_express.svg') }}" alt="American Express logo" class="payment_logo">
+                        </div>
+                    </div>
+                    <div class="col-md-12 text-white">
+                        {{ render_field(form.cardName, class="form-control", placeholder="John Doe") }}
+                    </div>
+                    <div class="col-md-12 text-white">
+                        {{ render_field(form.cardNo, class="form-control", placeholder="4111111111111111") }}
+                        {% if cardValid == False %}<div class="text-danger warning_alert"><h6><strong>Invalid Card Number</strong></h6></div>{% endif %}
+                    </div>
+                    <div class="col-md-6 text-white">
+                        {{ render_field(form.cardExpiry, class="form-control", placeholder="04/22 or 4/2022") }}
+                        {% if cardExpiryValid == False %}<div class="text-danger warning_alert"><h6><strong>Invalid Card Expiry Date</strong></h6></div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        <a href="/user_profile" class="float-start text-white">Skip <i class="fas fa-arrow-right"></i></a>
+                        <button type="submit" class="btn btn-colour text-white float-end">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {% if invalidCard %}
+        <script>
+            var invalidCardModal = new bootstrap.Modal(document.getElementById('invalidCardModal'), {});
+            invalidCardModal.show();
+        </script>
+    {% endif %}
+    {% if invalidCardType %}
+        <script>
+            var invalidCardTypeModal = new bootstrap.Modal(document.getElementById('invalidCardTypeModal'), {});
+            invalidCardTypeModal.show();
+        </script>
+    {% endif %}
+{% endblock %}

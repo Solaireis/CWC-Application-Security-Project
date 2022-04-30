@@ -1,0 +1,51 @@
+/* Dropzone.js css to overwrite default */
+
+.dropzone {
+  margin-top: 10px;
+  border: 4px dashed #ddd;
+}
+
+.upload-icon {
+  color: #009DF8;
+  font-size: 5em;
+  margin-bottom: 10px;
+}
+
+.upload-icon:hover {
+  color: #273C4D;;
+}
+
+@media (max-width: 468px) {
+  .upload-icon {
+    font-size: 3em;
+  }
+}
+
+.btn-margin {
+  margin-right: 10px;
+}
+
+#dropzoneText{
+  color: #000000;
+}
+
+label{
+  margin-top: 10px;
+}
+
+#radioBtnVideo{
+  margin-top: 15px;
+}
+
+#radioBtnZoom{
+  margin-top: 15px;
+}
+#teacher_condition2{
+  margin-left: 10px;
+  margin-top: 15px;
+}
+/* * {
+  background: #000 !important;
+  color: #0f0 !important;
+  outline: solid #f00 1px !important;
+} */

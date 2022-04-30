@@ -1,0 +1,33 @@
+/* settings for breadcrumb */
+ul.breadcrumb {
+  margin-left: 100px;
+  padding: 50px;
+  list-style: none;
+  transform:translate(-5px);
+  margin-left: none !important;
+
+}
+
+/* As the currently selected page*/
+ul.breadcrumb li {
+  display: inline;
+  font-size: 20px;
+  color:#75CFFD;
+  font-weight:bold;
+}
+
+/* for / */
+ul.breadcrumb li+li:before {
+  padding: 8px;
+  color: black;
+  content: "/\00a0";
+}
+ul.breadcrumb li a {
+  color: black;
+  text-decoration: none;
+}
+/* upon hover, the text turns blue and it gets underlined */
+ul.breadcrumb li a:hover {
+  color: #01447e;
+  text-decoration: underline;
+}

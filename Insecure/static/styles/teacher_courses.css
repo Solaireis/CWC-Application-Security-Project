@@ -1,0 +1,26 @@
+.course_info {
+    text-decoration: underline;
+}
+
+.image{
+    height: 100%;
+    width: auto;
+    text-align:center;
+}
+
+.col-md img{
+  height:auto;
+  width:100%;
+  margin-bottom:15px;
+  border-radius:10px;
+}
+
+.col-md p{
+  margin-bottom:100px;
+}
+
+.border{
+  border:2px solid #ccc;
+  padding:10px;
+  border-radius:5px;
+}

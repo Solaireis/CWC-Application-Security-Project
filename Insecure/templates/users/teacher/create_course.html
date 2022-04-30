@@ -1,0 +1,158 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
+{% endblock %}
+
+{% block title %}Create Course | CourseFinity{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col">
+            <div class="login-form bg-dark mt-4 p-4 rounded" id="userForm">
+                <form action="" method="POST" class="row g-3 m-2" enctype="multipart/form-data">
+                    <input type="hidden" name="submittedForm" value="courseDetails">
+                    <h4 class="text-white">Create Course</h4>
+                    <div class="col-md-12 text-white col-5">
+                        <!-- Title -->
+                        <label for="course title"> Title: </label>
+                        <fieldset>
+                            <input type="text" placeholder="Course Title" name="courseTitle" required autofocus>
+                        </fieldset>
+                        <!-- Description -->
+                        <label for="course description"> Description: </label>
+                        <fieldset>
+                            <textarea placeholder="Give a brief summary of the course..." name="courseDescription" id="" class="col-5" rows="7" required></textarea>
+                        </fieldset>
+                        <!-- Thumbnail -->
+                        <div class="mb-5 col-6 gx-5">
+                            <div class="card" style="width:180px;">
+                                <img id="thumbnail"
+                                    src="https://st2.depositphotos.com/3765753/5349/v/600/depositphotos_53491489-stock-illustration-example-rubber-stamp-vector-over.jpg"
+                                    alt="Your thumbnail will appear here" class="card-img-top" />
+                            </div>
+                            <br>
+                            <label for="formFile" class="form-label">Upload Zoom Lesson Thumbnail Here!</label>
+                            <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" id="formFile" type='file' onchange="readURL(this);" />
+                        </div>
+                    </div>
+
+                    <div class="col-4">
+                        <label for="course-tag" class="form-label text-white">Choose Your Course Category!</label>
+                        <select id="browsers" class="form-select" name="courseTag" aria-label="Course Tag">
+                            <optgroup label="Development">
+                                <option value="Programming">Programming</option>
+                                <option value="Web_Development">Web Development</option>
+                                <option value="Game_Development">Game Development</option>
+                                <option value="Mobile_App_Development">Mobile App Development</option>
+                                <option value="Software_Development">Software Development</option>
+                                <option value="Other_Development">Other Development</option>
+                            </optgroup>
+                            <optgroup label="Business">
+                                <option value="Entrepreneurship">Entrepreneurship</option>
+                                <option value="Project_Management">Project Management</option>
+                                <option value="BI_Analytics">Business Intelligence & Analytics</option>
+                                <option value="Business_Strategy">Business Strategy</option>
+                                <option value="Other_Business">Other</option>
+                            </optgroup>
+                            <optgroup label="Design">
+                                <option value="3D_Modelling">3D Modelling</option>
+                                <option value="Animation">Animation</option>
+                                <option value="UX_Design">UX Design</option>
+                                <option value="Design_Tools">Design Tools</option>
+                                <option value="Other_Design">Other Design</option>
+                            </optgroup>
+                            <optgroup label="Photography">
+                                <option value="Digital_Photography">Digital Photography</option>
+                                <option value="Photography_Tools">Photography Tools</option>
+                                <option value="Video_Production">Video Production</option>
+                                <option value="Video_Design Tools">Video Design Tools</option>
+                                <option value="Other_Photography_Videography">Other Photography/Videography</option>
+                            </optgroup>
+                            <optgroup label="Academics">
+                                <option value="Science">Science</option>
+                                <option value="Math">Math</option>
+                                <option value="Language">Language</option>
+                                <option value="Other Academics">Other Academics</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- Radio buttons for video or zoom lesson-->
+                    <div class="col-md-12 text-white">
+                        <div class="form-check form-check-inline">
+                            <input name="courseType" class="form-check-input" type="radio" id="radioBtnVideo" value="Video" required>
+                            <label class="form-check-label" for="radioBtnVideo">
+                                Video Lessons
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input name="courseType" class="form-check-input" type="radio" id="radioBtnZoom" value="Zoom" required>
+                            <label class="form-check-label" for="radioBtnZoom">
+                                Zoom Lessons
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- coursePrice -->
+                    <div class="col-md-12 text-white">
+                        <label for="coursePrice">Course Price: ($USD)</label>
+                        <fieldset>
+                            <input name="coursePrice" type="number" placeholder="Course Price" min="0.00" max="1000.00" step="0.01" required>
+                        </fieldset>
+                    </div>
+
+                    <!-- checkbox -->
+                    <div class="col-md-12 form_checkbox">
+                        <input class="form-check-input" type="checkbox" value="" id="teacher_condition2" required>
+                        <label class="form-label text-white" for="teacher_condition2">I understand that videos uploaded must comply with
+                            CourseFinity's terms and conditions.</label>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary float-end">Create</button>
+                    </div>
+                </form>
+
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <script>
+            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+            alertModal.show();
+        </script>
+    {% endif %}
+{% endwith %}
+{% endblock %}

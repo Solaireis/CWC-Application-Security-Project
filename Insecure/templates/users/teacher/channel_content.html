@@ -1,0 +1,283 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/channel_content.css') }}">
+{% endblock %}
+{% block title %}Channel Content | CourseFinity{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/teacher_page/{{ session.get('userSession') }}">Your Profile</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Course Management</li>
+        </ol>
+    </nav>
+    
+    {% for course in courseObjectList %}
+    <div class="row g-0 casing mx-auto border mt-3">
+        <div class="col-5">
+            <img class="resize img-fluid rounded float-start" src="{{ course.get_thumbnail() }}" alt="Course Thumbnail">
+        </div>
+        <div class="col-6">
+            <div class="card-body text">
+                <h5 class="card-title"><a href="/course/{{ course.get_courseID() }}">{{ course.get_title() }}</a></h5>
+                <p class="card-text">Course Description: {{ course.get_description() }}</p>
+            </div>
+            <div class="card-body">
+                <div class="row g-0">
+                    <div class="selection col">
+                        {% if course.get_course_type() == "Video" %}
+                        <p class="info">Lesson Type: Online Videos</p>
+                        {% elif course.get_course_type() == "Zoom" %}
+                        <p class="info">Lesson Type: Zoom Session</p>
+                        {% endif %}
+                        <div class="ratings col">
+                            {% with averageCourseRating = course.get_averageRating() %}
+                            {% if averageCourseRating == 5 %}
+                            <span class="fas fa-star"></span>
+                            <span class="fas fa-star"></span>
+                            <span class="fas fa-star"></span>
+                            <span class="fas fa-star"></span>
+                            <span class="fas fa-star"></span>
+                            {% elif averageCourseRating >= 4 and averageCourseRating < 5 %} <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 3 and averageCourseRating < 4 %} <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    {% elif averageCourseRating >= 2 and averageCourseRating < 3 %} <span class="fas fa-star"></span>
+                                        <span class="fas fa-star"></span>
+                                        <span class="far fa-star"></span>
+                                        <span class="far fa-star"></span>
+                                        <span class="far fa-star"></span>
+                                        {% elif averageCourseRating >= 1 and averageCourseRating < 2 %} <span class="fas fa-star"></span>
+                                            <span class="far fa-star"></span>
+                                            <span class="far fa-star"></span>
+                                            <span class="far fa-star"></span>
+                                            <span class="far fa-star"></span>
+                                            {% elif averageCourseRating >= 0 and averageCourseRating < 1 %} <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% endif %}
+                                                {% endwith %}
+                        </div>
+                        <p class="sales">Number of purchases: {{ course.get_numberPurchased() }}</p>
+
+                        {% if course.get_course_type() == "Video" %}
+                        <div class="modal fade" id="uploadVideoModal{{ course.get_courseID() }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+                            aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Video Upload</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <label for="video thumbnail"> Upload Video Here:</label>
+                                        <div class="row">
+                                            <div class="col-md-5 image-center">
+                                                <div class="mb-9">
+                                                    <div id="imageForm">
+                                                        <form action="" method="POST" enctype="multipart/form-data" class="dropzone"
+                                                            id="dropper{{ course.get_courseID() }}">
+                                                            <div class="dz-default dz-message upload-background">
+                                                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                                                <br>
+                                                                <span>Click or drop your video file here</span>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#" onclick="return false;" class="btn btn-primary" data-bs-toggle="modal"data-bs-target="#uploadVideoModal{{ course.get_courseID() }}">Create Video Lesson</a>
+                        {% elif course.get_course_type() == "Zoom" %}
+                        <a href="/course/{{course.get_courseID()}}/upload_zoom" class="btn btn-primary">Create Zoom Lesson</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% with teacherUID = session.get('userSession') %}
+        {% if maxPages > 5 %}
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination flex-wrap">
+                <li class="page-item ms-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/1" aria-label="First Page">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">First Page</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ previousPage }}" aria-label="Previous">
+                        <span aria-hidden="true">&lt;</span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                </li>
+                {% for key in paginationList %}
+                    {% if key == pageNum %}
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="/channel_content/{{ teacherUID }}/{{ key }}">{{ key }}</a></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="/channel_content/{{ teacherUID }}/{{ key }}">{{ key }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ nextPage }}" aria-label="Next">
+                        <span aria-hidden="true">&gt;</span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </li>
+                <li class="page-item me-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ maxPages }}" aria-label="Last Page">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Last Page</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% elif maxPages == 0 %}
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination">
+                <li class="page-item ms-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/0" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">Previous</span>
+                    </a>
+                </li>
+                <li class="page-item active" aria-current="page"><a class="page-link" href="/channel_content/{{ teacherUID }}/0">0</a></li>
+                <li class="page-item me-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/0" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Next</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% elif maxPages <= 5 %}
+        <nav aria-label="Page navigation" class="mt-3">
+            <ul class="pagination flex-wrap">
+                <li class="page-item ms-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/1" aria-label="First Page">
+                    <span aria-hidden="true">&laquo;</span>
+                    <span class="sr-only">First Page</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ previousPage }}" aria-label="Previous">
+                        <span aria-hidden="true">&lt;</span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                </li>
+                {% for key in paginationList %}
+                    {% if key == pageNum %}
+                    <li class="page-item active" aria-current="page"><a class="page-link" href="/channel_content/{{ teacherUID }}/{{ key }}">{{ key }}</a></li>
+                    {% else %}
+                    <li class="page-item"><a class="page-link" href="/channel_content/{{ teacherUID }}/{{ key }}">{{ key }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                <li class="page-item">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ nextPage }}" aria-label="Next">
+                        <span aria-hidden="true">&gt;</span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </li>
+                <li class="page-item me-auto">
+                    <a class="page-link" href="/channel_content/{{ teacherUID }}/{{ maxPages }}" aria-label="Last Page">
+                    <span aria-hidden="true">&raquo;</span>
+                    <span class="sr-only">Last Page</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+{% for course in courseObjectList %}
+    {% if course.get_course_type() == "Video"%}
+    <script type="application/javascript">
+    //Dropzone for lesson video
+    Dropzone.options.dropper{{ course.get_courseID() }} = {
+        maxFiles: 1,
+        paramName: 'lessonVideo',
+        acceptedFiles: ".mp4, .mov, .avi, .mkv, .wmv, .flv",
+        chunking: true,
+        forceChunking: true,
+        url: '/upload/{{ course.get_courseID() }}',
+        maxFilesize: 10000, // megabytes
+        chunkSize: 10000000, // bytes
+        retryChunks: true,
+        retryChunksLimit: 3,
+        autoProcessQueue: true,
+        autoQueue: true, // Make sure the files aren't queued until manually added
+        init: function() {
+            let lessonVideoDropzone = this;
+        
+            // when the user profile image has been successfully uploaded, refresh the page after 1.5 seconds
+            lessonVideoDropzone.on("success", function () {
+                function redirectUser() {
+                location.href = "/course/{{ course.get_courseID() }}";
+                }
+                setInterval(redirectUser, 1500);
+            });
+        }
+    };
+    </script>
+
+    {% endif %}
+{% endfor %}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <script>
+        var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+        alertModal.show();
+    </script>
+    {% endif %}
+{% endwith %}
+{% endblock %}

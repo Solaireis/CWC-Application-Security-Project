@@ -1,0 +1,52 @@
+.title {
+    margin:3em;
+    text-align:center;
+}
+
+.icon-div {
+    display:flex;
+    justify-content:center;
+}
+
+.fa-envelope-open-text {
+    font-size:20vw;
+}
+
+.content-row {
+    display:flex;
+    align-items: center;
+    padding:0px 10vw;
+}
+
+.contact-form label {
+    display:none;
+}
+
+.contact-form button {
+    text-align:center;
+    display:block;
+}
+
+.contact-form input, .contact-form select, .contact-form textarea, .contact-form button, .text-danger {
+    margin:1em auto;
+    width:75%;
+}
+
+.contact-form textarea {
+    resize:vertical;
+}
+
+.response-div h3 {
+    text-align:center;
+}
+
+.response-div {
+    border:2px solid black;
+    padding:5px;
+}
+
+@media only screen and (max-width: 600px) {
+    .icon-div {
+        display:none;
+    }
+}

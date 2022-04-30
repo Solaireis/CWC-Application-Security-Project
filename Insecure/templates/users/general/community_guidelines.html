@@ -1,0 +1,51 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/policy.css') }}">{% endblock %}
+{% block title %}Community Guidelines | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container policy text-break">
+    <h3>Trust and Safety at CourseFinity</h3>
+
+    <p>Last Updated: 12 February 2022</p>
+
+    <p>Every day, thousands of minutes of content are consumed on CourseFinity. This is made possible by instructors who are passionate about teaching and students who are dedicated to learning. CourseFinity is founded on core values centered around this exchange of knowledge. We are committed to empowering highly knowledgeable everyday, real-world experts to provide an amazing learning experience for a global community of students.</p>
+
+    <p>It is up to all of us here at CourseFinity to live these values: instructors, students, and the CourseFinity team. When we live these values, we continue to create a thriving, sustainable marketplace where anyone can truly learn anything online — and have a great time doing it.
+
+    <h5>Who Forms our Community?</h5>
+
+    <p><strong>Students</strong> – Our students come to CourseFinity to have an engaging learning experience where they have access to a huge variety of topics from real-world experts, who practice these skills.</p>
+
+    <p><strong>Instructors</strong> – Our instructors are an inspiring bunch who love to teach. They come to CourseFinity because of the opportunity to impact millions of students across the world, and for access to the tools, platform, and coaching that enables them to create high-quality courses.</p>
+
+    <h5>What are the Ground-Rules?</h5>
+
+    <p class="mt-3 mb-0"><strong>1) Don’t spam</strong></p>
+
+    <p>Students come to CourseFinity to have a safe and engaging learning experience and instructors teach for the love of sharing knowledge. Instructors: Once you’re on the CourseFinity platform, don’t try to sell other products or spam each other with requests and offers.</p>
+
+    <p class="mt-3 mb-0"><strong>2) Don’t game the system</strong></p>
+
+    <ul>
+        <li><strong>For instructors:</strong> Don’t direct CourseFinity students away from the CourseFinity platform, push the envelope on what is and is not allowed, or search for loopholes in policies. We want our community of students to grow, as does every other instructor. When you game the system, the whole community loses out on having a common pool of engaged students who want to learn.</li>
+        <li><strong>For students:</strong> Don’t harass instructors, ask for free coupons, or offer reviews in exchange for things. The community relies on a healthy interaction between students and instructors, as well as honest student feedback to understand which courses are right for them.</li>
+    </ul>
+
+    <p class="mt-3 mb-0"><strong>3) Keep it professional</strong></p>
+
+    <p>Our instructors actively collaborate and communicate with each other, and students and instructors have healthy and vibrant discussions through the course-taking experience. We ask that, in connection with those relationships, you are respectful, honest, and considerate with students, instructors, and CourseFinity staff. Be a positive member of the CourseFinity community. Never ask for personal information, or post unoriginal content as your own.</p>
+
+    <p class="mt-3 mb-0"><strong>4) If you see something, say something</strong></p>
+
+    <p>If anything you see or experience ever seems like a violation, or you are unsure about a policy, just let us know by emailing <a href="mailto:coursefinitysupport@gmail.com">coursefinity@support.com</a>. Someone on our team will review every report, answer your questions, and determine whether there has been a violation of our policies.</p>
+
+    <p>We’re here to help you understand our policies and be successful on CourseFinity.</p>
+</div>
+{% endblock %}

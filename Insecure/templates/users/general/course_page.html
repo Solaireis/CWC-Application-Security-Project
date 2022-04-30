@@ -1,0 +1,297 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+{% endblock %}
+
+{% block title %}{{ course.get_title() }} | CourseFinity{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/teacher_page/{{ course.get_userID() }}">{{ courseTeacherUsername }}</a></li>
+            <li class="breadcrumb-item active"><a href="/teacher/{{ course.get_userID() }}/page_1">All Courses</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ course.get_title() }}</li>
+        </ol>
+    </nav>
+    <div class="table-responsive-lg">
+        <table class="table table-borderless">
+            <tr>
+                <td class="td_cells_min_width">
+                    <div class="row">
+                        <div class="col-8 no_padding border rounded">
+                            <div class="course_info_left border-bottom rounded">
+                                <h3>{{ course.get_title() }}</h3>
+                                <p><span class="fw-bold">Course Detail:</span> {{ course.get_description() }}</p>
+                                <h6>By <a href="/teacher_page/{{ course.get_userID() }}">{{ courseTeacherUsername }}</a></h6>
+                            </div>
+                            <div>
+                                <h5 class="course_structure_title">Course Structure:</h5>
+                                {% if lessonsCount >= 1 %}
+                                    {% if course.get_course_type() == "Video" %}
+                                        {% for lesson in lessons %}
+                                        <div class="card mb-3 course_card">
+                                            <div class="row g-0">
+                                                <div class="col-4">
+                                                    <img src="{{ lesson.get_thumbnail() }}" class="img-fluid rounded-start" alt="Lesson Thumbnail">
+                                                </div>
+                                                <div class="col-8">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ lesson.get_title() }}</h5>
+                                                        <p class="card-text">{{ lesson.get_description() }}</p>
+                                                        {% if course.get_userID() == session.get('userSession') %}
+                                                        <a href="/course/{{ course.get_courseID() }}/edit/{{ lesson.get_lessonID() }}" class="btn btn-primary">Edit Video</a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% elif course.get_course_type() == "Zoom" %}
+                                        {% for lesson in lessons %}
+                                        <div class="card mb-3 course_card">
+                                            <div class="row g-0">
+                                                <div class="col-4">
+                                                    <img src="{{ lesson.get_thumbnail() }}" class="img-fluid rounded-start" alt="Lesson Thumbnail">
+                                                </div>
+                                                <div class="col-8">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title">{{ lesson.get_title() }}</h5>
+                                                        <p class="card-text">{{ lesson.get_description() }}</p>
+                                                        <p class="card-text"><span class="fw-bold">Weekly Schedule (24HR):</span> Every {{ lesson.get_weekly_day() }} at {{ lesson.get_timings() }} (UTC+8)</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% else %}
+                                <div class="card mb-3 course_card">
+                                    <div class="row g-0">
+                                        <div class="col-4">
+                                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="img-fluid rounded-start" alt="Lesson Thumbnail">
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-body">
+                                                <h5 class="card-title">Sorry the course has no lessons</h5>
+                                                <p class="card-text">The teacher of this course have yet to upload any videos. Please stay tuned.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-4 no_padding columns card">
+                            <img src="{{ course.get_thumbnail() }}" class="card-img-top border-bottom rounded" alt="{{ course.get_shortTitle() }} Thumbnail">
+                            <div class="card-body">
+                                <p class="card-text"><span class="fw-bold">Price:</span> ${{ course.get_price() }}</p>
+                                <p class="card-text"><span class="fw-bold">Learning Style:</span> {{ course.get_course_type() }}</p>
+                                <p class="card-text"><span class="fw-bold">No of lessons:</span> {{ lessonsCount }}</p> 
+                                <p class="card-text"><span class="fw-bold">Overall Rating:</span>
+                                    {% with averageCourseRating = course.get_averageRating() %}
+                                        {% if averageCourseRating == 5 %}
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        {% elif averageCourseRating >= 4 and averageCourseRating < 5 %}
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        {% elif averageCourseRating >= 3 and averageCourseRating < 4 %}
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span> 
+                                        {% elif averageCourseRating >= 2 and averageCourseRating < 3 %}
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        {% elif averageCourseRating >= 1 and averageCourseRating < 2 %}
+                                        <span class="fas fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        {% elif averageCourseRating >= 0 and averageCourseRating < 1 %}
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        <span class="far fa-star ratings"></span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </p>
+                                <p class="card-text"><span class="fw-bold">Category:</span> {{ course.get_readable_tag() }}</p>
+                                <p class="card-text"><span class="fw-bold">Views:</span> {{ course.get_views() }}</p>
+                                {% if (lessonsCount >= 1) and (userPurchased) and (course.get_course_type() == "Zoom") %}
+                                    {% with zoomCourseLink = lessons[0].get_zoom_link() %}
+                                    <p class="card-text"><span class="fw-bold">Zoom Link:</span> <a href="{{ zoomCourseLink }}" target="_blank">{{ zoomCourseLink }}</a></p>
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                {% if userPurchased != True %}
+                                    {% if accType=="Guest" %}
+                                    <form action="/login" method="GET">
+                                        <button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+                                    </form>
+                                    {% elif accType=="Admin" %}
+                                    <button type="button" class="btn btn-success course_buy_button float-end">Admin cannot add to cart!</button>
+                                    {% else %}
+                                    <form action="/add_to_cart/{{ course.get_courseID() }}" method="POST">
+                                        <button type="submit" class="btn btn-success course_buy_button float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+                                    </form>
+                                    {% endif %}
+                                {% else %}
+                                    <form action="/purchaseview/{{ course.get_courseID() }}" method="POST">
+                                        <button type="submit" class="btn btn-success course_buy_button float-end"><i class="fas fa-shopping-bag"></i> View Purchase</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div>
+        <h3>User Reviews</h3>
+        <div class="table-responsive-lg">
+            <table class="table table-borderless">
+                {% if reviewsCount >= 1 %}
+                    {% for review, userInfo in reviews.items() %}
+                    <tr>
+                        <td class="td_cells_min_width_reviews">
+                            <div class="card mb-3 course_card">
+                                <div class="row g-0">
+                                    <div class="col-2">
+                                        <img src="{{ userInfo[1] }}" class="img-fluid user_profile" alt="User's profile image">
+                                    </div>
+                                    <div class="col-10">
+                                        <div class="card-body">
+                                            {% if review.get_userID() == session.get("userSession") %}
+                                            <form action="/course/deletereview/{{ course.get_courseID() }}" method="POST">
+                                                <button type="submit" class="btn mb-2 float-end"><i class="fas fa-trash float-end text-danger"></i></button>
+                                            </form>
+                                            {% endif %}
+                                            <h5 class="card-title">{{ review.get_title() }}</h5>
+                                            <p class="card-text">{{ review.get_comment() }}</p>
+                                            <div class="ratings float-end">
+                                                {% with reviewRating = review.get_rating() %}
+                                                    {% if reviewRating == 5 %}
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    {% elif reviewRating >= 4 and reviewRating < 5 %}
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    {% elif reviewRating >= 3 and reviewRating < 4 %}
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span> 
+                                                    {% elif reviewRating >= 2 and reviewRating < 3 %}
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    {% elif reviewRating >= 1 and reviewRating < 2 %}
+                                                    <span class="fas fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    {% elif reviewRating >= 0 and reviewRating < 1 %}
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    <span class="far fa-star"></span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </div>
+                                            <small class="text-muted">Reviewed by {{ userInfo[0] }} at {{ review.get_review_time() }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td class="td_cells_min_width_reviews">
+                            <div class="mb-3">
+                                <div class="row g-0">
+                                    <div class="col-12">
+                                        <h5>This course do not have any reviews yet.</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </table>
+        </div>
+        {% if reviewsCount > 3 %}
+            <a href="/course/{{ course.get_courseID() }}/reviews/page_1" class="float-end">See all reviews...</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<script>
+			var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+			alertModal.show();
+		</script>
+		{% endif %}
+	{% endwith %}
+{% endblock %}

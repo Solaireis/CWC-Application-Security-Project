@@ -1,0 +1,72 @@
+.btn-colour {
+    background-color: #009DF8;
+}
+
+#userForm {
+    max-width: 40%;
+    margin: 0 30%;
+}
+
+.warning_text {
+    margin: 10px;
+}
+
+@media (max-width: 991px) {
+    .LSUForm {
+        margin: 0 10px;
+    }
+    #userForm {
+        max-width: 80%;
+        margin: 0 10%;
+    }
+}
+
+@media (max-width: 576px) {
+    #userForm {
+        max-width: 100%;
+        margin: 0 0;
+    }
+}
+
+.form_checkbox {
+    display: inline-flex;
+}
+
+@media (max-width: 420px) {
+    .form_checkbox {
+        display: inline-block !important;
+    }
+}
+
+.updateForm {
+    padding: 30px !important;
+}
+
+.warning_alert {
+    margin-top: 10px;
+}
+
+.forgetPWD {
+    color: #009DF8;
+}
+
+.forgetPWD:hover {
+    color: #009DF8;
+}
+
+/* for OTP QR code */
+.QRCode {
+    width: 250px;
+    height: auto;
+  }
+
+  .QRCode_wrapper {
+      text-align: center;
+  }
+
+  @media (max-width: 767px) {
+      .QRCode {
+          width: 60%;
+          height: auto;
+      }
+  }

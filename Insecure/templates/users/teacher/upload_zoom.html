@@ -1,0 +1,114 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/upload_zoom.css') }}">
+{% endblock %}
+
+{% block title %}Create Zoom Lesson | CourseFinity{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                {% for category, message in messages %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>{{ message }}</h6>
+                </div>
+                {% endfor %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container-sm" id="form">
+    <form action="" method="POST" enctype="multipart/form-data">
+        <h2>Zoom Lesson Creation</h2>
+        <div class="row">
+            <!-- Zoom Thumbnail -->
+            <div class="mb-5 col-6 gx-5">
+                <div class="card" style="width:180px;">
+                    <img id="thumbnail"
+                        src="https://st2.depositphotos.com/3765753/5349/v/600/depositphotos_53491489-stock-illustration-example-rubber-stamp-vector-over.jpg"
+                        alt="Your thumbnail will appear here" class="card-img-top" />
+                </div>
+                <br>
+                <label for="formFile" class="form-label">Upload Zoom Lesson Thumbnail Here!</label>
+                <input accept=".png, .jpg, .jpeg" name="zoomThumbnail" class="form-control" id="formFile" type='file' onchange="readURL(this);">
+            </div>
+
+            <div class="mb-3 col-5">
+                <!-- Zoom Title -->
+                <div class="mb-4">
+                    <label for="zoomTitle" class="form-label">Zoom Lesson Title</label>
+                    <input name="zoomTitle" class="form-control" id="zoomTitle" type="text" required
+                        placeholder="Lesson Title" />
+                </div>
+
+                <!-- Zoom Description -->
+                <div class="mb-4">
+                    <label for="zoomDescription" class="form-label">Zoom Lesson Description</label>
+                    <textarea name="zoomDescription" class="form-control" id="zoomDescription" rows="4"
+                        required placeholder="Lesson Description"></textarea>
+                </div>
+
+                <!-- Zoom Schedule -->
+                <div class="mb-4">
+                    <label for="zoomTime" class="form-label">Zoom Lesson Schedule (UTC +8)</label>
+                    <input name="zoomTime" class="form-control" id="zoomSchedule" type="time" value="zoomTime"
+                        required>
+                    <label for="zoomDay" class="form-label">Day of Lesson</label>
+                    <select name="zoomDay" class="form-control" id="zoomSchedule" type="text" value="zoomDay" required>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+
+
+                <!-- Zoom Link -->
+                <div>
+                    <label for="zoomLink" class="form-label">Zoom Lesson Link</label>
+                    <input name="zoomLink" class="form-control" id="zoomLink" type="text" required
+                        placeholder="Paste your Zoom Link here" />
+                </div>
+
+                <!-- Zoom Password -->
+                <div>
+                    <label for="zoomPassword" class="form-label">Zoom Lesson Link</label>
+                    <input name="zoomPassword" class="form-control" id="zoomPassword" type="text" required
+                        placeholder="Paste your Zoom Password here" />
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">
+            <span>Submit</span>
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<script>
+    var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+    alertModal.show();
+</script>
+{% endif %}
+{% endwith %}
+<script src="{{ url_for('static', filename='scripts/upload_zoom.js') }}"></script>
+{% endblock %}

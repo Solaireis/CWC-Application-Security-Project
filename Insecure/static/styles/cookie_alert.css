@@ -1,0 +1,49 @@
+/*
+ * Bootstrap Cookie Alert by Wruczek
+ * https://github.com/Wruczek/Bootstrap-Cookie-Alert
+ * Released under MIT license
+ */
+
+ /* note that the cookie alert css has been modified to fit CourseFinity's theme */
+
+ .cookiealert {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    margin: 0 !important;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    border-radius: 0;
+    transform: translateY(100%);
+    transition: all 500ms ease-out;
+    color: #EEFBFF;
+    background: #009DF8;
+}
+
+.cookiealert.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0%);
+    transition-delay: 1000ms;
+}
+
+.cookiealert a {
+    text-decoration: underline;
+    color: #EEFBFF;
+}
+
+.cookiealert a:hover {
+    color: #212529
+}
+
+.cookiealert .acceptcookies {
+    margin-left: 10px;
+    vertical-align: baseline;
+}
+
+/* additional style below to overwrite common.css */
+.acceptcookies {
+    margin-bottom: 0 !important;
+}

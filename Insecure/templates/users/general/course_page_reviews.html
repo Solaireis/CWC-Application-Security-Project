@@ -1,0 +1,292 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+{% endblock %}
+
+{% block title %}{{ course.get_title() }} Reviews | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/teacher_page/{{ course.get_userID() }}">{{ courseTeacherUsername }}</a></li>
+            <li class="breadcrumb-item active"><a href="/teacher/{{ course.get_userID() }}/page_1">All Courses</a></li>
+            <li class="breadcrumb-item"><a href="/course/{{ course.get_courseID() }}">{{ course.get_title() }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">All Reviews</li>
+        </ol>
+    </nav>
+    {% if userReviewed and userPurchased %}
+        <h3>Your Review</h3>
+        <div class="table-responsive-lg">
+            <table class="table table-borderless">
+                {% for review, userInfo in userReview.items() %}
+                <tr>
+                    <td class="td_cells_min_width_reviews">
+                        <div class="card mb-3 course_card">
+                            <div class="row g-0">
+                                <div class="col-2">
+                                    <!-- Get User Profile Pic-->
+                                    <img src="{{ userInfo[1] }}" class="img-fluid user_profile" alt="{{ userInfo[0] }}'s profile image">
+                                </div>
+                                <div class="col-10">
+                                    <div class="card-body">
+                                        <form action="/course/deletereview/{{ course.get_courseID() }}" method="POST">
+                                            <button type="submit" class="btn mb-2 float-end"><i class="fas fa-trash float-end text-danger"></i></button>
+                                        </form>
+                                        <h5 class="card-title">{{ review.get_title() }}</h5>
+                                        <p class="card-text">{{ review.get_comment() }}</p>
+                                        <div class="ratings float-end">
+                                            {% with reviewRating = review.get_rating() %}
+                                                {% if reviewRating == 5 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                {% elif reviewRating >= 4 and reviewRating < 5 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 3 and reviewRating < 4 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span> 
+                                                {% elif reviewRating >= 2 and reviewRating < 3 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 1 and reviewRating < 2 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 0 and reviewRating < 1 %}
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <small class="text-muted">Reviewed by you at {{ review.get_review_time() }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% elif userPurchased %}
+        <h3>Your Review</h3>
+        <div class="table-responsive-lg">
+            <table class="table table-borderless">
+                <tr>
+                    <td class="td_cells_min_width_reviews">
+                        <div class="mb-3">
+                            <div class="row g-0">
+                                <div class="col-12">
+                                    <h5>You have not reviewed this course yet.</h5>
+                                    <a href="/purchasereview/{{ course.get_courseID() }}">Click here to review this course!</a>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    {% endif %}
+    {% if userReviewed %}
+    <h3>There are {{ count }} user reviews including yours!</h3>
+    {% else %}
+    <h3>There are {{ count }} user reviews!</h3>
+    {% endif %}
+    <div class="table-responsive-lg">
+        <table class="table table-borderless">
+            {% if reviewsCount >= 1 %}
+                {% for review, userInfo in reviews.items() %}
+                <tr>
+                    <td class="td_cells_min_width_reviews">
+                        <div class="card mb-3 course_card">
+                            <div class="row g-0">
+                                <div class="col-2">
+                                    <!-- Get User Profile Pic-->
+                                    <img src="{{ userInfo[1] }}" class="img-fluid user_profile" alt="User's profile image">
+                                </div>
+                                <div class="col-10">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ review.get_title() }}</h5>
+                                        <p class="card-text">{{ review.get_comment() }}</p>
+                                        <div class="ratings float-end">
+                                            {% with reviewRating = review.get_rating() %}
+                                                {% if reviewRating == 5 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                {% elif reviewRating >= 4 and reviewRating < 5 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 3 and reviewRating < 4 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span> 
+                                                {% elif reviewRating >= 2 and reviewRating < 3 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 1 and reviewRating < 2 %}
+                                                <span class="fas fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% elif reviewRating >= 0 and reviewRating < 1 %}
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                <span class="far fa-star"></span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        <small class="text-muted">Reviewed by {{ userInfo[0] }} at {{ review.get_review_time() }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td class="td_cells_min_width_reviews">
+                        <div class="mb-3">
+                            <div class="row g-0">
+                                <div class="col-12">
+                                    <h5>This course do not have any reviews yet.</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% if maxPages > 5 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination flex-wrap">
+            <li class="page-item ms-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_1" aria-label="First Page">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">First Page</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ previousPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&lt;</span>
+                    <span class="sr-only">Previous</span>
+                </a>
+            </li>
+            {% for pageNum in paginationList %}
+                {% if pageNum == pageNum %}
+                <li class="page-item active" aria-current="page"><a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ pageNum }}">{{ pageNum }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ pageNum }}">{{ pageNum }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ nextPage }}" aria-label="Next">
+                    <span aria-hidden="true">&gt;</span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </li>
+            <li class="page-item me-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ maxPages }}" aria-label="Last Page">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Last Page</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% elif maxPages == 0 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination flex-wrap">
+            <li class="page-item ms-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_0" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+                </a>
+            </li>
+            <li class="page-item active" aria-current="page"><a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_0">0</a></li>
+            <li class="page-item me-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_0" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Next</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% elif maxPages <= 5 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination flex-wrap">
+            <li class="page-item ms-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_1" aria-label="First Page">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">First Page</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ previousPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&lt;</span>
+                    <span class="sr-only">Previous</span>
+                </a>
+            </li>
+            {% for pageNum in paginationList %}
+                {% if pageNum == pageNum %}
+                <li class="page-item active" aria-current="page"><a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ pageNum }}">{{ pageNum }}</a></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ pageNum }}">{{ pageNum }}</a></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ nextPage }}" aria-label="Next">
+                    <span aria-hidden="true">&gt;</span>
+                    <span class="sr-only">Next</span>
+                </a>
+            </li>
+            <li class="page-item me-auto">
+                <a class="page-link" href="/course/{{ course.get_courseID() }}/reviews/page_{{ maxPages }}" aria-label="Last Page">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Last Page</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

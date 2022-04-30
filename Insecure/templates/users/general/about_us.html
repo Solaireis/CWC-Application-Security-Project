@@ -1,0 +1,64 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}">{% endblock %}
+{% block title %}About Us | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+	<ul class="breadcrumb">
+		<li>
+			<a href="/">Home</a>
+		</li>
+		<li>About Us</li>
+	</ul>
+	<div class="row g-0 casing mx-auto border">
+		<div class="col-5">
+			<img src="../static/images/about_us/About.jpg" alt="">
+		</div>
+		<div class="col-7">
+			<h2>An Introduction To The Website</h2>
+			<br>
+			<h3>Our website has a variety of courses that can range from Academics to Technological courses. We help organizations of all types and sizes prepare for the path ahead — wherever it leads. Our curated collection of business and technical courses help companies, governments, and nonprofits go further by placing learning at the center of their strategies.</h3>
+		</div>
+	</div>
+	<br>
+	<br>
+	<br>
+	<div class="row g-0 casing mx-auto border">
+		<div class="col-5">
+			<h2>Our Vision</h2>
+			<br>
+			<h3>We intend to expand our services to a large amount of areas in the world. We expect to see thousands of teachers from acrosss the world, helping out students from anywhere and anytime. Student will also no longer be restricted to physical materials, and have access to thousands of courses that might just be the thing that they need.</h3>
+		</div>
+		<div class="col-7">
+			<img src="../static/images/about_us/Vision.jpg" alt="">
+		</div>
+	</div>
+	<br>
+	<br>
+	<br>
+	<div class="row g-0 casing mx-auto border">
+		<div class="col-5">
+			<img src="../static/images/about_us/Mission.jpg" alt="">
+		</div>
+		<div class="col-7">
+			<h2>Our Mission</h2>
+			<br>
+			<h3>Our mission is simple. Reunite learning with education and make it accessible to every single person on this planet. Anyone can learn anything, at any age, at an affordable cost, anywhere in the world.</h3>
+		</div>
+	</div>
+	<br>
+	<br>
+	<br>
+</div>
+<div class="quote">
+	<p>"Education is what someone tells you to do. Learning is what you do for yourself."</p>
+	<p>- Eden Pang, Competitive Programmer</p>
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "user_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/purchase_view.css') }}">{% endblock %}
+{% block title %}Purchase View | CourseFinity{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+    <nav aria-label="breadcrumb">
+		<ol class="breadcrumb">
+			<li class="breadcrumb-item"><a href="/purchasehistory/{{pageNum}}">Purchase History</a></li>
+			<li class="breadcrumb-item active" aria-current="page">View</li>
+		</ol>
+	</nav>
+    <h2>Purchase View</h2>
+    <br>
+
+    {% for courseInformation in courseList %}
+    <div class="row g-0 casing mx-auto border">
+        <div class="col">
+            <div class="card-body text">
+                <h5 class="card-title text-center"><a href="/course/{{ courseInformation['CourseID'] }}">{{ courseInformation["Title"] }}</a></h5>
+                <br>
+                <h5 class="card-text">Date: {{ courseInformation["Date"] }}</h5>
+                <h5 class="card-text">Time: {{ courseInformation["Time"] }}</h5>
+                <h5 class="card-text">Order ID: {{ courseInformation["OrderID"] }}</h5>
+                <h5 class="card-text">Paypal ID: {{ courseInformation["PaypalID"] }}</h5>
+                {% if courseInformation["CourseTypeCheck"] == "Video" %}
+                <h5 class="card-text">Lesson Type: Video Recording</h5>
+                {% elif courseInformation["CourseTypeCheck"] == "Zoom" %}
+                <h5 class="card-text">Lesson Type: Zoom</h5>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% for Lesson in courseInformation["Lesson"] %}
+    <div class="row g-0 casing mx-auto border">
+        <div class="col-5">
+            <img class="resize img-fluid rounded float-start" src="{{ Lesson.get_thumbnail() }}" alt="">
+        </div>
+        <div class="col-7">
+            <div class="card-body text">
+                <h5 class="card-title">{{ Lesson.get_title() }}</h5>
+                <p class="card-text">{{ Lesson.get_description() }}</p>
+                {% for courseInformation in courseList %}
+                    {% if courseInformation["CourseTypeCheck"] == "Video" %}
+                    <a href="/purchaseview/{{ courseID }}/view_video/{{ Lesson.get_lessonID() }}" class="view">View Recording</a>
+                    {% elif courseInformation["CourseTypeCheck"] == "Zoom" or "Video" %}
+                    <a target="_blank" href="{{ Lesson.get_zoom_link() }}" class="view">View Zoom Link</a>
+                    <p>Zoom Password: {{ Lesson.get_zoom_password() }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="selection col">
+                        <!--PlaceHolders-->
+                    </div>
+                    <div class="information col">
+                        <!--Placeholders-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <h3>My Review</h3>
+    {% if checker == True %}
+    <tr>
+        <td class="td_cells_min_width_reviews">
+            <div class="card mb-3 col-9 course_card mx-auto">
+                <div class="row g-0">
+                    <div class="col">
+                        <div class="card-body">
+                            <form action="/deletereview/{{ courseID }}" method="POST">
+                                <button type="submit" class="btn mb-2 float-end"><i class="fas fa-trash float-end text-danger"></i></button>
+                            </form>
+                            <h5 class="card-title">{{ courseInformation["Review"].get_title() }}</h5>
+                            <p class="card-text">{{ courseInformation["Review"].get_comment() }}</p>
+                            <div class="ratings float-end">
+                                {% with courseRating = courseInformation["Review"].get_rating() %}
+                                    {% if courseRating == 5 %}
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    {% elif courseRating >= 4 and courseRating < 5 %}
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    {% elif courseRating >= 3 and courseRating < 4 %}
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span> 
+                                    {% elif courseRating >= 2 and courseRating < 3 %}
+                                    <span class="fas fa-star"></span>
+                                    <span class="fas fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    {% elif courseRating >= 1 and courseRating < 2 %}
+                                    <span class="fas fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    {% elif courseRating >= 0 and courseRating < 1 %}
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    <span class="far fa-star"></span>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            <small class="text-muted">{{ courseInformation["Review"].get_review_time() }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </td>
+    </tr>
+    {% else %}
+    <h3 style="text-align:center;margin-bottom:50px;opacity:0.5;">You have not created one.</h3>
+    <h3 class="text-center"><a class="btn btn-link " href="/purchasereview/{{courseID}}">Click here to create one.</a></h3>
+    {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+		<script>
+			var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+			alertModal.show();
+		</script>
+		{% endif %}
+	{% endwith %}
+{% endblock %}

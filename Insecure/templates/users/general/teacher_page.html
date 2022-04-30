@@ -1,0 +1,192 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/teacher_page.css') }}">
+{% endblock %}
+
+{% block title %}Teacher Page | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Welcome to {{ teacherUsername }}'s page!</h1>
+    <div class="container row">
+        <div class="col card w-90 mb-3 border bg-light flex-row">
+            <div class="row">
+                <div id="pfp" class="col-md-3">
+                    <img src="{{ teacherProfile }}" alt="{{ teacherProfile }}'s Profile Icon" id="user-icon-setting">
+                </div>
+                <div id="bio" class="text-dark bg-light col-md-9">
+                    {% if bio == "" %}
+                    <p>Hello! Please take a look at the courses that I am teaching!</p>
+                    {% else %}
+                    <p>{{ bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <h2 class="headings">Popular Courses</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% if popularCourseLen >= 1 %}
+            {% for course in popularCourseList %}
+            <div class="col">
+                <div class="card text-dark bg-light h-100">
+                    <a href="/course/{{ course.get_courseID() }}"><img src="{{ course.get_thumbnail() }}" class="card-img-top" alt="Course Thumbnail"></a>
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="/course/{{ course.get_courseID() }}">{{ course.get_shortTitle() }}</a></h5>
+                        <p class="card-text">{{ course.get_shortDescription() }}</p>
+                        {% if course.get_course_type() == "Video" %}
+                        <p class="card-text fw-bold">Video: ${{ course.get_price() }}</p>
+                        {% elif course.get_course_type() == "Zoom" %}
+                        <p class="card-text fw-bold">Zoom: ${{ course.get_price() }}</p>
+                        {% endif %}
+                        <div class="ratings">
+                            {% with averageCourseRating = course.get_averageRating() %}
+                                {% if averageCourseRating == 5 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                {% elif averageCourseRating >= 4 and averageCourseRating < 5 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 3 and averageCourseRating < 4 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span> 
+                                {% elif averageCourseRating >= 2 and averageCourseRating < 3 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 1 and averageCourseRating < 2 %}
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 0 and averageCourseRating < 1 %}
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <p class="card-text">Views: {{ course.get_views() }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col">
+                <div class="card text-dark bg-light h-100">
+                    <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                    <div class="card-body">
+                        <h4 class="card-title">No Course Available</h4>
+                        <p class="card-text">Sorry, there are currently no courses available.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <h2 class="headings">Recent Courses</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% if lastThreeCourseLen >= 1 %}
+            {% for course in lastThreeCourseList %}
+            <div class="col">
+                <div class="card text-dark bg-light h-100">
+                    <a href="/course/{{ course.get_courseID() }}"><img src="{{ course.get_thumbnail() }}" class="card-img-top" alt="Course Thumbnail"></a>
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="/course/{{ course.get_courseID() }}">{{ course.get_shortTitle() }}</a></h5>
+                        <p class="card-text">{{ course.get_shortDescription() }}</p>
+                        {% if course.get_course_type() == "Video" %}
+                        <p class="card-text fw-bold">Video: ${{ course.get_price() }}</p>
+                        {% elif course.get_course_type() == "Zoom" %}
+                        <p class="card-text fw-bold">Zoom: ${{ course.get_price() }}</p>
+                        {% endif %}
+                        <div class="ratings">
+                            {% with averageCourseRating = course.get_averageRating() %}
+                                {% if averageCourseRating == 5 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                {% elif averageCourseRating >= 4 and averageCourseRating < 5 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 3 and averageCourseRating < 4 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span> 
+                                {% elif averageCourseRating >= 2 and averageCourseRating < 3 %}
+                                <span class="fas fa-star"></span>
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 1 and averageCourseRating < 2 %}
+                                <span class="fas fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% elif averageCourseRating >= 0 and averageCourseRating < 1 %}
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                <span class="far fa-star"></span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        <p class="card-text">Views: {{ course.get_views() }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col">
+                <div class="card text-dark bg-light h-100">
+                    <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                    <div class="card-body">
+                        <h4 class="card-title">No Course Available</h4>
+                        <p class="card-text">Sorry, there are currently no courses available.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    </div>
+    {% if teacherCourseLen > 3 %}
+    <div class="row">
+        <div class="col">
+            <a class="float-end" href="/teacher/{{teacherPageUID}}/page_1">See All Courses</a>
+        </div>
+    </div> 
+    {% endif %}    
+</div>
+{% endblock %}

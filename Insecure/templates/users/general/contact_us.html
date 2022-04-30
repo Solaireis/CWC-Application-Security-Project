@@ -1,0 +1,43 @@
+
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/contact_us.css') }}">
+{% endblock %}
+{% block title %}Contact Us | CourseFinity{% endblock %}
+
+{% from "includes/_formHelper.html" import render_field %}
+
+{% block content %}
+<div class="title">
+    <h4>Have any enquiries?</h4>
+    <h5>Submit your enquiries below, and we will get back to you.</h5>
+</div>
+
+<div class="row content-row g-0">
+
+    <div class="col icon-div">
+        <i class="fas fa-envelope-open-text"></i>
+    </div>
+
+    <div class="col form-div">
+        <form class="contact-form" method="post">
+            {{ render_field(form.name, class="form-control", placeholder="Name") }}
+            {{ render_field(form.email, class="form-control", placeholder="Email") }}
+            {{ render_field(form.subject, class="form-select", placeholder="Subject") }}
+            {{ render_field(form.enquiry, class="form-control", placeholder="Enquiry", rows="6") }}
+            <button type="submit" class="btn btn-primary mb-2">Submit</button>
+        </form>
+    </div>
+
+</div>
+
+<div class="title">
+    <h5><i class="fas fa-phone-alt"></i>&nbsp;&nbsp;&nbsp;Or call us at +65 6451 5115!&nbsp;&nbsp;&nbsp;<i class="fas fa-phone-alt"></i></h5>
+</div>
+
+{% endblock %}

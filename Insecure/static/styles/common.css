@@ -1,0 +1,381 @@
+* {
+	font-family: sans-serif;
+	box-sizing:border-box;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+/* ============ Navigation Bar ============ */
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.dropdown-menu.show {
+	-webkit-animation: fadeIn 0.3s alternate;
+	animation: fadeIn 0.3s alternate;
+}
+
+.nav-item.dropdown.dropdown-mega {
+	position: static;
+}
+
+.nav-item.dropdown.dropdown-mega .dropdown-menu {
+	width: 90%;
+	top: auto;
+	left: 5%;
+}
+
+.navbar_margin {
+	padding-right: 50px;
+	padding-left: 50px;
+}
+
+.search_form {
+	width: 600px;
+}
+
+.navbar-expand-lg .navbar-nav .nav-link {
+	padding: 5px;
+}
+
+@media (max-width: 1500px) {
+	.search_form {
+		width: 40%;
+	}
+}
+
+#nav-icon {
+	float: right;
+	line-height: 80px;
+	display: none;
+}
+
+#check {
+	display: none;
+}
+
+@media (max-width: 991px) {
+	#nav-icon {
+		display: block;
+		width: 50px;
+		height: 45px;
+		-webkit-transform: rotate(0deg);
+		-moz-transform: rotate(0deg);
+		-o-transform: rotate(0deg);
+		transform: rotate(0deg);
+		-webkit-transition: .5s ease-in-out;
+		-moz-transition: .5s ease-in-out;
+		-o-transition: .5s ease-in-out;
+		transition: .5s ease-in-out;
+		cursor: pointer;
+	}
+	#nav-icon span {
+		display: block;
+		position: absolute;
+		height: 9px;
+		width: 100%;
+		background: #fff;
+		border-radius: 9px;
+		opacity: 1;
+		left: 0;
+		-webkit-transform: rotate(0deg);
+		-moz-transform: rotate(0deg);
+		-o-transform: rotate(0deg);
+		transform: rotate(0deg);
+		-webkit-transition: .25s ease-in-out;
+		-moz-transition: .25s ease-in-out;
+		-o-transition: .25s ease-in-out;
+		transition: .25s ease-in-out;
+	}
+	#nav-icon span:nth-child(1) {
+		top: 0px;
+	}
+	#nav-icon span:nth-child(2) {
+		top: 18px;
+	}
+	#nav-icon span:nth-child(3) {
+		top: 36px;
+	}
+	#nav-icon.openTrue span:nth-child(1) {
+		top: 18px;
+		-webkit-transform: rotate(135deg);
+		-moz-transform: rotate(135deg);
+		-o-transform: rotate(135deg);
+		transform: rotate(135deg);
+	}
+	#nav-icon.openTrue span:nth-child(2) {
+		opacity: 0;
+		left: -60px;
+	}
+	#nav-icon.openTrue span:nth-child(3) {
+		top: 18px;
+		-webkit-transform: rotate(-135deg);
+		-moz-transform: rotate(-135deg);
+		-o-transform: rotate(-135deg);
+		transform: rotate(-135deg);
+	}
+	.search_form {
+		width: 100%;
+	}
+	.navbar-expand-lg .navbar-nav .nav-link, .search_form {
+		padding-top: 20px;
+	}
+	.navbar_margin {
+		padding-right: 15px;
+		padding-left: 15px;
+	}
+}
+
+@media (max-width: 360px) {
+	#nav-icon {
+		width: 35px;
+	}
+	#nav-icon span {
+		height: 6px;
+		border-radius: 5px;
+	}
+	#nav-icon span:nth-child(1) {
+		top: 5px;
+	}
+	#nav-icon span:nth-child(2) {
+		top: 17px;
+	}
+	#nav-icon span:nth-child(3) {
+		top: 29px;
+	}
+}
+
+.icons {
+	display: inline-flex;
+	margin-left: auto;
+}
+
+.icons a {
+	transition: all 0.2s ease-in-out;
+	padding: 0.2rem 0.4rem;
+	color: #ccc !important;
+	text-decoration: none;
+}
+
+.icons a:hover {
+	color: white;
+	text-shadow: 0 0 30px white;
+}
+
+#logo img {
+	float: left;
+	height: 80px;
+	width: auto;
+	margin-right: 20px;
+}
+
+#user_profile {
+	height: 40px;
+	width: auto;
+	border-radius: 50%;
+}
+
+@media (max-width: 412px) {
+	#logo img {
+		height: 55px;
+		margin-right: 0px;
+	}
+}
+@media (max-width:280px) {
+	#logo img {
+		height: 35px;
+	}
+}
+.nav-item {
+	margin: auto 10px !important;
+}
+
+@media (max-width: 991px) {
+	.navbar-nav, .nav-item {
+		margin: 0 !important;
+	}
+}
+
+#shopping-count {
+    position: absolute;
+    background-color: #FF6B6B;
+    border-radius: 50%;
+    border: 1.5px solid white;
+    font-size: 0.5em;
+    width: 2em;
+    height: 2em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:0.3s;
+}
+
+.nav-link:hover #shopping-count {
+    background-color:red;
+}
+
+#shopping-count-span {
+    bottom: 0.5em;
+    position: relative;
+    right: 0.8em;
+}
+
+#shopping-cart-link, #shopping-cart-link:hover {
+    text-decoration:none;
+}
+
+#shopping-cart-link:hover #shopping-cart-link-text {
+    text-decoration:underline;
+}
+
+/* ============ End of Navigation Bar ============ */
+
+
+/* ============ Footer ============ */
+
+footer .header {
+	margin-bottom: 20px;
+}
+
+footer .header div {
+	content: '';
+	position: absolute;
+	background-color: #009DF8;
+	height: 2px;
+	box-sizing: border-box;
+	width: 60px;
+}
+
+.logo_margin {
+	margin-left: 10px;
+}
+
+.about_company a {
+	color: #009DF8;
+	background-color: rgba(238, 251, 255, 0.8);
+	border-radius: 50%;
+	transition: all 0.5s ease;
+	padding: 5px;
+}
+
+.about_company a:hover {
+	color: #EEFBFF;
+	background-color: #009DF8;
+	text-decoration: none !important;
+}
+
+@media (max-width: 310px) {
+	.copyright {
+		width: 100%;
+		display: block !important;
+	}
+	.about_company {
+		margin-top: 10px;
+		width: 100%;
+		display: block !important;
+	}
+	.logo_margin {
+		margin-left: 5px;
+	}
+}
+
+.links li {
+	margin: 10px 0;
+}
+
+.links li a {
+	color: #EEFBFF !important;
+	transition: all 0.5s ease;
+}
+
+.links li a:hover {
+	color: #009DF8 !important;
+	padding-left: 5px;
+}
+
+footer ul li {
+	list-style: none;
+}
+
+footer ul {
+	padding-left: 0;
+}
+
+/* ============ End of Footer ============ */
+
+/* ============ Others ============ */
+
+.btn-primary {
+	background-color: #009DF8 !important;
+	color: #FFF !important;
+}
+
+.btn-primary:hover {
+	background-color: #273C4D !important;
+	color: #FFF !important;
+}
+
+/* Go to top button style */
+#topbutton {
+	text-decoration: none;
+	background-color: #009DF8;
+	width: 50px;
+	height: 50px;
+	text-align: center;
+	border-radius: 4px;
+	position: fixed;
+	bottom: 30px;
+	right: 30px;
+	transition: background-color .3s, opacity .5s, visibility .5s;
+	opacity: 0;
+	visibility: hidden;
+	z-index: 999;
+	font-weight: normal;
+	font-style: normal;
+	color: #EEFBFF;
+	display: grid;
+	place-items: center;
+	font-size: 2em;
+	line-height: 50px;
+}
+
+#topbutton:hover {
+	cursor: pointer;
+	background-color: #273C4D;
+}
+
+#topbutton.show {
+	opacity: 1;
+	visibility: visible;
+}
+
+.ratings {
+	color: #FFD700;
+}
+
+.content{
+	margin-top:50px;
+	margin-bottom:50px;
+}
+
+.btn-link {
+	text-decoration: none;
+}
+
+.btn-link:hover {
+	text-decoration: underline;
+}
+
+/* ============ End of Others ============ */

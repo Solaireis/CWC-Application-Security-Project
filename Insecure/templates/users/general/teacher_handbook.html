@@ -1,0 +1,330 @@
+{% if accType == "Guest" %}
+{% extends "guest_base.html" %}
+{% elif accType == "Student" or accType == "Teacher"%}
+{% extends "user_base.html" %}
+{% elif accType == "Admin" %}
+{% extends "admin_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/teacher_handbook.css') }}">
+{% endblock %}
+{% block title %}Teacher's Handbook | CourseFinity{% endblock %}
+
+{% block content %}
+<div class="container policy text-break">
+    <h1>Teacher's Handbook</h1>
+
+    <h2>Chapter 1</h2>
+
+    <h3>Introduction</h3>
+
+    <h5>COURSEFINITY MISSION, PHILOSOPHY & PURPOSE</h5>
+
+
+
+    <strong>OUR MISSION:</strong>
+
+    <p>
+        CourseFinity is committed to the harmonious development of the whole person for student excellence in academics,
+        and technological skills. Moreover, it intends to continue and expand its success as a learning space
+        for learners from anywhere around the world, or any age.
+    </p>
+    <p>
+        CourseFinity stresses the importance of Acedemics with e-Learning plus Technological Development and Digital
+        Skills.
+        With highly qualified and loving mentors, CourseFinity has positioned itself to deliver its curriculum which
+        has recognizably well-crafted content standards. CourseFinity curriculum demands the best practices, high
+        involvement,
+        and serious engagement of the stakeholders. Through the collaborative efforts of the teachers and the
+        community, CourseFinity cannot fail in professionally achieving its mission, standards and objectives. High
+        expectations are set for teachers and students with respect to continuous improvement in communication skills,
+        creative
+        imagination, contagious positive mental attitude, and contribution to society.
+    </p>
+    <p>
+        CourseFinity partners with more than 200 leading universities and companies to bring flexible, affordable,
+        job-relevant online
+        learning to individuals and organizations worldwide. We offer a range of learning opportunities—from hands-on
+        projects and courses to job-ready certificates and degree programs.
+        Hence, student learning is the bottom line with emphases in the practical realities of life and problem solving
+        skills so that the best in the students will be honed. Proper choices and creative imagination that links with
+        the
+        spiritual realm may lead them to happiness and success. This finds expression in the burning desire to cherish
+        and
+        pursue the divine mission to serve even the disadvantaged.
+    </p>
+
+
+    <div id="philosophy" class="container" style="text-align:center;">
+        <strong>OUR PHILOSOPHY:</strong>
+        <p>We believe</p>
+        <p>Learning is the source of human progress.</p>
+
+        <p>It has the power to transform our world</p>
+        <p>from illness to health,</p>
+        <p>from poverty to prosperity,</p>
+        <p>from conflict to peace.</p>
+
+        <br>
+
+        <p>It has the power to transform our lives</p>
+        <p>for ourselves,</p>
+        <p>for our families,</p>
+        <p>for our communities.</p>
+
+        <br>
+
+        <p>No matter who we are or where we are,</p>
+        <p>learning empowers us to change and grow</p>
+        <p>and redefine what's possible.</p>
+
+        <br>
+
+        <p>That's why access to the best learning is a right, not a privilege.</p>
+        <p>And that's why CourseFinity is here.</p>
+        <p>We partner with the best institutions</p>
+        <p>to bring the best learning</p>
+        <p>to every corner of the world.</p>
+        <br>
+        <p>So that anyone, anywhere has the power to</p>
+        <p>transform their life through learning.</p>
+    </div>
+
+
+    <strong>OUR GOALS:</strong>
+
+    <p><span class="bold">Challenge</span> each student to reach their full potential the wide and vast field of
+        technology.
+    </p>
+    <p><span class="bold">Train</span> students to become proficient in the field information technology as well as
+        academics.</p>
+    <p><span class="bold">Expect</span> students to develop critical, independent thinking skills, as well as aquire a
+        deep
+        understanding of the world or technology around us.</p>
+
+
+    <strong>OUR PURPOSE:</strong>
+    <p>
+        CourseFinity is the global online learning platform that offers anyone, anywhere access to online
+        courses and degrees from world-class universities and companies.
+    </p>
+    <p>
+        CourseFinity is established and developed to meet the increasing need and demand for high quality education for
+        everyone.
+        Information Technology (IT) allows you to take your career in a number of different directions. Become a
+        computer
+        network architect, a computer programmer, a computer systems analyst, a database administrator, an information
+        security
+        analyst, an information architect, a web developer and so much more!
+    </p>
+
+
+    <h5>At CourseFinity we endeavour:</h5>
+    <ul>
+        <li>To create an atmosphere of co-operation.</li>
+        <li>We make use of the learners' available knowledge to move forward and obtain new knowledge.</li>
+        <li>The knowledge we impart to our learners is relevant and pertains to their everyday life.</li>
+        <li>Interaction takes place by trying to understand the learners' questions, reasoning, investigation and
+            research.
+        </li>
+        <li>Learners are taught to think and to solve problems: how to reason and how to find creative solutions.</li>
+    </ul>
+
+
+
+    <h2>Chapter Two</h2>
+
+
+    <h5>TEACHERS WHO SERVE WITH DIGNITY AND DISTINCTION</h5>
+
+    <strong>Excellence is the key concept undergirding CourseFinity's mission and purposes.</strong>
+    <p>
+        Essentially, however, professional growth and development should arise from a personal motivation and striving
+        towards
+        excellence. With this in mind each educator is requested to regularly review his/her own professional
+        development,
+        using
+        the following questions:
+    </p>
+
+
+    <strong>Professional expertise</strong>
+    <p>
+        Are my teaching and other aspects of my work soundly based on the latest knowledge and research in education,
+        e.g.
+        educational psychology, educational technology, curriculum development, methodology? Or are my actions based on
+        “gut
+        feeling”, ad hoc approaches, and perpetuating the ways in which I was taught twenty or thirty years ago? (What
+        would
+        you
+        expect of a doctor?)
+    </p>
+
+
+    <strong>Professional performance</strong>
+    <p>
+        Am I consistently giving of my best and avoiding the “creeping slackness” that working behind closed doors for
+        much
+        of
+        the time can encourage? Is my performance as an educator characterized by a high standard of planning and
+        preparation,
+        thoughtful choice of priorities, a balanced and objective approach, and stimulating and enthusiastic commitment?
+    </p>
+
+
+    <strong>Professional service</strong>
+    <p>
+        How interested am I in the development of each student? What actions demonstrate my interest and
+        concern? How well do I know my learners and their individual needs? How do I react to learners who are
+        uninterested,
+        unmotivated, unpleasant or untalented?
+    </p>
+
+
+    <strong>Professional development</strong>
+    <p>
+        What am I doing of my own accord to improve my expertise and skills, without waiting for or relying completely
+        on my
+        employer to do this? What things show that I am not stagnating?
+    </p>
+
+
+
+
+    <h2>Chapter Three</h2>
+
+
+    <h5>CLASS QUALITY GUIDELINES</h5>
+
+    <strong>Meet Minimum Standards for Length</strong>
+    <p>Classes must include at least 10 minutes of video content.</p>
+
+    <strong>Include an Introduction Video</strong>
+    <p>
+        Your intro video is basically the movie trailer for your class. It's the first thing students see when they
+        click on
+        your class and the only part of your video content that non-members can see. At a minimum, the intro video
+        should:
+    </p>
+
+    <strong>Be the very first lesson in your class.</strong>
+    <p>
+        Stand on its own and clearly explain what the class is about.
+        Let students know what they're about to learn and what they can expect.
+        Provide more information on your experience with the class topic and background.
+    </p>
+
+    <strong>Include Well-Organized Content</strong>
+    <p>
+        Great instruction requires a solid structure based upon a lesson plan or course outline. At a minimum:
+    <ul>
+        <li>Each of your video lessons must have a clear title that reflects the content of the lesson.</li>
+        <li>Each class or video section should only be uploaded once. Classes that are overly repetitive in content may
+            be
+            removed.</li>
+    </ul>
+    </p>
+
+    <strong>Meet Standards for Audio & Video Quality</strong>
+    <p>
+        High-quality audio and video ensures students can stay focused on learning. Keep in mind:
+    <ul>
+        <li>The audio in your class must be clear and easy to understand. It should also be free of distracting
+            background
+            noises, such as hums, fuzziness, crackling, or echoes.</li>
+        <li>Your audio should sync with your video footage and come out of both channels.</li>
+        <li>Your video (if applicable) must be high resolution (1080p) and shot with a steady camera, clear lighting,
+            and
+            framing.</li>
+        <li>Screencasts, images, and text must be sharp, not blurry or pixelated.</li>
+    </ul>
+    </p>
+
+    <strong>Vary Visual Presentation</strong>
+    <p>
+        We require that teachers include a variety of visuals and/or visual formats, such as adding in on-screen text,
+        slides,
+        or example images, help emphasize key takeaways or explain complex ideas. Even switching up camera angles can
+        break
+        up
+        static shots and keep students engaged. Classes should not showcase one static picture or slide for the entirety
+        of
+        a
+        lesson. <br>
+        In addition to varied visuals, within each class:
+    <ul>
+        <li>Talking head shots need to be well-lit with professional backdrops.</li>
+        <li>Slides need to be well-structured and visually appealing.</li>
+        <li>Avoid rambling, ums, or excessive pauses.</li>
+    </ul>
+    </p>
+    <strong>Limit Self-Promotion</strong>
+    <p>
+        Teaching on CourseFinity is a great way to grow your brand and build your audience. As long as your activities
+        remain
+        aligned with our Community Guidelines, Teaching Policies, and Terms of Service, we encourage you to engage with
+        your
+        followers regularly and link to your website and social media accounts from your CourseFinity profile.
+    </p>
+    <p>
+        Within your classes though, marketing of your brand must be limited so that students can stay focused on
+        learning.
+        To
+        that end, self-promotion within your classes (e.g., discussing your personal brand or business; encouraging
+        students
+        to
+        follow you on social media or visit your website; sharing logos or other personal branding) should only happen
+        within
+        your introduction and conclusion videos.
+    </p>
+    <p>
+        You are permitted to refer to any of your previous CourseFinity classes anywhere within a class as long as the
+        reference
+        is in support of student learning (e.g., it provides prerequisite information or complements your teaching in
+        the
+        current lesson).
+    </p>
+
+
+    <strong>Foster Genuine Learning</strong>
+    <p>
+        We support authentic, inspired learning and all classes on CourseFinity are, first and foremost, educational.
+        Therefore:
+    <ul>
+        <li>Classes may not consist simply of a walkthrough, review, or demo of a certain website or tool without any
+            added
+            knowledge-based value from the teacher.</li>
+        <li>We don't permit classes that guarantee or promise a specific outcome or are geared primarily towards helping
+            students
+            achieve a static or monetary reward (i.e., “get rich quick” schemes) or a follower count on a platform
+            (i.e.,
+            “hacks”
+            for growing your Instagram audience).</li>
+    </ul>
+    </p>
+
+    <strong>Share Unique Educational Value</strong>
+    <p>
+        CourseFinity values creativity, original thought, and teachers bringing their unique perspectives to their class
+        topics.
+        Keep in mind that:
+    <ul>
+        <li>
+            Your video lessons should include narration throughout as you impart your expertise through tips, best
+            practices,
+            frameworks, concepts, theory, and/or examples that are your own. Your personal knowledge, experience, and
+            insight are
+            the most valuable things you have to share!
+        </li>
+        <li>
+            Classes may not draw from external materials that did not originate with the teacher for a significant
+            portion
+            of the
+            class.
+        </li>
+        <li>Classes should be made for CourseFinity, and not branded for any other online teaching platforms.</li>
+    </ul>
+    </p>
+</div>
+{% endblock %}
