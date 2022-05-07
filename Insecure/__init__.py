@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from os import environ
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_sqlalchemy import SQLAlchemy #Doing SQL
 from pathlib import Path
 from requests import post as pyPost
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -24,6 +25,24 @@ app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024 # 200MiB
 app.config["DICEBEAR_OPTIONS"] = DOptions(
     size=250
 )
+
+#Configuration of SQL
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+j_db = SQLAlchemy(app)
+
+#Needa read up abit will edit where valid
+
+# class Product(j_db.Model):
+#     __searchable__ = ['name', 'short_description', 'long_description', 'category']
+
+#     id = j_db.Column(j_db.Integer, primary_key=True)
+#     img_file_name = j_db.Column(j_db.String) #nullable=False
+#     name = j_db.Column(j_db.String(40)) # nullable=False
+#     price = j_db.Column(j_db.Float) # nullable=False
+#     category = j_db.Column(j_db.String(50))
+#     short_description = j_db.Column(j_db.String(100))
+#     long_description = j_db.Column(j_db.String)
+#     stock = j_db.Column(j_db.Integer)
 
 # creating an absolute path for storing the shelve files
 app.config["DATABASE_FOLDER"] = str(app.root_path) + "\\databases"
