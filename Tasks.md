@@ -9,7 +9,7 @@ Jason:
 - Login and signup pages
 - Storing of credit card
 - Profile page (change credentials)
-- Encryption of passwords
+- Hashing of passwords
 - Asymmetric encryption for sensitive information
 
 (Identification and Authentication Failures)
