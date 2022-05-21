@@ -72,7 +72,7 @@ def signup():
         con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
         cur = con.cursor()
         cur.execute("""CREATE TABLE IF NOT EXISTS user (
-            id PRIMARY KEY NOT NULL, 
+            id PRIMARY KEY, 
             role TEXT NOT NULL,
             username TEXT NOT NULL, 
             email TEXT NOT NULL, 
