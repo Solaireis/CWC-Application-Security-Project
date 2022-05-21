@@ -64,13 +64,14 @@ def login():
         statement = f"SELECT username from user WHERE email='{emailInput}' AND password = '{passwordInput}';"
         cur.execute(statement)
 
-        #Never State wether Email Or Password is the incorrect
-        con.close()
-        
+        # Never State wether Email Or Password is the incorrect
+
         if not cur.fetchone():  # An empty result evaluates to False.
+            con.close()
             flash("Please check your entries and try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
         else:
+            con.close()
             print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
             return redirect(url_for("home"))
 
