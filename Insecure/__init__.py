@@ -38,7 +38,8 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
-USER_SQL_PATH = app.config["DATABASE_FOLDER"] + "\\user.db"
+#Configuration of SQL
+app.config["USER_DATABASE_SQL"] = app.config["DATABASE_FOLDER"] + "\\user.db"
 
 """End of Web app configurations"""
 
@@ -68,7 +69,7 @@ def signup():
 
         print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
-        con = sqlite3.connect(USER_SQL_PATH, timeout=10)
+        con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
         cur = con.cursor()
         cur.execute("""CREATE TABLE IF NOT EXISTS user (
             id PRIMARY KEY NOT NULL, 
