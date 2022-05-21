@@ -1,15 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, Markup, abort, send_from_directory
 from werkzeug.utils import secure_filename
 from os import environ
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from pathlib import Path
 from requests import post as pyPost
 from apscheduler.schedulers.background import BackgroundScheduler
 from matplotlib import pyplot as plt
 from dicebear import DOptions
-from python_files import Student, Teacher, Forms, Course
+import sqlite3
+from datetime import datetime
+# from python_files import Student, Teacher, Forms, Course
 from python_files.IntegratedFunctions import *
+from python_files.Forms import *
 
 """Web app configurations"""
 # general Flask configurations
@@ -37,8 +38,7 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
-# Flask limiter configuration
-limiter = Limiter(app, key_func=get_remote_address, default_limits=["30 per second"])
+USER_SQL_PATH = app.config["DATABASE_FOLDER"] + "\\user.db"
 
 """End of Web app configurations"""
 
@@ -47,6 +47,68 @@ def home():
     """Home page"""
     return render_template("users/general/home.html")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    return render_template("users/guest/login.html")
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    signupForm = CreateSignUpForm(request.form)
+    if (request.method == "GET"):
+        return render_template("users/guest/signup.html", form=signupForm)
+
+    if (request.method == "POST" and signupForm.validate()):
+        # POST request code below
+        emailInput = signupForm.email.data
+        usernameInput = signupForm.username.data
+        passwordInput = signupForm.password.data
+        confirmPasswordInput = signupForm.cfm_password.data
+        if (passwordInput != confirmPasswordInput):
+            return render_template("users/guest/signup.html", form=signupForm, pwd_were_not_matched=True)
+
+        print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
+
+        con = sqlite3.connect(USER_SQL_PATH, timeout=10)
+        cur = con.cursor()
+        cur.execute("""CREATE TABLE IF NOT EXISTS user (
+            id PRIMARY KEY NOT NULL, 
+            role TEXT NOT NULL,
+            username TEXT NOT NULL, 
+            email TEXT NOT NULL, 
+            password TEXT NOT NULL, 
+            profile_image TEXT NOT NULL, 
+            date_joined DATE NOT NULL
+        )""")
+
+        emailDupe = bool(cur.execute("SELECT * FROM user WHERE email=:email", {"email": emailInput}).fetchall())
+
+        usernameDupes = bool(cur.execute("SELECT * FROM user WHERE username=:username",\
+                                                                    {"username": usernameInput}).fetchall())
+
+        if (not emailDupe and not usernameDupes):
+            while (1):
+                try:
+                    # add to the sqlite3 database
+                    userID = generate_id()
+                    data = (userID, "student", usernameInput, emailInput, passwordInput, "/static/images/user/default.jpg", datetime.now().strftime("%Y-%m-%d"))
+                    cmd = "INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    cur.execute(cmd, data)
+                    break
+                except sqlite3.IntegrityError:
+                    # if the userID is already taken in very rare case, try again
+                    continue
+
+        # commit the changes to the database
+        con.commit()
+        con.close()
+
+        if (emailDupe or usernameDupes):
+            return render_template("users/guest/signup.html", form=signupForm, email_duplicates=emailDupe, username_duplicates=usernameDupes)
+
+        return redirect(url_for("home"))
+
+    # post request but form inputs are not valid
+    return render_template("users/guest/signup.html", form=signupForm)
 
 """Custom Error Pages"""
 
@@ -113,4 +175,4 @@ def error503(e):
 """End of Custom Error Pages"""
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=True)
