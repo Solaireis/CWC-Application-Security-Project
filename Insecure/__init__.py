@@ -65,16 +65,16 @@ def login():
         cur.execute(statement)
 
         #Never State wether Email Or Password is the incorrect
-
+        con.close()
+        
         if not cur.fetchone():  # An empty result evaluates to False.
             flash("Please check your entries and try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
         else:
-            con.close()
             print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
             return redirect(url_for("home"))
 
-    return render_template("users/guest/login.html")
+    return render_template("users/guest/login.html", form = loginForm)
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
