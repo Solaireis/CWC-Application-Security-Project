@@ -39,7 +39,7 @@ app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
 #Configuration of SQL
-app.config["USER_DATABASE_SQL"] = app.config["DATABASE_FOLDER"] + "\\database.db"
+app.config["DATABASE_SQL"] = app.config["DATABASE_FOLDER"] + "\\database.db"
 
 """End of Web app configurations"""
 
