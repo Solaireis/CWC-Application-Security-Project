@@ -74,8 +74,8 @@ def signup():
         cur.execute("""CREATE TABLE IF NOT EXISTS user (
             id PRIMARY KEY, 
             role TEXT NOT NULL,
-            username TEXT NOT NULL, 
-            email TEXT NOT NULL, 
+            username TEXT NOT NULL UNIQUE, 
+            email TEXT NOT NULL UNIQUE, 
             password TEXT NOT NULL, 
             profile_image TEXT NOT NULL, 
             date_joined DATE NOT NULL
@@ -83,7 +83,7 @@ def signup():
 
         emailDupe = bool(cur.execute("SELECT * FROM user WHERE email=:email", {"email": emailInput}).fetchall())
 
-        usernameDupes = bool(cur.execute("SELECT * FROM user WHERE username=:username",\
+        usernameDupes = bool(cur.execute("SELECT * FROM user WHERE username=:username", \
                                                                     {"username": usernameInput}).fetchall())
 
         if (not emailDupe and not usernameDupes):
