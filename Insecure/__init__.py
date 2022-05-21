@@ -39,7 +39,7 @@ app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
 #Configuration of SQL
-app.config["DATABASE_SQL"] = app.config["DATABASE_FOLDER"] + "\\database.db"
+app.config["USER_DATABASE_SQL"] = app.config["DATABASE_FOLDER"] + "\\database.db"
 
 """End of Web app configurations"""
 
@@ -50,6 +50,30 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    loginForm = CreateLoginForm(request.form)
+    if (request.method == "GET"):
+        return render_template("users/guest/login.html", form=loginForm)
+
+    if (request.method == "POST" and loginForm.validate()):
+        emailInput = loginForm.email.data
+        passwordInput = loginForm.password.data
+
+        con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
+        cur = con.cursor()
+
+        statement = f"SELECT username from user WHERE email='{emailInput}' AND password = '{passwordInput}';"
+        cur.execute(statement)
+
+        #Never State wether Email Or Password is the incorrect
+
+        if not cur.fetchone():  # An empty result evaluates to False.
+            flash("Please check your entries and try again!", "Danger")
+            return render_template("users/guest/login.html", form=loginForm)
+        else:
+            con.close()
+            print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
+            return redirect(url_for("home"))
+
     return render_template("users/guest/login.html")
 
 @app.route("/signup", methods=["GET", "POST"])
