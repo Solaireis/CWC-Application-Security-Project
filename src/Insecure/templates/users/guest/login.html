@@ -47,7 +47,7 @@
                         {{ render_field(form.password, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <h6><a href="/reset_password" class="forgetPWD">Forget password?</a></h6>
+                        <h6><a href="#" class="forgetPWD">Forget password?</a></h6>
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-colour text-white float-end">Login</button>
@@ -56,7 +56,7 @@
                 <hr class="mt-4 text-white">
                 <div class="col-12">
                     <p class="text-center mb-0 text-white">Not a registered user?</p>
-                    <p class="text-center mb-0"><a class="text-white fw-bold" href="/signup">Sign up here!</a></p>
+                    <p class="text-center mb-0"><a class="text-white fw-bold" href="{{ url_for('signup') }}">Sign up here!</a></p>
                 </div>
             </div>
         </div>

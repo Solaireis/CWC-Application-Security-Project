@@ -1,9 +1,9 @@
-{% if accType == "Guest" %}
-{% extends "guest_base.html" %}
-{% elif accType == "Student" or accType == "Teacher"%}
-{% extends "user_base.html" %}
+{% if accType == "Student" or accType == "Teacher"%}
+	{% extends "user_base.html" %}
 {% elif accType == "Admin" %}
-{% extends "admin_base.html" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "guest_base.html" %}
 {% endif %}
 
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/home.css') }}">{% endblock %}
@@ -27,7 +27,7 @@
 		</div>
 	</div>
 	<div class="row">
-		<h2 id="recommendations">Recommendations</h2>
+		<h2 id="recommendations">Newly Uploaded Videos</h2>
 		<div class="row row-cols-1 row-cols-md-3 g-4">
 			<div class="col">
 				<div class="card text-dark bg-light h-100">
@@ -40,7 +40,7 @@
 			</div>
 		</div>
 	</div>
-	{% if accType == "Guest" %}
+	{% if accType == None %}
 	<div class="row become_headings">
 		<div class="col-md">
 			<img src="{{ url_for('static', filename='images/home/home_teacher_banner.webp') }}" alt="Become a Teacher Promo Image" class="thumbnails rounded">
@@ -48,7 +48,7 @@
 		<div class="col-md text-center">
 			<h2>Become A Teacher Today!</h2>
 			<p>We provide the platform for you to teach what you love.<br>For the first 90 days, you will earn 100% of your monthly earnings instead of the usual 75% due to the 25% commission!</p>
-			<form action="/teacher_signup" method="GET">
+			<form action="{{ url_for('signup') }}" method="GET">
 				<button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
 			</form>
 		</div>

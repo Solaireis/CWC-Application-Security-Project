@@ -8,6 +8,12 @@ def generate_id():
     """
     return uuid.uuid4().hex
 
+def connect_to_database():
+    """
+    Connects to the database and returns the connection object
+    """
+    return sqlite3.connect(app.config["SQL_DATABASE"], timeout=5)
+
 def user_sql_operation(mode=None, **kwargs):
     """
     Do CRUD operations on the user table
@@ -15,7 +21,7 @@ def user_sql_operation(mode=None, **kwargs):
     Insert keywords: email, username, password
     Query keywords: email, password
     """
-    con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
+    con = connect_to_database()
     cur = con.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
         id PRIMARY KEY, 
@@ -43,18 +49,26 @@ def user_sql_operation(mode=None, **kwargs):
             # add to the sqlite3 database
             userID = generate_id()
             passwordInput = kwargs.get("password")
-            data = (userID, "student", usernameInput, emailInput, passwordInput, "/static/images/user/default.jpg", datetime.now().strftime("%Y-%m-%d"))
+            data = (userID, "Student", usernameInput, emailInput, passwordInput, "/static/images/user/default.jpg", datetime.now().strftime("%Y-%m-%d"))
             cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?)", data)
             con.commit()
+            returnValue = userID
 
-    elif (mode == "query"):
+    elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
-        cur.execute(f"SELECT id FROM user WHERE email='{emailInput}' AND password='{passwordInput}'")
+        cur.execute(f"SELECT id, role FROM user WHERE email='{emailInput}' AND password='{passwordInput}'")
         returnValue = cur.fetchall()
         if (not returnValue):  # An empty list evaluates to False.
             returnValue = False
-        returnValue = returnValue[0][0] # returnValue is a list of tuples.
+        returnValue = returnValue[0] # returnValue is a list of tuples.
+
+    elif (mode == "get_user_data"):
+        userID = kwargs.get("userID")
+        cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
+        returnValue = cur.fetchall()
+        if (not returnValue):  # An empty list evaluates to False.
+            returnValue = False
 
     con.close()
     return returnValue
