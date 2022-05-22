@@ -60,6 +60,9 @@ def login():
             session["user"] = successfulLogin[0]
             session["role"] = successfulLogin[1]
             if (successfulLogin):
+                # Assuming it was placed outside to demonstrate Insecurity
+                # session["user"] = successfulLogin[0]
+                # session["role"] = successfulLogin[1]
                 print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             else:
@@ -89,6 +92,7 @@ def signup():
 
             print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
+            #isn't mode supposed to be in front
             returnedVal = user_sql_operation(email=emailInput, username=usernameInput, password=passwordInput, mode="insert")
 
             if (isinstance(returnedVal, tuple)):
