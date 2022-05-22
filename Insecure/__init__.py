@@ -15,7 +15,7 @@ from python_files.Forms import *
 """Web app configurations"""
 # general Flask configurations
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "a secret key" # for demonstration purposes, if deployed, change it to something more secure
+app.config["SECRET_KEY"] = "a secret key"
 scheduler = BackgroundScheduler()
 
 # Maximum file size for uploading anything to the web app's server
@@ -59,7 +59,9 @@ def login():
         passwordInput = loginForm.password.data
 
         successfulLogin = user_sql_operation(mode="query", email=emailInput, password=passwordInput)
-        if (successfulLogin is None):
+        print("successfulLogin: ", successfulLogin)
+        session["user"] = successfulLogin
+        if (successfulLogin):
             print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
             return redirect(url_for("home"))
         else:

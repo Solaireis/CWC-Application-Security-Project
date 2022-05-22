@@ -51,9 +51,10 @@ def user_sql_operation(mode=None, **kwargs):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
         cur.execute(f"SELECT id FROM user WHERE email='{emailInput}' AND password='{passwordInput}'")
-        loginResult = cur.fetchone()
-        if (not loginResult):  # An empty result evaluates to False.
+        returnValue = cur.fetchall()
+        if (not returnValue):  # An empty list evaluates to False.
             returnValue = False
+        returnValue = returnValue[0][0] # returnValue is a list of tuples.
 
     con.close()
     return returnValue
