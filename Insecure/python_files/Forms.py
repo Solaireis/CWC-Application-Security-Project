@@ -8,7 +8,7 @@ from wtforms import Form, validators, ValidationError, StringField, RadioField, 
 # https://stackoverflow.com/questions/386294/whatisthemaximumlengthofavalidemailaddress
 
 class CreateLoginForm(Form):
-    email = EmailField("Email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
+    email = StringField("Email:", [validators.Length(min=3, max=254), validators.DataRequired()])
     password = PasswordField("Password:", [validators.DataRequired()])
 
 class CreateSignUpForm(Form):

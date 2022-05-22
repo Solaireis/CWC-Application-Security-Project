@@ -58,23 +58,15 @@ def login():
         emailInput = loginForm.email.data
         passwordInput = loginForm.password.data
 
-        con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
-        cur = con.cursor()
-
-        statement = f"SELECT username from user WHERE email='{emailInput}' AND password = '{passwordInput}';"
-        cur.execute(statement)
-
-        # Never State wether Email Or Password is the incorrect
-
-        if not cur.fetchone():  # An empty result evaluates to False.
-            con.close()
-            flash("Please check your entries and try again!", "Danger")
-            return render_template("users/guest/login.html", form=loginForm)
-        else:
-            con.close()
+        successfulLogin = user_sql_operation(mode="query", email=emailInput, password=passwordInput)
+        if (successfulLogin is None):
             print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
             return redirect(url_for("home"))
+        else:
+            flash("Please check your entries and try again!", "Danger")
+            return render_template("users/guest/login.html", form=loginForm)
 
+    # post request but form inputs are not valid
     return render_template("users/guest/login.html", form = loginForm)
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -94,42 +86,10 @@ def signup():
 
         print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
-        con = sqlite3.connect(app.config["USER_DATABASE_SQL"], timeout=5)
-        cur = con.cursor()
-        cur.execute("""CREATE TABLE IF NOT EXISTS user (
-            id PRIMARY KEY, 
-            role TEXT NOT NULL,
-            username TEXT NOT NULL UNIQUE, 
-            email TEXT NOT NULL UNIQUE, 
-            password TEXT NOT NULL, 
-            profile_image TEXT NOT NULL, 
-            date_joined DATE NOT NULL
-        )""")
+        boolTuple = user_sql_operation(email=emailInput, username=usernameInput, password=passwordInput, mode="insert")
 
-        emailDupe = bool(cur.execute("SELECT * FROM user WHERE email=:email", {"email": emailInput}).fetchall())
-
-        usernameDupes = bool(cur.execute("SELECT * FROM user WHERE username=:username", \
-                                                                    {"username": usernameInput}).fetchall())
-
-        if (not emailDupe and not usernameDupes):
-            while (1):
-                try:
-                    # add to the sqlite3 database
-                    userID = generate_id()
-                    data = (userID, "student", usernameInput, emailInput, passwordInput, "/static/images/user/default.jpg", datetime.now().strftime("%Y-%m-%d"))
-                    cmd = "INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?)"
-                    cur.execute(cmd, data)
-                    break
-                except sqlite3.IntegrityError:
-                    # if the userID is already taken in very rare case, try again
-                    continue
-
-        # commit the changes to the database
-        con.commit()
-        con.close()
-
-        if (emailDupe or usernameDupes):
-            return render_template("users/guest/signup.html", form=signupForm, email_duplicates=emailDupe, username_duplicates=usernameDupes)
+        if (boolTuple):
+            return render_template("users/guest/signup.html", form=signupForm, email_duplicates=boolTuple[0], username_duplicates=boolTuple[1])
 
         return redirect(url_for("home"))
 
