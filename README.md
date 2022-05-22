@@ -1,5 +1,5 @@
 <h1 align="center">
-<img src="https://raw.githubusercontent.com/KJHJason/App-Development-Project/main/static/images/common/logo.png" width="500px" height="150px" alt="CourseFinity Logo">
+<img src="res/logo.png" width="500px" height="150px" alt="CourseFinity Logo">
 <br>
 CourseFinity Web Application using Flask
 <br>
