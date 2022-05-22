@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, Markup, abort, send_from_directory
-from numpy import isin
 from werkzeug.utils import secure_filename
 from os import environ
 from pathlib import Path
