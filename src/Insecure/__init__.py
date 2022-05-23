@@ -42,12 +42,7 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 def home():
     imageSrcPath = None
     if ("user" in session):
-        userInfo = user_sql_operation(mode="get_user_data", userID=session["user"])
-        print(userInfo)
-        imageSrcPath = userInfo[5]
-        print("Image Source Path:", imageSrcPath)
-        if (not imageSrcPath):
-            imageSrcPath = get_dicebear_image(userInfo[2])
+        imageSrcPath = get_image_path(session["user"])
 
     return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath)
 
@@ -122,14 +117,11 @@ def logout():
 @app.route('/user_profile', methods=["GET","POST"])
 def userProfile():
     if ("user" in session):
-        userSession = session["user"]
-        returnedVal = user_sql_operation(mode = "get_user_data", userID = userSession)
-        print(returnedVal)
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
-        username = returnedVal[2]
-        accType = returnedVal[1]
-        email = returnedVal[3]
-        imageSrcPath = get_dicebear_image(username)
+        username = userInfo[2]
+        accType = userInfo[1]
+        email = userInfo[3]
 
         return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
 

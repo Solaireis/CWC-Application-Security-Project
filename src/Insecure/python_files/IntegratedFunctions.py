@@ -9,9 +9,31 @@ def generate_id():
     """
     return uuid.uuid4().hex
 
+def get_image_path(userID, returnUserInfo=False):
+    """
+    Returns the image path for the user.
+    
+    If the user does not have a profile image uploaded, it will return a dicebear url.
+    Else, it will return the relative path of the user's profile image.
+    
+    If returnUserInfo is True, it will return a tuple of the user's record.
+    
+    Args:
+        - userID: The user's ID
+        - returnUserInfo: If True, it will return a tuple of the user's record.
+    """
+    userInfo = user_sql_operation(mode="get_user_data", userID=userID)
+    imageSrcPath = userInfo[5]
+    if (not imageSrcPath):
+        imageSrcPath = get_dicebear_image(userInfo[2])
+    return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
+
 def get_dicebear_image(username):
     """
     Returns a random dicebear image from the database
+    
+    Args:
+        - username: The username of the user
     """
     av = DAvatar(
         style=DStyle.initials,
@@ -23,6 +45,8 @@ def get_dicebear_image(username):
 def connect_to_database():
     """
     Connects to the database and returns the connection object
+    
+    Returns the sqlite3 connection object
     """
     return sqlite3.connect(app.config["SQL_DATABASE"], timeout=5)
 
@@ -30,8 +54,11 @@ def user_sql_operation(mode=None, **kwargs):
     """
     Do CRUD operations on the user table
     
-    Insert keywords: email, username, password
-    Query keywords: email, password
+    insert keywords: email, username, password
+    login keywords: email, password
+    get_user_data keywords: userID
+    edit keywords: userID, username, password, email, profileImagePath
+    delete keywords: userID
     """
     if (not mode):
         raise ValueError("You must specify a mode in the user_sql_operation function!")
@@ -92,6 +119,7 @@ def user_sql_operation(mode=None, **kwargs):
         usernameInput = kwargs.get("username")
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
+        profileImagePath = kwargs.get("profileImagePath")
         statement = "UPDATE user SET "
         if (usernameInput is not None):
             statement += f"username='{usernameInput}', "
@@ -100,7 +128,10 @@ def user_sql_operation(mode=None, **kwargs):
             statement += f"email='{emailInput}', "
 
         if (passwordInput is not None):
-            statement += f"password='{passwordInput}'"
+            statement += f"password='{passwordInput}', "
+
+        if (profileImagePath is not None):
+            statement += f"profile_image='{profileImagePath}'"
 
         statement += f" WHERE id='{userID}'"
         cur.execute(statement)
@@ -115,6 +146,15 @@ def user_sql_operation(mode=None, **kwargs):
     return returnValue
 
 def course_sql_operation(mode=None, **kwargs):
+    """
+    Do CRUD operations on the course table
+    
+    insert keywords: teacherID
+    
+    get_course_data keywords: courseID
+
+    edit keywords: 
+    """
     if (not mode):
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
@@ -126,44 +166,47 @@ def course_sql_operation(mode=None, **kwargs):
         course_name TEXT NOT NULL,
         course_description TEXT,
         course_image_path TEXT,
-        course_price TEXT,
-        course_total_rating INT,
-        course_rating_count INT,
-        date_uploaded DATE NOT NULL
+        course_price TEXT NOT NULL,
+        course_category TEXT NOT NULL,
+        course_total_rating INT NOT NULL,
+        course_rating_count INT NOT NULL,
+        date_created DATE NOT NULL
     )""")
     if (mode == "insert"):
         course_id = generate_id()
-        teacher_id = kwargs.get("teacher_id")
-        course_name = kwargs.get("course_name")
-        course_description = kwargs.get("course_description")
-        course_image_path = kwargs.get("course_image_path")
-        course_price = kwargs.get("course_price")
+        teacher_id = kwargs.get("teacherId")
+        course_name = kwargs.get("courseName")
+        course_description = kwargs.get("courseDescription")
+        course_image_path = kwargs.get("courseImagePath")
+        course_price = kwargs.get("coursePrice")
+        course_category = kwargs.get("courseCategory")
         course_total_rating = 0
         course_rating_count = 0
-        date_uploaded = datetime.now().strftime("%Y-%m-%d")
+        date_created = datetime.now().strftime("%Y-%m-%d")
         
-        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_total_rating, course_rating_count, date_uploaded)
-        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created)
+        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
         con.commit()
 
-    elif (mode == "query"):
-        course_id = kwargs.get("course_id")
+    elif (mode == "get_course_data"):
+        course_id = kwargs.get("courseId")
         cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
         returnValue = cur.fetchall()
         if (not returnValue):
             returnValue = False
     
     elif (mode == "edit"):
-        course_id = kwargs.get("course_id")
-        course_name = kwargs.get("course_name")
-        course_description = kwargs.get("course_description")
-        course_image_path = kwargs.get("course_image_path")
-        course_price = kwargs.get("course_price")
-        cur.execute(f"UPDATE course SET course_name='{course_name}', course_description='{course_description}', course_image_path='{course_image_path}', course_price='{course_price}' WHERE course_id='{course_id}'")
-        con.commit()
-    
+        course_id = kwargs.get("courseId")
+        course_name = kwargs.get("courseName")
+        course_description = kwargs.get("courseDescription")
+        course_image_path = kwargs.get("courseImagePath")
+        course_price = kwargs.get("coursePrice")
+        course_category = kwargs.get("courseCategory")
+        course_total_rating = kwargs.get("courseTotalRating")
+        course_rating_count = kwargs.get("courseRatingCount")
+
     elif (mode == "delete"):
-        course_id = kwargs.get("course_id")
+        course_id = kwargs.get("courseId")
         cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
         con.commit()
         
