@@ -32,8 +32,9 @@ def user_sql_operation(mode=None, **kwargs):
         username TEXT NOT NULL UNIQUE, 
         email TEXT NOT NULL UNIQUE, 
         password TEXT NOT NULL, 
-        profile_image TEXT NOT NULL, 
-        date_joined DATE NOT NULL
+        profile_image TEXT, 
+        date_joined DATE NOT NULL,
+        puchased_courses TEXT
     )""")
     returnValue = None
     if (mode == "insert"):
@@ -52,8 +53,8 @@ def user_sql_operation(mode=None, **kwargs):
             # add to the sqlite3 database
             userID = generate_id()
             passwordInput = kwargs.get("password")
-            data = (userID, "Student", usernameInput, emailInput, passwordInput, "/static/images/user/default.jpg", datetime.now().strftime("%Y-%m-%d"))
-            cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?)", data)
+            data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "[]")
+            cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
             con.commit()
             returnValue = userID
 
@@ -62,17 +63,38 @@ def user_sql_operation(mode=None, **kwargs):
         passwordInput = kwargs.get("password")
         cur.execute(f"SELECT id, role FROM user WHERE email='{emailInput}' AND password='{passwordInput}'")
         returnValue = cur.fetchall()
-        if (not returnValue):  # An empty list evaluates to False.
+        if (not returnValue):
             returnValue = False
-        #No else statement if no results will incur a type error so im assuming its not there to display insecure
-        returnValue = returnValue[0] # returnValue is a list of tuples.
+        else:
+            returnValue = returnValue[0] # returnValue is a list of tuples.
 
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
         cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
         returnValue = cur.fetchall()
-        if (not returnValue):  # An empty list evaluates to False.
+        if (not returnValue):
             returnValue = False
 
     con.close()
     return returnValue
+
+def course_sql_operation(mode=None):
+    if (not mode):
+        raise ValueError("You must specify a mode in the course_sql_operation function!")
+
+    con = connect_to_database()
+    cur = con.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS course (
+        course_id PRIMARY KEY, 
+        teacher_id TEXT NOT NULL,
+        course_name TEXT NOT NULL,
+        course_description TEXT,
+        course_image TEXT,
+        course_price TEXT,
+        course_total_rating TEXT,
+        course_rating_count TEXT,
+        profile_image TEXT, 
+        date_uploaded DATE NOT NULL
+    )""")
+    con.close()
+    return
