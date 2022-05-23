@@ -88,8 +88,7 @@ def signup():
 
             print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
-            #isn't mode supposed to be in front
-            returnedVal = user_sql_operation(email=emailInput, username=usernameInput, password=passwordInput, mode="insert")
+            returnedVal = user_sql_operation(mode="insert", email=emailInput, username=usernameInput, password=passwordInput)
 
             if (isinstance(returnedVal, tuple)):
                 return render_template("users/guest/signup.html", form=signupForm, email_duplicates=returnedVal[0], username_duplicates=returnedVal[1])
