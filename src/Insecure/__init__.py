@@ -112,10 +112,10 @@ def signup():
 
 @app.route('/logout')
 def logout():
-    if ("user" in session):
-        session.clear()
-    else:
-        return redirect(url_for("home"))
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
