@@ -1,12 +1,24 @@
 import uuid, sqlite3
 from datetime import datetime
 from __init__ import app
+from dicebear import DAvatar, DStyle
 
 def generate_id():
     """
     Generates a unique ID
     """
     return uuid.uuid4().hex
+
+def get_dicebear_image(username):
+    """
+    Returns a random dicebear image from the database
+    """
+    av = DAvatar(
+        style=DStyle.initials,
+        seed=username,
+        options=app.config["DICEBEAR_OPTIONS"]
+    )
+    return av.url_svg
 
 def connect_to_database():
     """
@@ -71,7 +83,7 @@ def user_sql_operation(mode=None, **kwargs):
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
         cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
-        returnValue = cur.fetchall()
+        returnValue = cur.fetchall()[0]
         if (not returnValue):
             returnValue = False
     

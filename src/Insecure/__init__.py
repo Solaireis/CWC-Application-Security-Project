@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, make_response, flash, Markup, abort, send_from_directory
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
+# from werkzeug.utils import secure_filename
 from os import environ
 from pathlib import Path
-from requests import post as pyPost
+import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
 from datetime import datetime
@@ -40,8 +40,16 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 
 @app.route("/")
 def home():
-    """Home page"""
-    return render_template("users/general/home.html", accType=session.get("role"))
+    imageSrcPath = None
+    if ("user" in session):
+        userInfo = user_sql_operation(mode="get_user_data", userID=session["user"])
+        print(userInfo)
+        imageSrcPath = userInfo[5]
+        print("Image Source Path:", imageSrcPath)
+        if (not imageSrcPath):
+            imageSrcPath = get_dicebear_image(userInfo[2])
+
+    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
