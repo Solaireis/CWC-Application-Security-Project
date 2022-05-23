@@ -81,16 +81,16 @@ def user_sql_operation(mode=None, **kwargs):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
         statement = "UPDATE user SET "
-        if (usernameInput):
+        if (usernameInput is None):
             statement += f"username='{usernameInput}', "
 
-        if (emailInput):
+        if (emailInput is None):
             statement += f"email='{emailInput}', "
 
-        if (passwordInput):
-            statement += f"password='{passwordInput}', "
+        if (passwordInput is None):
+            statement += f"password='{passwordInput}'"
 
-        statement = statement[:-2] + f" WHERE id='{userID}'"
+        statement += f" WHERE id='{userID}'"
         cur.execute(statement)
         con.commit()
 
