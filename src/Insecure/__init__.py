@@ -40,6 +40,12 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 
 @app.route("/")
 def home():
+    latestThreeCourses = course_sql_operation(mode="get_latest_3_courses")
+    trendingThreeCourses = course_sql_operation(mode="get_trending_3_courses")
+
+    print("latestThreeCourses: ", latestThreeCourses)
+    print("trendingThreeCourses: ", trendingThreeCourses)
+
     imageSrcPath = None
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])

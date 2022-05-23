@@ -2,6 +2,7 @@ import uuid, sqlite3
 from datetime import datetime
 from __init__ import app
 from dicebear import DAvatar, DStyle
+from .Course import Course
 
 def generate_id():
     """
@@ -48,7 +49,9 @@ def connect_to_database():
     
     Returns the sqlite3 connection object
     """
-    return sqlite3.connect(app.config["SQL_DATABASE"], timeout=5)
+    # timeout is in seconds to give time to other threads that is connected to the SQL database.
+    # After the timeout, an OperationalError will be raised, stating "database is locked".
+    return sqlite3.connect(app.config["SQL_DATABASE"], timeout=10) 
 
 def user_sql_operation(mode=None, **kwargs):
     """
@@ -73,7 +76,7 @@ def user_sql_operation(mode=None, **kwargs):
         password TEXT NOT NULL, 
         profile_image TEXT, 
         date_joined DATE NOT NULL,
-        puchased_courses TEXT
+        puchased_courses TEXT NOT NULL
     )""")
     returnValue = None
     if (mode == "insert"):
@@ -92,7 +95,7 @@ def user_sql_operation(mode=None, **kwargs):
             # add to the sqlite3 database
             userID = generate_id()
             passwordInput = kwargs.get("password")
-            data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "[]")
+            data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "{}")
             cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
             con.commit()
             returnValue = userID
@@ -158,6 +161,7 @@ def course_sql_operation(mode=None, **kwargs):
     if (not mode):
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
+    returnValue = None
     con = connect_to_database()
     cur = con.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS course (
@@ -166,11 +170,13 @@ def course_sql_operation(mode=None, **kwargs):
         course_name TEXT NOT NULL,
         course_description TEXT,
         course_image_path TEXT,
-        course_price TEXT NOT NULL,
+        course_price FLOAT NOT NULL,
         course_category TEXT NOT NULL,
         course_total_rating INT NOT NULL,
         course_rating_count INT NOT NULL,
-        date_created DATE NOT NULL
+        date_created DATE NOT NULL,
+        video_path TEXT NOT NULL,
+        FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
     if (mode == "insert"):
         course_id = generate_id()
@@ -194,7 +200,6 @@ def course_sql_operation(mode=None, **kwargs):
         returnValue = cur.fetchall()
         if (not returnValue):
             returnValue = False
-    
     elif (mode == "edit"):
         course_id = kwargs.get("courseId")
         course_name = kwargs.get("courseName")
@@ -209,6 +214,42 @@ def course_sql_operation(mode=None, **kwargs):
         course_id = kwargs.get("courseId")
         cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
         con.commit()
-        
+
+    elif (mode == "get_latest_3_courses" or mode == "get_trending_3_courses"):
+        teacherID = kwargs.get("teacherID")
+        statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
+
+        if (mode == "get_latest_3_courses"):
+            # get the latest 3 courses
+            if (not teacherID):
+                cur.execute(f"{statement} ORDER BY ROWID DESC LIMIT 3")
+            else:
+                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY ROWID DESC LIMIT 3")
+        else:
+            # get top 3 trending courses
+            if (not teacherID):
+                cur.execute(f"{statement} ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
+            else:
+                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
+
+        returnValue = cur.fetchall()
+        if (not returnValue):
+            returnValue = []
+        else:
+            # e.g. [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
+            courseInfoList = []
+            # get the teacher name for each course
+            if (not teacherID):
+                teacherIDList = [teacherID[1] for teacherID in returnValue]
+                for i, teacherID in enumerate(teacherIDList):
+                    cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
+                    courseInfoList.append((cur.fetchall()[0], returnValue[i]))
+            else:
+                teacherInfo = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")[0]
+                for tupleInfo in returnValue:
+                    courseInfoList.append((teacherInfo, tupleInfo))
+
+            returnValue = [Course(t) for t in courseInfoList]
+
     con.close()
-    return
+    return returnValue
