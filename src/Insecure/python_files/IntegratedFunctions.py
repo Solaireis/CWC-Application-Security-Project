@@ -21,6 +21,9 @@ def user_sql_operation(mode=None, **kwargs):
     Insert keywords: email, username, password
     Query keywords: email, password
     """
+    if (not mode):
+        raise ValueError("You must specify a mode in the user_sql_operation function!")
+
     con = connect_to_database()
     cur = con.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
