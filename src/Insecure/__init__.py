@@ -57,9 +57,9 @@ def login():
 
             successfulLogin = user_sql_operation(mode="login", email=emailInput, password=passwordInput)
             print("successfulLogin: ", successfulLogin)
-            session["user"] = successfulLogin[0]
-            session["role"] = successfulLogin[1]
             if (successfulLogin):
+                session["user"] = successfulLogin[0]
+                session["role"] = successfulLogin[1]
                 print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             else:
