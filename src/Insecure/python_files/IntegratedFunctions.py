@@ -74,11 +74,35 @@ def user_sql_operation(mode=None, **kwargs):
         returnValue = cur.fetchall()
         if (not returnValue):
             returnValue = False
+    
+    elif (mode == "edit"):
+        userID = kwargs.get("userID")
+        usernameInput = kwargs.get("username")
+        emailInput = kwargs.get("email")
+        passwordInput = kwargs.get("password")
+        statement = "UPDATE user SET "
+        if (usernameInput):
+            statement += f"username='{usernameInput}', "
+
+        if (emailInput):
+            statement += f"email='{emailInput}', "
+
+        if (passwordInput):
+            statement += f"password='{passwordInput}', "
+
+        statement = statement[:-2] + f" WHERE id='{userID}'"
+        cur.execute(statement)
+        con.commit()
+
+    elif (mode == "delete"):
+        userID = kwargs.get("userID")
+        cur.execute(f"DELETE FROM user WHERE id='{userID}'")
+        con.commit()
 
     con.close()
     return returnValue
 
-def course_sql_operation(mode=None):
+def course_sql_operation(mode=None, **kwargs):
     if (not mode):
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
@@ -89,12 +113,47 @@ def course_sql_operation(mode=None):
         teacher_id TEXT NOT NULL,
         course_name TEXT NOT NULL,
         course_description TEXT,
-        course_image TEXT,
+        course_image_path TEXT,
         course_price TEXT,
-        course_total_rating TEXT,
-        course_rating_count TEXT,
-        profile_image TEXT, 
+        course_total_rating INT,
+        course_rating_count INT,
         date_uploaded DATE NOT NULL
     )""")
+    if (mode == "insert"):
+        course_id = generate_id()
+        teacher_id = kwargs.get("teacher_id")
+        course_name = kwargs.get("course_name")
+        course_description = kwargs.get("course_description")
+        course_image_path = kwargs.get("course_image_path")
+        course_price = kwargs.get("course_price")
+        course_total_rating = 0
+        course_rating_count = 0
+        date_uploaded = datetime.now().strftime("%Y-%m-%d")
+        
+        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_total_rating, course_rating_count, date_uploaded)
+        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        con.commit()
+
+    elif (mode == "query"):
+        course_id = kwargs.get("course_id")
+        cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
+        returnValue = cur.fetchall()
+        if (not returnValue):
+            returnValue = False
+    
+    elif (mode == "edit"):
+        course_id = kwargs.get("course_id")
+        course_name = kwargs.get("course_name")
+        course_description = kwargs.get("course_description")
+        course_image_path = kwargs.get("course_image_path")
+        course_price = kwargs.get("course_price")
+        cur.execute(f"UPDATE course SET course_name='{course_name}', course_description='{course_description}', course_image_path='{course_image_path}', course_price='{course_price}' WHERE course_id='{course_id}'")
+        con.commit()
+    
+    elif (mode == "delete"):
+        course_id = kwargs.get("course_id")
+        cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
+        con.commit()
+        
     con.close()
     return
