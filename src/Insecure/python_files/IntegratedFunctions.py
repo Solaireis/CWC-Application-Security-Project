@@ -81,13 +81,13 @@ def user_sql_operation(mode=None, **kwargs):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
         statement = "UPDATE user SET "
-        if (usernameInput is None):
+        if (usernameInput is not None):
             statement += f"username='{usernameInput}', "
 
-        if (emailInput is None):
+        if (emailInput is not None):
             statement += f"email='{emailInput}', "
 
-        if (passwordInput is None):
+        if (passwordInput is not None):
             statement += f"password='{passwordInput}'"
 
         statement += f" WHERE id='{userID}'"
