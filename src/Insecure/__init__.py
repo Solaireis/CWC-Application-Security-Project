@@ -119,6 +119,20 @@ def logout():
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
+@app.route('/user_profile', methods=["GET","POST"])
+def userProfile():
+    if ("user" in session):
+        userSession = session["user"]
+        returnedVal = user_sql_operation(mode = "get_user_data", userID = userSession)
+        print(returnedVal)
+
+        username = returnedVal[2]
+        accType = returnedVal[1]
+        email = returnedVal[3]
+        imageSrcPath = get_dicebear_image(username)
+
+        return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
+
 """Custom Error Pages"""
 
 # Bad Request
