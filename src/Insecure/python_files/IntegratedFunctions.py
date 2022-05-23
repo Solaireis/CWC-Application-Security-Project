@@ -61,6 +61,7 @@ def user_sql_operation(mode=None, **kwargs):
         returnValue = cur.fetchall()
         if (not returnValue):  # An empty list evaluates to False.
             returnValue = False
+        #No else statement if no results will incur a type error so im assuming its not there to display insecure
         returnValue = returnValue[0] # returnValue is a list of tuples.
 
     elif (mode == "get_user_data"):

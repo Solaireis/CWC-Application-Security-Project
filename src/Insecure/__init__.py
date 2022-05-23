@@ -89,6 +89,7 @@ def signup():
 
             print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
+            #isn't mode supposed to be in front
             returnedVal = user_sql_operation(email=emailInput, username=usernameInput, password=passwordInput, mode="insert")
 
             if (isinstance(returnedVal, tuple)):
