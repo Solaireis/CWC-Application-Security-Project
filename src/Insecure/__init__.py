@@ -110,7 +110,7 @@ def signup():
     else:
         return redirect(url_for("home"))
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     if ("user" not in session):
         return redirect(url_for("login"))
