@@ -4,7 +4,6 @@ from os import environ
 from pathlib import Path
 from requests import post as pyPost
 from apscheduler.schedulers.background import BackgroundScheduler
-from matplotlib import pyplot as plt
 from dicebear import DOptions
 from datetime import datetime
 # from python_files import Student, Teacher, Forms, Course
