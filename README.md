@@ -5,15 +5,17 @@ CourseFinity Web Application using Flask
 <br>
 (Requires Python 3.8 and above)
 </h1>
-## Forked Project for App Security Group project purposes
-## Nanyang Polytechnic Y1 App Development Group Project [4 members]
+
+---
+
+## Forked Project for IT2555 App Security Project [4 members]
 This project consists of us making a web application using Flask as its framework.
 
 **Group Members:**
->1. Jason (Group Leader)
->2. Wei Ren (Assistant Group Leader)
->3. Clarence
->4. Royston
+>1. Eden (Group Leader)
+>2. Jason
+>3. Wei Ren
+>4. Calvin
 
 **Project Situation:** 
 
@@ -29,9 +31,9 @@ This project consists of us making a web application using Flask as its framewor
 >
 >The web application is for students and teachers to connect together from all over the world and share their skills.
 >
->The teachers can either upload videos or host weekly Zoom sessions and sell the course to earn extra money for themselves.
+>The teachers can either upload videos and sell the courses to earn extra money for themselves.
 >
->The students can then buy the courses, using PayPal as the payment gateway, and start learning! 
+>The students can then buy the courses and start learning! 
 
 ---
 
@@ -63,42 +65,20 @@ pip install -r requirements.txt
 
 ---
 
-**Task Allocation:**
+**OWASP Allocation:**
 
-* Jason
-> 1. Login and signup
-> 2. Two Factor Authentication using compatible apps such as Google Authenticator (6 digits time-based one time passcode)
-> 3. Reset password (10 mins reset link sent via email)
-> 4. Verification of Emails (24 hr verify link sent via email)
-> 5. User and Admin profile settings
-> 6. User management for Admins
-> 7. Admin Console (Part 1 and 4) [Admin account creation, updating passwords, removing 2FA, deactivation or deletion of all admin accounts without 2FA]
-> 8. Content Personalisation (Recommendations and Trending)
-> 9. Cash out system logic for teachers
-> 10. Admin dashboard [Graphs and generating user database to a CSV file]
-> 11. Course page and its review page
+Eden
+> 1. [A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+> 2. [A05:2021 – Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 
-* Wei Ren
-> 1. Shopping Cart
-> 2. PayPal Checkout
-> 3. Contact Us [Ticket]
-> 4. Ticket Management
-> 5. Cashout Preference Settings [Edit, View]
-> 6. PayPal Payouts API Integration [when Cashing Out] 
+Jason
+> 1. [A02:2021 – Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+> 2. [A07:2021 – Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 
-* Clarence
-> 1. Teacher Page
-> 2. Teacher All Courses (Student View)
-> 3. Teacher Course Management
-> 4. Create Course
-> 5. Create Video Lesson
-> 6. Create Zoom Lesson
-> 7. Admin Console (Part 2) [Deactivation, reactivation and deletion of admin accounts]
+Wei Ren
+> 1. [A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
+> 2. [A09:2021 – Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
 
-* Royston
-> 1. Explore Category
-> 2. Search Function
-> 3. Purchase History
-> 4. Purchase View
-> 5. Purchase Review
-> 6. Admin Console (Part 3) [Reading of all admin account]
+Calvin
+> 1. [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
+> 2. [A08:2021 – Software and Data Integrity Failures](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/)
