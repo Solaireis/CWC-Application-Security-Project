@@ -40,8 +40,8 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 
 @app.route("/")
 def home():
-    latestThreeCourses = course_sql_operation(mode="get_latest_3_courses")
-    trendingThreeCourses = course_sql_operation(mode="get_trending_3_courses")
+    latestThreeCourses = sql_operation(table="course", mode="get_latest_3_courses")
+    trendingThreeCourses = sql_operation(table="course", mode="get_trending_3_courses")
 
     print("latestThreeCourses: ", latestThreeCourses)
     print("trendingThreeCourses: ", trendingThreeCourses)
@@ -63,7 +63,7 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
 
-            successfulLogin = user_sql_operation(mode="login", email=emailInput, password=passwordInput)
+            successfulLogin = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
             print("successfulLogin: ", successfulLogin)
             if (successfulLogin):
                 session["user"] = successfulLogin[0]
@@ -97,7 +97,7 @@ def signup():
 
             print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
-            returnedVal = user_sql_operation(mode="insert", email=emailInput, username=usernameInput, password=passwordInput)
+            returnedVal = sql_operation(table="user", mode="insert", email=emailInput, username=usernameInput, password=passwordInput)
 
             if (isinstance(returnedVal, tuple)):
                 return render_template("users/guest/signup.html", form=signupForm, email_duplicates=returnedVal[0], username_duplicates=returnedVal[1])

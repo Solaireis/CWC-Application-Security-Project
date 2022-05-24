@@ -23,7 +23,7 @@ def get_image_path(userID, returnUserInfo=False):
         - userID: The user's ID
         - returnUserInfo: If True, it will return a tuple of the user's record.
     """
-    userInfo = user_sql_operation(mode="get_user_data", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
     imageSrcPath = userInfo[5]
     if (not imageSrcPath):
         imageSrcPath = get_dicebear_image(userInfo[2])
@@ -43,17 +43,30 @@ def get_dicebear_image(username):
     )
     return av.url_svg
 
-def connect_to_database():
+def sql_operation(table=None, mode=None, **kwargs):
     """
     Connects to the database and returns the connection object
     
-    Returns the sqlite3 connection object
+    Args:
+        - table: The table to connect to ("course", "user")
+        - mode: The mode to use ("insert", "edit", "login", etc.)
+        - kwargs: The keywords to pass into the respective sql operation functions
+    
+    Returns the returned value from the SQL operation.
     """
+    returnValue = None
     # timeout is in seconds to give time to other threads that is connected to the SQL database.
     # After the timeout, an OperationalError will be raised, stating "database is locked".
-    return sqlite3.connect(app.config["SQL_DATABASE"], timeout=10) 
+    con = sqlite3.connect(app.config["SQL_DATABASE"], timeout=10)
+    if (table == "user"):
+        returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
+    elif (table == "course"):
+        returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
+    
+    con.close()
+    return returnValue
 
-def user_sql_operation(mode=None, **kwargs):
+def user_sql_operation(connection=None, mode=None, **kwargs):
     """
     Do CRUD operations on the user table
     
@@ -66,8 +79,7 @@ def user_sql_operation(mode=None, **kwargs):
     if (not mode):
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
-    con = connect_to_database()
-    cur = con.cursor()
+    cur = connection.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
         id PRIMARY KEY, 
         role TEXT NOT NULL,
@@ -88,7 +100,6 @@ def user_sql_operation(mode=None, **kwargs):
         usernameDupes = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchall())
 
         if (emailDupe or usernameDupes):
-            con.close()
             returnValue = (emailDupe, usernameDupes)
 
         if (returnValue is None and not emailDupe and not usernameDupes):
@@ -97,7 +108,7 @@ def user_sql_operation(mode=None, **kwargs):
             passwordInput = kwargs.get("password")
             data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "{}")
             cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
-            con.commit()
+            connection.commit()
             returnValue = userID
 
     elif (mode == "login"):
@@ -113,10 +124,12 @@ def user_sql_operation(mode=None, **kwargs):
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
         cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
-        returnValue = cur.fetchall()[0]
+        returnValue = cur.fetchall()
         if (not returnValue):
             returnValue = False
-    
+        else:
+            returnValue = returnValue[0]
+
     elif (mode == "edit"):
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
@@ -138,17 +151,16 @@ def user_sql_operation(mode=None, **kwargs):
 
         statement += f" WHERE id='{userID}'"
         cur.execute(statement)
-        con.commit()
+        connection.commit()
 
     elif (mode == "delete"):
         userID = kwargs.get("userID")
         cur.execute(f"DELETE FROM user WHERE id='{userID}'")
-        con.commit()
+        connection.commit()
 
-    con.close()
     return returnValue
 
-def course_sql_operation(mode=None, **kwargs):
+def course_sql_operation(connection=None, mode=None, **kwargs):
     """
     Do CRUD operations on the course table
     
@@ -162,8 +174,7 @@ def course_sql_operation(mode=None, **kwargs):
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
     returnValue = None
-    con = connect_to_database()
-    cur = con.cursor()
+    cur = connection.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS course (
         course_id PRIMARY KEY, 
         teacher_id TEXT NOT NULL,
@@ -192,7 +203,7 @@ def course_sql_operation(mode=None, **kwargs):
         
         data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created)
         cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
-        con.commit()
+        connection.commit()
 
     elif (mode == "get_course_data"):
         course_id = kwargs.get("courseId")
@@ -200,6 +211,7 @@ def course_sql_operation(mode=None, **kwargs):
         returnValue = cur.fetchall()
         if (not returnValue):
             returnValue = False
+
     elif (mode == "edit"):
         course_id = kwargs.get("courseId")
         course_name = kwargs.get("courseName")
@@ -213,7 +225,7 @@ def course_sql_operation(mode=None, **kwargs):
     elif (mode == "delete"):
         course_id = kwargs.get("courseId")
         cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
-        con.commit()
+        connection.commit()
 
     elif (mode == "get_latest_3_courses" or mode == "get_trending_3_courses"):
         teacherID = kwargs.get("teacherID")
@@ -251,5 +263,4 @@ def course_sql_operation(mode=None, **kwargs):
 
             returnValue = [Course(t) for t in courseInfoList]
 
-    con.close()
     return returnValue
