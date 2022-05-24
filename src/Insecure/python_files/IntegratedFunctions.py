@@ -197,12 +197,13 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         course_image_path = kwargs.get("courseImagePath")
         course_price = kwargs.get("coursePrice")
         course_category = kwargs.get("courseCategory")
+        video_path = kwargs.get("videoPath")
         course_total_rating = 0
         course_rating_count = 0
         date_created = datetime.now().strftime("%Y-%m-%d")
         
-        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created)
-        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
+        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
         connection.commit()
 
     elif (mode == "get_course_data"):
