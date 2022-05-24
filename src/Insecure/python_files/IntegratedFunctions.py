@@ -62,7 +62,9 @@ def sql_operation(table=None, mode=None, **kwargs):
         returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
     elif (table == "course"):
         returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-    
+    elif (table == "teacher"):
+        returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
+
     con.close()
     return returnValue
 
@@ -297,3 +299,6 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
                     return (courseInfoList, teacherInfo[0])
 
                 return courseInfoList
+
+def teacher_sql_operation(connection=None, mode=None, **kwargs):
+    pass

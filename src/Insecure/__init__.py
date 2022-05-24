@@ -229,6 +229,28 @@ def updatePassword():
         else:
             return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
 
+@app.route('/change_account_type', methods=['GET','POST'])
+def changeAccountType():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+        if (request.method == "POST") and (request.form["changeAccountType"] == "changeToTeacher"):
+            pass
+
+        #Havent do TeacherSignUp Form
+
+@app.route('/teacher_signup', methods=['GET','POST'])
+def teacherSignUp():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+
+        create_teacher_sign_up_form = CreateSignUpForm(request.form)
+        if (request.method == 'POST') and (create_teacher_sign_up_form.validate()):
+            pass
+        else:
+            return render_template('users/guest/teacher_signup.html', form=create_teacher_sign_up_form)
+
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
