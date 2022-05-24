@@ -10,6 +10,20 @@ from datetime import datetime
 from python_files.IntegratedFunctions import *
 from python_files.Forms import *
 
+"""
+
+Task Allocation:
+Jason - Home & Payment Setting , Search fn
+Calvin - User Profile, course video upload
+Eden - Admin Profile, Review feature
+Wei Ren - Shopping Cart, checkout, purchase history
+
+Done alr
+-Login
+-Sign up
+
+"""
+
 """Web app configurations"""
 # general Flask configurations
 app = Flask(__name__)
