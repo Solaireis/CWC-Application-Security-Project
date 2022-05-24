@@ -1,3 +1,4 @@
+from click import confirm
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 # from werkzeug.utils import secure_filename
 from os import environ
@@ -13,14 +14,16 @@ from python_files.Forms import *
 """
 
 Task Allocation:
-Jason - Home & Payment Setting , Search fn
-Calvin - User Profile, course video upload
-Eden - Admin Profile, Review feature
+Jason - Payment Setting
+Calvin - User Profile, course video upload, search for courses
+Eden - Admin Profile, Review feature, Course Page (overview of the course details with a review section at the bottom)
 Wei Ren - Shopping Cart, checkout, purchase history
 
 Done alr
--Login
--Sign up
+- Home
+- Login
+- Sign up
+- Teacher Page (Same as home page, can copy the html code from the home.html)
 
 """
 
@@ -152,6 +155,79 @@ def userProfile():
         email = userInfo[3]
 
         return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
+
+@app.route('/change_username', methods=['GET','POST'])
+def updateUsername():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+
+        create_update_username_form = CreateChangeUsername(request.form)
+        if (request.method == "POST") and (create_update_username_form.validate()):
+            updatedUsername = create_update_username_form.updateUsername.data
+        
+            changed = sql_operation(table="user", mode="edit", userID=userID, username=updatedUsername)
+
+            if (not changed):
+                flash("Sorry, Username has already been taken!")
+                return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+            
+            else:
+                return redirect(url_for("userProfile"))
+        
+        else:
+            return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+
+@app.route('/change_email', methods=['GET','POST'])
+def updateEmail():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+        oldEmail = userInfo[2]
+
+        create_update_email_form = CreateChangeEmail(request.form)
+        if (request.method == "POST") and (create_update_email_form.validate()):
+            updatedEmail = create_update_email_form.updateEmail.data
+        
+            changed = sql_operation(table="user", mode="edit", userID=userID, email=updatedEmail)
+
+            if (not changed):
+                flash("Sorry, Email is been used by another user!")
+                return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
+            
+            else:
+                print(f"old email:{oldEmail}, new email:{updatedEmail}")
+                return redirect(url_for("userProfile"))
+        
+        else:
+            return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
+
+@app.route('/change_password', methods=['GET','POST'])
+def updatePassword():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+
+        create_update_password_form = CreateChangePasswordForm(request.form)
+        if (request.method == "POST") and (create_update_password_form.validate()):
+            currentPassword = create_update_password_form.currentPassword.data
+            updatedPassword = create_update_password_form.updatePassword.data
+            confirmPassword = create_update_password_form.confirmPassword.data
+
+            if (updatedPassword != confirmPassword):
+                flash("Passwords Do Not Match")
+                return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
+            else:
+                changed = sql_operation(table="user", mode="edit", userID=userID, password=updatedPassword, oldPassword=currentPassword)
+
+                if (changed):
+                    flash(changed)
+                    return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
+                else:
+                    return redirect(url_for("userProfile"))
+        
+        else:
+            return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):

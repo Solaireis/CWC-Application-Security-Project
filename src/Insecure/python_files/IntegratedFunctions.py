@@ -137,22 +137,45 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
         emailInput = kwargs.get("email")
+        oldPasswordInput = kwargs.get("oldPassword")
         passwordInput = kwargs.get("password")
         profileImagePath = kwargs.get("profileImagePath")
         statement = "UPDATE user SET "
         if (usernameInput is not None):
-            statement += f"username='{usernameInput}', "
+            duplicates = (f"SELECT * FROM user WHERE username='{usernameInput}'")
+            cur.execute(duplicates)
+            matched = cur.fetchone()
+            if (not matched):
+                statement += f"username='{usernameInput}'"
+            else:
+                return False
 
         if (emailInput is not None):
-            statement += f"email='{emailInput}', "
+            duplicates = (f"SELECT * FROM user WHERE email='{emailInput}'")
+            cur.execute(duplicates)
+            matched = cur.fetchone()
+            if (not matched):
+                statement += f"email='{emailInput}'"
+            else:
+                return False
 
         if (passwordInput is not None):
-            statement += f"password='{passwordInput}', "
+            duplicates = (f"SELECT password FROM user WHERE id='{userID}'")
+            cur.execute(duplicates)
+            userPassword = cur.fetchone()[0]
+            if (userPassword == oldPasswordInput):
+                if (userPassword != passwordInput):
+                    statement += f"password='{passwordInput}'"
+                else:
+                    return "Cannot Reuse previous password!"
+            else:
+                return "Password does not match previous password!"
 
         if (profileImagePath is not None):
             statement += f"profile_image='{profileImagePath}'"
 
         statement += f" WHERE id='{userID}'"
+        print(statement)
         cur.execute(statement)
         connection.commit()
 
