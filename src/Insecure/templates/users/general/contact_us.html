@@ -1,8 +1,9 @@
-
-{% if accType == "Guest" %}
-{% extends "guest_base.html" %}
-{% elif accType == "Student" or accType == "Teacher"%}
-{% extends "user_base.html" %}
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
 {% endif %}
 
 {% block head %}

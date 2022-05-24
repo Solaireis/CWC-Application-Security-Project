@@ -1,5 +1,6 @@
 import sqlite3, pathlib, uuid
 from datetime import datetime
+from random import randint
 
 def generate_id():
     return uuid.uuid4().hex
@@ -42,19 +43,27 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
-howManyDaniels = int(input("How many courses would you like to create?: "))
-for i in range(howManyDaniels):
+demoCourse = int(input("How many courses would you like to create?: "))
+
+latestDemoCourse = cur.execute(f"SELECT course_name FROM course WHERE teacher_id='30a749defdd843ecae5da3b26b6d6b9b' ORDER BY ROWID DESC LIMIT 1").fetchall()
+if (not latestDemoCourse):
+    latestDemoCourse = 1
+else:
+    latestDemoCourse = int(latestDemoCourse[0][0].split(" ")[-1]) + 1
+
+for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     course_id = generate_id()
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
-    course_name = f"How to be a daniel {i}"
-    course_description = f"This course teaches you to learn how to be a daniel part {i}"
+    course_name = f"Demo Course {i}"
+    course_description = f"This is a demo course, part {i}!"
     course_image_path = None
     course_price = i * 50.50
     course_category = "Other Academics"
-    course_total_rating = 0
-    course_rating_count = 0
+    course_total_rating = randint(0, 5)
+    course_rating_count = 1
+
     date_created = datetime.now().strftime("%Y-%m-%d")
-    video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" # demo, will be changed to a video path
 
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
@@ -62,4 +71,4 @@ for i in range(howManyDaniels):
 con.commit()
 con.close()
 
-print("Added", i+1, "How to be a daniel courses to the database")
+print("Added", demoCourse, "How to be a daniel courses to the database")

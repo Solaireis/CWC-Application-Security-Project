@@ -16,17 +16,17 @@ class Course:
         self.course_name = tupleInfo[1][2]
         self.course_description = tupleInfo[1][3]
         self.course_image_path = tupleInfo[1][4]
-        self.course_price = tupleInfo[1][5]
+        self.course_price = f"${round(float(tupleInfo[1][5]), 2):.2f}"
         self.course_category = tupleInfo[1][6]
         self.course_date_created = tupleInfo[1][7]
 
         # total ratings score / num of ratings
-        numOfRatings = tupleInfo[1][9]
-        ratingTotalScore = tupleInfo[1][8]
-        if (numOfRatings == 0):
+        self.rating_count = tupleInfo[1][9]
+        self.total_rating_score = tupleInfo[1][8]
+        if (self.rating_count == 0):
             self.average_rating = 0
         else:
-            self.average_rating = int(round(ratingTotalScore / numOfRatings, 0)) 
+            self.average_rating = int(round(self.total_rating_score / self.rating_count, 0)) 
 
     def __repr__(self):
         return f"\n[Course: {self.course_name} | " + f"By: {self.teacher_name} | " + f"Price: ${self.course_price} | " + f"Category: {self.course_category} | " + f"Date Created: {self.course_date_created} | " + f"Rating: {self.average_rating} ]\n"

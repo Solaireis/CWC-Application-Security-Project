@@ -228,18 +228,18 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
         connection.commit()
 
-    elif (mode == "get_latest_3_courses" or mode == "get_trending_3_courses"):
+    elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
         statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
 
-        if (mode == "get_latest_3_courses"):
+        if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (not teacherID):
                 cur.execute(f"{statement} ORDER BY ROWID DESC LIMIT 3")
             else:
                 cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY ROWID DESC LIMIT 3")
         else:
-            # get top 3 trending courses
+            # get top 3 highly rated courses
             if (not teacherID):
                 cur.execute(f"{statement} ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
             else:

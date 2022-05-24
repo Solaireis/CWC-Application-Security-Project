@@ -40,17 +40,16 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 
 @app.route("/")
 def home():
-    latestThreeCourses = sql_operation(table="course", mode="get_latest_3_courses")
-    trendingThreeCourses = sql_operation(table="course", mode="get_trending_3_courses")
-
-    print("latestThreeCourses: ", latestThreeCourses)
-    print("trendingThreeCourses: ", trendingThreeCourses)
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
+    threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
 
     imageSrcPath = None
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
 
-    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath)
+    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath, userPurchasedCourses=[], \
+        threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses), \
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -130,6 +129,29 @@ def userProfile():
         email = userInfo[3]
 
         return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
+
+@app.route("/teacher/<teacherID>")
+def teacherPage(teacherID):
+    return "teacher: " + teacherID
+
+@app.route("/course/<courseID>")
+def coursePage(courseID):
+    return "course: " + courseID
+
+@app.route("/cart", methods=["GET", "POST"])
+def cart():
+    if (request.method == "POST"):
+        # add to cart
+        courseID = request.form.get("courseID")
+    return "cart"
+
+@app.route("/purchase-history")
+def purchaseHistory():
+    return "purchase history"
+
+@app.route("/my-purchase?id=<courseID>")
+def purchaseDetails(courseID):
+    return "purchase details: " + courseID
 
 """Custom Error Pages"""
 
