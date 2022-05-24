@@ -71,4 +71,4 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
 con.commit()
 con.close()
 
-print("Added", demoCourse, "How to be a daniel courses to the database")
+print("Added", demoCourse, "demo courses to the database")
