@@ -54,7 +54,7 @@ for i in range(howManyDaniels):
     course_total_rating = 0
     course_rating_count = 0
     date_created = datetime.now().strftime("%Y-%m-%d")
-    video_path = None
+    video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
