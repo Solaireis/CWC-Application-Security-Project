@@ -38,17 +38,26 @@ app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
 
 """End of Web app configurations"""
 
+@app.before_request # called before each request to the application.
+def before_request():
+    if ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
+        # if user session is invalid as the user does not exist anymore
+        session.clear()
+
 @app.route("/")
 def home():
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
     threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
 
+    userPurchasedCourses = []
     imageSrcPath = None
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath, userPurchasedCourses=[], \
-        threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses), \
+    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
+        userPurchasedCourses=userPurchasedCourses,
+        threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
 
 @app.route("/login", methods=["GET", "POST"])
@@ -132,7 +141,22 @@ def userProfile():
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
-    return "teacher: " + teacherID
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
+    threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
+
+    teacherProfilePath = get_image_path(teacherID)
+
+    imageSrcPath = None
+    userPurchasedCourses = {}
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+
+    return render_template("users/general/teacher_page.html", accType=session.get("role"),                              
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
+        teacherProfilePath=teacherProfilePath,
+        threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
 
 @app.route("/course/<courseID>")
 def coursePage(courseID):

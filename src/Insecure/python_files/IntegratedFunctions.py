@@ -1,4 +1,4 @@
-import uuid, sqlite3
+import uuid, sqlite3, json
 from datetime import datetime
 from __init__ import app
 from dicebear import DAvatar, DStyle
@@ -90,8 +90,14 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         date_joined DATE NOT NULL,
         puchased_courses TEXT NOT NULL
     )""")
-    returnValue = None
-    if (mode == "insert"):
+    if (mode == "verify_userID_existence"):
+        userID = kwargs.get("userID")
+        if (not userID):
+            raise ValueError("You must specify a userID in the user_sql_operation function when verifying userID!")
+        cur.execute("SELECT * FROM user WHERE id=?", (userID,))
+        return bool(cur.fetchone())
+
+    elif (mode == "insert"):
         emailInput = kwargs.get("email")
         usernameInput = kwargs.get("username")
 
@@ -100,35 +106,32 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         usernameDupes = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchall())
 
         if (emailDupe or usernameDupes):
-            returnValue = (emailDupe, usernameDupes)
+            return (emailDupe, usernameDupes)
 
-        if (returnValue is None and not emailDupe and not usernameDupes):
-            # add to the sqlite3 database
-            userID = generate_id()
-            passwordInput = kwargs.get("password")
-            data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "{}")
-            cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
-            connection.commit()
-            returnValue = userID
+        # add to the sqlite3 database
+        userID = generate_id()
+        passwordInput = kwargs.get("password")
+        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "{}")
+        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
+        connection.commit()
+        return userID
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
         cur.execute(f"SELECT id, role FROM user WHERE email='{emailInput}' AND password='{passwordInput}'")
-        returnValue = cur.fetchall()
-        if (not returnValue):
-            returnValue = False
-        else:
-            returnValue = returnValue[0] # returnValue is a list of tuples.
+        matched = cur.fetchone()
+        if (not matched):
+            return False
+        return matched
 
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
         cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
-        returnValue = cur.fetchall()
-        if (not returnValue):
-            returnValue = False
-        else:
-            returnValue = returnValue[0]
+        matched = cur.fetchone()
+        if (not matched):
+            return False
+        return matched
 
     elif (mode == "edit"):
         userID = kwargs.get("userID")
@@ -158,7 +161,10 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         cur.execute(f"DELETE FROM user WHERE id='{userID}'")
         connection.commit()
 
-    return returnValue
+    elif (mode == "get_user_purchases"):
+        userID = kwargs.get("userID")
+        cur.execute(f"SELECT puchased_courses FROM user WHERE id='{userID}'")
+        return json.loads(cur.fetchone()[0])
 
 def course_sql_operation(connection=None, mode=None, **kwargs):
     """
@@ -173,7 +179,6 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
     if (not mode):
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
-    returnValue = None
     cur = connection.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS course (
         course_id PRIMARY KEY, 
@@ -209,9 +214,10 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
     elif (mode == "get_course_data"):
         course_id = kwargs.get("courseId")
         cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
-        returnValue = cur.fetchall()
-        if (not returnValue):
-            returnValue = False
+        matched = cur.fetchone()
+        if (not matched):
+            return False
+        return matched
 
     elif (mode == "edit"):
         course_id = kwargs.get("courseId")
@@ -245,23 +251,26 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
             else:
                 cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
 
-        returnValue = cur.fetchall()
-        if (not returnValue):
-            returnValue = []
+        matchedList = cur.fetchall()
+        if (not matchedList):
+            return []
         else:
             # e.g. [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
             courseInfoList = []
             # get the teacher name for each course
             if (not teacherID):
-                teacherIDList = [teacherID[1] for teacherID in returnValue]
+                teacherIDList = [teacherID[1] for teacherID in matchedList]
                 for i, teacherID in enumerate(teacherIDList):
                     cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
-                    courseInfoList.append((cur.fetchall()[0], returnValue[i]))
+                    courseInfoList.append(Course((cur.fetchone(), matchedList[i])))
+                return courseInfoList
             else:
-                teacherInfo = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")[0]
-                for tupleInfo in returnValue:
-                    courseInfoList.append((teacherInfo, tupleInfo))
+                teacherInfo = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
 
-            returnValue = [Course(t) for t in courseInfoList]
+                for tupleInfo in matchedList:
+                    courseInfoList.append(Course((teacherInfo, tupleInfo)))
+                
+                if (kwargs.get("getTeacherUsername")):
+                    return (courseInfoList, teacherInfo[0])
 
-    return returnValue
+                return courseInfoList
