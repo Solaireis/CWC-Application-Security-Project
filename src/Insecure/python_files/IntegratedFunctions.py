@@ -304,6 +304,14 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
     
     elif (mode == "search"):
         searchInput = kwargs.get("searchInput")
-        foundResults = cur.execute(f"SELECT course_id FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
-        return foundResults
+        resultsList = []
+
+        foundResults = cur.execute(f"SELECT * FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
+        teacherIDList = [teacherID[1] for teacherID in foundResults]
+        for i, teacherID in enumerate(teacherIDList):
+            cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
+            print(foundResults[i])
+            resultsList.append(Course((cur.fetchone(), foundResults[i])))
+
+        return resultsList
 

@@ -51,7 +51,7 @@ app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
 # SQL database file path
-app.config["SQL_DATABASE"] = app.root_path + "\\databases\\database.db"
+app.config["SQL_DATABASE"] = app.root_path + "/databases/database.db"
 
 """End of Web app configurations"""
 
@@ -283,8 +283,7 @@ def purchaseDetails(courseID):
 def search(pageNum):
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return redirect(url_for("home"))
-    # return render_template('users/general/search.html')
+    return render_template("users/general/search.html", foundResults=foundResults, foundResultsLen=len(foundResults))
 
 """Custom Error Pages"""
 
