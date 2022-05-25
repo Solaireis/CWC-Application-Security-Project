@@ -301,7 +301,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
                     return (courseInfoList, teacherInfo[0])
 
                 return courseInfoList
-    
+
     elif (mode == "search"):
         searchInput = kwargs.get("searchInput")
         resultsList = []
