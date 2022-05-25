@@ -266,9 +266,13 @@ def coursePage(courseID):
 
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
-    if (request.method == "POST"):
+    if request.method == "POST":
         # add to cart
         courseID = request.form.get("courseID")
+
+    else:
+        pass
+
     return "cart"
 
 @app.route("/purchase-history")
