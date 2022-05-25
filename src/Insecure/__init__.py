@@ -235,21 +235,11 @@ def changeAccountType():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
         if (request.method == "POST") and (request.form["changeAccountType"] == "changeToTeacher"):
-            pass
-
-        #Havent do TeacherSignUp Form
-
-@app.route('/teacher_signup', methods=['GET','POST'])
-def teacherSignUp():
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
-
-        create_teacher_sign_up_form = CreateSignUpForm(request.form)
-        if (request.method == 'POST') and (create_teacher_sign_up_form.validate()):
-            pass
+            sql_operation(table="user", mode="edit", userID=userID, newAccType=True)
+            return redirect(url_for("userProfile"))
         else:
-            return render_template('users/guest/teacher_signup.html', form=create_teacher_sign_up_form)
+            print("Not POST request or did not have relevant hidden field.")
+            return redirect(url_for("userProfile"))
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):

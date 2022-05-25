@@ -62,8 +62,6 @@ def sql_operation(table=None, mode=None, **kwargs):
         returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
     elif (table == "course"):
         returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-    elif (table == "teacher"):
-        returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
 
     con.close()
     return returnValue
@@ -142,6 +140,7 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         oldPasswordInput = kwargs.get("oldPassword")
         passwordInput = kwargs.get("password")
         profileImagePath = kwargs.get("profileImagePath")
+        newAccType = kwargs.get("newAccType")
         statement = "UPDATE user SET "
         if (usernameInput is not None):
             duplicates = (f"SELECT * FROM user WHERE username='{usernameInput}'")
@@ -175,6 +174,9 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
 
         if (profileImagePath is not None):
             statement += f"profile_image='{profileImagePath}'"
+
+        if (newAccType is not False):
+            statement += "role='Teacher'"
 
         statement += f" WHERE id='{userID}'"
         print(statement)
@@ -299,6 +301,3 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
                     return (courseInfoList, teacherInfo[0])
 
                 return courseInfoList
-
-def teacher_sql_operation(connection=None, mode=None, **kwargs):
-    pass
