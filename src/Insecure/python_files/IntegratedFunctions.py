@@ -309,11 +309,11 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         foundResults = cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
-            cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
             res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
             teacherUsername = res[0]
             teacherProfile = res[1]
-            teacherProfile = (get_dicebear_image(teacherUsername),True) if (not teacherProfile) else (teacherProfile, False)
+            teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
+                                                                         else (teacherProfile, False)
             resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i])))
 
         return resultsList
