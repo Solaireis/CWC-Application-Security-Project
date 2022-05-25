@@ -301,3 +301,9 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
                     return (courseInfoList, teacherInfo[0])
 
                 return courseInfoList
+    
+    elif (mode == "search"):
+        searchInput = kwargs.get("searchInput")
+        foundResults = cur.execute(f"SELECT course_id FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
+        return foundResults
+

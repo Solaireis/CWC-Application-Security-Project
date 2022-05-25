@@ -66,6 +66,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" # demo, will be changed to a video path
 
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
+    print(data)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
 
 con.commit()

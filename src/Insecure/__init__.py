@@ -279,6 +279,13 @@ def purchaseHistory():
 def purchaseDetails(courseID):
     return "purchase details: " + courseID
 
+@app.route('/search/<int:pageNum>/', methods=["GET","POST"])
+def search(pageNum):
+    searchInput = str(request.args.get("q"))
+    foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
+    return redirect(url_for("home"))
+    # return render_template('users/general/search.html')
+
 """Custom Error Pages"""
 
 # Bad Request
