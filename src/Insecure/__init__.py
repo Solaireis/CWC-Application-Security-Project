@@ -279,11 +279,11 @@ def purchaseHistory():
 def purchaseDetails(courseID):
     return "purchase details: " + courseID
 
-@app.route('/search/<int:pageNum>/', methods=["GET","POST"])
-def search(pageNum):
+@app.route('/search', methods=["GET","POST"])
+def search():
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", foundResults=foundResults, foundResultsLen=len(foundResults))
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 """Custom Error Pages"""
 

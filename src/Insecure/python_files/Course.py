@@ -10,7 +10,8 @@ class Course:
         Note that all attributes are public.
         """
         self.teacher_name = tupleInfo[0][0]
-        self.teacher_profile_image = tupleInfo[0][1]
+        self.teacher_profile_image = tupleInfo[0][1][0]
+        self.dicebear_profile_image = tupleInfo[0][1][1]
         self.course_id = tupleInfo[1][0]
         self.teacher_id = tupleInfo[1][1]
         self.course_name = tupleInfo[1][2]

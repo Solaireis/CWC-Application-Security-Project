@@ -20,17 +20,46 @@
     </div>
     {% else %}
         {% for results in foundResults %}
-            <div class="row g-0 casing mx-auto border">
-                <div class="col-5">
-                    {% if (results.course_image_path == None) %}
-                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% else %}
-                        <img src="{{ url_for('static', filename='images/courses/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% endif %}
-                </div>
-                <div class="col-7">
-                    <div class="card-body">
-
+            <div class="card mb-3">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if (results.course_image_path == None) %}
+                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/courses/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title"><a href="#">{{ results.course_name }}</a></h5>
+                            <p class="card-text">{{ results.course_description }}</p>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    {% if (results.rating_count > 0) %}
+                                    <div class="ratings">
+                                        {% with remainingStars = 5 - results.average_rating %}
+                                            {% for _ in range(results.average_rating) %}
+                                                <span class="fas fa-star"></span>
+                                            {% endfor %}
+                                            {% for _ in range(remainingStars) %}
+                                                <span class="far fa-star"></span>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                    {% else %}
+                                    <p class="card-text text-danger">No ratings yet...</p>
+                                    {% endif %}
+                                </small>
+                            </p>
+                            <p class="card-text">
+                                {% if not results.dicebear_profile_image %}
+                                    <img src="{{ url_for('static', filename='images/courses/' ~ results.teacher_profile_image) }}" id="user_profile" alt="Profile Icon">
+                                {% else %}
+                                    <img src="{{ results.teacher_profile_image }}" id="user_profile" alt="Profile Icon">
+                                {% endif %}
+                                {{ results.teacher_name }}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

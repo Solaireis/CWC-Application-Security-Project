@@ -310,8 +310,11 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
-            print(foundResults[i])
-            resultsList.append(Course((cur.fetchone(), foundResults[i])))
+            res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+            teacherUsername = res[0]
+            teacherProfile = res[1]
+            teacherProfile = (get_dicebear_image(teacherUsername),True) if (not teacherProfile) else teacherProfile
+            resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i])))
 
         return resultsList
 
