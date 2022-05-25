@@ -288,17 +288,24 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
             if (not teacherID):
                 teacherIDList = [teacherID[1] for teacherID in matchedList]
                 for i, teacherID in enumerate(teacherIDList):
-                    cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
-                    courseInfoList.append(Course((cur.fetchone(), matchedList[i])))
+                    res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+                    teacherUsername = res[0]
+                    teacherProfile = res[1]
+                    teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
+                                                                                else (teacherProfile, False)
+                    courseInfoList.append(Course(((teacherUsername, teacherProfile), matchedList[i])))
                 return courseInfoList
             else:
-                teacherInfo = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
-
+                res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+                teacherUsername = res[0]
+                teacherProfile = res[1]
+                teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
+                                                                            else (teacherProfile, False)
                 for tupleInfo in matchedList:
-                    courseInfoList.append(Course((teacherInfo, tupleInfo)))
+                    courseInfoList.append(Course(((teacherUsername, teacherProfile), tupleInfo)))
                 
                 if (kwargs.get("getTeacherUsername")):
-                    return (courseInfoList, teacherInfo[0])
+                    return (courseInfoList, res[0])
 
                 return courseInfoList
 

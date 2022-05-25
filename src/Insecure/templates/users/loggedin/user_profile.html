@@ -43,8 +43,8 @@
                             Profile
                         </a>
                     </li>
-                    {% if accType == "Teacher" %}
-                    <li class="nav-item">
+                    {# if accType == "Teacher" #}
+                    <!-- <li class="nav-item">
                         <a href="/cashout_preference" class="nav-link text-white">
                             Cashout Preferences
                         </a>
@@ -53,8 +53,8 @@
                         <a href="/teacher_cashout" class="nav-link text-white">
                             Cashing Out
                         </a>
-                    </li>
-                    {% endif %}
+                    </li> -->
+                    {# endif #}
                 </ul>
             </div>
         </div>
@@ -139,45 +139,45 @@
                                             {% endif %}
                                         </td>
                                     </tr>
-                                    <!-- {% if accType == "Teacher" %}
-                                    <tr>
+                                    {# if accType == "Teacher" #}
+                                    <!-- <tr>
                                         <td colspan="2">
-                                            {% if teacherBio == "" %}
+                                            {# if teacherBio == "" #}
                                             <div class="mb-3" id="originalTextarea">
                                                 <label for="teacherBio" class="form-label">Bio:</label>
                                                 <input type="hidden" name="submittedForm" value="bio">
-                                                {% if teacherBio == "" %}
+                                                {# if teacherBio == "" #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>Enter a bio to tell students of CourseFinity about you and what you are teaching! (You can also resize the text box by dragging on the bottom right of this text box)</textarea>
-                                                {% else %}
+                                                {# else #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }}</textarea>
-                                                {% endif %}
+                                                {# endif #}
                                                 <div class="d-flex float-end">
                                                     <button type="button" class="btn btn-primary margin-top" onclick="editBioNow()">Edit Bio</button>
                                                 </div>
                                             </div>
-                                            {% else %}
+                                            {# else #}
                                             <div class="mb-3" id="originalTextarea">
                                                 <label for="teacherBio" class="form-label">Bio:</label>
                                                 <input type="hidden" name="submittedForm" value="bio">
-                                                {% if teacherBio == "" %}
+                                                {# if teacherBio == "" #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }})</textarea>
-                                                {% else %}
+                                                {# else #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }}</textarea>
-                                                {% endif %}
+                                                {# endif #}
                                                 <div class="d-flex float-end">
                                                     <button type="button" class="btn btn-primary margin-top" onclick="editBioNow()">Edit Bio</button>
                                                 </div>
                                             </div>
-                                            {% endif %}
+                                            {# endif #}
                                         <form action="" method="POST" id="editedTextarea" hidden>
                                             <div class="mb-3">
                                                 <label for="teacherBio" class="form-label">Bio:</label>
                                                 <input type="hidden" name="submittedForm" value="bio">
-                                                {% if teacherBio == "" %}
+                                                {# if teacherBio == "" #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" spellcheck="true">Enter a bio to tell students of CourseFinity about you and what you are teaching! (You can also resize the text box by dragging on the bottom right of this text box)</textarea>
-                                                {% else %}
+                                                {# else #}
                                                 <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" spellcheck="true">{{ teacherBio }}</textarea>
-                                                {% endif %}
+                                                {# endif #}
                                                 <div class="d-flex float-end">
                                                     <button type="button" class="btn btn-danger margin-top cancleSaveBio" onclick="cancelBio()">Cancel</button>
                                                     <button type="submit" class="btn btn-success margin-top">Save Bio</button>
@@ -186,7 +186,7 @@
                                         </form>
                                         </td>
                                     </tr>
-                                    {% endif %} -->
+                                    {# endif #} -->
                                 </table>
                             </div>
                             {% if accType == "Student" %}
