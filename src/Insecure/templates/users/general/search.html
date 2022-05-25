@@ -52,7 +52,7 @@
                                 </small>
                             </p>
                             <p class="card-text">
-                                {% if not results.dicebear_profile_image %}
+                                {% if (not results.dicebear_profile_image) %}
                                     <img src="{{ url_for('static', filename='images/courses/' ~ results.teacher_profile_image) }}" id="user_profile" alt="Profile Icon">
                                 {% else %}
                                     <img src="{{ results.teacher_profile_image }}" id="user_profile" alt="Profile Icon">
