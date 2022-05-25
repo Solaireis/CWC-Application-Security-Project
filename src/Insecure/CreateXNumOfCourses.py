@@ -5,7 +5,7 @@ from random import randint
 def generate_id():
     return uuid.uuid4().hex
 
-pyFilePath = pathlib.Path(__file__).parent.absolute().as_posix() + "/databases/database.db"
+pyFilePath = pathlib.Path(__file__).parent.absolute().joinpath("databases", "database.db")
 
 con = sqlite3.connect(pyFilePath)
 cur = con.cursor()
