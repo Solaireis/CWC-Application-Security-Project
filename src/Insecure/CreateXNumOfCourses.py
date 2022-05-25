@@ -5,7 +5,7 @@ from random import randint
 def generate_id():
     return uuid.uuid4().hex
 
-pyFilePath = pathlib.Path(__file__).parent.absolute().as_posix() + "/databases/database.db"
+pyFilePath = pathlib.Path(__file__).parent.absolute().as_posix() + "\\databases\\database.db"
 
 con = sqlite3.connect(pyFilePath)
 cur = con.cursor()
@@ -43,6 +43,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
+print(pyFilePath)
 demoCourse = int(input("How many courses would you like to create?: "))
 
 latestDemoCourse = cur.execute(f"SELECT course_name FROM course WHERE teacher_id='30a749defdd843ecae5da3b26b6d6b9b' ORDER BY ROWID DESC LIMIT 1").fetchall()
@@ -66,7 +67,6 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" # demo, will be changed to a video path
 
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
-    print(data)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
 
 con.commit()
