@@ -313,7 +313,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
             res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
             teacherUsername = res[0]
             teacherProfile = res[1]
-            teacherProfile = (get_dicebear_image(teacherUsername),True) if (not teacherProfile) else teacherProfile
+            teacherProfile = (get_dicebear_image(teacherUsername),True) if (not teacherProfile) else (teacherProfile, False)
             resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i])))
 
         return resultsList
