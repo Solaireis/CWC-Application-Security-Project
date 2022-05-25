@@ -62,7 +62,7 @@ def sql_operation(table=None, mode=None, **kwargs):
         returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
     elif (table == "course"):
         returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-    
+
     con.close()
     return returnValue
 
@@ -137,22 +137,49 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
         emailInput = kwargs.get("email")
+        oldPasswordInput = kwargs.get("oldPassword")
         passwordInput = kwargs.get("password")
         profileImagePath = kwargs.get("profileImagePath")
+        newAccType = kwargs.get("newAccType")
         statement = "UPDATE user SET "
         if (usernameInput is not None):
-            statement += f"username='{usernameInput}', "
+            duplicates = (f"SELECT * FROM user WHERE username='{usernameInput}'")
+            cur.execute(duplicates)
+            matched = cur.fetchone()
+            if (not matched):
+                statement += f"username='{usernameInput}'"
+            else:
+                return False
 
         if (emailInput is not None):
-            statement += f"email='{emailInput}', "
+            duplicates = (f"SELECT * FROM user WHERE email='{emailInput}'")
+            cur.execute(duplicates)
+            matched = cur.fetchone()
+            if (not matched):
+                statement += f"email='{emailInput}'"
+            else:
+                return False
 
         if (passwordInput is not None):
-            statement += f"password='{passwordInput}', "
+            duplicates = (f"SELECT password FROM user WHERE id='{userID}'")
+            cur.execute(duplicates)
+            userPassword = cur.fetchone()[0]
+            if (userPassword == oldPasswordInput):
+                if (userPassword != passwordInput):
+                    statement += f"password='{passwordInput}'"
+                else:
+                    return "Cannot Reuse previous password!"
+            else:
+                return "Password does not match previous password!"
 
         if (profileImagePath is not None):
             statement += f"profile_image='{profileImagePath}'"
 
+        if (newAccType is not False):
+            statement += "role='Teacher'"
+
         statement += f" WHERE id='{userID}'"
+        print(statement)
         cur.execute(statement)
         connection.commit()
 
@@ -274,3 +301,9 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
                     return (courseInfoList, teacherInfo[0])
 
                 return courseInfoList
+    
+    elif (mode == "search"):
+        searchInput = kwargs.get("searchInput")
+        foundResults = cur.execute(f"SELECT course_id FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
+        return foundResults
+

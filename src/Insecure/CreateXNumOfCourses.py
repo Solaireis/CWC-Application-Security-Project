@@ -43,6 +43,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
+print(pyFilePath)
 demoCourse = int(input("How many courses would you like to create?: "))
 
 latestDemoCourse = cur.execute(f"SELECT course_name FROM course WHERE teacher_id='30a749defdd843ecae5da3b26b6d6b9b' ORDER BY ROWID DESC LIMIT 1").fetchall()

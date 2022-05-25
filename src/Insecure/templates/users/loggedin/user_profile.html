@@ -51,7 +51,7 @@
                     </li>
                     <li class="nav-item">
                         <a href="/teacher_cashout" class="nav-link text-white">
-                          Cashing Out
+                            Cashing Out
                         </a>
                     </li>
                     {% endif %}
@@ -61,15 +61,16 @@
         <div class="col-lg-9 merge-boxes">
             <div id="right-user">
                 <div class="container res_padding_remove">
-                    {% if emailVerification == False %}
-                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    {# if emailVerification == False #}
+                    <!--div class="alert alert-warning alert-dismissible fade show" role="alert">
                         <h6>Looks like you have not verified your email, please verify by clicking <a class="text-danger fw-bold" href="/generate_verify_email_token">here...</a></h6>
                         <h6>Alternatively, you can check your email if you have recently signed up.</h6>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    {% endif %}
+                    </div-->
+                    {# endif #}
                     <div class="row">
                         <div class="col-md-5 image-center">
+                            <!---Dicebear uses Links so cannot use url_for-->>
                             <img src="{{ imageSrcPath }}" alt="User Profile Icon" id="user-icon-setting">
                             {% if userProfileFilenameSaved %}
                             <form action="" method="POST">
