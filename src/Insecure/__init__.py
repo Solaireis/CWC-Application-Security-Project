@@ -302,6 +302,10 @@ def admProfile():
     else:
         return redirect(url_for("login"))
 
+@app.route("/admin-dashboard", methods=["GET","POST"])
+def adminDashboard():
+    pass
+
 """Custom Error Pages"""
 
 # Bad Request
