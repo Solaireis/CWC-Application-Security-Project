@@ -289,6 +289,19 @@ def search():
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
+@app.route('/adm-profile', methods=["GET","POST"])
+def admProfile():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+        userUsername = userInfo[1]
+        userEmail = userInfo[2]
+        userAccType = userInfo[3]
+
+        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userAccType=userAccType, userID=userID)
+    else:
+        return redirect(url_for("login"))
+
 """Custom Error Pages"""
 
 # Bad Request
