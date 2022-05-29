@@ -290,7 +290,7 @@ def search():
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 @app.route('/admin-profile', methods=["GET","POST"])
-def admProfile():
+def adminProfile():
     if ("admin" in session):
         imageSrcPath, userInfo = get_image_path(session["admin"], returnUserInfo=True)
         userID = userInfo[0]
