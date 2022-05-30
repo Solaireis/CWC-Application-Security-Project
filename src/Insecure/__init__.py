@@ -60,6 +60,9 @@ def before_request():
     if ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
         # if user session is invalid as the user does not exist anymore
         session.clear()
+    elif ("admin" in session and not sql_operation(table="user", mode="verify_adminID_existence", adminID=session["admin"])):
+        # if admin session is invalid as the admin does not exist anymore
+        session.clear()
 
 @app.route("/")
 def home():
