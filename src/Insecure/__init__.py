@@ -271,10 +271,11 @@ def coursePage(courseID):
     #retrieve one course id 
     #make it an course object
     # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
-    if (len(courses) == 0):
-        return redirect(url_for("homePage"))
-    else:
-        return render_template("users/general/course_page.html", accType=session.get("role"), course_ID=course_ID)
+    # if (len(courses) == 0):
+    #     return redirect(url_for("homePage"))
+    # else:
+    #     return render_template("users/general/course_page.html", accType=session.get("role"), course_ID=course_ID)
+    return render_template("users/general/course_page.html", accType=session.get("role"), )
 
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
