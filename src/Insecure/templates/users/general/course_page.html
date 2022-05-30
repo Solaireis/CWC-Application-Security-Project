@@ -6,6 +6,27 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="">Teacher</a></li>
+            <li class="breadcrumb-item active"><a href="">All Courses</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Title</li>
+        </ol>
+    </nav>
+    <div class="table-responsive-lg">
+        <table class="table table-borderless">
+            <tr></tr>
+        </table>
+    </div>
+    <h3>Course Page</h3>
+    <img src="https://images.unsplash.com/photo-1529928750697-1d9646312221?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80" alt="" width="600" height="500">
+
+</div>
+    
+{% endblock %}
+
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
 {% endblock %}
