@@ -277,7 +277,7 @@ def coursePage(courseID):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
     else:
-        return render_template("users/general/course_page.html", accType=session.get("role"), course_ID=course_ID,
+        return render_template("users/general/course_page.html", accType=session.get("role"), courseID = courseID,
             imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
             teacherProfilePath=teacherProfilePath,)
 
@@ -302,9 +302,11 @@ def purchaseDetails(courseID):
 
 @app.route('/search', methods=["GET","POST"])
 def search():
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"]) 
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
 
 @app.route('/admin-profile', methods=["GET","POST"])
 def adminProfile():
