@@ -271,8 +271,8 @@ def coursePage(courseID):
     #retrieve one course id 
     #make it an course object
     # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
-    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courseID)
-    teacherProfilePath=get_image_path(courseID)
+    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courses[1])
+    teacherProfilePath=get_image_path(courses[1])
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
