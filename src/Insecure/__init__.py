@@ -271,11 +271,16 @@ def coursePage(courseID):
     #retrieve one course id 
     #make it an course object
     # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
-    # if (len(courses) == 0):
-    #     return redirect(url_for("homePage"))
-    # else:
-    #     return render_template("users/general/course_page.html", accType=session.get("role"), course_ID=course_ID)
-    return render_template("users/general/course_page.html", accType=session.get("role"), )
+    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courses[1])
+    course_ID = courses[0]
+    teacherProfilePath=get_image_path(teacherID)
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+    else:
+        return render_template("users/general/course_page.html", accType=session.get("role"), course_ID=course_ID,
+            imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
+            teacherProfilePath=teacherProfilePath,)
 
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
