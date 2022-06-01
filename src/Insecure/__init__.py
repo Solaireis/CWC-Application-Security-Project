@@ -60,6 +60,9 @@ def before_request():
     if ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
         # if user session is invalid as the user does not exist anymore
         session.clear()
+    elif ("admin" in session and not sql_operation(table="user", mode="verify_adminID_existence", adminID=session["admin"])):
+        # if admin session is invalid as the admin does not exist anymore
+        session.clear()
 
 @app.route("/")
 def home():
@@ -262,7 +265,21 @@ def teacherPage(teacherID):
 
 @app.route("/course/<courseID>")
 def coursePage(courseID):
-    return "course: " + courseID
+    courses = sql_operation(table="course", mode="get_course_by_id", courseID=courseID)
+    # integrated function containing all sql 
+    # use course.py represent tuple as an object 
+    #retrieve one course id 
+    #make it an course object
+    # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
+    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courses[1])
+    teacherProfilePath=get_image_path(courses[1])
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+    else:
+        return render_template("users/general/course_page.html", accType=session.get("role"), courseID = courseID,
+            imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
+            teacherProfilePath=teacherProfilePath,)
 
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
@@ -324,9 +341,33 @@ def purchaseDetails(courseID):
 
 @app.route('/search', methods=["GET","POST"])
 def search():
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"]) 
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+
+@app.route('/admin-profile', methods=["GET","POST"])
+def adminProfile():
+    if ("admin" in session):
+        imageSrcPath, userInfo = get_image_path(session["admin"], returnUserInfo=True)
+        userID = userInfo[0]
+        userUsername = userInfo[1]
+        userEmail = userInfo[2]
+        userAccType = userInfo[3]
+
+        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userAccType=userAccType, userID=userID)
+    
+    # for logged users that are not admins
+    if ("user" in session):
+        return redirect(url_for("userProfile"))
+
+    # for guests
+    return redirect(url_for("login"))
+
+@app.route("/admin-dashboard", methods=["GET","POST"])
+def adminDashboard():
+    pass
 
 """Custom Error Pages"""
 
