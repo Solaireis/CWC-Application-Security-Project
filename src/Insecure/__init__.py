@@ -267,17 +267,56 @@ def coursePage(courseID):
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
     if request.method == "POST":
-        # add to cart
+        # Remove item from cart
         courseID = request.form.get("courseID")
+        sql_operation(table = "cart", mode = "remove", userID = session["user"], courseID = courseID)
+
+        return redirect(url_for("cart"))
 
     else:
-        pass
+        
 
-    return "cart"
+
+        return render_template("users/student/shopping_cart.html", )
+
+@app.route("/checkout", methods = ["GET", "POST"])
+def checkout():
+    if request.method == "POST":
+
+        card_no = request.form.get("card_no")
+        card_exp = request.form.get("card_exp")
+        card_cvv = request.form.get("card_cvv")
+        card_name = request.form.get("card_name")
+
+        # Make Purchase
+        cart_courses = sql_operation(table = "cart", mode = "get_cart_courses", userID = session["user"])
+        for course in cart_courses:
+            sql_operation(table = "purchased", mode = "insert", userID = session["user"], courseID = course)
+        sql_operation(table = "cart", mode = "empty", userID = session["user"])
+
+    else:
+
+        return render_template("users/student/checkout.html")
 
 @app.route("/purchase-history")
 def purchaseHistory():
-    return "purchase history"
+    purchased_courses = sql_operation(table = "purchased", mode = "get_purchased_courses", userID = session["user"])
+    courses = []
+    for courseID in purchased_courses:
+        course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
+        courses.append({'Course ID'           : course[0], 
+                        'Teacher ID'          : course[1],
+                        'Course Name'         : course[2],
+                        'Course Description'  : course[3],
+                        'Course Image Path'   : course[4],
+                        'Course Price'        : course[5],
+                        'Course Total Rating' : course[6],
+                        'Course Rating Count' : course[7],
+                        'Date Created'        : course[8], 
+                        'Video Path'          : course[9]
+                      })
+
+    return render_template("users/student/purchase_history.html", courses = courses)
 
 @app.route("/my-purchase?id=<courseID>")
 def purchaseDetails(courseID):

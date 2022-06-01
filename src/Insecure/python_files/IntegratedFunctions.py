@@ -62,6 +62,10 @@ def sql_operation(table=None, mode=None, **kwargs):
         returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
     elif (table == "course"):
         returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
+    elif table == "cart":
+        returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
+    elif table == "purchased":
+        returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
 
     con.close()
     return returnValue
@@ -325,3 +329,79 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
 
         return resultsList
 
+def cart_sql_operation(connection = None, mode = None, **kwargs):
+    """
+    Do CRUD operations on the cart table
+    
+    insert keywords: userId, courseId
+    get_cart_data keywords: userId
+    remove keywords: userId, courseId
+    empty keywords: userId
+    """
+
+    if mode == None:
+        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS cart (
+        user_id TEXT,
+        course_id TEXT,
+        PRIMARY KEY (user_id, course_id)
+    )""")
+
+    userId = kwargs.get("userId")
+
+    if mode == "insert":
+        courseId = kwargs.get("courseId")
+        cur.execute("INSERT INTO cart VALUES (?, ?)", (userId, courseId))
+        connection.commit()
+
+    elif mode == "get_cart_courses":
+        # List of course IDs in cart
+        courseId_list = cur.execute(f"SELECT course_id FROM cart WHERE user_id = '{userId}'").fetchall()
+        return courseId_list
+
+    elif mode == "remove":
+        courseId = kwargs.get("courseId")
+        cur.execute("DELETE FROM cart WHERE user_id = '{userID}' AND course_id = '{courseID}'")
+        connection.commit()
+
+    elif mode == "empty":
+        cur.execute("DELETE FROM cart WHERE user_id = '{userID}'")
+        connection.commit()
+    
+def purchased_sql_operation(connection = None, mode = None, **kwargs):
+    """
+    Do CRUD operations on the purchased table
+    
+    insert keywords: userId, courseId
+    get_purchased_data keywords: userId
+    delete keywords: userId, courseId
+    """
+
+    if mode == None:
+        raise ValueError("You must specify a mode in the purchased_sql_operation function!")
+
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
+        user_id TEXT,
+        course_id TEXT,
+        PRIMARY KEY (user_id, course_id)
+    )""")
+
+    userId = kwargs.get("userId")
+
+    if mode == "insert":
+        courseId = kwargs.get("courseId")
+        cur.execute("INSERT INTO purchased VALUES (?, ?)", (userId, courseId))
+        connection.commit()
+
+    elif mode == "get_purchased_courses":
+        # List of course IDs in purchased
+        courseId_list = cur.execute(f"SELECT course_id FROM purchased WHERE user_id = '{userId}'").fetchall()
+        return courseId_list
+
+    elif mode == "delete":
+        courseId = kwargs.get("courseId")
+        cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
+        connection.commit()
