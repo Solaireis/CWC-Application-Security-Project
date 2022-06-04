@@ -18,14 +18,19 @@ cur.execute("""CREATE TABLE IF NOT EXISTS user (
         password TEXT NOT NULL, 
         profile_image TEXT, 
         date_joined DATE NOT NULL,
+        card_name TEXT,
+        card_no INTEGER UNIQUE,
+        card_exp TEXT,
+        card_cvv INTEGER,
+        cart_courses TEXT NOT NULL,
         puchased_courses TEXT NOT NULL
     )""")
 
 res = cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'").fetchall()
 if (not res):
     # add to the sqlite3 database
-    data = ("30a749defdd843ecae5da3b26b6d6b9b", "Teacher", "Daniel", "test@teacher.com", "123123", None, "2022-05-22", "{}")
-    cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
+    data = ("30a749defdd843ecae5da3b26b6d6b9b", "Teacher", "Daniel", "test@teacher.com", "123123", None, "2022-05-22", None, None, None, None, "[]", "[]")
+    cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
     con.commit()
 
 cur.execute("""CREATE TABLE IF NOT EXISTS course (

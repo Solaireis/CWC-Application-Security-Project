@@ -62,10 +62,10 @@ def sql_operation(table=None, mode=None, **kwargs):
         returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
     elif (table == "course"):
         returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-    elif table == "cart":
-        returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
-    elif table == "purchased":
-        returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
+    # elif table == "cart":
+    #     returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
+    # elif table == "purchased":
+    #     returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
 
     con.close()
     return returnValue
@@ -78,6 +78,9 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
     login keywords: email, password
     get_user_data keywords: userID
     edit keywords: userID, username, password, email, profileImagePath
+    add_to_cart keywords: userID, courseID
+    remove_from_cart keywords: userID, courseID
+    purchase_courses keywords: userID
     delete keywords: userID
     """
     if (not mode):
@@ -92,7 +95,12 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         password TEXT NOT NULL, 
         profile_image TEXT, 
         date_joined DATE NOT NULL,
-        puchased_courses TEXT NOT NULL
+        card_name TEXT,
+        card_no INTEGER UNIQUE,
+        card_exp TEXT,
+        card_cvv INTEGER,
+        cart_courses TEXT NOT NULL,
+        purchased_courses TEXT NOT NULL
     )""")
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
@@ -115,8 +123,8 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         # add to the sqlite3 database
         userID = generate_id()
         passwordInput = kwargs.get("password")
-        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), "{}")
-        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", data)
+        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), None, None, None, None, "[]", "[]")
+        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
         connection.commit()
         return userID
 
@@ -145,6 +153,12 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         passwordInput = kwargs.get("password")
         profileImagePath = kwargs.get("profileImagePath")
         newAccType = kwargs.get("newAccType")
+
+        cardName = kwargs.get('cardName')
+        cardNo = kwargs.get('cardNo')
+        cardExp = kwargs.get('cardExp')
+        cardCvv = kwargs.get('cardCVV')
+
         statement = "UPDATE user SET "
         if (usernameInput is not None):
             duplicates = (f"SELECT * FROM user WHERE username='{usernameInput}'")
@@ -182,6 +196,10 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
         if (newAccType is not False):
             statement += "role='Teacher'"
 
+        if cardName is not None:
+            statement += f"card_name='{cardName}'card_no='{cardNo}'card_exp='{cardExp}'card_cvv='{cardCvv}'"
+
+
         statement += f" WHERE id='{userID}'"
         print(statement)
         cur.execute(statement)
@@ -194,9 +212,67 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
 
     elif (mode == "get_user_purchases"):
         userID = kwargs.get("userID")
-        cur.execute(f"SELECT puchased_courses FROM user WHERE id='{userID}'")
+        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
         return json.loads(cur.fetchone()[0])
 
+    elif mode == "get_user_cart":
+        userID = kwargs.get("userID")
+        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        return json.loads(cur.fetchone()[0])
+
+    elif mode == "add_to_cart":
+        
+        userID = kwargs.get("userID")
+        courseID = kwargs.get("courseID")
+
+        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cartCourseIDs = json.loads(cur.fetchone()[0])
+
+        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
+        purchasedCourseIDs = json.loads(cur.fetchone()[0])
+        
+        if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs:
+            cartCourseIDs.append(courseID)
+            cur.execute(f"UPDATE user SET cart_courses='{json.dumps(cartCourseIDs)}' WHERE id='{userID}'")
+            connection.commit()
+
+    elif mode == "remove_from_cart":
+        userID = kwargs.get("userID")
+        courseID = kwargs.get("courseID")
+
+        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cartCourseIDs = json.loads(cur.fetchone()[0])
+
+        if courseID in cartCourseIDs:
+            cartCourseIDs.remove(courseID)
+            cur.execute(f"UPDATE user SET cart_courses='{json.dumps(cartCourseIDs)}' WHERE id='{userID}'")
+            connection.commit()
+
+    elif mode == "purchase_courses":
+
+        userID = kwargs.get("userID")
+
+        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cartCourseIDs = json.loads(cur.fetchone()[0])
+
+        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
+        purchasedCourseIDs = json.loads(cur.fetchone()[0])
+
+        for courseID in cartCourseIDs:
+        
+            if courseID not in purchasedCourseIDs:
+                purchasedCourseIDs.append(courseID)
+        
+        # Add to purchases
+        cur.execute(f"UPDATE user SET purchased_courses='{json.dumps(purchasedCourseIDs)}' WHERE id='{userID}'")        
+        
+        # Empty cart
+        cur.execute(f"UPDATE user SET cart_courses='[]' WHERE id='{userID}'")
+
+        connection.commit()      
+
+
+# May not be used
 def course_sql_operation(connection=None, mode=None, **kwargs):
     """
     Do CRUD operations on the course table
@@ -251,7 +327,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         return matched
 
     elif (mode == "edit"):
-        course_id = kwargs.get("courseId")
+        course_id = kwargs.get("courseID")
         course_name = kwargs.get("courseName")
         course_description = kwargs.get("courseDescription")
         course_image_path = kwargs.get("courseImagePath")
@@ -261,7 +337,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         course_rating_count = kwargs.get("courseRatingCount")
 
     elif (mode == "delete"):
-        course_id = kwargs.get("courseId")
+        course_id = kwargs.get("courseID")
         cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
         connection.commit()
 
@@ -329,14 +405,15 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
 
         return resultsList
 
+# May not be used
 def cart_sql_operation(connection = None, mode = None, **kwargs):
     """
     Do CRUD operations on the cart table
     
-    insert keywords: userId, courseId
-    get_cart_data keywords: userId
-    remove keywords: userId, courseId
-    empty keywords: userId
+    insert keywords: userID, courseID
+    get_cart_data keywords: userID
+    remove keywords: userID, courseID
+    empty keywords: userID
     """
 
     if mode == None:
@@ -349,20 +426,20 @@ def cart_sql_operation(connection = None, mode = None, **kwargs):
         PRIMARY KEY (user_id, course_id)
     )""")
 
-    userId = kwargs.get("userId")
+    userID = kwargs.get("userID")
 
     if mode == "insert":
-        courseId = kwargs.get("courseId")
-        cur.execute("INSERT INTO cart VALUES (?, ?)", (userId, courseId))
+        courseID = kwargs.get("courseID")
+        cur.execute("INSERT INTO cart VALUES (?, ?)", (userID, courseID))
         connection.commit()
 
     elif mode == "get_cart_courses":
         # List of course IDs in cart
-        courseId_list = cur.execute(f"SELECT course_id FROM cart WHERE user_id = '{userId}'").fetchall()
-        return courseId_list
+        courseID_list = cur.execute(f"SELECT course_id FROM cart WHERE user_id = '{userID}'").fetchall()
+        return courseID_list
 
     elif mode == "remove":
-        courseId = kwargs.get("courseId")
+        courseID = kwargs.get("courseID")
         cur.execute("DELETE FROM cart WHERE user_id = '{userID}' AND course_id = '{courseID}'")
         connection.commit()
 
@@ -370,13 +447,14 @@ def cart_sql_operation(connection = None, mode = None, **kwargs):
         cur.execute("DELETE FROM cart WHERE user_id = '{userID}'")
         connection.commit()
     
+# May not be used
 def purchased_sql_operation(connection = None, mode = None, **kwargs):
     """
     Do CRUD operations on the purchased table
     
-    insert keywords: userId, courseId
-    get_purchased_data keywords: userId
-    delete keywords: userId, courseId
+    insert keywords: userID, courseID
+    get_purchased_data keywords: userID
+    delete keywords: userID, courseID
     """
 
     if mode == None:
@@ -389,19 +467,20 @@ def purchased_sql_operation(connection = None, mode = None, **kwargs):
         PRIMARY KEY (user_id, course_id)
     )""")
 
-    userId = kwargs.get("userId")
+    userID = kwargs.get("userID")
 
     if mode == "insert":
-        courseId = kwargs.get("courseId")
-        cur.execute("INSERT INTO purchased VALUES (?, ?)", (userId, courseId))
+        courseID = kwargs.get("courseID")
+        cur.execute("INSERT INTO purchased VALUES (?, ?)", (userID, courseID))
         connection.commit()
 
     elif mode == "get_purchased_courses":
         # List of course IDs in purchased
-        courseId_list = cur.execute(f"SELECT course_id FROM purchased WHERE user_id = '{userId}'").fetchall()
-        return courseId_list
+        courseID_list = cur.execute(f"SELECT course_id FROM purchased WHERE user_id = '{userID}'").fetchall()
+        return courseID_list
 
     elif mode == "delete":
-        courseId = kwargs.get("courseId")
+        courseID = kwargs.get("courseID")
         cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
         connection.commit()
+
