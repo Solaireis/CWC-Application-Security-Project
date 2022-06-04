@@ -271,8 +271,6 @@ def coursePage(courseID):
     #courseName = courses[0][1]
     print(courses)
 
-    
-
     teacherID = courses[1]
     courseName = courses[2]
     courseDescription = courses[3]
