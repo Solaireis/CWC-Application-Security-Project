@@ -70,8 +70,8 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     course_rating_count = 1
 
     date_created = datetime.now().strftime("%Y-%m-%d")
-    video_path = "https://www.youtube.com/watch?v=dQw4w9WgXcQ" # demo, will be changed to a video path
-
+    #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
+    video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
 
