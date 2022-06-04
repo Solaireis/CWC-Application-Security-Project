@@ -274,7 +274,17 @@ def coursePage(courseID):
     
 
     teacherID = courses[1]
+    courseName = courses[2]
+    courseDescription = courses[3]
+    coursePrice = courses[5]
+    courseCategory = courses[6]
+    courseRating = courses[7]
+    courseRatingCount = courses[8]
+    courseDate = courses[9]
+    courseVideoPath = courses[10]
+
     print("course",courses[1])
+
     teacherProfilePath = get_image_path(teacherID)
     teacherUsername = sql_operation(table="user", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
