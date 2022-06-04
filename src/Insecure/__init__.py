@@ -1,7 +1,7 @@
 from click import confirm
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 # from werkzeug.utils import secure_filename
-from os import environ
+# from os import environ
 import os
 from pathlib import Path
 import requests as req
@@ -73,10 +73,10 @@ def home():
     userPurchasedCourses = []
     imageSrcPath = None
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"])
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
+    return render_template("users/general/home.html", accType=userInfo[1], imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
@@ -245,7 +245,7 @@ def changeAccountType():
             print("Not POST request or did not have relevant hidden field.")
             return redirect(url_for("userProfile"))
 
-@app.route('/uploadProfilePic' , methods=["GET","POST"])
+@app.route('/upload_profile_pic' , methods=["GET","POST"])
 def uploadPic():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -268,6 +268,17 @@ def uploadPic():
             sql_operation(table="user", mode="edit", userID=userID, profileImagePath=filepath, newAccType=False)
 
             return redirect(url_for('userProfile'))
+
+@app.route('/create_course', methods=['GET','POST'])
+def createCourse():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo[1]
+        if (request.method == "POST"):
+            #Need remake html and forms.py
+            pass
+        
+        return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath)
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
