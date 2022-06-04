@@ -266,9 +266,9 @@ def teacherPage(teacherID):
 @app.route("/course/<courseID>")
 def coursePage(courseID):
     print(courseID)
-    #courseID = "de129196e57d4149a61175c589f5625d"
+    #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is 
-    #   de129196e57d4149a61175c589f5625d
+    #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     print(courses)
