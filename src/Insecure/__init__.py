@@ -267,10 +267,13 @@ def teacherPage(teacherID):
 def coursePage(courseID):
     print(courseID)
     #courseID = "de129196e57d4149a61175c589f5625d"
+    # the course id is 
+    #   de129196e57d4149a61175c589f5625d
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     print(courses)
 
+    #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
     courseDescription = courses[3]
@@ -284,7 +287,9 @@ def coursePage(courseID):
     print("course",courses[1])
 
     teacherProfilePath = get_image_path(teacherID)
-    teacherUsername = sql_operation(table="user", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID, )
+    print(teacherRecords)
+    teacherName = teacherRecords[2]
 
 
     imageSrcPath = None
@@ -294,7 +299,7 @@ def coursePage(courseID):
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
     return render_template("users/general/course_page.html", accType=session.get("role"),
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, teacherProfilePath=teacherProfilePath \
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
 
