@@ -243,7 +243,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         connection.commit()
 
     elif (mode == "get_course_data"):
-        course_id = kwargs.get("courseId")
+        course_id = kwargs.get("courseID")
         cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
         matched = cur.fetchone()
         if (not matched):

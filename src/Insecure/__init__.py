@@ -265,21 +265,48 @@ def teacherPage(teacherID):
 
 @app.route("/course/<courseID>")
 def coursePage(courseID):
-    courses = sql_operation(table="course", mode="get_course_by_id", courseID=courseID)
+    print(courseID)
+    #courseID = "de129196e57d4149a61175c589f5625d"
+    courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    #courseName = courses[0][1]
+    print(courses)
+
+    
+
+    teacherID = courses[1]
+    print("course",courses[1])
+    teacherProfilePath = get_image_path(teacherID)
+    teacherUsername = sql_operation(table="user", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
+
+
+    imageSrcPath = None
+    userPurchasedCourses = {}
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+
+    return render_template("users/general/course_page.html", accType=session.get("role"),
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, teacherProfilePath=teacherProfilePath)
+
+
+
     # integrated function containing all sql 
     # use course.py represent tuple as an object 
     #retrieve one course id 
     #make it an course object
     # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
-    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courses[1])
-    teacherProfilePath=get_image_path(courses[1])
+    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courseID)
+    teacherProfilePath=get_image_path(courseID)
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
-    else:
-        return render_template("users/general/course_page.html", accType=session.get("role"), courseID = courseID,
-            imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
-            teacherProfilePath=teacherProfilePath,)
+
+    return render_template("users/general/course_page.html", accType=session.get("role"), courseID = courseID,
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
+        teacherProfilePath=teacherProfilePath,)
+
+
+        
 
 @app.route("/cart", methods=["GET", "POST"])
 def cart():
