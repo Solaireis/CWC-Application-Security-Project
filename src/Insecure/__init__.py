@@ -296,7 +296,9 @@ def coursePage(courseID):
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
     return render_template("users/general/course_page.html", accType=session.get("role"),
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, teacherProfilePath=teacherProfilePath)
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, teacherProfilePath=teacherProfilePath \
+        , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
 
 
 
