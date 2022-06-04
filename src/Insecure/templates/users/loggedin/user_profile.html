@@ -9,10 +9,10 @@
 {% from "includes/_formHelper.html" import render_field %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+{% if messages %}
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
             {% for category, message in messages %}
             <div class="modal-header">
                 <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
@@ -25,10 +25,10 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
             </div>
-            </div>
         </div>
     </div>
-    {% endif %}
+</div>
+{% endif %}
 {% endwith %}
 
 <div class="container container_margin">
@@ -82,7 +82,11 @@
                             <div class="mb-9">
                                 <button class="btn btn-primary" id="editProfileButton">Edit Profile Image</button>
                                 <div id="imageForm" style="display: none;">
-                                    <form action="" method="POST" enctype="multipart/form-data" class="dropzone" id="dropper">
+                                    <form action="/uploadProfilePic" method="POST" enctype="multipart/form-data">
+                                        <input type="file" id="myFile" name="profilePic"> 
+                                        <input class="btn btn-primary" id="editProfileButton" type="submit" value="Apply">
+                                    </form>
+                                    <!-- <form action="" method="POST" enctype="multipart/form-data" class="dropzone" id="dropper">
                                         <input type="hidden" name="submittedForm" value="image">
                                         <div class="dz-default dz-message">
                                             <i class="fas fa-cloud-upload-alt upload-icon"></i>
@@ -93,7 +97,7 @@
                                         <button class="" id="remove-pfp" hidden data-dz-remove>Reset</button>
                                     </form>
                                     <label for="submit-button" class="btn btn-success profile-icon float-end" >Upload</label>
-                                    <label for="remove-pfp" class="btn btn-danger profile-icon float-end btn-margin">Cancel</label>
+                                    <label for="remove-pfp" class="btn btn-danger profile-icon float-end btn-margin">Cancel</label> -->
                                 </div>
                             </div>
                         </div>
@@ -101,34 +105,55 @@
                             <div class="table-responsive">
                                 <table class="table margin-top">
                                     <tr>
-                                        <td><h6>Username:</h6></td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueUsername"><a href="javascript:copyToClipBoard('Username')" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUsername" class="profile_copy_text">{{ username }}</a></h6>
+                                            <h6>Username:</h6>
+                                        </td>
+                                        <td>
+                                            <h6 class="margin-btm" id="tooltipValueUsername"><a
+                                                    href="javascript:copyToClipBoard('Username')"
+                                                    onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip"
+                                                    data-bs-placement="top" title="Copy to clipboard"
+                                                    id="tooltipElementUsername" class="profile_copy_text">{{ username
+                                                    }}</a></h6>
                                             <a href="{{ url_for('updateUsername') }}">Change Username</a>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><h6>Email:</h6></td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueEmail"><a href="javascript:copyToClipBoard('Email')" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a></h6>
+                                            <h6>Email:</h6>
+                                        </td>
+                                        <td>
+                                            <h6 class="margin-btm" id="tooltipValueEmail"><a
+                                                    href="javascript:copyToClipBoard('Email')"
+                                                    onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip"
+                                                    data-bs-placement="top" title="Copy to clipboard"
+                                                    id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a>
+                                            </h6>
                                             <a href="{{ url_for('updateEmail') }}">Change Email</a>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><h6>Account Type:</h6></td>
+                                        <td>
+                                            <h6>Account Type:</h6>
+                                        </td>
                                         <td>
                                             <h6 class="margin-btm">{{ accType }}</h6>
                                             {% if accType == "Student" %}
-                                            <span><a href="#" onclick="return false;" data-bs-toggle="modal" data-bs-target="#becomeTeacher">Become a Teacher!</a></span>
+                                            <span><a href="#" onclick="return false;" data-bs-toggle="modal"
+                                                    data-bs-target="#becomeTeacher">Become a Teacher!</a></span>
                                             {% endif %}
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td><h6>Password:</h6></td>
+                                        <td>
+                                            <h6>Password:</h6>
+                                        </td>
                                         <td><a href="/{{ url_for('updatePassword') }}">Change Password</a></td>
                                     </tr>
                                     <tr>
-                                        <td><h6>Two Factor Authentication:</h6></td>
+                                        <td>
+                                            <h6>Two Factor Authentication:</h6>
+                                        </td>
                                         <td>
                                             {% if twoFAEnabled %}
                                             <h6 class="text-success">Enabled</h6>
@@ -190,21 +215,32 @@
                                 </table>
                             </div>
                             {% if accType == "Student" %}
-                            <div class="modal fade" id="becomeTeacher" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="becomeTeacherLabel" aria-hidden="true">
+                            <div class="modal fade" id="becomeTeacher" data-bs-backdrop="static"
+                                data-bs-keyboard="false" tabindex="-1" aria-labelledby="becomeTeacherLabel"
+                                aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title" id="becomeTeacherLabel">Change account type to teacher?</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            <h5 class="modal-title" id="becomeTeacherLabel">Change account type to
+                                                teacher?</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
                                             <p>Are you sure that you would like to become a teacher in CourseFinity?</p>
-                                            <p>If so, please read the <a href="#" target="_blank">Teacher's Handbook</a> and any failure to comply with the rules written in the <a href="#" target="_blank">Teacher's Handbook</a> will result in <span class="text-danger">termination</span> of your account.</p>
-                                            <p class="text-danger">Warning: Changing of account type from teacher to student is not possible. Hence, please consider this opportunity seriously and carefully.</p>
-                                            <p>Otherwise, please click the back button and continue to enjoy learning various skills!</p>
+                                            <p>If so, please read the <a href="#" target="_blank">Teacher's Handbook</a>
+                                                and any failure to comply with the rules written in the <a href="#"
+                                                    target="_blank">Teacher's Handbook</a> will result in <span
+                                                    class="text-danger">termination</span> of your account.</p>
+                                            <p class="text-danger">Warning: Changing of account type from teacher to
+                                                student is not possible. Hence, please consider this opportunity
+                                                seriously and carefully.</p>
+                                            <p>Otherwise, please click the back button and continue to enjoy learning
+                                                various skills!</p>
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Back</button>
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Back</button>
                                             <form action="/change_account_type" method="POST">
                                                 <input type="hidden" name="changeAccountType" value="changeToTeacher">
                                                 <button type="submit" class="btn btn-primary">Become a teacher!</button>
@@ -213,13 +249,17 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="border border-2 alert alert-light alert-dismissible fade show text-dark" role="alert">
+                            <div class="border border-2 alert alert-light alert-dismissible fade show text-dark"
+                                role="alert">
                                 <h4>Did you know?</h4>
                                 <p>If you have a passion for teaching, you can become an educator on CourseFinity!</p>
-                                <p>CourseFinity will only take 25% of your monthly revenue. Additionally, for the first three months, you will earn 100% of your monthly revenue!</p>
+                                <p>CourseFinity will only take 25% of your monthly revenue. Additionally, for the first
+                                    three months, you will earn 100% of your monthly revenue!</p>
                                 <p>Click on the button below or click on "Become a Teacher!" above!</p>
-                                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#becomeTeacher">Change account type</button>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal"
+                                    data-bs-target="#becomeTeacher">Change account type</button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                    aria-label="Close"></button>
                             </div>
                             {% endif %}
                         </div>
@@ -232,16 +272,16 @@
 {% endblock %}
 
 {% block extra_js %}
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <script>
-            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
-            alertModal.show();
-        </script>
-        {% endif %}
-    {% endwith %}
-    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-    <script src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<script>
+    var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+    alertModal.show();
+</script>
+{% endif %}
+{% endwith %}
+<!-- <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script> -->
+<script src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

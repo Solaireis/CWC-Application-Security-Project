@@ -2,6 +2,7 @@ from click import confirm
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 # from werkzeug.utils import secure_filename
 from os import environ
+import os
 from pathlib import Path
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -243,6 +244,30 @@ def changeAccountType():
         else:
             print("Not POST request or did not have relevant hidden field.")
             return redirect(url_for("userProfile"))
+
+@app.route('/uploadProfilePic' , methods=["GET","POST"])
+def uploadPic():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
+
+        if (request.method == "POST"):
+            if "profilePic" not in request.files:
+                print("No File Sent")
+                return redirect(url_for("userProfile"))
+
+            file = request.files['profilePic']
+            filename = file.filename
+            print(f"This is the filename for the inputted file : {filename}")
+
+            filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            print(f"This is the filepath for the inputted file: {filepath}")
+            
+            file.save(os.path.join("src/Insecure/", filepath))
+
+            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=filepath, newAccType=False)
+
+            return redirect(url_for('userProfile'))
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
