@@ -131,11 +131,11 @@
 					<ul class="dropdown-menu shadow">
 						{% if accType == "Teacher" %}
 						<!--li><a href="/teacher_page/{{ teacherUID }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li-->
-						<li><a href="/create_course/{{ teacherUID }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
+						<li><a href="{{ url_for('createCourse') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
 						<li><a href="/purchasehistory/0" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
-						<li><a class="dropdown-item" href="/user_profile"><i class="fas fa-user-edit"></i> Settings</a></li>
+						<li><a class="dropdown-item" href="{{ url_for('userProfile') }}"><i class="fas fa-user-edit"></i> Settings</a></li>
 						<li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>
