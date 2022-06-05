@@ -3,14 +3,15 @@ from datetime import datetime
 from __init__ import app
 from dicebear import DAvatar, DStyle
 from .Course import Course
+from typing import Union
 
-def generate_id():
+def generate_id() -> str:
     """
     Generates a unique ID
     """
     return uuid.uuid4().hex
 
-def get_image_path(userID, returnUserInfo=False):
+def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
     
@@ -29,7 +30,7 @@ def get_image_path(userID, returnUserInfo=False):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
 
-def get_dicebear_image(username):
+def get_dicebear_image(username:str) -> str:
     """
     Returns a random dicebear image from the database
     
@@ -43,7 +44,7 @@ def get_dicebear_image(username):
     )
     return av.url_svg
 
-def sql_operation(table=None, mode=None, **kwargs):
+def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
     Connects to the database and returns the connection object
     
@@ -70,7 +71,7 @@ def sql_operation(table=None, mode=None, **kwargs):
     con.close()
     return returnValue
 
-def user_sql_operation(connection=None, mode=None, **kwargs):
+def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
     
@@ -273,7 +274,7 @@ def user_sql_operation(connection=None, mode=None, **kwargs):
 
 
 # May not be used
-def course_sql_operation(connection=None, mode=None, **kwargs):
+def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
     
@@ -406,7 +407,7 @@ def course_sql_operation(connection=None, mode=None, **kwargs):
         return resultsList
 
 # May not be used
-def cart_sql_operation(connection = None, mode = None, **kwargs):
+def cart_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the cart table
     
@@ -448,7 +449,7 @@ def cart_sql_operation(connection = None, mode = None, **kwargs):
         connection.commit()
     
 # May not be used
-def purchased_sql_operation(connection = None, mode = None, **kwargs):
+def purchased_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
     

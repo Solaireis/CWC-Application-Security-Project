@@ -1,5 +1,5 @@
 class Course:
-    def __init__(self, tupleInfo):
+    def __init__(self, tupleInfo:tuple) -> None:
         """
         Creates a course object in this format, 
         [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
@@ -29,5 +29,5 @@ class Course:
         else:
             self.average_rating = int(round(self.total_rating_score / self.rating_count, 0)) 
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"\n[Course: {self.course_name} | " + f"By: {self.teacher_name} | " + f"Price: ${self.course_price} | " + f"Category: {self.course_category} | " + f"Date Created: {self.course_date_created} | " + f"Rating: {self.average_rating} ]\n"
