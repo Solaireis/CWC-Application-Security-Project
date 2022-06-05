@@ -149,6 +149,16 @@ def logout():
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
+@app.route("/payment-settings")
+def paymentSettings():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    userID = session["user"]
+    userInfo = sql_operation(table="user", mode="get_user_info", userID=userID)
+
+    return render_template("users/admin/payment-settings.html", accType=userInfo[1])
+
 @app.route('/user_profile', methods=["GET","POST"])
 def userProfile():
     if ("user" in session):

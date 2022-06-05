@@ -39,8 +39,13 @@
                 <hr>
                 <ul class="nav nav-pills flex-column mb-auto">
                     <li class="nav-item">
-                        <a href="/user_profile" class="nav-link text-white active-custom">
+                        <a href="{{ url_for('userProfile') }}" class="nav-link text-white active-custom">
                             Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('paymentSettings') }}" class="nav-link text-white active-custom">
+                            Payment Method
                         </a>
                     </li>
                     {# if accType == "Teacher" #}
