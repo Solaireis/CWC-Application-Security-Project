@@ -23,7 +23,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS user (
         card_exp TEXT,
         card_cvv INTEGER,
         cart_courses TEXT NOT NULL,
-        puchased_courses TEXT NOT NULL
+        purchased_courses TEXT NOT NULL
     )""")
 
 res = cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'").fetchall()
@@ -49,7 +49,10 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
     )""")
 
 print(pyFilePath)
-demoCourse = int(input("How many courses would you like to create?: "))
+demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
+while (demoCourse < 10):
+    print("Please enter at least 10.")
+    demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
 
 latestDemoCourse = cur.execute(f"SELECT course_name FROM course WHERE teacher_id='30a749defdd843ecae5da3b26b6d6b9b' ORDER BY ROWID DESC LIMIT 1").fetchall()
 print(latestDemoCourse)
@@ -58,12 +61,15 @@ if (not latestDemoCourse):
 else:
     latestDemoCourse = int(latestDemoCourse[0][0].split(" ")[-1]) + 1
 
+course_id_list = []
+
 for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     course_id = generate_id()
+    course_id_list.append(course_id)
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Demo Course {i}"
     course_description = f"This is a demo course, part {i}!"
-    course_image_path = None
+    course_image_path = "/static/images/courses/placeholder.webp"
     course_price = i * 50.50
     course_category = "Other Academics"
     course_total_rating = randint(0, 5)
@@ -74,6 +80,19 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
     data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
     cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+
+# Add student
+res = cur.execute("SELECT * FROM user WHERE id='76456a9aa7104d7db2c89b24cab697c4'").fetchall()
+if (not res):
+    # add to the sqlite3 database
+    # use first 10 courseIDs as data
+
+    cart_data = f'["{course_id_list[0]}", "{course_id_list[1]}", "{course_id_list[2]}", "{course_id_list[3]}", "{course_id_list[4]}"]'
+    purchased_data = f'["{course_id_list[5]}", "{course_id_list[6]}", "{course_id_list[7]}", "{course_id_list[8]}", "{course_id_list[9]}"]'
+
+    data = ("76456a9aa7104d7db2c89b24cab697c4", "Student", "Chloe", "test@student.com", "456456", None, "2022-06-04", None, None, None, None, cart_data, purchased_data)
+    cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+    con.commit()
 
 con.commit()
 con.close()

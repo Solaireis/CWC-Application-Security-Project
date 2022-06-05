@@ -14,12 +14,12 @@
 
 .card {
     max-width: 80vw;
-    margin: 2.5vw;
+    margin: 2.5em auto;
     margin-top:1vw;
 }
 
 .card:nth-last-of-type(1) {
-    margin-bottom:5vw;
+    margin-bottom:3rem;
 }
 
 .card .row {
@@ -39,7 +39,6 @@
 
 .card-title .fa-times {
     float:right;
-    display:inline-block;
 }
 
 .layer-1, .layer-2 {
@@ -65,7 +64,6 @@
 
 .delete {
     float: right;
-    display: inline-block;
     font-size: 2.4em;
     height: auto;
     position: relative;
@@ -207,7 +205,8 @@
 
 #shopping-title {
     /*Top-Bottom, Left-Right*/
-    margin:2.5em 2.5vw;
+    margin:2.5em auto;
+    max-width: 80vw;
 }
 
 /*Not a shopping card, but a shopping cart.*/
@@ -229,6 +228,15 @@
     cursor:pointer;
 }
 
+#checkout-button {
+    display: block;
+    text-align: center;
+}
+
+#checkout-button button {
+    width: 33%;
+}
+
 /*For payment*/
 #paypal-button-container {
     text-align:center;
@@ -237,7 +245,6 @@
 
 .subtotal {
     text-align:center;
-    margin-top:2em;
 }
 
 #paypal-container {

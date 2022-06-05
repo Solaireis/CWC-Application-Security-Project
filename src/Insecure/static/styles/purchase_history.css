@@ -1,5 +1,6 @@
 h4 {
-  margin-top:50px;
+  margin: 50px auto;
+  opacity: 0.5;
 }
 
 h2{
@@ -11,6 +12,11 @@ h2{
   margin-right:auto;
   margin-bottom:50px;
 }
+
+.card-body:nth-of-type(2n + 1) {
+  height: 72.5%;
+}
+
 .card img{
   margin-top:auto;
   margin-bottom:auto;

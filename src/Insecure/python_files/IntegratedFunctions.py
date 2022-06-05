@@ -158,7 +158,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         cardName = kwargs.get('cardName')
         cardNo = kwargs.get('cardNo')
         cardExp = kwargs.get('cardExp')
-        cardCvv = kwargs.get('cardCVV')
+        cardCvv = kwargs.get('cardCvv')
 
         statement = "UPDATE user SET "
         if (usernameInput is not None):
@@ -198,7 +198,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             statement += "role='Teacher'"
 
         if cardName is not None:
-            statement += f"card_name='{cardName}'card_no='{cardNo}'card_exp='{cardExp}'card_cvv='{cardCvv}'"
+            statement += f"card_name='{cardName}', card_no='{cardNo}', card_exp='{cardExp}', card_cvv='{cardCvv}'"
 
 
         statement += f" WHERE id='{userID}'"

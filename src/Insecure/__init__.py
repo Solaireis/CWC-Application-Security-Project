@@ -367,11 +367,11 @@ def addToCart(courseID):
     else:
         return redirect(url_for("login"))
 
-@app.route("/cart", methods=["GET", "DELETE"])
+@app.route("/shopping_cart", methods=["GET", "POST"])
 def cart():
     if "user" in session:
         
-        if request.method == "DELETE":
+        if request.method == "POST":
             # Remove item from cart
             courseID = request.form.get("courseID")
             sql_operation(table = "user", mode = "remove_from_cart", userID = session["user"], courseID = courseID)
@@ -381,25 +381,28 @@ def cart():
         else:
 
             cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
-            courses = []
+            # print(cartCourseIDs)
+            
+            courseList = []
+            subtotal = 0
 
             for courseID in cartCourseIDs:
                 
                 course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
-                
-                courses.append({'Course ID'           : course[0], 
-                                'Teacher ID'          : course[1],
-                                'Course Name'         : course[2],
-                                'Course Description'  : course[3],
-                                'Course Image Path'   : course[4],
-                                'Course Price'        : course[5],
-                                'Course Total Rating' : course[6],
-                                'Course Rating Count' : course[7],
-                                'Date Created'        : course[8], 
-                                'Video Path'          : course[9]
-                            })
 
-            return render_template("users/student/shopping_cart.html", courses = courses)
+                courseList.append({'courseID' : course[0],
+                                   'courseOwnerLink' : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
+                                   'courseOwnerUsername' : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                                   'courseOwnerImagePath' : get_image_path(course[1]),
+                                   'courseName' : course[2],
+                                   'courseDescription' : course[3],
+                                   'courseThumbnailPath' : course[4],
+                                   'coursePrice' : f"{course[5]:,.2f}",
+                                 })
+
+                subtotal += course[5]
+
+            return render_template("users/loggedin/shopping_cart.html", courseList = courseList, subtotal = f"{subtotal:,.2f}", imageSrcPath = get_image_path(session["user"]))
 
     else:
         return redirect(url_for("login"))
@@ -411,47 +414,75 @@ def checkout():
         if request.method == "POST":
 
             cardNo = request.form.get("cardNo")
-            cardExp = request.form.get("cardExp")
+            cardExp = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
             cardCvv = request.form.get("cardCvv")
             cardName = request.form.get("cardName")
             cardSave = request.form.get("cardSave")
+            print(cardSave)
 
-            if cardSave == True:
-                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExp = cardExp, cardCvv = cardCvv, cardName = cardName)
+            if cardSave != None:
+                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExp = cardExp, cardCvv = cardCvv, cardName = cardName, newAccType = False)
 
             # Make Purchase
-            sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
+            # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
 
             return redirect(url_for("purchaseHistory"))
 
         else:
-            return render_template("users/student/checkout.html")
+
+            userInfo = sql_operation(table = "user", mode = "get_user_data", userID = session["user"])
+
+            cardInfo = {"cardName": "",
+                        "cardNo": "",
+                        "cardExpMonth": "",
+                        "cardExpYear": "",
+                        "cardCvv": ""
+                        }
+
+            if userInfo[7] is not None:
+
+                cardInfo["cardName"] = userInfo[7]
+                cardInfo["cardNo"] = userInfo[8]
+                cardInfo["cardExpMonth"] = int(userInfo[9].split("-")[0])
+                cardInfo["cardExpYear"] = int(userInfo[9].split("-")[1])
+                cardInfo["cardCvv"] = userInfo[10]
+
+            cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
+            cartCount = len(cartCourseIDs)
+
+            subtotal = 0
+
+            for courseID in cartCourseIDs:
+                course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
+                subtotal += course[5]
+
+            currentYear = datetime.today().year
+
+            return render_template("users/loggedin/checkout.html", cartCount = cartCount, subtotal = f"{subtotal:,.2f}", cardInfo = cardInfo, currentYear = currentYear, imageSrcPath = get_image_path(session["user"]))
 
     else:
         return redirect(url_for("login"))
 
-@app.route("/purchase-history")
+@app.route("/purchase_history")
 def purchaseHistory():
     purchasedCourseIDs = sql_operation(table = "user", mode = "get_user_purchases", userID = session["user"])
-    courses = []
+    courseList = []
     
     for courseID in purchasedCourseIDs:
     
         course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
     
-        courses.append({'Course ID'           : course[0], 
-                        'Teacher ID'          : course[1],
-                        'Course Name'         : course[2],
-                        'Course Description'  : course[3],
-                        'Course Image Path'   : course[4],
-                        'Course Price'        : course[5],
-                        'Course Total Rating' : course[6],
-                        'Course Rating Count' : course[7],
-                        'Date Created'        : course[8], 
-                        'Video Path'          : course[9]
-                      })
+        courseList.append({'courseID' : course[0],
+                            'courseOwnerLink' : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
+                            'courseOwnerUsername' : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                            'courseOwnerImagePath' : get_image_path(course[1]),
+                            'courseName' : course[2],
+                            'courseDescription' : course[3],
+                            'courseThumbnailPath' : course[4],
+                            'coursePrice' : f"{course[5]:,.2f}",
+                            })
 
-    return render_template("users/student/purchase_history.html", courses = courses)
+    return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
 
 @app.route("/my-purchase?id=<courseID>")
 def purchaseDetails(courseID):
