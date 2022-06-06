@@ -396,6 +396,16 @@ def coursePage(courseID):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
         teacherProfilePath=teacherProfilePath,)
 
+@app.route("/course-review/<courseID>")
+def courseReview(courseID):
+    imageSrcPath = None
+    userPurchasedCourses = {}
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+
+    return render_template("users/general/course_review.html", accType=session.get("role"),
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
 
         
 
