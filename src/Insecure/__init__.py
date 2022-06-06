@@ -288,7 +288,12 @@ def createCourse():
         accType = userInfo[1]
         courseForm = CreateCourse(request.form)
         if (request.method == "POST"):
-            #Need remake html and forms.py
+            courseTitle = courseForm.courseTitle.data
+            courseDescription = courseForm.courseDescription.data
+            courseTagInput = request.form.get("courseTag")
+            courseTypeInput = request.form.get("courseType")
+            coursePrice = courseForm.coursePrice.data
+
             pass
         
         else:
