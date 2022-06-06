@@ -534,9 +534,10 @@ def purchaseHistory():
 
     return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
 
-@app.route("/my-purchase?id=<courseID>")
+@app.route("/purchase-view/<courseID>")
 def purchaseDetails(courseID):
-    return "purchase details: " + courseID
+
+    return render_template("users/loggedin/purchase_view.html", courseID = courseID)
 
 @app.route('/search', methods=["GET","POST"])
 def search():
