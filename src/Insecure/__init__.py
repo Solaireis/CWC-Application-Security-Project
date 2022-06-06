@@ -540,11 +540,12 @@ def purchaseDetails(courseID):
 
 @app.route('/search', methods=["GET","POST"])
 def search():
-    if ("user" in session):
-        imageSrcPath = get_image_path(session["user"]) 
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"]) 
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 @app.route('/admin-profile', methods=["GET","POST"])
 def adminProfile():
