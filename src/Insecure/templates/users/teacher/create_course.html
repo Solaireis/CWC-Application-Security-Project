@@ -105,7 +105,7 @@
                     <!-- Radio buttons for video or zoom lesson-->
                     <div class="col-md-12 text-white">
                         <!-- <div class="form-check form-check-inline">
-                            {{ render_field(form.courseType, class="form-control", id="radioBtnVideo") }}
+                            {# render_field(form.courseType, class="form-control", id="radioBtnVideo") #}
                         </div> -->
 
                         <div class="form-check form-check-inline">
@@ -120,6 +120,10 @@
                                 Zoom Lessons
                             </label>
                         </div>
+                    </div>
+
+                    <div class="col-12 text-white">
+                        {{ render_field(form.courseVideoPath, class="form-control", placeholder="Enter an Unlisted Youtube Link") }}
                     </div>
                     
                     <!-- coursePrice -->

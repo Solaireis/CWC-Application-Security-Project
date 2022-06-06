@@ -277,7 +277,7 @@ def uploadPic():
             file.save(Path("src/Insecure/").joinpath(filepath))
             # file.save(os.path.join("src/Insecure/", filepath))
 
-            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=filepath, newAccType=False)
+            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
             return redirect(url_for('userProfile'))
 
@@ -285,17 +285,36 @@ def uploadPic():
 def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
         accType = userInfo[1]
         courseForm = CreateCourse(request.form)
         if (request.method == "POST"):
             courseTitle = courseForm.courseTitle.data
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
-            courseTypeInput = request.form.get("courseType")
-            coursePrice = courseForm.coursePrice.data
+            courseVideoPath = courseForm.courseVideoPath.data
+            #Course Video Path takes links right now, never fix for uploading video
 
-            pass
-        
+            # courseTypeInput = request.form.get("courseType")
+            coursePrice = float(courseForm.coursePrice.data)
+            if "courseThumbnail" not in request.files:
+                print("No file sent.")
+                return redirect(url_for("createCourse"))
+
+            file = request.files.get("courseThumbnail")
+            filename = file.filename
+
+            print(f"This is the filename for the inputted file : {filename}")
+
+            filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
+            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            print(f"This is the filepath for the inputted file: {filepath}")
+            
+            file.save(Path("src/Insecure/").joinpath(filepath))
+
+            sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseVideoPath)
+
+            return redirect(url_for('home'))
         else:
             return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
 

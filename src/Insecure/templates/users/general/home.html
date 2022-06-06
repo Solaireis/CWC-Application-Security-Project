@@ -32,7 +32,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/courses/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title">{{ course.course_name }}</h4>
