@@ -149,15 +149,32 @@ def logout():
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
-@app.route("/payment-settings")
+@app.route("/payment-settings", methods=["GET", "POST"])
 def paymentSettings():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    userID = session["user"]
-    userInfo = sql_operation(table="user", mode="get_user_info", userID=userID)
+    paymentForm = CreateAddPaymentForm(request.form)
 
-    return render_template("users/admin/payment-settings.html", accType=userInfo[1])
+    # GET method codes below
+    if (request.method == "GET"):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+
+        return render_template("users/loggedin/payment_settings.html", form=paymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath)
+
+    # POST method codes below
+    if (paymentForm.validate()):
+        # POST request code below
+        cardNumberInput = paymentForm.cardNo.data
+        cardNameInput = paymentForm.cardName.data
+        cardExpiryInput = paymentForm.cardExpiry.data
+        cardCVVInput = paymentForm.cardCVV.data
+
+        sql_operation(table="user", mode="edit", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        return redirect(url_for("paymentSettings"))
+
+    # invalid form inputs
+    return redirect(url_for("paymentSettings"))
 
 @app.route('/user_profile', methods=["GET","POST"])
 def userProfile():
@@ -179,18 +196,19 @@ def updateUsername():
         create_update_username_form = CreateChangeUsername(request.form)
         if (request.method == "POST") and (create_update_username_form.validate()):
             updatedUsername = create_update_username_form.updateUsername.data
-        
+
             changed = sql_operation(table="user", mode="edit", userID=userID, username=updatedUsername)
 
             if (not changed):
                 flash("Sorry, Username has already been taken!")
                 return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
-            
+
             else:
                 return redirect(url_for("userProfile"))
-        
         else:
             return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+
+    return "hello world!"
 
 @app.route('/change_email', methods=['GET','POST'])
 def updateEmail():
@@ -208,11 +226,11 @@ def updateEmail():
             if (not changed):
                 flash("Sorry, Email is been used by another user!")
                 return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
-            
+
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
                 return redirect(url_for("userProfile"))
-        
+
         else:
             return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
 

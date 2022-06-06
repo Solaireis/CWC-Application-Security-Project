@@ -7,6 +7,12 @@ from wtforms.widgets import Select as BaseSelectWidget
 # Research note for email length:
 # https://stackoverflow.com/questions/386294/whatisthemaximumlengthofavalidemailaddress
 
+class CreateAddPaymentForm(Form):
+    cardName = StringField("Card Name:", [validators.Length(min=1, max=50), validators.DataRequired()])
+    cardNo = StringField("Card Number:", [validators.Length(min=14, max=19), validators.DataRequired()])
+    cardExpiry = StringField("Expiry Date:", [validators.Length(min=4, max=7), validators.DataRequired()])
+    cardCVV = StringField("CVV:", [validators.Length(min=3, max=4), validators.DataRequired()])
+
 class CreateLoginForm(Form):
     email = StringField("Email:", [validators.Length(min=3, max=254), validators.DataRequired()])
     password = PasswordField("Password:", [validators.DataRequired()])

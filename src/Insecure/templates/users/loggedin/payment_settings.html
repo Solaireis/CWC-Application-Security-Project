@@ -2,10 +2,9 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/checkout.css') }}">
 {% endblock %}
 
-{% block title %}Add Cashout Preference | CourseFinity{% endblock %}
+{% block title %}Payment Settings | CourseFinity{% endblock %}
 
 {% block content %}
 {% from "includes/_formHelper.html" import render_field %}
@@ -27,13 +26,6 @@
                             Payment Method
                         </a>
                     </li>
-                    <!-- {# if accType == "Teacher" #}
-                    <li class="nav-item">
-                        <a href="/teacher_cashout" class="nav-link text-white">
-                          Cash Out
-                        </a>
-                    </li>
-                    {# endif #} -->
                 </ul>
             </div>
         </div>
@@ -55,18 +47,15 @@
                                     <div class="col">
                                         {{ render_field(form.cardName, class="form-control", placeholder="John Doe") }}
                                     </div>
-                                    <div class="col">
+                                    <div class="col margin-top margin-top2">
                                         {{ render_field(form.cardNo, class="form-control", placeholder="4111111111111111") }}
-                                        {% if cardValid == False %}<div class="text-danger"><h6><strong>Invalid Card Number</strong></h6></div>{% endif %}
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6 margin-top margin-top2">
                                             {{ render_field(form.cardExpiry, class="form-control", placeholder="04/22 or 4/2022") }}
-                                            {% if cardExpiryValid == False %}<div class="text-danger"><h6><strong>Invalid Card Expiry Date</strong></h6></div>{% endif %}
                                         </div>
                                         <div class="col-md-6 margin-top margin-top2">
                                             {{ render_field(form.cardCVV, class="form-control", placeholder="123") }}
-                                            {% if cardCVVValid == False %}<div class="text-danger"><h6><strong>Invalid CVV</strong></h6></div>{% endif %}
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-success margin-top margin-top2 float-end">Save</button>

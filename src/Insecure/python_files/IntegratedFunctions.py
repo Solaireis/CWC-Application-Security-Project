@@ -97,7 +97,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         profile_image TEXT, 
         date_joined DATE NOT NULL,
         card_name TEXT,
-        card_no INTEGER UNIQUE,
+        card_no INTEGER, -- May not be unique since one might have alt accounts.
         card_exp TEXT,
         card_cvv INTEGER,
         cart_courses TEXT NOT NULL,
@@ -153,12 +153,12 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         oldPasswordInput = kwargs.get("oldPassword")
         passwordInput = kwargs.get("password")
         profileImagePath = kwargs.get("profileImagePath")
-        newAccType = kwargs.get("newAccType")
+        newAccType = kwargs.get("newAccType") # pass in a boolean to indicate whether to update to Teacher
 
         cardName = kwargs.get('cardName')
         cardNo = kwargs.get('cardNo')
-        cardExp = kwargs.get('cardExp')
-        cardCvv = kwargs.get('cardCvv')
+        cardExp = kwargs.get("cardExpiry")
+        cardCvv = kwargs.get("cardCVV")
 
         statement = "UPDATE user SET "
         if (usernameInput is not None):
@@ -166,7 +166,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             cur.execute(duplicates)
             matched = cur.fetchone()
             if (not matched):
-                statement += f"username='{usernameInput}'"
+                statement += f"username='{usernameInput}' "
             else:
                 return False
 
@@ -175,7 +175,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             cur.execute(duplicates)
             matched = cur.fetchone()
             if (not matched):
-                statement += f"email='{emailInput}'"
+                statement += f"email='{emailInput}' "
             else:
                 return False
 
@@ -185,23 +185,22 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             userPassword = cur.fetchone()[0]
             if (userPassword == oldPasswordInput):
                 if (userPassword != passwordInput):
-                    statement += f"password='{passwordInput}'"
+                    statement += f"password='{passwordInput}' "
                 else:
                     return "Cannot Reuse previous password!"
             else:
                 return "Password does not match previous password!"
 
         if (profileImagePath is not None):
-            statement += f"profile_image='{profileImagePath}'"
+            statement += f"profile_image='{profileImagePath}' "
 
-        if (newAccType is not False):
-            statement += "role='Teacher'"
+        if (newAccType is not None):
+            statement += "role='Teacher' "
 
-        if cardName is not None:
-            statement += f"card_name='{cardName}', card_no='{cardNo}', card_exp='{cardExp}', card_cvv='{cardCvv}'"
+        if (cardName is not None):
+            statement += f"card_name='{cardName}', card_no='{cardNo}', card_exp='{cardExp}', card_cvv='{cardCvv}' "
 
-
-        statement += f" WHERE id='{userID}'"
+        statement += f"WHERE id='{userID}'"
         print(statement)
         cur.execute(statement)
         connection.commit()
