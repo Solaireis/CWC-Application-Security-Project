@@ -76,7 +76,7 @@ def home():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/home.html", accType=userInfo[1], imageSrcPath=imageSrcPath,   
+    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
@@ -148,6 +148,16 @@ def logout():
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
+
+@app.route("/payment-settings")
+def paymentSettings():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    userID = session["user"]
+    userInfo = sql_operation(table="user", mode="get_user_info", userID=userID)
+
+    return render_template("users/admin/payment-settings.html", accType=userInfo[1])
 
 @app.route('/user_profile', methods=["GET","POST"])
 def userProfile():
@@ -260,12 +270,14 @@ def uploadPic():
             filename = file.filename
             print(f"This is the filename for the inputted file : {filename}")
 
-            filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            filepath = Path(app.config["PROFILE_UPLOAD_PATH"]).joinpath(filename)
+            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
             print(f"This is the filepath for the inputted file: {filepath}")
             
-            file.save(os.path.join("src/Insecure/", filepath))
+            file.save(Path("src/Insecure/").joinpath(filepath))
+            # file.save(os.path.join("src/Insecure/", filepath))
 
-            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=filepath, newAccType=False)
+            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
             return redirect(url_for('userProfile'))
 
@@ -273,12 +285,40 @@ def uploadPic():
 def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userID = userInfo[0]
         accType = userInfo[1]
+        courseForm = CreateCourse(request.form)
         if (request.method == "POST"):
-            #Need remake html and forms.py
-            pass
-        
-        return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath)
+            courseTitle = courseForm.courseTitle.data
+            courseDescription = courseForm.courseDescription.data
+            courseTagInput = request.form.get("courseTag")
+            courseVideoPath = courseForm.courseVideoPath.data
+            #Course Video Path takes links right now, never fix for uploading video
+
+            # courseTypeInput = request.form.get("courseType")
+            coursePrice = float(courseForm.coursePrice.data)
+            if "courseThumbnail" not in request.files:
+                print("No file sent.")
+                return redirect(url_for("createCourse"))
+
+            file = request.files.get("courseThumbnail")
+            filename = file.filename
+
+            print(f"This is the filename for the inputted file : {filename}")
+
+            filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
+            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            print(f"This is the filepath for the inputted file: {filepath}")
+            
+            file.save(Path("src/Insecure/").joinpath(filepath))
+
+            # imageResized, webpFilePath = resize_image(newFilePath, (1920, 1080))
+
+            sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseVideoPath)
+
+            return redirect(url_for('home'))
+        else:
+            return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):

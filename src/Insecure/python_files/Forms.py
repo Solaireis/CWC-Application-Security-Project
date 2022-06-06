@@ -1,7 +1,7 @@
 import json
 
 from wtforms import Form, validators, ValidationError, StringField, RadioField, SelectField, TextAreaField, EmailField, DateField, TimeField, HiddenField, FormField, IntegerField, PasswordField, BooleanField, FileField
-
+from wtforms.widgets import Select as BaseSelectWidget
 """WTForms by Jason"""
 
 # Research note for email length:
@@ -371,5 +371,9 @@ class CreateCourse(Form):
     courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1)])
     #thumbnail use HTML to validate size, type
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
+    courseVideoPath = StringField("Link to Video (Unlisted): ", [validators.DataRequired(), validators.Length(min=3, max=100)])
+    # courseType = RadioField('', choices=[('video','Video Lessons')])
+    #wtforms does not support opt groups, probs have a way but i quite braindead
+    # courseTag = SelectField("Choose Your Course Category! ", [validators.DataRequired()])
     
 """End of WTForms by Clarence"""
