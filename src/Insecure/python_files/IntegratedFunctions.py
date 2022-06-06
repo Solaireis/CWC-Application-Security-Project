@@ -197,7 +197,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         if (newAccType is not None):
             statement += "role='Teacher' "
 
-        if (cardName is not None):
+        if (cardName is not "" or cardName is not None):
             statement += f"card_name='{cardName}', card_no='{cardNo}', card_exp='{cardExp}', card_cvv='{cardCvv}' "
 
         statement += f"WHERE id='{userID}'"
@@ -269,8 +269,34 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         # Empty cart
         cur.execute(f"UPDATE user SET cart_courses='[]' WHERE id='{userID}'")
 
-        connection.commit()      
+        connection.commit()
 
+    elif (mode == "check_card_if_exist"):
+        userID = kwargs.get("userID")
+        getCardInfo = kwargs.get("getCardInfo")
+
+        cur.execute(f"SELECT card_name, card_no, card_exp, card_cvv FROM user WHERE id='{userID}'")
+        cardInfo = cur.fetchone()
+        if (cardInfo is None):
+            return False
+
+        if (cardInfo[0] is None or cardInfo[1] is None or cardInfo[2] is None or cardInfo[3] is None):
+            return False
+
+        if (not getCardInfo):
+            return True
+        return (cardInfo, True)
+
+    elif (mode == "delete_card"):
+        userID = kwargs.get("userID")
+        cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL, card_cvv=NULL WHERE id='{userID}'")
+        connection.commit()
+    elif (mode == "update_card"):
+        userID = kwargs.get("userID")
+        cardExp = kwargs.get("cardExpiry")
+        cardCvv = kwargs.get("cardCVV")
+        cur.execute(f"UPDATE user SET card_exp='{cardExp}', card_cvv='{cardCvv}' WHERE id='{userID}'")
+        connection.commit()
 
 # May not be used
 def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:

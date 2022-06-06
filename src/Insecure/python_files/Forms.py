@@ -13,6 +13,12 @@ class CreateAddPaymentForm(Form):
     cardExpiry = StringField("Expiry Date:", [validators.Length(min=4, max=7), validators.DataRequired()])
     cardCVV = StringField("CVV:", [validators.Length(min=3, max=4), validators.DataRequired()])
 
+class CreateEditPaymentForm(Form):
+    cardName = StringField("None") # placeholder, won't display on the page
+    cardNo = StringField("None") # placeholder, won't display on the page
+    cardExpiry = StringField("Expiry Date:", [validators.Length(min=4, max=7), validators.DataRequired()])
+    cardCVV = StringField("CVV:", [validators.Length(min=3, max=4), validators.DataRequired()])
+
 class CreateLoginForm(Form):
     email = StringField("Email:", [validators.Length(min=3, max=254), validators.DataRequired()])
     password = PasswordField("Password:", [validators.DataRequired()])

@@ -9,6 +9,26 @@
 {% block content %}
 {% from "includes/_formHelper.html" import render_field %}
 
+<div class="modal fade" id="deleteCardModal" tabindex="-1" aria-labelledby="deleteCardConfirmation" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCardConfirmation">Delete Card Info?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Are you sure that you want to delete your card info?</h6>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <form action="{{ url_for('deletePayment') }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container container_margin">
     <div class="row">
         <div class="col-lg-3 merge-boxes">
@@ -33,6 +53,7 @@
             <div id="right-user">
                 <div class="container">
                     <div class="row">
+                        {% if not cardExists %}
                         <div class="card">
                             <h4 class="card-title margin-top">Add Payment Method</h4>
                             <div class="card-body">
@@ -61,6 +82,30 @@
                                     <button type="submit" class="btn btn-success margin-top margin-top2 float-end">Save</button>
                                 </form>
                             </div>
+                        </div>
+                        {% else %}
+                        <div class="table-responsive-lg cc-table">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td colspan="2">
+                                        <span class="float-end"><a href="{{ url_for('editPayment') }}">Edit</a></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        {{ cardName }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span class="float-start">Expiry Date: {{ cardExpiry }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="float-end"><button class="btn btn-danger delete_button" data-bs-toggle="modal" data-bs-target="#deleteCardModal">Delete Card</button></span>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
