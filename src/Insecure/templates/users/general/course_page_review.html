@@ -1,0 +1,25 @@
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+{% endblock %}
+
+<div class="container-lg">
+    <div class="row">
+        
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="">{{ teacherName }}</a></li>
+                <li class="breadcrumb-item active"><a href="">All Courses</a></li>
+                <li class="breadcrumb-item active" aria-current="page"> {{ courseName }}</li>
+            </ol>
+        </nav>
+        
+    </div>
+</div>
