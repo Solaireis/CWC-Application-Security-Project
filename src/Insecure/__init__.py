@@ -482,14 +482,16 @@ def checkout():
         if request.method == "POST":
 
             cardNo = request.form.get("cardNo")
-            cardExp = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
-            cardCvv = request.form.get("cardCvv")
+            cardExpiry = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
+            cardCVV = request.form.get("cardCVV")
             cardName = request.form.get("cardName")
             cardSave = request.form.get("cardSave")
+
+
             print(cardSave)
 
             if cardSave != None:
-                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExp = cardExp, cardCvv = cardCvv, cardName = cardName, newAccType = False)
+                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExpiry = cardExpiry, cardCVV = cardCVV, cardName = cardName)
 
             # Make Purchase
             # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
@@ -504,7 +506,7 @@ def checkout():
                         "cardNo": "",
                         "cardExpMonth": "",
                         "cardExpYear": "",
-                        "cardCvv": ""
+                        "cardCVV": ""
                         }
 
             if userInfo[7] is not None:
@@ -513,7 +515,7 @@ def checkout():
                 cardInfo["cardNo"] = userInfo[8]
                 cardInfo["cardExpMonth"] = int(userInfo[9].split("-")[0])
                 cardInfo["cardExpYear"] = int(userInfo[9].split("-")[1])
-                cardInfo["cardCvv"] = userInfo[10]
+                cardInfo["cardCVV"] = userInfo[10]
 
             cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
             cartCount = len(cartCourseIDs)
@@ -587,6 +589,10 @@ def adminProfile():
 @app.route("/admin-dashboard", methods=["GET","POST"])
 def adminDashboard():
     pass
+
+@app.route("/teapot")
+def teapot():
+    abort(418)
 
 """Custom Error Pages"""
 
