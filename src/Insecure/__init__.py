@@ -312,6 +312,8 @@ def createCourse():
             
             file.save(Path("src/Insecure/").joinpath(filepath))
 
+            # imageResized, webpFilePath = resize_image(newFilePath, (1920, 1080))
+
             sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseVideoPath)
 
             return redirect(url_for('home'))
