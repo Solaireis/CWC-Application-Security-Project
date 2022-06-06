@@ -414,6 +414,16 @@ def coursePage(courseID):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
         teacherProfilePath=teacherProfilePath,)
 
+@app.route("/course-review/<courseID>")
+def courseReview(courseID):
+    imageSrcPath = None
+    userPurchasedCourses = {}
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"])
+        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+
+    return render_template("users/general/course_review.html", accType=session.get("role"),
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
 
         
 
@@ -542,17 +552,19 @@ def purchaseHistory():
 
     return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
 
-@app.route("/my-purchase?id=<courseID>")
+@app.route("/purchase-view/<courseID>")
 def purchaseDetails(courseID):
-    return "purchase details: " + courseID
+
+    return render_template("users/loggedin/purchase_view.html", courseID = courseID)
 
 @app.route('/search', methods=["GET","POST"])
 def search():
-    if ("user" in session):
-        imageSrcPath = get_image_path(session["user"]) 
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"]) 
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 @app.route('/admin-profile', methods=["GET","POST"])
 def adminProfile():
