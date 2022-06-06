@@ -76,7 +76,7 @@ def home():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/home.html", accType=userInfo[1], imageSrcPath=imageSrcPath,   
+    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
@@ -270,10 +270,12 @@ def uploadPic():
             filename = file.filename
             print(f"This is the filename for the inputted file : {filename}")
 
-            filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            filepath = Path(app.config["PROFILE_UPLOAD_PATH"]).joinpath(filename)
+            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
             print(f"This is the filepath for the inputted file: {filepath}")
             
-            file.save(os.path.join("src/Insecure/", filepath))
+            file.save(Path("src/Insecure/").joinpath(filepath))
+            # file.save(os.path.join("src/Insecure/", filepath))
 
             sql_operation(table="user", mode="edit", userID=userID, profileImagePath=filepath, newAccType=False)
 
@@ -284,11 +286,13 @@ def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         accType = userInfo[1]
+        courseForm = CreateCourse(request.form)
         if (request.method == "POST"):
             #Need remake html and forms.py
             pass
         
-        return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath)
+        else:
+            return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
