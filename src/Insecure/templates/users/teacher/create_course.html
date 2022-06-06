@@ -50,8 +50,8 @@
                         <div class="col-12 text-white">
                             <div class="mb-5 col-6 gx-5">
                                 <br>
-                                <label for="formFile" class="form-label">Upload Zoom Lesson Thumbnail Here!</label>
-                                <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" id="formFile" type='file' onchange="readURL(this);" />
+                                <label for="formFile" class="form-label">Upload Lesson Thumbnail Here!</label>
+                                <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" required id="formFile" type='file' onchange="readURL(this);" />
                                 <br>
                                 <div class="card" style="width:180px;">
                                     <img id="thumbnail"
@@ -102,6 +102,7 @@
                         </select>
                     </div>
                     
+
                     <!-- Radio buttons for video or zoom lesson-->
                     <div class="col-md-12 text-white">
                         <!-- <div class="form-check form-check-inline">
@@ -114,18 +115,21 @@
                                 Video Lessons
                             </label>
                         </div>
-                        <div class="form-check form-check-inline">
+                        <!-- <div class="form-check form-check-inline">
                             <input name="courseType" class="form-check-input" type="radio" id="radioBtnZoom" value="Zoom" required>
                             <label class="form-check-label" for="radioBtnZoom">
                                 Zoom Lessons
                             </label>
-                        </div>
+                        </div> -->
                     </div>
 
+
                     <div class="col-12 text-white">
-                        {{ render_field(form.courseVideoPath, class="form-control", placeholder="Enter an Unlisted Youtube Link") }}
+                        <label for="formVideo" class="form-label">Upload Lesson Video Here!</label>
+                        <input accept=".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv" name="courseVideo" class="form-control" id="formVideo" type='file' />
                     </div>
-                    
+
+
                     <!-- coursePrice -->
                     <div class="col-md-12 text-white">
                         {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}

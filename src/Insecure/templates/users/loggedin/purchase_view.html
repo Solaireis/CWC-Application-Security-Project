@@ -47,11 +47,6 @@
                 <h5 class="card-text">Time: {{ courseInformation["Time"] }}</h5>
                 <h5 class="card-text">Order ID: {{ courseInformation["OrderID"] }}</h5>
                 <h5 class="card-text">Paypal ID: {{ courseInformation["PaypalID"] }}</h5>
-                {% if courseInformation["CourseTypeCheck"] == "Video" %}
-                <h5 class="card-text">Lesson Type: Video Recording</h5>
-                {% elif courseInformation["CourseTypeCheck"] == "Zoom" %}
-                <h5 class="card-text">Lesson Type: Zoom</h5>
-                {% endif %}
             </div>
         </div>
     </div>
