@@ -135,8 +135,8 @@
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
 						<li><a href="/purchase_history" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
-						<li><a class="dropdown-item" href="/user_profile"><i class="fas fa-user-edit"></i> Settings</a></li>
-						<li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+						<li><a class="dropdown-item" href="{{ url_for('userProfile') }}"><i class="fas fa-user-edit"></i> Settings</a></li>
+						<li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>
 

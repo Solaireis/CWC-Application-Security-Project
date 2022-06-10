@@ -69,7 +69,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Demo Course {i}"
     course_description = f"This is a demo course, part {i}!"
-    course_image_path = "/static/images/courses/placeholder.webp"
+    course_image_path = None
     course_price = i * 50.50
     course_category = "Other Academics"
     course_total_rating = randint(0, 5)

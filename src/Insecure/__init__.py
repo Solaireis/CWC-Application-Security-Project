@@ -149,15 +149,85 @@ def logout():
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
-@app.route("/payment-settings")
+@app.route("/payment-settings", methods=["GET", "POST"])
 def paymentSettings():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    userID = session["user"]
-    userInfo = sql_operation(table="user", mode="get_user_info", userID=userID)
+    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
+    print(cardExists)
+    paymentForm = CreateAddPaymentForm(request.form)
 
-    return render_template("users/admin/payment-settings.html", accType=userInfo[1])
+    # GET method codes below
+    if (request.method == "GET"):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        
+        cardName = cardNumber = cardExpiry = cardCVV = None
+        if (cardExists):
+            cardInfo = cardExists[0]
+            cardName = cardInfo[0]
+            cardNumber = cardInfo[1]
+            cardExpiry = cardInfo[2]
+            cardCVV = cardInfo[3]
+
+        return render_template("users/loggedin/payment_settings.html", form=paymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry, cardCVV=cardCVV)
+
+    # POST method codes below
+    if (paymentForm.validate() and not cardExists):
+        # POST request code below
+        cardNumberInput = paymentForm.cardNo.data
+        cardNameInput = paymentForm.cardName.data
+        cardExpiryInput = paymentForm.cardExpiry.data
+        cardCVVInput = paymentForm.cardCVV.data
+
+        sql_operation(table="user", mode="edit", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        return redirect(url_for("paymentSettings"))
+
+    # invalid form inputs or already has a card
+    return redirect(url_for("paymentSettings"))
+
+@app.post("/delete-payment")
+def deletePayment():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"])
+    if (not cardExists):
+        return redirect(url_for("paymentSettings"))
+
+    sql_operation(table="user", mode="delete_card", userID=session["user"])
+    return redirect(url_for("paymentSettings"))
+
+@app.route("/edit-payment", methods=["GET", "POST"])
+def editPayment():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
+    if (not cardExists):
+        return redirect(url_for("paymentSettings"))
+
+    editPaymentForm = CreateEditPaymentForm(request.form)
+
+    if (request.method == "GET"):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        cardInfo = cardExists[0]
+        cardName = cardInfo[0]
+        cardExpiry = cardInfo[2]
+        cardCVV = cardInfo[3]
+
+        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry, cardCVV=cardCVV)
+
+    if (editPaymentForm.validate()):
+        # POST request code below
+        cardExpiryInput = editPaymentForm.cardExpiry.data
+        cardCVVInput = editPaymentForm.cardCVV.data
+
+        sql_operation(table="user", mode="update_card", userID=session["user"], cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        return redirect(url_for("paymentSettings"))
+
+    # invalid form inputs
+    return redirect(url_for("paymentSettings"))
 
 @app.route('/user_profile', methods=["GET","POST"])
 def userProfile():
@@ -179,18 +249,19 @@ def updateUsername():
         create_update_username_form = CreateChangeUsername(request.form)
         if (request.method == "POST") and (create_update_username_form.validate()):
             updatedUsername = create_update_username_form.updateUsername.data
-        
+
             changed = sql_operation(table="user", mode="edit", userID=userID, username=updatedUsername)
 
             if (not changed):
                 flash("Sorry, Username has already been taken!")
                 return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
-            
+
             else:
                 return redirect(url_for("userProfile"))
-        
         else:
             return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+
+    return "hello world!"
 
 @app.route('/change_email', methods=['GET','POST'])
 def updateEmail():
@@ -208,11 +279,11 @@ def updateEmail():
             if (not changed):
                 flash("Sorry, Email is been used by another user!")
                 return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
-            
+
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
                 return redirect(url_for("userProfile"))
-        
+
         else:
             return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
 
@@ -292,14 +363,7 @@ def createCourse():
             courseTitle = courseForm.courseTitle.data
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
-            courseVideoPath = courseForm.courseVideoPath.data
-            #Course Video Path takes links right now, never fix for uploading video
-
-            # courseTypeInput = request.form.get("courseType")
             coursePrice = float(courseForm.coursePrice.data)
-            if "courseThumbnail" not in request.files:
-                print("No file sent.")
-                return redirect(url_for("createCourse"))
 
             file = request.files.get("courseThumbnail")
             filename = file.filename
@@ -312,9 +376,22 @@ def createCourse():
             
             file.save(Path("src/Insecure/").joinpath(filepath))
 
+            if (request.files['courseVideo'].filename == ''):
+                flash("Please Upload a Video Or Link")
+                return redirect(url_for("createCourse"))
+
+
+            file = request.files.get("courseVideo")
+            filename = file.filename
+            filepath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(filename)
+            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            print(f"This is the filepath for the inputted file: {filepath}")
+
+            file.save(Path("src/Insecure/").joinpath(filepath))
+
             # imageResized, webpFilePath = resize_image(newFilePath, (1920, 1080))
 
-            sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseVideoPath)
+            sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=filename)
 
             return redirect(url_for('home'))
         else:
@@ -491,14 +568,16 @@ def checkout():
         if request.method == "POST":
 
             cardNo = request.form.get("cardNo")
-            cardExp = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
-            cardCvv = request.form.get("cardCvv")
+            cardExpiry = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
+            cardCVV = request.form.get("cardCVV")
             cardName = request.form.get("cardName")
             cardSave = request.form.get("cardSave")
+
+
             print(cardSave)
 
             if cardSave != None:
-                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExp = cardExp, cardCvv = cardCvv, cardName = cardName, newAccType = False)
+                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExpiry = cardExpiry, cardCVV = cardCVV, cardName = cardName)
 
             # Make Purchase
             # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
@@ -513,7 +592,7 @@ def checkout():
                         "cardNo": "",
                         "cardExpMonth": "",
                         "cardExpYear": "",
-                        "cardCvv": ""
+                        "cardCVV": ""
                         }
 
             if userInfo[7] is not None:
@@ -522,7 +601,7 @@ def checkout():
                 cardInfo["cardNo"] = userInfo[8]
                 cardInfo["cardExpMonth"] = int(userInfo[9].split("-")[0])
                 cardInfo["cardExpYear"] = int(userInfo[9].split("-")[1])
-                cardInfo["cardCvv"] = userInfo[10]
+                cardInfo["cardCVV"] = userInfo[10]
 
             cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
             cartCount = len(cartCourseIDs)
@@ -561,17 +640,19 @@ def purchaseHistory():
 
     return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
 
-@app.route("/my-purchase?id=<courseID>")
+@app.route("/purchase-view/<courseID>")
 def purchaseDetails(courseID):
-    return "purchase details: " + courseID
+
+    return render_template("users/loggedin/purchase_view.html", courseID = courseID)
 
 @app.route('/search', methods=["GET","POST"])
 def search():
-    if ("user" in session):
-        imageSrcPath = get_image_path(session["user"]) 
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    if ("user" in session):
+        imageSrcPath = get_image_path(session["user"]) 
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 @app.route('/admin-profile', methods=["GET","POST"])
 def adminProfile():
@@ -594,6 +675,10 @@ def adminProfile():
 @app.route("/admin-dashboard", methods=["GET","POST"])
 def adminDashboard():
     pass
+
+@app.route("/teapot")
+def teapot():
+    abort(418)
 
 """Custom Error Pages"""
 
