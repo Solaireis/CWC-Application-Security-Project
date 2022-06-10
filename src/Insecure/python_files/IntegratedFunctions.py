@@ -321,8 +321,10 @@ def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kw
 
     elif (mode == "get_course_data"):
         course_id = kwargs.get("courseID")
+        print(course_id)
         cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
         matched = cur.fetchone()
+        print(matched)
         if (not matched):
             return False
         return matched
@@ -484,4 +486,39 @@ def purchased_sql_operation(connection:sqlite3.Connection=None, mode:str=None, *
         courseID = kwargs.get("courseID")
         cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
         connection.commit()
+
+def review_sql_operation(connection:sqlite3.Connection=None, mode: str=None, **kwargs) -> Union[list, None]:
+    """
+    Do CRUD operations on the purchased table
+
+    revieve keywords: userID, courseID, 
+    insert keywords: userID, courseID, courseRating, CourseReview
+    
+    """
+    if mode == None:
+        raise ValueError("You must specify a mode in the review_sql_operation function!")
+    
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS review (
+        user_id TEXT,
+        course_id TEXT,
+        course_rating INTEGER,
+        course_review TEXT,
+        
+        PRIMARY KEY (user_id, course_id)
+    )""")
+
+    userID = kwargs.get("userID")
+    courseID = kwargs.get("courseID")
+
+    if mode == "retrieve":
+        review_list = cur.execute(f"SELECT course_rating, course_review FROM review WHERE user_id = '{userID}' AND course_id = '{courseID}'").fetchall()
+        return review_list
+    
+    if mode == "insert":
+        courseRating = kwargs.get("courseRating")
+        courseReview = kwargs.get("courseReview")
+        cur.execute("INSERT INTO review VALUES (?, ?, ?, ?)", (userID, courseID, courseRating, courseReview))
+        connection.commit()
+
 

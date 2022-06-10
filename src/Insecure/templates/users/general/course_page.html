@@ -10,65 +10,70 @@
 <div class="container-lg">
     <div class="row">
         
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="">{{ teacherName }}</a></li>
-            <li class="breadcrumb-item active"><a href="">All Courses</a></li>
-            <li class="breadcrumb-item active" aria-current="page"> {{ courseName }}</li>
-        </ol>
-    </nav>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="">{{ teacherName }}</a></li>
+                <li class="breadcrumb-item active"><a href="">All Courses</a></li>
+                <li class="breadcrumb-item active" aria-current="page"> {{ courseName }}</li>
+            </ol>
+        </nav>
 
-    <div class="table-responsive-lg">
-        <table class="table table-borderless">
-            <tr></tr>
-        </table>
+        <div class="table-responsive-lg">
+            <table class="table table-borderless">
+                <tr></tr>
+            </table>
+        </div>
     </div>
-
-    <div class="container-lg">
-        <div class="row">
+</div>
+<div class="container-lg">
+    <!-- 
+    <div class="row">
             <iframe width="1200" height="600" frameborder="0" src="{{ courseVideoPath }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen   >
             </iframe>
-        </div>
     </div>
-
-    <div class="container-lg">
-        <div class="row">
-            <div class="col-lg-12">
-                <h1>{{ courseName }}</h1>
-
-            </div>
-        </div>
-    
-    <div class="accordion accordion-flush" id="accordionFlushExample">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="flush-headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-                <h4>Description</h4>
-            </button>
-            </h2>
-        <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-            <div class="accordion-body"> 
-                <p>Course Type: <span>{{ courseCategory }}</span></p>
-                <p>Uploaded by: <span>{{ teacherName }}</span></p>
-                <p>Date Published: {{courseDate}}</p>
-                <p> Course Rating: {{courseRating}} / 5 </p>
-                <p> Rating Counts: {{courseRatingCount}} </p>
-                <hr> <!-- Not sure why hr doesnt appear-->
-                <hr>
-                <p>Description</p>
-                <p>{{ courseDescription }}</p>
-                
-
-                
-
-            </div>
-        </div>
-    </div>
-    </div>
-    </div>
-
-
+    -->
 </div>
+
+<div class="container-lg">
+    <div class="row">
+        <div class="col-lg-8">
+            <h1>{{ courseName }}</h1>
+            <hr>
+            <p>Description</p>
+            <p>{{ courseDescription }}</p>
+            <h3>Course Structure</h3>
+            <p>Insert Courses</p>
+        </div>
+        <div class="col-lg-4">
+            <div class="accordion accordion-flush" id="accordionFlushExample">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+                        <h4>Description</h4>
+                        </button>
+                        </h2>
+                    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
+                        <div class="accordion-body"> 
+                            <p>Course Type: <span>{{ courseCategory }}</span></p>
+                            <p>Uploaded by: <span>{{ teacherName }}</span></p>
+                            <p>Date Published: {{courseDate}}</p>
+                            <p>Course Rating: {{courseRating}} / 5 </p>
+                            <p>Rating Counts: {{courseRatingCount}} </p>
+                            <p>Course Price: ${{coursePrice}}</p>
+                            <hr>
+                            <p>Description</p>
+                            <p>{{ courseDescription }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            
+        </div>
+    </div> 
+</div>
+
     
 {% endblock %}
 

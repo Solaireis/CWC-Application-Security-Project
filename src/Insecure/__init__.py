@@ -348,7 +348,8 @@ def coursePage(courseID):
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     print(courses)
-
+    if courses == False: #raise exception
+        abort(404)
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
@@ -380,33 +381,59 @@ def coursePage(courseID):
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
 
 
-
-    # integrated function containing all sql 
-    # use course.py represent tuple as an object 
-    #retrieve one course id 
-    #make it an course object
-    # SELECT  course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course where course_id='123123123'
-    teacherUsername = sql_operation(table="course", mode="get_teacher_username", teacherID=courseID)
-    teacherProfilePath=get_image_path(courseID)
+@app.route("/course-review/<courseID>")
+def courseReview(courseID):
+    imageSrcPath = None
+    userPurchasedCourses = {}
+    courses = sql_operation(table="course", mode="", courseID=courseID)
+    
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/course_page.html", accType=session.get("role"), courseID = courseID,
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
-        teacherProfilePath=teacherProfilePath,)
+    return render_template("users/general/course_page_review.html", accType=session.get("role"),
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
 
-@app.route("/course-review/<courseID>")
-def courseReview(courseID):
+@app.route("/purchase-view/<courseID>")
+def purchaseView(courseID):
+    print(courseID)
+    #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
+    # the course id is 
+    #   a78da127690d40d4bebaf5d9c45a09a8
+    courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    #courseName = courses[0][1]
+    if courses == False: #raise 404 error
+        abort(404)
+
+    #create variable to store these values
+    teacherID = courses[1]
+    courseName = courses[2]
+    courseDescription = courses[3]
+    coursePrice = courses[5]
+    courseCategory = courses[6]
+    courseRating = courses[7]
+    courseRatingCount = courses[8]
+    courseDate = courses[9]
+    courseVideoPath = courses[10]
+
+    print("course",courses[1])
+
+    teacherProfilePath = get_image_path(teacherID)
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID, )
+    print(teacherRecords)
+    teacherName = teacherRecords[2]
+
+
     imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/course_review.html", accType=session.get("role"),
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
-
+    return render_template("users/general/purchase_view.html", accType=session.get("role"),
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
+        , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
         
 
 @app.post("/add_to_cart/<courseID>")
