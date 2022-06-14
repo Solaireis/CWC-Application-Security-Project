@@ -65,6 +65,21 @@ def before_request():
         # if admin session is invalid as the admin does not exist anymore
         session.clear()
 
+@app.after_request # called after each request to the application
+def add_header(response):
+    """
+    Add headers to cache the rendered page for 10 minutes.
+    
+    Note that max-age is for the browser, s-maxage is for the CDN.
+    It will be useful when the flask web app is deployed to a server.
+    This helps to reduce loads on the flask webapp such that the server can handle more requests
+    as it doesn't have to render the page again for each request to the application.
+    """
+    # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
+    # will be uncommented when the web app is ready to be hosted on firebase.
+    # response.headers["Cache-Control"] = "public, max-age=600, s-maxage=600"
+    return response
+
 @app.route("/")
 def home():
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
@@ -229,7 +244,7 @@ def editPayment():
     # invalid form inputs
     return redirect(url_for("paymentSettings"))
 
-@app.route('/user_profile', methods=["GET","POST"])
+@app.route("/user_profile", methods=["GET","POST"])
 def userProfile():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -240,7 +255,7 @@ def userProfile():
 
         return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
 
-@app.route('/change_username', methods=['GET','POST'])
+@app.route("/change_username", methods=["GET","POST"])
 def updateUsername():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -254,16 +269,16 @@ def updateUsername():
 
             if (not changed):
                 flash("Sorry, Username has already been taken!")
-                return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
 
             else:
                 return redirect(url_for("userProfile"))
         else:
-            return render_template('users/loggedin/change_username.html', form=create_update_username_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
 
     return "hello world!"
 
-@app.route('/change_email', methods=['GET','POST'])
+@app.route("/change_email", methods=["GET","POST"])
 def updateEmail():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -278,16 +293,16 @@ def updateEmail():
 
             if (not changed):
                 flash("Sorry, Email is been used by another user!")
-                return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
 
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
                 return redirect(url_for("userProfile"))
 
         else:
-            return render_template('users/loggedin/change_email.html', form=create_update_email_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
 
-@app.route('/change_password', methods=['GET','POST'])
+@app.route("/change_password", methods=["GET","POST"])
 def updatePassword():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -301,20 +316,20 @@ def updatePassword():
 
             if (updatedPassword != confirmPassword):
                 flash("Passwords Do Not Match")
-                return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
             else:
                 changed = sql_operation(table="user", mode="edit", userID=userID, password=updatedPassword, oldPassword=currentPassword)
 
                 if (changed):
                     flash(changed)
-                    return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
+                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
                 else:
                     return redirect(url_for("userProfile"))
         
         else:
-            return render_template('users/loggedin/change_password.html', form=create_update_password_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
 
-@app.route('/change_account_type', methods=['GET','POST'])
+@app.route("/change_account_type", methods=["GET","POST"])
 def changeAccountType():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -326,7 +341,7 @@ def changeAccountType():
             print("Not POST request or did not have relevant hidden field.")
             return redirect(url_for("userProfile"))
 
-@app.route('/upload_profile_pic' , methods=["GET","POST"])
+@app.route("/upload_profile_pic" , methods=["GET","POST"])
 def uploadPic():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -337,12 +352,12 @@ def uploadPic():
                 print("No File Sent")
                 return redirect(url_for("userProfile"))
 
-            file = request.files['profilePic']
+            file = request.files["profilePic"]
             filename = file.filename
             print(f"This is the filename for the inputted file : {filename}")
 
             filepath = Path(app.config["PROFILE_UPLOAD_PATH"]).joinpath(filename)
-            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
             print(f"This is the filepath for the inputted file: {filepath}")
             
             file.save(Path("src/Insecure/").joinpath(filepath))
@@ -350,9 +365,9 @@ def uploadPic():
 
             sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
-            return redirect(url_for('userProfile'))
+            return redirect(url_for("userProfile"))
 
-@app.route('/create_course', methods=['GET','POST'])
+@app.route("/create_course", methods=["GET","POST"])
 def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -371,12 +386,12 @@ def createCourse():
             print(f"This is the filename for the inputted file : {filename}")
 
             filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
             print(f"This is the filepath for the inputted file: {filepath}")
             
             file.save(Path("src/Insecure/").joinpath(filepath))
 
-            if (request.files['courseVideo'].filename == ''):
+            if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video Or Link")
                 return redirect(url_for("createCourse"))
 
@@ -384,7 +399,7 @@ def createCourse():
             file = request.files.get("courseVideo")
             filename = file.filename
             filepath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(filename)
-            # filepath = os.path.join(app.config['PROFILE_UPLOAD_PATH'], filename)
+            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
             print(f"This is the filepath for the inputted file: {filepath}")
 
             file.save(Path("src/Insecure/").joinpath(filepath))
@@ -393,7 +408,7 @@ def createCourse():
 
             sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=filename)
 
-            return redirect(url_for('home'))
+            return redirect(url_for("home"))
         else:
             return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
 
@@ -544,14 +559,14 @@ def cart():
                 
                 course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
 
-                courseList.append({'courseID' : course[0],
-                                   'courseOwnerLink' : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
-                                   'courseOwnerUsername' : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
-                                   'courseOwnerImagePath' : get_image_path(course[1]),
-                                   'courseName' : course[2],
-                                   'courseDescription' : course[3],
-                                   'courseThumbnailPath' : course[4],
-                                   'coursePrice' : f"{course[5]:,.2f}",
+                courseList.append({"courseID" : course[0],
+                                   "courseOwnerLink" : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
+                                   "courseOwnerUsername" : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                                   "courseOwnerImagePath" : get_image_path(course[1]),
+                                   "courseName" : course[2],
+                                   "courseDescription" : course[3],
+                                   "courseThumbnailPath" : course[4],
+                                   "coursePrice" : f"{course[5]:,.2f}",
                                  })
 
                 subtotal += course[5]
@@ -628,14 +643,14 @@ def purchaseHistory():
     
         course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
     
-        courseList.append({'courseID' : course[0],
-                            'courseOwnerLink' : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
-                            'courseOwnerUsername' : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
-                            'courseOwnerImagePath' : get_image_path(course[1]),
-                            'courseName' : course[2],
-                            'courseDescription' : course[3],
-                            'courseThumbnailPath' : course[4],
-                            'coursePrice' : f"{course[5]:,.2f}",
+        courseList.append({"courseID" : course[0],
+                            "courseOwnerLink" : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
+                            "courseOwnerUsername" : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                            "courseOwnerImagePath" : get_image_path(course[1]),
+                            "courseName" : course[2],
+                            "courseDescription" : course[3],
+                            "courseThumbnailPath" : course[4],
+                            "coursePrice" : f"{course[5]:,.2f}",
                             })
 
     return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
@@ -645,7 +660,7 @@ def purchaseDetails(courseID):
 
     return render_template("users/loggedin/purchase_view.html", courseID = courseID)
 
-@app.route('/search', methods=["GET","POST"])
+@app.route("/search", methods=["GET","POST"])
 def search():
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
@@ -654,7 +669,7 @@ def search():
         return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
-@app.route('/admin-profile', methods=["GET","POST"])
+@app.route("/admin-profile", methods=["GET","POST"])
 def adminProfile():
     if ("admin" in session):
         imageSrcPath, userInfo = get_image_path(session["admin"], returnUserInfo=True)
@@ -744,5 +759,5 @@ def error503(e):
 
 """End of Custom Error Pages"""
 
-if __name__ == '__main__':
+if (__name__ == "__main__"):
     app.run(debug=True)
