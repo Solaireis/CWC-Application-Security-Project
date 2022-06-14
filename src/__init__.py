@@ -1,37 +1,24 @@
-from click import confirm
+# import third party libraries
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
-# from werkzeug.utils import secure_filename
-# from os import environ
-import os
-from pathlib import Path
+from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
-from datetime import datetime
+
 # from python_files import Student, Teacher, Forms, Course
 from python_files.IntegratedFunctions import *
 from python_files.Forms import *
 
-"""
-
-Task Allocation:
-Jason - Payment Setting
-Calvin - User Profile, course video upload, search for courses
-Eden - Admin Profile, Review feature, Course Page (overview of the course details with a review section at the bottom)
-Wei Ren - Shopping Cart, checkout, purchase history
-
-Done alr
-- Home
-- Login
-- Sign up
-- Teacher Page (Same as home page, can copy the html code from the home.html)
-
-"""
+# import python standard libraries
+import secrets
+from datetime import datetime
+from pathlib import Path
 
 """Web app configurations"""
+
 # general Flask configurations
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "a secret key"
+app.config["SECRET_KEY"] = secrets.token_hex(32) # 32 bytes/256 bits
 scheduler = BackgroundScheduler()
 
 # Maximum file size for uploading anything to the web app's server

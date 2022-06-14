@@ -1,9 +1,76 @@
+# import python standard libraries
 import uuid, sqlite3, json
 from datetime import datetime
-from __init__ import app
-from dicebear import DAvatar, DStyle
-from .Course import Course
 from typing import Union
+from base64 import urlsafe_b64encode
+
+# import third party libraries
+from dicebear import DAvatar, DStyle
+
+# import local python files
+from .Course import Course
+from .Google import google_init, SCOPES, TOKEN_PATH
+
+# For Gmail API (Third-party libraries)
+from email.mime.text import MIMEText
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google.oauth2.credentials import Credentials
+
+# import Flask web application configs
+from __init__ import app
+
+google_init() # ensure that there is token.json for gmail API
+
+def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", messageText:str="") -> dict:
+    """
+    Create a message for an email.
+    
+    Args:
+    - sender: Email address of the sender.
+    - to: Email address of the receiver.
+    - subject: The subject of the email message.
+    - messageText: The text of the email message. (Can be HTML)
+
+    Returns:
+    A dictionary containing a base64url encoded email object.
+    """
+    message = MIMEText(messageText, "html")
+    message["To"] = to
+    message["From"] = sender
+    message["Subject"] = subject
+    return {"raw": urlsafe_b64encode(message.as_string().encode()).decode()}
+
+def send_email(to:str="", subject:str="", messageText:str="") -> Union[dict, None]:
+    """
+    Create and send an email message.
+    
+    Args:
+    - to: Email address of the receiver.
+    - subject: The subject of the email message.
+    - messageText: The text of the email message. (Can be HTML)
+    
+    Returns: 
+    Message object, including message id or None if there was an error.
+    """
+    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+
+    sentMessage = None
+    try:
+        # Create an authorized Gmail API service instance.
+        service = build("gmail", "v1", credentials=creds)
+
+        # creates a message object and sets the sender, recipient, and subject.
+        message = create_message(to=to, subject=subject, messageText=messageText)
+
+        # send the message
+        sentMessage = (service.users().messages().send(userId="me", body=message).execute())
+        print(f"Email sent!")
+    except HttpError as e:
+        print("Failed to send email...")
+        print(f"Error:\n{e}\n")
+
+    return sentMessage
 
 def generate_id() -> str:
     """
@@ -155,8 +222,8 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         profileImagePath = kwargs.get("profileImagePath")
         newAccType = kwargs.get("newAccType") # pass in a boolean to indicate whether to update to Teacher
 
-        cardName = kwargs.get('cardName')
-        cardNo = kwargs.get('cardNo')
+        cardName = kwargs.get("cardName")
+        cardNo = kwargs.get("cardNo")
         cardExp = kwargs.get("cardExpiry")
         cardCvv = kwargs.get("cardCVV")
 
@@ -197,7 +264,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         if (newAccType is not None):
             statement += "role='Teacher' "
 
-        if (cardName is not "" or cardName is not None):
+        if (cardName is not None):
             statement += f"card_name='{cardName}', card_no='{cardNo}', card_exp='{cardExp}', card_cvv='{cardCvv}' "
 
         statement += f"WHERE id='{userID}'"
@@ -545,5 +612,3 @@ def review_sql_operation(connection:sqlite3.Connection=None, mode: str=None, **k
         courseReview = kwargs.get("courseReview")
         cur.execute("INSERT INTO review VALUES (?, ?, ?, ?)", (userID, courseID, courseRating, courseReview))
         connection.commit()
-
-
