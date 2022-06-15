@@ -79,7 +79,13 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
             with open(BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
             blacklist = txtFile.split("\n")
-            date = datetime.strptime(blacklist[0], DATE_FORMAT)
+
+            try:
+                date = datetime.strptime(blacklist[0], DATE_FORMAT)
+            except (ValueError):
+                BLACKLIST_FILEPATH.unlink()
+                return get_IP_address_blacklist()
+
             if (date >= lastUpdated):
                 print("\nIP Address Blacklist is up to date!")
                 print("Successfully loaded IP Address Blacklist from the saved file.\n")
@@ -97,7 +103,15 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
         if (BLACKLIST_FILEPATH.exists()):
             with open(BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
-                blacklist = txtFile.split("\n")
+            blacklist = txtFile.split("\n")
+
+            # try to parse the date from the first line
+            try:
+                datetime.strptime(blacklist[0], DATE_FORMAT)
+            except (ValueError):
+                BLACKLIST_FILEPATH.unlink()
+                return get_IP_address_blacklist(checkForUpdates=False)
+
             print("\nIP Address Blacklist loaded from the saved file.\n")
             return tuple(blacklist[1:])
         else:
