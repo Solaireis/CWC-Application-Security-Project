@@ -212,15 +212,14 @@ def paymentSettings():
     if (request.method == "GET"):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         
-        cardName = cardNumber = cardExpiry = cardCVV = None
+        cardName = cardNumber = cardExpiry = None
         if (cardExists):
             cardInfo = cardExists[0]
             cardName = cardInfo[0]
             cardNumber = cardInfo[1]
             cardExpiry = cardInfo[2]
-            cardCVV = cardInfo[3]
 
-        return render_template("users/loggedin/payment_settings.html", form=paymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry, cardCVV=cardCVV)
+        return render_template("users/loggedin/payment_settings.html", form=paymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry)
 
     # POST method codes below
     if (paymentForm.validate() and not cardExists):
@@ -228,9 +227,8 @@ def paymentSettings():
         cardNumberInput = paymentForm.cardNo.data
         cardNameInput = paymentForm.cardName.data
         cardExpiryInput = paymentForm.cardExpiry.data
-        cardCVVInput = paymentForm.cardCVV.data
 
-        sql_operation(table="user", mode="add_card", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        sql_operation(table="user", mode="add_card", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput)
         return redirect(url_for("paymentSettings"))
 
     # invalid form inputs or already has a card
@@ -264,16 +262,14 @@ def editPayment():
         cardInfo = cardExists[0]
         cardName = cardInfo[0]
         cardExpiry = cardInfo[2]
-        cardCVV = cardInfo[3]
 
-        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry, cardCVV=cardCVV)
+        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry)
 
     if (editPaymentForm.validate()):
         # POST request code below
         cardExpiryInput = editPaymentForm.cardExpiry.data
-        cardCVVInput = editPaymentForm.cardCVV.data
 
-        sql_operation(table="user", mode="update_card", userID=session["user"], cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        sql_operation(table="user", mode="update_card", userID=session["user"], cardExpiry=cardExpiryInput)
         return redirect(url_for("paymentSettings"))
 
     # invalid form inputs

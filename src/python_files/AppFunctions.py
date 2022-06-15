@@ -118,7 +118,6 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         card_name TEXT,
         card_no INTEGER, -- May not be unique since one might have alt accounts.
         card_exp TEXT,
-        card_cvv INTEGER,
         cart_courses TEXT NOT NULL,
         purchased_courses TEXT NOT NULL
     )""")
@@ -135,7 +134,6 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         usernameInput = kwargs.get("username")
 
         emailDupe = bool(cur.execute(f"SELECT * FROM user WHERE email='{emailInput}'").fetchone())
-
         usernameDupes = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchone())
 
         if (emailDupe or usernameDupes):
@@ -144,8 +142,8 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         # add to the sqlite3 database
         userID = generate_id()
         passwordInput = kwargs.get("password")
-        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), None, None, None, None, "[]", "[]")
-        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), None, None, None, "[]", "[]")
+        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
         connection.commit()
         return userID
 
@@ -177,7 +175,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
         reusedUsername = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchone())
-        
+
         if (reusedUsername):
             connection.close()
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
@@ -231,7 +229,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         userID = kwargs.get("userID")
         getCardInfo = kwargs.get("getCardInfo")
 
-        cur.execute(f"SELECT card_name, card_no, card_exp, card_cvv FROM user WHERE id='{userID}'")
+        cur.execute(f"SELECT card_name, card_no, card_exp FROM user WHERE id='{userID}'")
         cardInfo = cur.fetchone()
         if (cardInfo is None):
             connection.close()
@@ -241,7 +239,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             if (info is None):
                 # if any information is missing which should not be possible, 
                 # the card will then be considered to not exist and will reset the card info to Null
-                cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL, card_cvv=NULL WHERE id='{userID}'")
+                cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id='{userID}'")
                 connection.commit()
                 raise CardDoesNotExistError("Credit card is missing some information!")
 
@@ -253,21 +251,20 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         cardName = kwargs.get("cardName")
         cardNo = kwargs.get("cardNo")
         cardExp = kwargs.get("cardExpiry")
-        cardCvv = kwargs.get("cardCVV")
 
-        cur.execute(f"UPDATE user SET card_name='{cardName}', card_no={cardNo}, card_exp='{cardExp}', card_cvv={cardCvv} WHERE id='{userID}'")
+        cur.execute(f"UPDATE user SET card_name='{cardName}', card_no={cardNo}, card_exp='{cardExp}' WHERE id='{userID}'")
         connection.commit()
 
     elif (mode == "delete_card"):
         userID = kwargs.get("userID")
-        cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL, card_cvv=NULL WHERE id='{userID}'")
+        cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id='{userID}'")
         connection.commit()
 
     elif (mode == "update_card"):
         userID = kwargs.get("userID")
         cardExp = kwargs.get("cardExpiry")
         cardCvv = kwargs.get("cardCVV")
-        cur.execute(f"UPDATE user SET card_exp='{cardExp}', card_cvv='{cardCvv}' WHERE id='{userID}'")
+        cur.execute(f"UPDATE user SET card_exp='{cardExp}' WHERE id='{userID}'")
         connection.commit()
 
     elif (mode == "delete_user"):
