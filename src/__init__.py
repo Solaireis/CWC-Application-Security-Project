@@ -650,21 +650,46 @@ def checkout():
         if request.method == "POST":
 
             cardNo = request.form.get("cardNo")
-            cardExpiry = f"{request.form.get('cardExpMonth')}-{request.form.get('cardExpYear')}"
+            cardExpiryMonth  = request.form.get('cardExpMonth')
+            cardExpiryYear = request.form.get('cardExpYear')
             cardCVV = request.form.get("cardCVV")
             cardName = request.form.get("cardName")
             cardSave = request.form.get("cardSave")
+            print(cardCVV)
 
+            cardErrors = []
 
-            print(cardSave)
+            if cardNo == "":
+                cardErrors.append('cardNo')
+            if cardExpiryMonth == "":
+                cardErrors.append('cardExpiryMonth')
+            if cardExpiryYear == "":
+                cardErrors.append('cardExpiryYear')
+            if cardCVV == "":
+                cardErrors.append('cardCVV')
+            if cardName == "":
+                cardErrors.append('cardName')
 
-            if cardSave != None:
-                sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExpiry = cardExpiry, cardCVV = cardCVV, cardName = cardName)
+            session['cardErrors'] = cardErrors
 
-            # Make Purchase
-            # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
+            cardExpiry = f"{cardExpiryMonth}-{cardExpiryYear}"
 
-            return redirect(url_for("purchaseHistory"))
+            print(cardExpiryMonth)
+            print(cardExpiryYear)
+
+            # Errors, try again.
+            if cardErrors != []:
+                return redirect(url_for("checkout"))
+
+            else:
+
+                if cardSave != None:
+                    sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExpiry = cardExpiry, cardCVV = cardCVV, cardName = cardName)
+
+                # Make Purchase
+                # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
+
+                return redirect(url_for("purchaseHistory"))
 
         else:
 
@@ -696,7 +721,14 @@ def checkout():
 
             currentYear = datetime.today().year
 
-            return render_template("users/loggedin/checkout.html", cartCount = cartCount, subtotal = f"{subtotal:,.2f}", cardInfo = cardInfo, currentYear = currentYear, imageSrcPath = get_image_path(session["user"]))
+            if 'cardErrors' not in session:
+                cardErrors = []
+            else:
+                cardErrors = session['cardErrors']
+
+            print(cardErrors)
+
+            return render_template("users/loggedin/checkout.html", cardErrors = cardErrors , cartCount = cartCount, subtotal = f"{subtotal:,.2f}", cardInfo = cardInfo, currentYear = currentYear, imageSrcPath = get_image_path(session["user"]))
 
     else:
         return redirect(url_for("login"))
