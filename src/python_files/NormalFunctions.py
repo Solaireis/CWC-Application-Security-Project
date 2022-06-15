@@ -75,6 +75,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
         lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S")
         lastUpdated += timedelta(hours=6) # update the datetime to utc+8 from utc+2
 
+        action = 0 # 1 for update, 0 for creating a new file
         if (BLACKLIST_FILEPATH.exists()):
             with open(BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
@@ -90,13 +91,17 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
                 print("\nIP Address Blacklist is up to date!")
                 print("Successfully loaded IP Address Blacklist from the saved file.\n")
                 return tuple(blacklist[1:]) # return the blacklist if it is up to date
+            else:
+                print("\nIP Address Blacklist is outdated!", end="")
+                action = 1
 
+        print("\nLoading IP Address Blacklist from the github repo...")
         blacklist = tuple([ip.split("\t")[0] for ip in results if (not ip.startswith("#"))])
 
         with open(BLACKLIST_FILEPATH, "w") as f:
             f.write(lastUpdated.strftime(DATE_FORMAT) + "\n")
             f.write("\n".join(blacklist))
-        print("\nIP Address Blacklist, blacklist.txt, created/updated and loaded!\n")
+        print(f"IP Address Blacklist, blacklist.txt, {'created' if (action == 0) else 'updated'} and loaded!\n")
 
         return blacklist
     else:
