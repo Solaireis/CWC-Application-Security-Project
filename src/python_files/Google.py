@@ -12,11 +12,17 @@ CREDENTIALS_PATH = PARENT_FOLDER_PATH.joinpath("credentials.json")
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.send"]
 
-def google_init():
+def google_init(quiet:bool=False):
     """
     Initialise Google API by trying to authenticate with token.json
     On success, will not ask for credentials again.
     Otherwise, will ask to authenticate with Google.
+    
+    Args:
+        - quiet: If True, will not print any messages.
+
+    Returns:
+        - Google API resource object if successful, None otherwise.
     """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
@@ -45,13 +51,17 @@ def google_init():
 
         if (labels is None): # should have labels
             # if there are no labels, then something might have went wrong
-            print("Something went wrong!")
+            if (not quiet):
+                print("Something went wrong!")
             return
-        print("\nStatus OK! token.json is valid.", end="\n\n")
-        return True
+
+        if (not quiet):
+            print("\nStatus OK! token.json is valid.", end="\n\n")
+        return service
     except HttpError as error:
-        print(f"\nAn error has occurred:\n{error}")
-        print()
+        if (not quiet):
+            print(f"\nAn error has occurred:\n{error}")
+            print()
 
 if (__name__ == "__main__"):
     google_init()

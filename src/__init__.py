@@ -15,7 +15,6 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.Google import google_init
 
 # import python standard libraries
 import secrets
@@ -55,13 +54,14 @@ app.config["DATABASE_FOLDER"] = app.root_path + r"\databases"
 # SQL database file path
 app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 
-# get ip address blacklist from a github repo or the saved file
-app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
-
 """End of Web app configurations"""
 
 @app.before_request # called before each request to the application.
 def before_request():
+    if (app.config.get("IP_ADDRESS_BLACKLIST") is None):
+        # get ip address blacklist from a github repo or the saved file
+        app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
     elif ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
@@ -831,9 +831,4 @@ def error503(e):
 """End of Custom Error Pages"""
 
 if (__name__ == "__main__"):
-    googleAPIOk = google_init() # ensure that there is token.json for gmail API
-    if (not googleAPIOk):
-        print("Flask will be running but Google Gmail API will not be available.")
-        print("Sending of emails will not be possible and there might be some runtime errors.")
-
     app.run(debug=True)

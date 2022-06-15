@@ -15,20 +15,23 @@ from hashlib import sha1
 
 # import local python files
 from .Errors import *
-from .Google import SCOPES, TOKEN_PATH, PARENT_FOLDER_PATH
+from .Google import PARENT_FOLDER_PATH, google_init
 
 # import third party libraries
 import requests as req
 
 # For Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from google.oauth2.credentials import Credentials
 
-# define constants
+"""------------------------------ Define Constants ------------------------------"""
+
+# for comparing the date on the github repo
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 BLACKLIST_FILEPATH = PARENT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+
+# Create an authorized Gmail API service instance.
+GOOGLE_SERVICE = google_init(quiet=True)
 
 # password regex follows OWASP's recommendations
 # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -43,6 +46,8 @@ PASSWORD_REGEX = re.compile(r"""
 {10,}                                                               # at least 10 characters long  
 $                                                                   # end of password
 """, re.VERBOSE)
+
+"""------------------------------ End of Defining Constants ------------------------------"""
 
 def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
     """
@@ -119,30 +124,27 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     message["Subject"] = subject
     return {"raw": urlsafe_b64encode(message.as_string().encode()).decode()}
 
-def send_email(to:str="", subject:str="", messageText:str="") -> Union[dict, None]:
+def send_email(to:str="", subject:str="", body:str="") -> Union[dict, None]:
     """
     Create and send an email message.
     
     Args:
     - to: Email address of the receiver.
     - subject: The subject of the email message.
-    - messageText: The text of the email message. (Can be HTML)
+    - body: The text of the email message. (Can be HTML)
     
     Returns: 
     Message object, including message id or None if there was an error.
     """
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    # creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
 
     sentMessage = None
     try:
-        # Create an authorized Gmail API service instance.
-        service = build("gmail", "v1", credentials=creds)
-
         # creates a message object and sets the sender, recipient, and subject.
-        message = create_message(to=to, subject=subject, messageText=messageText)
+        message = create_message(to=to, subject=subject, messageText=body)
 
         # send the message
-        sentMessage = (service.users().messages().send(userId="me", body=message).execute())
+        sentMessage = (GOOGLE_SERVICE.users().messages().send(userId="me", body=message).execute())
         print(f"Email sent!")
     except HttpError as e:
         print("Failed to send email...")
