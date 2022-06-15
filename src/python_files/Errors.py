@@ -67,12 +67,6 @@ class CardDoesNotExistError(Exception):
     Raised if the user tries to do CRUD operations on their credit card but their credit card does not exist.
     """
 
-class HaveibeenpwnedRequestError(Exception):
-    """
-    Raised if the user tries to check their password against the HaveIBeenPwned database but the request
-    to the API failed (status code is not 200 or 429).
-    """
-
 class IsAlreadyTeacherError(Exception):
     """
     Raised if the user tries to become a teacher even though they are already a teacher.

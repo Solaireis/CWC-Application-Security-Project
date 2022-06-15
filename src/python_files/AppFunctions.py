@@ -20,7 +20,7 @@ from argon2.exceptions import VerifyMismatchError
 # import local python files
 from .Course import Course
 from .Errors import *
-from .NormalFunctions import generate_id, pwd_has_been_pwned
+from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
 
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
@@ -209,17 +209,17 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         try:
             # check if the supplied old password matches the current password
             if (PH().verify(currentPasswordHash, oldPasswordInput)):
-                if (len(passwordInput) < 8):
+                if (len(passwordInput) < 10):
                     connection.close()
-                    raise PwdTooShortError("The password must be at least 8 characters long!")
+                    raise PwdTooShortError("The password must be at least 10 characters long!")
 
                 if (len(passwordInput) > 48):
                     connection.close()
                     raise PwdTooLongError("The password must be less than 48 characters long!")
 
-                if (pwd_has_been_pwned(passwordInput)):
+                if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                     connection.close()
-                    raise PwdTooWeakError("The password has been pwned!")
+                    raise PwdTooWeakError("The password is too weak!")
 
                 cur.execute(f"UPDATE user SET password='{PH().hash(passwordInput)}' WHERE id='{userID}'")
                 connection.commit()

@@ -151,13 +151,13 @@ def signup():
             if (passwordInput != confirmPasswordInput):
                 flash("Passwords did not match!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) < 8):
-                flash("Password must be at least 8 characters long!")
+            if (len(passwordInput) < 10):
+                flash("Password must be at least 10 characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (len(passwordInput) > 48):
                 flash("Password cannot be more than 48 characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (pwd_has_been_pwned(passwordInput)):
+            if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
@@ -374,7 +374,7 @@ def updatePassword():
                 except (ChangePwdError):
                     flash("Please check your entries and try again.")
                 except (PwdTooShortError, PwdTooLongError):
-                    flash("Password must be between 8 and 48 characters long.")
+                    flash("Password must be between 10 and 48 characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
 

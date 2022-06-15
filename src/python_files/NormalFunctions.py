@@ -6,7 +6,7 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-import uuid, pathlib
+import uuid, re
 from datetime import datetime, timedelta
 from typing import Union
 from base64 import urlsafe_b64encode
@@ -26,6 +26,24 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
 
+# define constants
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+BLACKLIST_FILEPATH = PARENT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+
+# password regex follows OWASP's recommendations
+# https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
+PASSWORD_REGEX = re.compile(r"""
+^                                                                   # beginning of password
+(?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
+(?=.*?[a-z])                                                        # at least one lowercase letter
+(?=.*?[A-Z])                                                        # at least one uppercase letter
+(?=.*?[\d])                                                         # at least one digit
+(?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
+[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
+{10,}                                                               # at least 10 characters long  
+$                                                                   # end of password
+""", re.VERBOSE)
+
 def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
     """
     Get the IP address to blacklist from the server.
@@ -36,13 +54,10 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
     Args:
         - checkForUpdates:  If True, the function will check for updates to the blacklist.
                             Otherwise, it will just load from the saved text file if found.
-    
+
     Returns:
         - A tuple containing the IP address to blacklist
     """
-    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-    BLACKLIST_FILEPATH = PARENT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
-
     if (checkForUpdates):
         response = req.get("https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt")
         if (response.status_code != 200):
@@ -135,6 +150,30 @@ def send_email(to:str="", subject:str="", messageText:str="") -> Union[dict, Non
 
     return sentMessage
 
+def pwd_is_strong(password:str) -> bool:
+    """
+    Checks if the password is strong against the password regex.
+    
+    Args:
+    - password: The password to check.
+    
+    Returns:
+    - True if the password is strong, False otherwise.
+    
+    Password complexity requirements:
+    - At least 10 characters long
+    - At least one lowercase letter
+    - At least one uppercase letter
+    - At least one digit
+    - At least one special character
+    - Not more than two identical characters in a row
+    
+    Resources:
+    - https://owasp.org/www-community/password-special-characters
+    - https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
+    """
+    return True if (re.fullmatch(PASSWORD_REGEX, password)) else False
+
 def pwd_has_been_pwned(password:str) -> bool:
     """
     Checks if the password is in the haveibeenpwned database.
@@ -164,7 +203,7 @@ def pwd_has_been_pwned(password:str) -> bool:
             sleep(2)
         else:
             print(f"Failed to retrieve data from pwnedpasswords.com.\nError code: {response.status_code}")
-            raise HaveibeenpwnedRequestError("Failed to retrieve data from pwnedpasswords.com...")
+            return False # returns False (considered not leaked) but will rely on the checking of the password strength
 
     # compare the possible ranges with the hash suffix (after the first five characters) of the sha1 hash
     for result in results:
