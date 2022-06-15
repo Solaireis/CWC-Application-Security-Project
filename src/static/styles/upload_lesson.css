@@ -1,0 +1,78 @@
+html, body {
+        height: 100%;
+}
+
+#actions {
+    margin: 2em 0;
+}
+
+#details {
+    background: #f6f6f6;
+    padding: 1em;
+    width: 50%;
+    height: 100%;
+    align-items: center;
+    border-radius: 0.5em;
+    border: 1px solid;
+    border-color: rgb(7, 6, 6);
+}
+
+h2{
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+/* Hide the delete button initially */
+#previews .file-row .delete {
+    display: none;
+}
+
+.upload-background{
+  background-color: #ffffff;
+  color: #0a0202;
+  border-radius: 5px;
+  margin: 0.5em;
+  text-align: center;
+}
+
+/* Upload Thumbnail */
+#thumbnail{
+  max-width:180px;
+}
+
+input[type=file]{
+padding:10px;
+background:#2d2d2d;
+border:none;
+border-radius:5px;
+width: 200px;
+}
+
+/* Form body */
+#form{
+    width: 100%;
+    height: 100%;
+    background-color: #2d2d2d;
+    padding: 20px;
+    border-radius: 5px;
+    color: #fff;
+    margin-top: 20px;
+}
+
+/* Submit Btn */
+button {
+    display: flex;
+    align-items: center;
+    padding: 0 0.22em 0 0;
+    background-color: #f2f2f2;
+    border-radius: 0 12px 12px 0;
+    border: none;
+    cursor: pointer;
+}
+  button span {
+    padding: 0.55em 1.5em;
+    color: #fff;
+    background-color: #009dff;
+    border-radius: 12px;
+    font-size: clamp(14px, calc(0.875rem + ((1vw - 5.76px) * 0.641)), 18px);
+}

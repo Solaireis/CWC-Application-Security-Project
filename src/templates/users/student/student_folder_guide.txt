@@ -1,0 +1,1 @@
+This is where all html files that is only for student view are stored.

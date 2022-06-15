@@ -1,0 +1,21 @@
+{% extends "user_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/purchase_view.css') }}">
+
+{% endblock %}
+{% block title %} View Video | CourseFinity {% endblock %}
+
+{% block content %}
+<div class="container">
+	<nav aria-label="breadcrumb">
+		<ol class="breadcrumb">
+			<li class="breadcrumb-item"><a href="/purchasehistory/{{pageNum}}">Purchase History</a></li>
+			<li class="breadcrumb-item"><a href="/purchaseview/{{courseID}}">Purchase View</a></li>
+			<li class="breadcrumb-item active" aria-current="page">View Video</li>
+		</ol>
+	</nav>
+    <h2>View Video</h2>
+    <div class="row g-0 casing mx-auto border">
+		<video controls><source src="{{ video }}"></source></video>
+    </div>
+  </div>
+{% endblock %}

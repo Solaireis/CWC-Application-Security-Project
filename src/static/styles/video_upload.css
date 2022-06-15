@@ -1,0 +1,26 @@
+/* Dropzone.js css to overwrite default */
+
+.dropzone {
+  margin-top: 10px;
+  border: 4px dashed #ddd;
+}
+
+.upload-icon {
+  color: #009DF8;
+  font-size: 5em;
+  margin-bottom: 10px;
+}
+
+.upload-icon:hover {
+  color: #273C4D;;
+}
+
+@media (max-width: 468px) {
+  .upload-icon {
+    font-size: 3em;
+  }
+}
+
+.btn-margin {
+  margin-right: 10px;
+}

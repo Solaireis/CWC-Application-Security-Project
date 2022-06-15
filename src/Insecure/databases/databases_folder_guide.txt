@@ -1,1 +1,0 @@
-This is where all sensitive files will be stored such as the SQLite3 database file.

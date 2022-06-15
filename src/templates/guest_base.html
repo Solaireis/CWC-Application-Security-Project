@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <!-- Bootstrap 5.1.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <!-- Bootstrap cookie alert css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/cookie_alert.css') }}">
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/font_size.css') }}">
+    {% block head %}
+    {% endblock %}
+    <!-- link tags for the favicon for all browsers including safari -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
+    <!-- cookie alert javascript in the head so that the browser will run this first -->
+    <script src="{{ url_for('static', filename='scripts/cookie_alert.js') }}"></script>
+</head>
+<body>
+    {% block navbar %}
+        {% include 'includes/_guest_navbar.html' %}
+    {% endblock %}
+
+    <a id="topbutton"><i class="fas fa-chevron-up"></i></a> <!-- go to top button -->
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+    
+    
+    <!-- START Bootstrap-Cookie-Alert from https://github.com/Wruczek/Bootstrap-Cookie-Alert -->
+    <div class="alert text-center cookiealert" role="alert">
+        <b>Do you like cookies?</b> &#x1F36A; CourseFinity relies on cookies to provide you the best experience! <a href="/cookie_policy">Click here to learn more</a>
+        <button type="button" class="btn btn-success btn-sm acceptcookies">
+            I agree
+        </button>
+    </div>
+    <!-- END Bootstrap-Cookie-Alert -->
+
+    {% block footer %}
+        {% include 'includes/_footer.html' %}
+    {% endblock %}
+
+    <!-- Bootstrap JS bundle -->
+    {% block scripts %}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+        <script src="{{ url_for('static', filename='scripts/common.js') }}"></script>
+    {% endblock %}
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

@@ -1,0 +1,43 @@
+{% extends "admin_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block title %}Change Username | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
+</svg>
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col">
+            <div class="login-form bg-dark mt-4 p-4 rounded updateForm" id="userForm">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                            <div>
+                                <h6 class="warning_text">{{ message }}</h6>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form action="" method="POST" class="row g-3 ">
+                    <h4 class="text-white">Change Username</h4>
+                    <div class="col-12 text-white">
+                        {{ render_field(form.updateUsername, class="form-control") }}
+                    </div>
+                    <div class="col-12">
+                        <a href="/admin_profile" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
+                        <button type="submit" class="btn btn-colour text-white float-end">Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+<nav class="navbar navbar-expand-lg bg-dark">
+	<div class="container-fluid navbar_margin">
+		<a id="logo" href="/"><img src="{{ url_for('static', filename='images/common/logo.png') }}" alt="CourseFinity Logo"></a>
+		</a>
+		<input type="checkbox" id="check" data-bs-toggle="collapse" data-bs-target="#navbar-content"  aria-expanded="false" aria-label="Toggle navigation">
+		<label for="check" id="nav-icon">
+			<span></span>
+			<span></span>
+			<span></span>
+		</label>
+		<div class="collapse navbar-collapse" id="navbar-content">
+			<ul class="navbar-nav mr-auto mb-2 mb-lg-0">
+				<li class="nav-item dropdown">
+					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown" data-bs-auto-close="outside">Explore Categories!</a>
+					<ul class="dropdown-menu shadow">
+						<li class="dropend">
+							<a href="#" onclick="return false;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">Development</a>
+							<ul class="dropdown-menu shadow">
+								<li>
+									<a class="dropdown-item" href="/explore/Programming"> Programming</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Web_Development"> Web Development</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Game_Development"> Game Development</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Mobile_App_Development"> Mobile App Development</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Software_Development"> Software Development</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Other_Development"> Other Development</a>
+								</li>
+							</ul>
+						</li>
+                        <li class="dropend">
+							<a href="#" onclick="return false;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">Business</a>
+							<ul class="dropdown-menu shadow">
+								<li>
+									<a class="dropdown-item" href="/explore/Entrepreneurship"> Entrepreneurship</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Project_Management"> Project Management</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/BI_Analytics"> Business Intelligence & Analytics</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Business_Strategy"> Business Strategy</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Other_Business"> Other Business</a>
+								</li>
+							</ul>
+						</li>
+                        <li class="dropend">
+							<a href="#" onclick="return false;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">Design</a>
+							<ul class="dropdown-menu shadow">
+								<li>
+									<a class="dropdown-item" href="/explore/3D_Modelling"> 3D Modelling</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Animation"> Animation</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/UX_Design"> UX Design</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Design_Tools"> Design Tools</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Other_Design"> Other Design</a>
+								</li>
+							</ul>
+						</li>
+                        <li class="dropend">
+							<a href="#" onclick="return false;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">Photography/Videography</a>
+							<ul class="dropdown-menu shadow">
+								<li>
+									<a class="dropdown-item" href="/explore/Digital_Photography"> Digital Photography</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Photography_Tools"> Photography Tools</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Video_Production"> Video Production</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Video_Design_Tools"> Video Design Tools</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Other_Photography_Videography"> Other Photography/Videography</a>
+								</li>
+							</ul>
+						</li>
+                        <li class="dropend">
+							<a href="#" onclick="return false;" class="dropdown-item dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside">Academics</a>
+							<ul class="dropdown-menu shadow">
+								<li>
+									<a class="dropdown-item" href="/explore/Science"> Science</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Math"> Math</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Language"> Language</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Test_Prep"> Test Prep</a>
+								</li>
+								<li>
+									<a class="dropdown-item" href="/explore/Other_Academics"> Other Academics</a>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+            </ul>
+			<form action="{{ url_for('search') }}" method="GET" class="d-flex ms-auto me-auto search_form">
+				<div class="input-group">
+					<input class="form-control border-0 mr-2" type="search" placeholder="Search" name="q" aria-label="Search" required>
+					<button class="btn btn-secondary border-0" type="submit"><i class="fas fa-search"></i></button>
+				</div>
+			</form>
+			<ul class="navbar-nav">
+				<li class="nav-item dropdown">
+					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="{{ url_for('static', filename='images/user/default.png') }}" id="user_profile" alt="User profile icon"></a>
+					<ul class="dropdown-menu shadow dropdown-menu-end">
+						<li><a class="dropdown-item" href="/admin_dashboard"><i class="fas fa-database"></i> Dashboard</a></li>
+						<li><a class="dropdown-item" href="/admin_profile"><i class="fas fa-user-edit"></i> Account Settings</a></li>
+						<li><a class="dropdown-item" href="/user_management/page/1"><i class="fas fa-chalkboard-teacher"></i> User Management</a></li>
+						<li><a class="dropdown-item" href="/support_ticket_management/1"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
+						<li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+					</ul>
+				</li>
+            </ul>
+		</div>
+	</div>
+</nav>

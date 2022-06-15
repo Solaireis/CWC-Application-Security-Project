@@ -1,0 +1,81 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/upload_lesson.css') }}">
+{% endblock %}
+
+{% block title %}Create Video Lesson | CourseFinity{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                {% for category, message in messages %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>{{ message }}</h6>
+                </div>
+                {% endfor %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container-sm" id="form">
+    <form action="" method="POST" enctype="multipart/form-data">
+        <h2>Video Lesson Creation</h2>
+        <div class="row">
+            <!-- Zoom Thumbnail -->
+            <div class="mb-5 col-6 gx-5">
+                <div class="card" style="width:180px;">
+                    <img id="thumbnail"
+                        src="https://st2.depositphotos.com/3765753/5349/v/600/depositphotos_53491489-stock-illustration-example-rubber-stamp-vector-over.jpg"
+                        alt="Your thumbnail will appear here" class="card-img-top" />
+                </div>
+                <br>
+                <label for="formFile" class="form-label">Upload Video Lesson Thumbnail Here!</label>
+                <input name="videoThumbnail" accept=".png, .jpg, .jpeg"  class="form-control" id="formFile" type='file' onchange="readURL(this);">
+            </div>
+
+            <div class="mb-3 col-5">
+                <!-- Video Title -->
+                <div class="mb-4">
+                    <label for="videoTitle" class="form-label">Video Lesson Title</label>
+                    <input name="videoTitle" class="form-control" id="videoTitle" type="text" required
+                        placeholder="Lesson Title" />
+                </div>
+
+                <!-- Video Description -->
+                <div class="mb-4">
+                    <label for="videoDescription" class="form-label">Video Lesson Description</label>
+                    <textarea name="videoDescription" class="form-control" id="videoDescription" rows="4"
+                        required placeholder="Lesson Description"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <span>Submit</span>
+        </button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <script>
+        var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+        alertModal.show();
+    </script>
+    {% endif %}
+{% endwith %}
+<script src="{{ url_for('static', filename='scripts/upload_lesson.js') }}"></script>
+{% endblock %}

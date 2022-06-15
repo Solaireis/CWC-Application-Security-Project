@@ -1,0 +1,126 @@
+{% extends "admin_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block title %}Admin Profile Settings | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container container_margin">
+    <div class="row">
+        <div class="col-lg-3 merge-boxes">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+                <h4><span class="fs-4">Admin Dashboard</span></h4>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="/admin_dashboard" class="nav-link text-white">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin_profile" class="nav-link text-white active-custom">
+                            Account Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/user_management/page/1" class="nav-link text-white">
+                            User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/support_ticket_management/0" class="nav-link text-white">
+                            Support Ticket Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-9 merge-boxes">
+            <div id="right-user">
+                <div class="container">
+                    <div class="row">
+                        <div class="table-responsive-xl">
+                            <table class="table">
+                                <tr>
+                                    <tr>
+                                        <td class="p-3"><h6>Admin ID:</h6></td>
+                                        <td class="p-3"><h6 id="tooltipValueUID"><a href="javascript:copyToClipBoard('UID')" onmouseout="tooltipMouseOut('UID')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUID"  class="profile_copy_text">{{ admin_id }}</a></h6></td>
+                                    </tr>
+                                    <td class="p-3"><h6>Username:</h6></td>
+                                    <td class="p-3">
+                                        <h6 id="tooltipValueUsername"><a href="javascript:copyToClipBoard('Username')" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUsername" class="profile_copy_text">{{ username }}</a></h6>
+                                        <a href="/admin_change_username">Change Username</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3"><h6>Email:</h6></td>
+                                    <td class="p-3">
+                                        <h6 id="tooltipValueEmail"><a href="javascript:copyToClipBoard('Email')" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a></h6>
+                                        <a href="/admin_change_email">Change Email</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3"><h6>Account Type:</h6></td>
+                                    <td class="p-3"><h6>Admin</h6></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3"><h6>Password:</h6></td>
+                                    <td class="p-3"><h6><a href="/admin_change_password">Change Password</a></h6></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3"><h6>Two Factor Authentication:</h6></td>
+                                    <td class="p-3">
+                                        {% if twoFAEnabled %}
+                                        <h6 class="text-success">Enabled</h6>
+                                        <a href="/admin_disable_2FA">Disable 2FA</a></h6>
+                                        {% else %}
+                                        <h6 class="text-danger">Disabled</h6>
+                                        <a href="/admin_setup_2FA">Enable 2FA</a></h6>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <script>
+            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+            alertModal.show();
+        </script>
+        {% endif %}
+    {% endwith %}
+    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+{% endblock %}

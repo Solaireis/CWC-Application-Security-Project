@@ -1,0 +1,17 @@
+.policy {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-decoration: underline;
+}
+
+h1, h3 {
+    margin-top: 50px;
+    font-weight: bolder ;
+}
+
+h5 {
+  font-weight: bold;  
+}

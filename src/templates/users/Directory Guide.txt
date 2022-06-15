@@ -1,0 +1,11 @@
+admin folder will contain html files for admin view
+
+general folder will contain html files for all users to view
+
+guest folder will contain html files for non-logged in users aka guests
+
+loggedin folder will contain html files for logged in users, mainly students and teachers
+
+student folder will contain html files for student account type
+
+teacher folder will contain html files for teacher account type

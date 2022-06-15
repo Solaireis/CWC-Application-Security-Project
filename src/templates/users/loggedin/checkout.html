@@ -1,0 +1,149 @@
+{% extends "user_base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/checkout.css') }}">
+{% endblock %}
+
+{% block title %}Add Cashout Preference | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div id="checkout-title">
+    <h4>Checkout</h4>
+    <hr>
+</div>
+
+<div class="row g-0 ">
+
+    <div class="col"> <!--col-8 if PayPal exists -->
+
+        <form id = "checkout-form" method = "post">
+
+            <label class = "form-label">Card Number</label>
+            {% if 'cardNo' in cardErrors %}
+            <span class = "fw-bold text-danger"><sup>*Please enter a value.</sup></span>
+            {% endif %}
+            <input type = "text" value = "{{ cardInfo['cardNo'] }}" class="form-control" name = "cardNo" placeholder = "4444000011111111">
+
+            
+            <label class = "form-label">Card CVV</label>
+            {% if 'cardCVV' in cardErrors %}
+            <span class = "fw-bold text-danger"><sup>*Please enter a value.</sup></span>
+            {% endif %}
+            <input type = "text" value = "{{ cardInfo['cardCVV'] }}" class="form-control" name = "cardCVV" placeholder = "123">
+            
+            <label class = "form-label">Card Expiry Date</label>
+            {% if 'cardExpiryMonth' in cardErrors or 'cardExpiryYear' in cardErrors %}
+            <span class = "fw-bold text-danger"><sup>*Please select a value for both month and year.</sup></span>
+            {% endif %}
+            <div class = "row g-0 d-flex justify-content-between">
+
+                <select class = "form-select" name = "cardExpMonth">
+                    {% if cardInfo['cardExpMonth'] == None %}
+                        <option selected value = "">Month</option>
+                    {% else %}
+                        <option value = "">Month</option>
+                    {%endif%}
+
+                    {% for month in range(1, 13) %}
+
+                        {% if month == cardInfo['cardExpMonth'] %}
+                            <option selected value = "{{ month }}">{{ month }}</option>
+                        {% else %}
+                            <option value = "{{ month }}">{{ month }}</option>
+                        {% endif %}
+
+                    {% endfor %}
+                </select>
+
+                <select class = "form-select" name = "cardExpYear">
+                
+                    {% if cardInfo['cardExpMonth'] == None %}
+                        <option selected value = "">Year</option>
+                    {% else %}
+                        <option value = "">Year</option>
+                    {% endif %}
+
+                    {% for year in range(currentYear, currentYear + 30) %}
+                        {# {{ cardInfo['cardExpYear'], year }} #}
+                        {% if year == cardInfo['cardExpYear'] %}
+
+                            <option selected value = "{{ year }}">{{ year }}</option>
+                        {% else %}
+                            <option value = "{{ year }}">{{ year }}</option>
+                        {% endif %}
+
+                    
+                    {% endfor %}
+                </select>
+
+            </div>
+            
+            <label class="form-label">Cardholder Name</label>
+            {% if 'cardName' in cardErrors %}
+            <span class = "fw-bold text-danger"><sup>*Please enter a value.</sup></span>
+            {% endif %}
+            <input type = "text" value = "{{ cardInfo['cardName'] }}" class="form-control" name = "cardName" placeholder = "John Doe">
+
+            <div class="form-check">
+                <label class="form-check-label">Save Information?</label>
+                <input type = "checkbox" class="form-check-input" name = "cardSave" placeholder = "4444000011111111">
+            </div>
+
+            <div id = "subtotal">
+                {% if cartCount == 1 %}
+                    <h5>Subtotal (1 item): US ${{ subtotal }}</h5>
+                {% else %}
+                    <h5>Subtotal ({{ cartCount }} items): US ${{ subtotal }}</h5>
+                {% endif %}
+                
+
+                {% if cartCount == 0 %}
+                    <button disabled type = "button" class = "btn btn-outline-secondary checkout-button">Checkout</button>
+                {% else %}
+                    <input type = "submit" class = "btn btn-outline-warning checkout-button" value = "Checkout"> 
+                {% endif %}  
+            </div>
+    
+        </form>
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <script>
+        var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+        alertModal.show();
+    </script>
+    {% endif %}
+{% endwith %}
+
+{% endblock %}

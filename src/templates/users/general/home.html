@@ -1,0 +1,166 @@
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/home.css') }}">{% endblock %}
+{% block title %}Home | CourseFinity{% endblock %}
+
+{% block content %}
+
+<div class="container">
+	<div class="row">
+		<h2>Highly Rated</h2>
+		<div class="row row-cols-1 row-cols-md-3 g-4">
+			{% if (threeHighlyRatedCoursesLen < 1) %}
+				<div class="col">
+					<div class="card text-dark bg-light h-100">
+						<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+						<div class="card-body">
+							<h4 class="card-title">No Course Available</h4>
+							<p class="card-text">Sorry, there are currently no courses available.</p>
+						</div>
+					</div>
+				</div>
+			{% else %}
+				{% for course in threeHighlyRatedCourses %}
+					<div class="col">
+						<div class="card text-dark bg-light h-100">
+							{% if (course.course_image_path == None) %}
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+							{% else %}
+								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+							{% endif %}
+							<div class="card-body">
+								<h4 class="card-title">{{ course.course_name }}</h4>
+								<a href="{{ url_for('teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
+								<p class="card-text">{{ course.course_description }}</p>
+								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
+								{% if (course.rating_count > 0) %}
+								<div class="ratings">
+									{% with remainingStars = 5 - course.average_rating %}
+										{% for _ in range(course.average_rating) %}
+											<span class="fas fa-star"></span>
+										{% endfor %}
+										{% for _ in range(remainingStars) %}
+											<span class="far fa-star"></span>
+										{% endfor %}
+									{% endwith %}
+								</div>
+								{% else %}
+								<p class="card-text text-danger">No ratings yet...</p>
+								{% endif %}
+							</div>
+							<div class="card-footer">
+								{% if (accType == None) %}
+									<a href="{{ url_for('login') }}" class="btn btn-success float-end">
+										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
+									</a>
+								{% elif (accType == "Admin") %}
+									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
+								{% else %}
+									{% if (course.course_id in userPurchasedCourses) %}
+										<a action="{{ url_for('purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+											<i class="fas fa-shopping-bag"></i> View Purchase
+										</a>
+									{% else %}
+										<form action="{{ url_for('cart') }}" method="POST">
+											<input name="courseID" type="hidden" value="{{ course.course_id }}">
+											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+										</form>
+									{% endif %}
+								{% endif %}
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			{% endif %}
+		</div>
+	</div>
+	<div class="row">
+		<h2 id="newest-videos">Newly Uploaded Videos</h2>
+		<div class="row row-cols-1 row-cols-md-3 g-4">
+			{% if (latestThreeCoursesLen < 1) %}
+				<div class="col">
+					<div class="card text-dark bg-light h-100">
+						<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+						<div class="card-body">
+							<h4 class="card-title">No Course Available</h4>
+							<p class="card-text">Sorry, there are currently no courses available.</p>
+						</div>
+					</div>
+				</div>
+			{% else %}
+				{% for course in latestThreeCourses %}
+					<div class="col">
+						<div class="card text-dark bg-light h-100">
+							{% if (course.course_image_path == None) %}
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+							{% else %}
+								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+							{% endif %}
+							<div class="card-body">
+								<h4 class="card-title"><a href="{{ url_for('coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
+								<a href="{{ url_for('teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
+								<p class="card-text">{{ course.course_description }}</p>
+								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
+								{% if (course.rating_count > 0) %}
+								<div class="ratings">
+									{% with remainingStars = 5 - course.average_rating %}
+										{% for _ in range(course.average_rating) %}
+											<span class="fas fa-star"></span>
+										{% endfor %}
+										{% for _ in range(remainingStars) %}
+											<span class="far fa-star"></span>
+										{% endfor %}
+									{% endwith %}
+								</div>
+								{% else %}
+								<p class="card-text text-danger">No ratings yet...</p>
+								{% endif %}
+							</div>
+							<div class="card-footer">
+								{% if (accType == None) %}
+									<a href="{{ url_for('login') }}" class="btn btn-success float-end">
+										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
+									</a>
+								{% elif (accType == "Admin") %}
+									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
+								{% else %}
+									{% if (course.course_id in userPurchasedCourses) %}
+										<a action="{{ url_for('purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+											<i class="fas fa-shopping-bag"></i> View Purchase
+										</a>
+									{% else %}
+										<form action="{{ url_for('cart') }}" method="POST">
+											<input name="courseID" type="hidden" value="{{ course.course_id }}">
+											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+										</form>
+									{% endif %}
+								{% endif %}
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			{% endif %}
+		</div>
+	</div>
+	{% if (accType == None or accType == "Student") %}
+	<div class="row become_headings">
+		<div class="col-md">
+			<img src="{{ url_for('static', filename='images/home/home_teacher_banner.webp') }}" alt="Become a Teacher Promo Image" class="thumbnails rounded">
+		</div>
+		<div class="col-md text-center">
+			<h2>Become A Teacher Today!</h2>
+			<p>We provide the platform for you to teach what you love.<br>Start now by teaching students and earn 25% comission!</p>
+			<form action="{{ url_for('signup') }}" method="GET">
+				<button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
+			</form>
+		</div>
+	</div>
+	{% endif %}
+</div>
+{% endblock %}

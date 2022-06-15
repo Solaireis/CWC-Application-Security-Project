@@ -1,0 +1,66 @@
+#pfp_bio{
+    background-color:#273C4D;
+    opacity: 1;
+    height:100%;
+}
+
+.image{
+    height: auto;
+    width: 100%;
+    text-align:center;
+}
+
+h2{
+  margin-top:50px;
+  margin-bottom:50px;
+}
+
+.col-md img{
+  height:auto;
+  width:100%;
+  margin-bottom:15px;
+  border-radius:10px;
+}
+
+.col-md p{
+  margin-bottom:100px;
+}
+
+#user-icon-setting {
+  height: 80px;
+  width: 100px;
+  margin: 10px;
+  border-radius: 50%;
+  margin-left: 100px;
+  margin-right: 0px;
+}
+
+#bio{
+    display: flex;
+    margin: auto;
+    width: 75%;
+    height: 100%;
+    border: 2px solid black;
+    padding: 40px;
+    background-color: white;
+    margin-left:10px;
+}
+
+@media screen and (max-width: 1500px){
+  .thebutton{
+    margin-bottom:50px;
+  }
+}
+
+.ratings {
+  color: #FFD700;
+}
+
+.headings {
+  margin-bottom: 0;
+  margin-top: 30px;
+}
+
+.become_headings {
+  margin-top: 100px;
+}

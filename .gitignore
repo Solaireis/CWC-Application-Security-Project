@@ -1,2 +1,14 @@
+# Ignore pycache and sqlite3 db files
 *.pyc
 *.db
+
+# Ignore Mac DS_Store files
+.DS_Store
+**/.DS_Store
+
+# ignore other files
+test.py
+blacklist.txt
+
+# ignore all .json files (just in case as there are google gmail api tokens in there)
+*.json
