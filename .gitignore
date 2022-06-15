@@ -8,6 +8,7 @@
 
 # ignore other files
 test.py
+blacklist.txt
 
 # ignore all .json files (just in case as there are google gmail api tokens in there)
 *.json

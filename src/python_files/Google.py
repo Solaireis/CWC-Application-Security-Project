@@ -5,7 +5,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-TOKEN_PATH = pathlib.Path(__file__).parent.parent.resolve().joinpath("token.json")
+PARENT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
+TOKEN_PATH = PARENT_FOLDER_PATH.joinpath("token.json")
+CREDENTIALS_PATH = PARENT_FOLDER_PATH.joinpath("credentials.json")
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.send"]
@@ -21,18 +23,18 @@ def google_init():
     # created automatically when the authorization flow 
     # completes for the first time.
     if (TOKEN_PATH.exists()):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):
         if (creds and creds.expired and creds.refresh_token):
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
-        with open("token.json", "w") as token:
+        with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
 
     try:
@@ -41,14 +43,15 @@ def google_init():
         results = service.users().labels().list(userId="me").execute()
         labels = results.get("labels", [])
 
-        if (labels is None):
+        if (labels is None): # should have labels
+            # if there are no labels, then something might have went wrong
             print("Something went wrong!")
             return
-        print("Status OK! Authenticated with Google Gmail API.")
+        print("\nStatus OK! token.json is valid.", end="\n\n")
+        return True
     except HttpError as error:
-        print(f"An error has occurred:\n{error}")
+        print(f"\nAn error has occurred:\n{error}")
         print()
-        print("Please contact KJHJason (on discord) for help.")
 
 if (__name__ == "__main__"):
     google_init()

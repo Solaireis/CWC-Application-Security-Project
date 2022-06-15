@@ -1,13 +1,21 @@
 # import third party libraries
-from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
+from argon2 import PasswordHasher as PH
 
-# from python_files import Student, Teacher, Forms, Course
-from python_files.IntegratedFunctions import *
+# import flask libraries
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+# import local python libraries
+from python_files.AppFunctions import *
+from python_files.NormalFunctions import *
 from python_files.Forms import *
+from python_files.Errors import *
+from python_files.Google import google_init
 
 # import python standard libraries
 import secrets
@@ -21,6 +29,9 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = secrets.token_hex(32) # 32 bytes/256 bits
 scheduler = BackgroundScheduler()
 
+# rate limiter configuration using flask limiter
+limiter = Limiter(app, key_func=get_remote_address, default_limits=["30 per second"])
+
 # Maximum file size for uploading anything to the web app's server
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024 # 200MiB
 
@@ -30,22 +41,30 @@ app.config["DICEBEAR_OPTIONS"] = DOptions(
 )
 
 # for image uploads file path
-app.config["PROFILE_UPLOAD_PATH"] = "static/images/user"
-app.config["THUMBNAIL_UPLOAD_PATH"] = "static/images/courses/thumbnails"
+app.config["PROFILE_UPLOAD_PATH"] = r"static\images\user"
+app.config["THUMBNAIL_UPLOAD_PATH"] = r"static\images\courses\thumbnails"
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
-app.config["COURSE_VIDEO_FOLDER"] = "static/course_videos"
+app.config["COURSE_VIDEO_FOLDER"] = r"static\course_videos"
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
+# database folder path
+app.config["DATABASE_FOLDER"] = app.root_path + r"\databases"
+
 # SQL database file path
-app.config["SQL_DATABASE"] = app.root_path + "/databases/database.db"
+app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
+
+# get ip address blacklist from a github repo or the saved file
+app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
 """End of Web app configurations"""
 
 @app.before_request # called before each request to the application.
 def before_request():
-    if ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
+    if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
+        abort(403)
+    elif ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
         # if user session is invalid as the user does not exist anymore
         session.clear()
     elif ("admin" in session and not sql_operation(table="user", mode="verify_adminID_existence", adminID=session["admin"])):
@@ -76,7 +95,7 @@ def home():
     imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+        userPurchasedCourses = userInfo[-1]
 
     return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
@@ -84,6 +103,7 @@ def home():
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per second")
 def login():
     if ("user" not in session):
         loginForm = CreateLoginForm(request.form)
@@ -94,19 +114,22 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
 
-            successfulLogin = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
-            print("successfulLogin: ", successfulLogin)
+            successfulLogin = False
+            try:
+                userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
+                successfulLogin = True
+            except (IncorrectPwdError, EmailDoesNotExistError):
+                flash("Please check your entries and try again!", "Danger")
+
             if (successfulLogin):
-                session["user"] = successfulLogin[0]
-                session["role"] = successfulLogin[1]
+                session["user"] = userInfo[0]
+                session["role"] = userInfo[1]
                 print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             else:
-                flash("Please check your entries and try again!", "Danger")
                 return render_template("users/guest/login.html", form=loginForm)
-
-        # post request but form inputs are not valid
-        return render_template("users/guest/login.html", form = loginForm)
+        else:
+            return render_template("users/guest/login.html", form = loginForm)
     else:
         return redirect(url_for("home"))
 
@@ -123,15 +146,36 @@ def signup():
             usernameInput = signupForm.username.data
             passwordInput = signupForm.password.data
             confirmPasswordInput = signupForm.cfm_password.data
-            if (passwordInput != confirmPasswordInput):
-                return render_template("users/guest/signup.html", form=signupForm, pwd_were_not_matched=True)
 
+            # some checks on the password input
+            if (passwordInput != confirmPasswordInput):
+                flash("Passwords did not match!")
+                return render_template("users/guest/signup.html", form=signupForm)
+            if (len(passwordInput) < 8):
+                flash("Password must be at least 8 characters long!")
+                return render_template("users/guest/signup.html", form=signupForm)
+            if (len(passwordInput) > 48):
+                flash("Password cannot be more than 48 characters long!")
+                return render_template("users/guest/signup.html", form=signupForm)
+            if (pwd_has_been_pwned(passwordInput)):
+                flash("Password is too weak, please enter a stronger password!")
+                return render_template("users/guest/signup.html", form=signupForm)
+
+            passwordInput = PH().hash(passwordInput)
             print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
 
-            returnedVal = sql_operation(table="user", mode="insert", email=emailInput, username=usernameInput, password=passwordInput)
+            returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput)
 
             if (isinstance(returnedVal, tuple)):
-                return render_template("users/guest/signup.html", form=signupForm, email_duplicates=returnedVal[0], username_duplicates=returnedVal[1])
+                emailDupe = returnedVal[0]
+                usernameDupe = returnedVal[1]
+                if (emailDupe and usernameDupe):
+                    flash("Email and username already exists!")
+                elif (emailDupe):
+                    flash("Email already exists!")
+                elif (usernameDupe):
+                    flash("Username already exists!")
+                return render_template("users/guest/signup.html", form=signupForm)
 
             session["user"] = returnedVal # i.e. successful signup, returned the user ID
             session["role"] = "Student"
@@ -156,8 +200,12 @@ def paymentSettings():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
-    print(cardExists)
+    try:
+        cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
+        print(cardExists)
+    except (CardDoesNotExistError):
+        cardExists = False
+
     paymentForm = CreateAddPaymentForm(request.form)
 
     # GET method codes below
@@ -182,7 +230,7 @@ def paymentSettings():
         cardExpiryInput = paymentForm.cardExpiry.data
         cardCVVInput = paymentForm.cardCVV.data
 
-        sql_operation(table="user", mode="edit", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
+        sql_operation(table="user", mode="add_card", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput, cardCVV=cardCVVInput)
         return redirect(url_for("paymentSettings"))
 
     # invalid form inputs or already has a card
@@ -241,6 +289,8 @@ def userProfile():
         email = userInfo[3]
 
         return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/change_username", methods=["GET","POST"])
 def updateUsername():
@@ -252,18 +302,23 @@ def updateUsername():
         if (request.method == "POST") and (create_update_username_form.validate()):
             updatedUsername = create_update_username_form.updateUsername.data
 
-            changed = sql_operation(table="user", mode="edit", userID=userID, username=updatedUsername)
+            changed = False
+            try:
+                sql_operation(table="user", mode="change_username", userID=userID, username=updatedUsername)
+                changed = True
+            except (ReusedUsernameError):
+                flash("Sorry, Username has already been taken!")
 
-            if (not changed):
+            if (changed):
+                flash("Your username has been successfully changed.", "Account Details Updated!")
+                return redirect(url_for("userProfile"))
+            else:
                 flash("Sorry, Username has already been taken!")
                 return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
-
-            else:
-                return redirect(url_for("userProfile"))
         else:
             return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
-
-    return "hello world!"
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/change_email", methods=["GET","POST"])
 def updateEmail():
@@ -275,19 +330,26 @@ def updateEmail():
         create_update_email_form = CreateChangeEmail(request.form)
         if (request.method == "POST") and (create_update_email_form.validate()):
             updatedEmail = create_update_email_form.updateEmail.data
-        
-            changed = sql_operation(table="user", mode="edit", userID=userID, email=updatedEmail)
+
+            changed = False
+            try:
+                sql_operation(table="user", mode="change_email", userID=userID, email=updatedEmail)
+                changed = True
+            except (EmailAlreadyInUseError):
+                flash("Sorry, Email has already been taken!")
+            except (SameAsOldEmailError):
+                flash("Sorry, please enter a different email from your current one!")
 
             if (not changed):
-                flash("Sorry, Email is been used by another user!")
                 return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
-
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
+                flash("Your email has been successfully changed.", "Account Details Updated!")
                 return redirect(url_for("userProfile"))
-
         else:
             return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/change_password", methods=["GET","POST"])
 def updatePassword():
@@ -302,19 +364,29 @@ def updatePassword():
             confirmPassword = create_update_password_form.confirmPassword.data
 
             if (updatedPassword != confirmPassword):
-                flash("Passwords Do Not Match")
+                flash("Passwords Do Not Match!")
                 return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
             else:
-                changed = sql_operation(table="user", mode="edit", userID=userID, password=updatedPassword, oldPassword=currentPassword)
+                changed = False
+                try:
+                    sql_operation(table="user", mode="change_password", userID=userID, password=updatedPassword, oldPassword=currentPassword)
+                    changed = True
+                except (ChangePwdError):
+                    flash("Please check your entries and try again.")
+                except (PwdTooShortError, PwdTooLongError):
+                    flash("Password must be between 8 and 48 characters long.")
+                except (PwdTooWeakError):
+                    flash("Password is too weak, please enter a stronger password!")
 
                 if (changed):
-                    flash(changed)
-                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
-                else:
+                    flash("Your password has been successfully changed.", "Account Details Updated!")
                     return redirect(url_for("userProfile"))
-        
+                else:
+                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
         else:
             return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/change_account_type", methods=["GET","POST"])
 def changeAccountType():
@@ -322,11 +394,17 @@ def changeAccountType():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
         if (request.method == "POST") and (request.form["changeAccountType"] == "changeToTeacher"):
-            sql_operation(table="user", mode="edit", userID=userID, newAccType=True)
+            try:
+                sql_operation(table="user", mode="update_to_teacher", userID=userID)
+                flash("Your account has been successfully upgraded to a Teacher.", "Account Details Updated!")
+            except (IsAlreadyTeacherError):
+                flash("You are already a teacher!", "Failed to Update!")
             return redirect(url_for("userProfile"))
         else:
             print("Not POST request or did not have relevant hidden field.")
             return redirect(url_for("userProfile"))
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/upload_profile_pic" , methods=["GET","POST"])
 def uploadPic():
@@ -353,6 +431,11 @@ def uploadPic():
             sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
             return redirect(url_for("userProfile"))
+
+        # if request is not post
+        return redirect(url_for("userProfile"))
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/create_course", methods=["GET","POST"])
 def createCourse():
@@ -398,6 +481,8 @@ def createCourse():
             return redirect(url_for("home"))
         else:
             return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/teacher/<teacherID>")
 def teacherPage(teacherID):
@@ -458,7 +543,6 @@ def coursePage(courseID):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
-
 
 @app.route("/course-review/<courseID>")
 def courseReview(courseID):
@@ -747,4 +831,9 @@ def error503(e):
 """End of Custom Error Pages"""
 
 if (__name__ == "__main__"):
+    googleAPIOk = google_init() # ensure that there is token.json for gmail API
+    if (not googleAPIOk):
+        print("Flask will be running but Google Gmail API will not be available.")
+        print("Sending of emails will not be possible and there might be some runtime errors.")
+
     app.run(debug=True)
