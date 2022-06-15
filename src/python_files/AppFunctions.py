@@ -159,7 +159,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             raise EmailDoesNotExistError("Email does not exist!")
 
         try:
-            if (PH().verify(passwordInput, matched[2])):
+            if (PH().verify(matched[2], passwordInput)):
                 return (matched[0], matched[1])
         except (VerifyMismatchError):
             connection.close()
