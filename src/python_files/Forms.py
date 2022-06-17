@@ -2,6 +2,7 @@ import json
 
 from wtforms import Form, validators, ValidationError, StringField, RadioField, SelectField, TextAreaField, EmailField, DateField, TimeField, HiddenField, FormField, IntegerField, PasswordField, BooleanField, FileField
 from wtforms.widgets import Select as BaseSelectWidget
+
 """WTForms by Jason"""
 
 # Research note for email length:
@@ -18,12 +19,12 @@ class CreateEditPaymentForm(Form):
     cardExpiry = StringField("Expiry Date:", [validators.Length(min=4, max=7), validators.DataRequired()])
 
 class CreateLoginForm(Form):
-    email = StringField("Email:", [validators.Length(min=3, max=254), validators.DataRequired()])
+    email = EmailField("Email:", [validators.Email(), validators.Length(min=5, max=254), validators.DataRequired()])
     password = PasswordField("Password:", [validators.DataRequired()])
 
 class CreateSignUpForm(Form):
     username = StringField("Username:", [validators.Length(min=1, max=30), validators.DataRequired()])
-    email = EmailField("Email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
+    email = EmailField("Email:", [validators.Email(), validators.Length(min=5, max=254), validators.DataRequired()])
     password = PasswordField("Password:", [validators.Length(min=6, max=20), validators.DataRequired()])
     cfm_password = PasswordField("Confirm Password:", [validators.Length(min=6, max=20), validators.DataRequired()])
 
