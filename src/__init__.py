@@ -61,9 +61,8 @@ app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 
 @app.before_first_request # called at the very first request to the web app
 def before_first_request():
-    if (app.config.get("IP_ADDRESS_BLACKLIST") is None):
-        # get ip address blacklist from a github repo or the saved file
-        app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist() 
+    # get ip address blacklist from a github repo or the saved file
+    app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist() 
 
 @app.before_request # called before each request to the application.
 def before_request():
