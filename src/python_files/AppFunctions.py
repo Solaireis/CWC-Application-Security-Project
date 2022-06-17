@@ -8,7 +8,7 @@ from __init__ import app
 
 # import python standard libraries
 import sqlite3, json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 from time import sleep
 
@@ -86,9 +86,78 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     #     returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
     # elif table == "purchased":
     #     returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
+    elif (table == "session"):
+        returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
 
     con.close()
     return returnValue
+
+def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, dict, None]:
+    if (mode is None):
+        connection.close()
+        raise ValueError("You must specify a mode in the session_sql_operation function!")
+
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS session (
+        session_id PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        expiry_date DATE NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+    if (mode == "create_session"):
+        sessionID = kwargs.get("sessionID")
+        userID = kwargs.get("userID")
+        expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
+        cur.execute("INSERT INTO session VALUES (?, ?, ?)", (sessionID, userID, expiryDate))
+        connection.commit()
+
+    elif (mode == "get_user_id"):
+        sessionID = kwargs.get("sessionID")
+        cur.execute("SELECT user_id FROM session WHERE session_id = ?", (sessionID,))
+        userID = cur.fetchone()[0]
+        return userID
+
+    elif (mode == "get_session"):
+        sessionID = kwargs.get("sessionID")
+        cur.execute("SELECT * FROM session WHERE session_id = ?", (sessionID,))
+        returnValue = cur.fetchone()
+        return returnValue
+
+    elif (mode == "delete_session"):
+        sessionID = kwargs.get("sessionID")
+        cur.execute("DELETE FROM session WHERE session_id = ?", (sessionID,))
+        connection.commit()
+
+    elif (mode == "update_session"):
+        sessionID = kwargs.get("sessionID")
+        expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
+        cur.execute("UPDATE session SET expiry_date = ? WHERE session_id = ?", (expiryDate, sessionID))
+        connection.commit()
+
+    elif (mode == "check_if_valid"):
+        sessionID = kwargs.get("sessionID")
+        cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = ?", (sessionID,))
+        result = cur.fetchone()
+        expiryDate = datetime.strptime(result[1], "%Y-%m-%d %H:%M:%S.%f")
+        if (expiryDate >= datetime.now()):
+            # not expired, check if the userID matches the sessionID
+            return kwargs.get("userID") == result[0]
+        else:
+            # expired
+            return False
+
+    elif (mode == "delete_expired_sessions"):
+        cur.execute("DELETE FROM session WHERE expiry_date < ?", (datetime.now(),))
+        connection.commit()
+
+    elif (mode == "if_session_exists"):
+        sessionID = kwargs.get("sessionID")
+        cur.execute("SELECT * FROM session WHERE session_id = ?", (sessionID,))
+        returnValue = cur.fetchone()
+        if (returnValue):
+            return True
+        else:
+            return False
 
 def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
@@ -97,13 +166,13 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
     insert keywords: email, username, password
     login keywords: email, password
     get_user_data keywords: userID
-    edit keywords: userID, username, password, email, profileImagePath
     add_to_cart keywords: userID, courseID
     remove_from_cart keywords: userID, courseID
     purchase_courses keywords: userID
     delete keywords: userID
     """
-    if (not mode):
+    if (mode is None):
+        connection.close()
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
     cur = connection.cursor()

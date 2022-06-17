@@ -1,9 +1,7 @@
 import sqlite3, pathlib, uuid
 from datetime import datetime
 from random import randint
-
-def generate_id():
-    return uuid.uuid4().hex
+from python_files.NormalFunctions import generate_id
 
 pyFilePath = pathlib.Path(__file__).parent.absolute().joinpath("databases", "database.db")
 
@@ -48,14 +46,12 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
-print(pyFilePath)
 demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
 while (demoCourse < 10):
     print("Please enter at least 10.")
     demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
 
 latestDemoCourse = cur.execute(f"SELECT course_name FROM course WHERE teacher_id='30a749defdd843ecae5da3b26b6d6b9b' ORDER BY ROWID DESC LIMIT 1").fetchall()
-print(latestDemoCourse)
 if (not latestDemoCourse):
     latestDemoCourse = 1
 else:

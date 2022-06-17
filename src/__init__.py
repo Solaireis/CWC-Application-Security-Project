@@ -1,4 +1,5 @@
 # import third party libraries
+from matplotlib.style import use
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -54,6 +55,9 @@ app.config["DATABASE_FOLDER"] = app.root_path + r"\databases"
 # SQL database file path
 app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 
+# Session config
+app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
+
 """End of Web app configurations"""
 
 @app.before_request # called before each request to the application.
@@ -64,9 +68,29 @@ def before_request():
 
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
-    elif ("user" in session and not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
-        # if user session is invalid as the user does not exist anymore
-        session.clear()
+    elif ("user" in session):
+        if (not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
+            # if user session is invalid as the user does not exist anymore
+            sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
+            session.clear()
+            return
+
+        if (sql_operation(table="session", mode="if_session_exists", sessionID=session["sid"])):
+            # if session exists
+            if (not sql_operation(table="session", mode="check_if_valid", sessionID=session["sid"], userID=session["user"])):
+                # if user session is expired or the userID does not match with the sessionID
+                sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
+                session.clear()
+                return
+
+            # update session expiry time
+            sql_operation(table="session", mode="update_session", sessionID=session["sid"])
+            return
+        else:
+            # if session does not exist in the db
+            session.clear()
+            return
+
     elif ("admin" in session and not sql_operation(table="user", mode="verify_adminID_existence", adminID=session["admin"])):
         # if admin session is invalid as the admin does not exist anymore
         session.clear()
@@ -122,6 +146,9 @@ def login():
                 flash("Please check your entries and try again!", "Danger")
 
             if (successfulLogin):
+                sessionID = generate_id()
+                sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userInfo[0])
+                session["sid"] = sessionID
                 session["user"] = userInfo[0]
                 session["role"] = userInfo[1]
                 print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
@@ -859,4 +886,8 @@ def error503(e):
 """End of Custom Error Pages"""
 
 if (__name__ == "__main__"):
+    scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
+    scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour="23", minute="59", second="0", id="deleteExpiredSessions")
+    scheduler.start()
     app.run(debug=True)
+    # app.run(debug=True, use_reloader=False)

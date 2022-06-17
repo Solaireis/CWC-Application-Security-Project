@@ -1,3 +1,4 @@
+APScheduler>=3.8.1
 argon2-cffi>=21.3.0
 dicebear==0.2.15
 email-validator==1.1.3
