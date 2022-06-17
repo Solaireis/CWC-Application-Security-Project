@@ -4,22 +4,26 @@
 
 Jason: 
 (Cryptographic Failures)
+
 Plan:
 - Login and signup pages
 - Storing of credit card
 - Profile page (change credentials)
 - Hashing of passwords
 - Asymmetric encryption for sensitive information
+
 Implemented:
 - Secure Flask Secret Key
 - Argon2 for hashing passwords
 
 (Identification and Authentication Failures)
+
 Plan:
 - Brute forcing/credential stuffing logins
 - Implement 2FA
 - Invalidate session after several mins of inactivity
 - Block weak passwords
+
 Implemented:
 - Minimum Password Complexity Policy using regex
 - Blacklisting of known malicious IP addresses
