@@ -88,6 +88,8 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
                 return get_IP_address_blacklist()
 
             if (date >= lastUpdated):
+                print("\nIP Address Blacklist is up to date!")
+                print("Successfully loaded IP Address Blacklist from the saved file.\n")
                 return tuple(blacklist[1:]) # return the blacklist if it is up to date
             else:
                 print("\nIP Address Blacklist is outdated!", end="")

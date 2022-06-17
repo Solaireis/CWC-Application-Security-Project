@@ -57,14 +57,17 @@ app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 # Session config
 app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 
-# get ip address blacklist from a github repo or the saved file
-IP_ADDRESS_BLACKLIST = get_IP_address_blacklist()
-
 """End of Web app configurations"""
+
+@app.before_first_request # called at the very first request to the web app
+def before_first_request():
+    if (app.config.get("IP_ADDRESS_BLACKLIST") is None):
+        # get ip address blacklist from a github repo or the saved file
+        app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist() 
 
 @app.before_request # called before each request to the application.
 def before_request():
-    if (get_remote_address() in IP_ADDRESS_BLACKLIST):
+    if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
     elif ("user" in session):
         if (not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
