@@ -144,7 +144,7 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     - to: Email address of the receiver.
     - subject: The subject of the email message.
     - message: The text of the email message. (Can be HTML)
-    - name: The name of the receipient.
+    - name: The name of the recipient.
 
     Returns:
     A dictionary containing a base64url encoded email object.
