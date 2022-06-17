@@ -73,3 +73,11 @@ class IsAlreadyTeacherError(Exception):
     """
     Raised if the user tries to become a teacher even though they are already a teacher.
     """
+
+class AccountLockedError(Exception):
+    """
+    Raised if the user tries to login but their account is locked.
+
+    Reasons for locked account: 
+        - Too many failed login attempts. (> 10 attempts)
+    """

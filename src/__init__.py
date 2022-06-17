@@ -1,5 +1,4 @@
 # import third party libraries
-from matplotlib.style import use
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -26,7 +25,7 @@ from pathlib import Path
 
 # general Flask configurations
 app = Flask(__name__)
-app.config["SECRET_KEY"] = secrets.token_hex(32) # 32 bytes/256 bits
+app.config["SECRET_KEY"] = "secret" # secrets.token_hex(32) # 32 bytes/256 bits
 scheduler = BackgroundScheduler()
 
 # rate limiter configuration using flask limiter
@@ -58,15 +57,14 @@ app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 # Session config
 app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 
+# get ip address blacklist from a github repo or the saved file
+IP_ADDRESS_BLACKLIST = get_IP_address_blacklist()
+
 """End of Web app configurations"""
 
 @app.before_request # called before each request to the application.
 def before_request():
-    if (app.config.get("IP_ADDRESS_BLACKLIST") is None):
-        # get ip address blacklist from a github repo or the saved file
-        app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
-
-    if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
+    if (get_remote_address() in IP_ADDRESS_BLACKLIST):
         abort(403)
     elif ("user" in session):
         if (not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
@@ -142,11 +140,25 @@ def login():
             try:
                 userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
                 successfulLogin = True
+                sql_operation(table="login_attempts", mode="reset_user_attempts", userID=userInfo[0])
             except (IncorrectPwdError, EmailDoesNotExistError):
-                flash("Please check your entries and try again!", "Danger")
+                try:
+                    sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
+                    flash("Please check your entries and try again!", "Danger")
+                except (EmailDoesNotExistError):
+                    flash("Please check your entries and try again!", "Danger")
+                except (AccountLockedError):
+                    print("Account locked")
+                    flash("Too many failed login attempts, please try again later.", "Danger")
+            except (AccountLockedError):
+                print("Account locked")
+                flash("Too many failed login attempts, please try again later.", "Danger")
 
             if (successfulLogin):
-                sessionID = generate_id()
+                # minimum requirement for a session ID:
+                # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
+                sessionID = generate_id() # using a 32 byte session ID
+
                 sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userInfo[0])
                 session["sid"] = sessionID
                 session["user"] = userInfo[0]
@@ -218,6 +230,7 @@ def logout():
     if ("user" not in session):
         return redirect(url_for("login"))
 
+    sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
@@ -329,14 +342,13 @@ def updateUsername():
             try:
                 sql_operation(table="user", mode="change_username", userID=userID, username=updatedUsername)
                 changed = True
+                flash("Your username has been successfully changed.", "Account Details Updated!")
             except (ReusedUsernameError):
                 flash("Sorry, Username has already been taken!")
 
             if (changed):
-                flash("Your username has been successfully changed.", "Account Details Updated!")
                 return redirect(url_for("userProfile"))
             else:
-                flash("Sorry, Username has already been taken!")
                 return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
         else:
             return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
@@ -353,15 +365,18 @@ def updateEmail():
         create_update_email_form = CreateChangeEmail(request.form)
         if (request.method == "POST") and (create_update_email_form.validate()):
             updatedEmail = create_update_email_form.updateEmail.data
+            currentPassword = create_update_email_form.currentPassword.data
 
             changed = False
             try:
-                sql_operation(table="user", mode="change_email", userID=userID, email=updatedEmail)
+                sql_operation(table="user", mode="change_email", userID=userID, email=updatedEmail, currentPassword=currentPassword)
                 changed = True
             except (EmailAlreadyInUseError):
-                flash("Sorry, Email has already been taken!")
+                flash("Sorry, email has already been taken!")
             except (SameAsOldEmailError):
                 flash("Sorry, please enter a different email from your current one!")
+            except (IncorrectPwdError):
+                flash("Sorry, please check your current password and try again!")
 
             if (not changed):
                 return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
@@ -887,7 +902,8 @@ def error503(e):
 
 if (__name__ == "__main__"):
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
-    scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour="23", minute="59", second="0", id="deleteExpiredSessions")
+    scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour="23", minute="58", second="0", id="deleteExpiredSessions")
+    scheduler.add_job(lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), trigger="cron", hour="23", minute="59", second="0", id="resetLockedAccounts")
     scheduler.start()
     app.run(debug=True)
     # app.run(debug=True, use_reloader=False)

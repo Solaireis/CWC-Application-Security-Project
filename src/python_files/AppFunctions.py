@@ -22,6 +22,12 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
 
+"""------------------------------ Define Constants ------------------------------"""
+
+MAX_LOGIN_ATTEMPTS = 6
+
+"""------------------------------ End of Defining Constants ------------------------------"""
+
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
@@ -78,21 +84,78 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             sleep(1) # wait one second before trying again
             continue
 
-    if (table == "user"):
-        returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
-    elif (table == "course"):
-        returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-    # elif table == "cart":
-    #     returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
-    # elif table == "purchased":
-    #     returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
-    elif (table == "session"):
-        returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
+    try:
+        if (table == "user"):
+            returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "course"):
+            returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
+        # elif table == "cart":
+        #     returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
+        # elif table == "purchased":
+        #     returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "session"):
+            returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "login_attempts"):
+            returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
+    except (sqlite3.OperationalError, sqlite3.DatabaseError, sqlite3.IntegrityError):
+        # to ensure that the connection is closed even if an error with sqlite3 occurs
+        pass
 
     con.close()
     return returnValue
 
-def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, dict, None]:
+def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, tuple, None]:
+    if (mode is None):
+        connection.close()
+        raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
+
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
+        user_id PRIMARY KEY,
+        attempts INT NOT NULL,
+        reset_date DATE NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+
+    if (mode == "add_attempt"):
+        emailInput = kwargs.get("email")
+        userID = cur.execute("SELECT id FROM user WHERE email = ?", (emailInput,)).fetchone()
+        if (userID is None):
+            connection.close()
+            raise EmailDoesNotExistError("Email does not exist!")
+
+        userID = userID[0]
+        cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = ?", (userID,))
+        attempts = cur.fetchone()
+        if (attempts is None):
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (?, ?, ?)", (userID, 1, datetime.now() + timedelta(hours=4)))
+        else:
+            # comparing the reset datetime with the current datetime
+            if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
+                # if not past the reset datetime
+                currentAttempts = attempts[0]
+            else:
+                # if past the reset datetime, reset the attempts to 0
+                currentAttempts = 0
+
+            if (currentAttempts > MAX_LOGIN_ATTEMPTS):
+                # if reached max attempts per account
+                connection.close()
+                raise AccountLockedError("User have exceeded the maximum number of password attempts!")
+
+            cur.execute("UPDATE login_attempts SET attempts = ?, reset_date = ? WHERE user_id = ?", (currentAttempts + 1, datetime.now() + timedelta(hours=4), userID))
+        connection.commit()
+
+    elif (mode == "reset_user_attempts"):
+        userID = kwargs.get("userID")
+        cur.execute("DELETE FROM login_attempts WHERE user_id = ?", (userID,))
+        connection.commit()
+
+    elif (mode == "reset_attempts_past_reset_date"):
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < ?", (datetime.now(),))
+        connection.commit()
+
+def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, bool, tuple, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
@@ -158,6 +221,13 @@ def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs
             return True
         else:
             return False
+
+    elif (mode == "delete_users_other_session"):
+        # delete all session of a user except the current session id
+        userID = kwargs.get("userID")
+        sessionID = kwargs.get("sessionID")
+        cur.execute("DELETE FROM session WHERE user_id = ? AND session_id != ?", (userID, sessionID))
+        connection.commit()
 
 def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
@@ -225,6 +295,16 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
+        lockedAccount = cur.execute("SELECT attempts FROM login_attempts WHERE user_id=?", (matched[0],)).fetchone()
+        if (lockedAccount):
+            if (lockedAccount[0] > MAX_LOGIN_ATTEMPTS):
+                connection.close()
+                raise AccountLockedError("Account is locked!")
+            else:
+                # reset the attempts
+                cur.execute("DELETE FROM login_attempts WHERE user_id=?", (matched[0],))
+                connection.commit()
+
         try:
             if (PH().verify(matched[2], passwordInput)):
                 return (matched[0], matched[1])
@@ -254,18 +334,26 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
 
     elif (mode == "change_email"):
         userID = kwargs.get("userID")
+        currentPasswordInput = kwargs.get("currentPassword")
         emailInput = kwargs.get("email")
-        reusedEmail = cur.execute(f"SELECT userid FROM user WHERE email='{emailInput}'").fetchone()
-        if (reusedEmail[0] == userID):
-            connection.close()
-            raise SameAsOldEmailError(f"The email {emailInput} is the same as the old email!")
 
-        if (bool(reusedEmail)):
-            connection.close()
-            raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
+        reusedEmail = cur.execute(f"SELECT id, password FROM user WHERE email='{emailInput}'").fetchone()
+        if (reusedEmail is not None):
+            if (reusedEmail[0] == userID):
+                connection.close()
+                raise SameAsOldEmailError(f"The email {emailInput} is the same as the old email!")
+            else:
+                connection.close()
+                raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
-        cur.execute(f"UPDATE user SET email='{emailInput}' WHERE id='{userID}'")
-        connection.commit()
+        currentPassword = cur.execute(f"SELECT password FROM user WHERE id='{userID}'").fetchone()
+        try:
+            if (PH().verify(currentPassword[0], currentPasswordInput)):
+                cur.execute(f"UPDATE user SET email='{emailInput}' WHERE id='{userID}'")
+                connection.commit()
+        except (VerifyMismatchError):
+            connection.close()
+            raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "change_password"):
         userID = kwargs.get("userID")

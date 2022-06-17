@@ -88,8 +88,6 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
                 return get_IP_address_blacklist()
 
             if (date >= lastUpdated):
-                print("\nIP Address Blacklist is up to date!")
-                print("Successfully loaded IP Address Blacklist from the saved file.\n")
                 return tuple(blacklist[1:]) # return the blacklist if it is up to date
             else:
                 print("\nIP Address Blacklist is outdated!", end="")
@@ -115,13 +113,15 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
                 datetime.strptime(blacklist[0], DATE_FORMAT)
             except (ValueError):
                 BLACKLIST_FILEPATH.unlink()
-                return get_IP_address_blacklist(checkForUpdates=False)
+                return get_IP_address_blacklist(checkForUpdates=True) # true as a last resort
 
-            print("\nIP Address Blacklist loaded from the saved file.\n")
+            print("\nLoading potentially outdated IP Address Blacklist from the saved text file...")
+            print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
             return tuple(blacklist[1:])
         else:
-            print("\nIP Address Blacklist not found!")
-            print("IP Address Blacklist will not be loaded and will be empty!\n")
+            print("\nIP Address Blacklist GitHub repo and text file were not found!")
+            print("IP Address Blacklist will not be loaded and will be empty!")
+            print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
             return ()
 
 def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", messageText:str="") -> dict:
@@ -235,6 +235,6 @@ def pwd_has_been_pwned(password:str) -> bool:
 
 def generate_id() -> str:
     """
-    Generates a unique ID
+    Generates a unique ID (32 bytes)
     """
     return uuid.uuid4().hex

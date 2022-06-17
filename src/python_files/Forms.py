@@ -32,6 +32,7 @@ class CreateChangeUsername(Form):
 
 class CreateChangeEmail(Form):
     updateEmail = EmailField("Enter a new email address:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
+    currentPassword = PasswordField("Enter your current password:", [validators.Length(min=6, max=20), validators.DataRequired()])
 
 class CreateChangePasswordForm(Form):
     currentPassword = PasswordField("Enter your current password:", [validators.Length(min=6, max=20), validators.DataRequired()])

@@ -141,7 +141,7 @@
                                         <td>
                                             <h6>Password:</h6>
                                         </td>
-                                        <td><a href="/{{ url_for('updatePassword') }}">Change Password</a></td>
+                                        <td><a href="{{ url_for('updatePassword') }}">Change Password</a></td>
                                     </tr>
                                     <tr>
                                         <td>
@@ -234,7 +234,7 @@
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary"
                                                 data-bs-dismiss="modal">Back</button>
-                                            <form action="/change_account_type" method="POST">
+                                            <form action="{{ url_for('changeAccountType') }}" method="POST">
                                                 <input type="hidden" name="changeAccountType" value="changeToTeacher">
                                                 <button type="submit" class="btn btn-primary">Become a teacher!</button>
                                             </form>
