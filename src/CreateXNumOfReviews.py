@@ -1,9 +1,7 @@
 import sqlite3, pathlib, uuid
 from datetime import datetime
 from random import randint
-
-def generate_id():
-    return uuid.uuid4().hex
+from python_files.NormalFunctions import generate_id
 
 pyFilePath = pathlib.Path(__file__).parent.absolute().joinpath("databases", "database.db")
 

@@ -1,9 +1,12 @@
 # import third party libraries
+from limits.storage import base
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
 from argon2 import PasswordHasher as PH
+import pyotp, qrcode
+import qrcode.image.svg
 
 # import flask libraries
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
@@ -20,6 +23,8 @@ from python_files.Errors import *
 import secrets
 from datetime import datetime
 from pathlib import Path
+import base64
+from io import BytesIO
 
 """Web app configurations"""
 
@@ -56,6 +61,9 @@ app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 
 # Session config
 app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
+
+# duration for locked accounts before user can try to login again
+app.config["LOCKED_ACCOUNT_DURATION"] = 30 # 
 
 """End of Web app configurations"""
 
@@ -121,13 +129,13 @@ def home():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = userInfo[-1]
 
-    return render_template("users/general/home.html", accType=session.get("role"), imageSrcPath=imageSrcPath,   
+    return render_template("users/general/home.html", imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
 
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("10 per second")
+@limiter.limit("2 per second")
 def login():
     if ("user" not in session):
         loginForm = CreateLoginForm(request.form)
@@ -138,11 +146,14 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
 
-            successfulLogin = False
+            successfulLogin = userHasTwoFA = False
             try:
                 userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
+
                 successfulLogin = True
                 sql_operation(table="login_attempts", mode="reset_user_attempts", userID=userInfo[0])
+
+                userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
             except (IncorrectPwdError, EmailDoesNotExistError):
                 try:
                     sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
@@ -156,17 +167,16 @@ def login():
                 print("Account locked")
                 flash("Too many failed login attempts, please try again later.", "Danger")
 
-            if (successfulLogin):
-                # minimum requirement for a session ID:
-                # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
-                sessionID = generate_id() # using a 32 byte session ID
-
-                sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userInfo[0])
-                session["sid"] = sessionID
+            if (successfulLogin and not userHasTwoFA):
+                session["sid"] = add_session(userInfo[0])
                 session["user"] = userInfo[0]
                 session["role"] = userInfo[1]
-                print(f"Successful Login : email: {emailInput}, password: {passwordInput}")
+                print(f"Successful Login: email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
+            elif (successfulLogin and userHasTwoFA):
+                session["temp_uid"] = userInfo[0]
+                session["temp_role"] = userInfo[1]
+                return redirect(url_for("enter2faTOTP"))
             else:
                 return render_template("users/guest/login.html", form=loginForm)
         else:
@@ -237,6 +247,107 @@ def logout():
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
 
+@app.route("/enter-2fa", methods=["GET", "POST"])
+def enter2faTOTP():
+    if ("user" in session):
+        return redirect(url_for("home"))
+
+    if ("temp_uid" not in session and "temp_role" not in session):
+        return redirect(url_for("login"))
+
+    twoFactorAuthForm = twoFAForm(request.form)
+    if (request.method == "GET"):
+        return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+
+    if (request.method == "POST" and twoFactorAuthForm.validate()):
+        twoFAInput = twoFactorAuthForm.twoFATOTP.data
+        try:
+            getSecretToken = sql_operation(table="2fa_token", mode="get_token", userID=session["temp_uid"])
+        except (No2FATokenError):
+            # if for whatever reasons, the user has no 2FA token (which shouldn't happen), redirect to login
+            return redirect(url_for("login"))
+
+        if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
+            userID = session["temp_uid"]
+            role = session["temp_role"]
+            session.clear()
+            session["user"] = userID
+            session["role"] = role
+            session["sid"] = add_session(userID)
+            return redirect(url_for("home"))
+        else:
+            flash("Invalid 2FA code, please try again!")
+            return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+
+    # post request but form inputs are not valid
+    return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+
+@app.route("/disable-2fa")
+def disableTwoFactorAuth():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])):
+        sql_operation(table="2fa_token", mode="delete_token", userID=session["user"])
+        flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
+    else:
+        flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
+
+    return redirect(url_for("userProfile"))
+
+@app.route("/setup-2fa", methods=["GET", "POST"])
+def twoFactorAuthSetup():
+    if ("user" not in session):
+        return redirect(url_for("login"))
+
+    twoFactorAuthForm = twoFAForm(request.form)
+    if (request.method == "GET"):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+
+        # for google authenticator setup key (20 byte)
+        secretToken = pyotp.random_base32() # MUST be kept secret
+
+        imageSrcPath = get_image_path(session["user"])
+
+        # generate a QR code for the user to scan
+        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo[2], issuer_name='CourseFinity')
+
+        # to save the image in the memory buffer
+        # instead of saving the qrcode png as a file in the web server
+        stream = BytesIO() 
+
+        # create a qrcode object
+        qrCodeData = qrcode.make(totp, box_size=15)
+
+        # save the qrcode image in the memory buffer
+        qrCodeData.save(stream)
+
+        # get the image from the memory buffer and encode it into base64
+        QRCodeBytes = base64.b64encode(stream.getvalue()).decode()
+
+        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, QRCodeBytes=QRCodeBytes, secretToken=secretToken)
+
+    if (request.method == "POST" and twoFactorAuthForm.validate()):
+        # POST request code below
+        twoFATOTP = twoFactorAuthForm.twoFATOTP.data
+        secretToken = request.form.get("secretToken")
+        if (secretToken is None or not two_fa_token_is_valid(secretToken)):
+            flash("Please check your entry and try again!")
+            return redirect(url_for("twoFactorAuthSetup"))
+
+        # check if the TOTP is valid
+        if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
+            # update the user's 2FA status to True
+            sql_operation(table="2fa_token", mode="add_token", userID=session["user"], token=secretToken)
+            flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
+            return redirect(url_for("userProfile"))
+        else:
+            flash("Please check your entry and try again!")
+            return redirect(url_for("twoFactorAuthSetup"))
+
+    # post request but form inputs are not valid
+    return redirect(url_for("twoFactorAuthSetup"))
+
 @app.route("/payment-settings", methods=["GET", "POST"])
 def paymentSettings():
     if ("user" not in session):
@@ -252,7 +363,7 @@ def paymentSettings():
 
     # GET method codes below
     if (request.method == "GET"):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = get_image_path(session["user"], returnUserInfo=False)
         
         cardName = cardNumber = cardExpiry = None
         if (cardExists):
@@ -261,7 +372,7 @@ def paymentSettings():
             cardNumber = cardInfo[1]
             cardExpiry = cardInfo[2]
 
-        return render_template("users/loggedin/payment_settings.html", form=paymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry)
+        return render_template("users/loggedin/payment_settings.html", form=paymentForm, imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry)
 
     # POST method codes below
     if (paymentForm.validate() and not cardExists):
@@ -300,12 +411,12 @@ def editPayment():
     editPaymentForm = CreateEditPaymentForm(request.form)
 
     if (request.method == "GET"):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = get_image_path(session["user"], returnUserInfo=False)
         cardInfo = cardExists[0]
         cardName = cardInfo[0]
         cardExpiry = cardInfo[2]
 
-        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, accType=userInfo[1], imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry)
+        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry)
 
     if (editPaymentForm.validate()):
         # POST request code below
@@ -323,10 +434,11 @@ def userProfile():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
         username = userInfo[2]
-        accType = userInfo[1]
         email = userInfo[3]
 
-        return render_template("users/loggedin/user_profile.html", username=username, accType=accType, email=email, imageSrcPath=imageSrcPath)
+        twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
+
+        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled)
     else:
         return redirect(url_for("login"))
 
@@ -468,7 +580,8 @@ def uploadPic():
             file.save(Path("src/Insecure/").joinpath(filepath))
             # file.save(os.path.join("src/Insecure/", filepath))
 
-            sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
+            # no more mode="edit"
+            # sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
             return redirect(url_for("userProfile"))
 
@@ -482,7 +595,6 @@ def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
-        accType = userInfo[1]
         courseForm = CreateCourse(request.form)
         if (request.method == "POST"):
             courseTitle = courseForm.courseTitle.data
@@ -520,7 +632,7 @@ def createCourse():
 
             return redirect(url_for("home"))
         else:
-            return render_template("users/teacher/create_course.html", accType=accType, imageSrcPath=imageSrcPath, form = courseForm)
+            return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form = courseForm)
     else:
         return redirect(url_for("login"))
 
@@ -537,7 +649,7 @@ def teacherPage(teacherID):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/teacher_page.html", accType=session.get("role"),                              
+    return render_template("users/general/teacher_page.html",                              
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
         teacherProfilePath=teacherProfilePath,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
@@ -579,7 +691,7 @@ def coursePage(courseID):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/course_page.html", accType=session.get("role"),
+    return render_template("users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
@@ -594,7 +706,7 @@ def courseReview(courseID):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/course_page_review.html", accType=session.get("role"),
+    return render_template("users/general/course_page_review.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
 
 @app.route("/purchase-view/<courseID>")
@@ -633,7 +745,7 @@ def purchaseView(courseID):
         imageSrcPath = get_image_path(session["user"])
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
 
-    return render_template("users/general/purchase_view.html", accType=session.get("role"),
+    return render_template("users/general/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
@@ -819,9 +931,8 @@ def adminProfile():
         userID = userInfo[0]
         userUsername = userInfo[1]
         userEmail = userInfo[2]
-        userAccType = userInfo[3]
 
-        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userAccType=userAccType, userID=userID)
+        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userID=userID)
     
     # for logged users that are not admins
     if ("user" in session):

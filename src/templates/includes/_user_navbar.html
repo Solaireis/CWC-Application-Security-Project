@@ -129,19 +129,19 @@
 				<li class="nav-item dropdown">
 					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="{{ imageSrcPath }}" id="user_profile" alt="User profile icon"></a>
 					<ul class="dropdown-menu shadow">
-						{% if accType == "Teacher" %}
-						<!--li><a href="/teacher_page/{{ teacherUID }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li-->
+						{% if session.get("role") == "Teacher" %}
+						<li><a href="{{ url_for('teacherPage', teacherID=session.get('user')) }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li>
 						<li><a href="{{ url_for('createCourse') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
-						<li><a href="/purchase_history" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
+						<li><a href="{{ url_for('purchaseHistory') }}" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
 						<li><a class="dropdown-item" href="{{ url_for('userProfile') }}"><i class="fas fa-user-edit"></i> Settings</a></li>
 						<li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>
 
 				<li class="nav-item">
-					<a href="/shopping_cart" class="nav-link text-white" id="shopping-cart-link">
+					<a href="{{ url_for('cart') }}" class="nav-link text-white" id="shopping-cart-link">
 						<i class="fas fa-shopping-cart fa-lg text-decoration-none"></i>
 					</a>
 				</li>

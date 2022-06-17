@@ -36,6 +36,7 @@
   - Verified whenever the user signs up or changes his/her password
 - Maximum of 6 failed login attempts per account (will reset after 4 hrs)
 - Session timeout after 30 mins of inactivity
+- 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 
 ---
 

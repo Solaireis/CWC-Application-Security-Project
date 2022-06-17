@@ -150,10 +150,10 @@
                                         <td>
                                             {% if twoFAEnabled %}
                                             <h6 class="text-success">Enabled</h6>
-                                            <a href="/2FA_disable">Disable 2FA</a>
+                                            <a href="{{ url_for('disableTwoFactorAuth') }}">Disable 2FA</a>
                                             {% else %}
                                             <h6 class="text-danger">Not Enabled</h6>
-                                            <a href="/2FA">Enable 2FA</a>
+                                            <a href="{{ url_for('twoFactorAuthSetup') }}">Enable 2FA</a>
                                             {% endif %}
                                         </td>
                                     </tr>

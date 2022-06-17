@@ -47,9 +47,11 @@ PASSWORD_REGEX = re.compile(r"""
 $                                                                   # end of password
 """, re.VERBOSE)
 
+OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
+
 """------------------------------ End of Defining Constants ------------------------------"""
 
-def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
+def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
     """
     Get the IP address to blacklist from the server.
     Though this is not the most effective way of preventing malcious threat actors from
@@ -89,14 +91,14 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
 
             if (date >= lastUpdated):
                 print("\nIP Address Blacklist is up to date!")
-                print("Successfully loaded IP Address Blacklist from the saved file.\n")
-                return tuple(blacklist[1:]) # return the blacklist if it is up to date
+                print("Successfully loaded IP Address Blacklist from thq saved file.\n")
+                return blacklist[1:] # return the blacklist if it is up to date
             else:
                 print("\nIP Address Blacklist is outdated!", end="")
                 action = 1
 
         print("\nLoading IP Address Blacklist from the github repo...")
-        blacklist = tuple([ip.split("\t")[0] for ip in results if (not ip.startswith("#"))])
+        blacklist = [ip.split("\t")[0] for ip in results if (not ip.startswith("#"))]
 
         with open(BLACKLIST_FILEPATH, "w") as f:
             f.write(lastUpdated.strftime(DATE_FORMAT) + "\n")
@@ -119,12 +121,12 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> tuple:
 
             print("\nLoading potentially outdated IP Address Blacklist from the saved text file...")
             print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
-            return tuple(blacklist[1:])
+            return blacklist[1:]
         else:
             print("\nIP Address Blacklist GitHub repo and text file were not found!")
             print("IP Address Blacklist will not be loaded and will be empty!")
             print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
-            return ()
+            return []
 
 def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", messageText:str="") -> dict:
     """
@@ -240,3 +242,15 @@ def generate_id() -> str:
     Generates a unique ID (32 bytes)
     """
     return uuid.uuid4().hex
+
+def two_fa_token_is_valid(token:str) -> bool:
+    """
+    Checks if the 2FA token is valid.
+    
+    Args:
+    - token: The token to check.
+    
+    Returns:
+    - True if the token is valid, False otherwise.
+    """
+    return True if (re.fullmatch(OTP_REGEX, token)) else False

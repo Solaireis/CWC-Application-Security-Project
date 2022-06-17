@@ -24,9 +24,26 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
 
 """------------------------------ Define Constants ------------------------------"""
 
-MAX_LOGIN_ATTEMPTS = 6
+MAX_LOGIN_ATTEMPTS = 10
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def add_session(userID:str) -> str:
+    """
+    Generate a 32 byte session ID and add it to the database.
+    
+    Args:
+        - userID (str): The user ID of the user
+
+    Returns:
+        - The generated session ID (str)
+    """
+    # minimum requirement for a session ID:
+    # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
+    sessionID = generate_id() # using a 32 byte session ID
+
+    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
+    return sessionID
 
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
@@ -97,14 +114,58 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "login_attempts"):
             returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
-    except (sqlite3.OperationalError, sqlite3.DatabaseError, sqlite3.IntegrityError):
+        elif (table == "2fa_token"):
+            returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
+    except (sqlite3.OperationalError, sqlite3.DatabaseError, sqlite3.IntegrityError) as e:
         # to ensure that the connection is closed even if an error with sqlite3 occurs
-        pass
+        print("Error caught:")
+        print(e)
 
     con.close()
     return returnValue
 
-def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, tuple, None]:
+def twofa_token_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, str, None]:
+    if (mode is None):
+        connection.close()
+        raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
+
+    cur = connection.cursor()
+    cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
+        token PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+    connection.commit()
+
+    if (mode == "add_token"):
+        token = kwargs.get("token")
+        userID = kwargs.get("userID")
+
+        cur.execute("INSERT INTO twofa_token (token, user_id) VALUES (?, ?)", (token, userID))
+        connection.commit()
+
+    elif (mode == "get_token"):
+        userID = kwargs.get("userID")
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = ?", (userID,))
+        matchedToken = cur.fetchone()
+        if (matchedToken is None):
+            connection.close()
+            raise No2FATokenError("No 2FA OTP found for this user!")
+
+        return matchedToken[0]
+
+    elif (mode == "check_if_user_has_2fa"):
+        userID = kwargs.get("userID")
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = ?", (userID,))
+        matchedToken = cur.fetchone()
+        return True if (matchedToken is not None) else False
+
+    elif (mode == "delete_token"):
+        userID = kwargs.get("userID")
+        cur.execute("DELETE FROM twofa_token WHERE user_id = ?", (userID,))
+        connection.commit()
+
+def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> None:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
@@ -116,6 +177,7 @@ def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, *
         reset_date DATE NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    connection.commit()
 
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
@@ -128,7 +190,7 @@ def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, *
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = ?", (userID,))
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (?, ?, ?)", (userID, 1, datetime.now() + timedelta(hours=4)))
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (?, ?, ?)", (userID, 1, datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])))
         else:
             # comparing the reset datetime with the current datetime
             if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
@@ -143,7 +205,7 @@ def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, *
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = ?, reset_date = ? WHERE user_id = ?", (currentAttempts + 1, datetime.now() + timedelta(hours=4), userID))
+            cur.execute("UPDATE login_attempts SET attempts = ?, reset_date = ? WHERE user_id = ?", (currentAttempts + 1, datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), userID))
         connection.commit()
 
     elif (mode == "reset_user_attempts"):
@@ -155,7 +217,7 @@ def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, *
         cur.execute("DELETE FROM login_attempts WHERE reset_date < ?", (datetime.now(),))
         connection.commit()
 
-def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, bool, tuple, None]:
+def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
@@ -167,6 +229,8 @@ def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs
         expiry_date DATE NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    connection.commit()
+
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
@@ -260,6 +324,8 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         cart_courses TEXT NOT NULL,
         purchased_courses TEXT NOT NULL
     )""")
+    connection.commit()
+
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
         if (not userID):
@@ -267,6 +333,12 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=?", (userID,))
         return bool(cur.fetchone())
+
+    # elif (mode == "get_username"):
+    #     userID = kwargs.get("userID")
+    #     cur.execute("SELECT username FROM user WHERE id=?", (userID,))
+    #     username = cur.fetchone()
+    #     return username[0] if (username is not None) else None
 
     elif (mode == "signup"):
         emailInput = kwargs.get("email")
@@ -534,6 +606,8 @@ def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kw
         video_path TEXT NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
+    connection.commit()
+
     if (mode == "insert"):
         course_id = generate_id()
         teacher_id = kwargs.get("teacherId")

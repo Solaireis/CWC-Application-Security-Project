@@ -81,3 +81,8 @@ class AccountLockedError(Exception):
     Reasons for locked account: 
         - Too many failed login attempts. (> 10 attempts)
     """
+
+class No2FATokenError(Exception):
+    """
+    Raised if the user tries to login but they have not enabled 2FA.
+    """

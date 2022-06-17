@@ -37,18 +37,18 @@
                             <li>Submit the time-based one time password (OTP) in the form.</li>
                             <li class="text-warning">Do note that this setup key will change upon refreshing the page.</li>
                         </ol>
-                        <h6 class="text-break">Setup Key: <a href="javascript:copyToClipBoard('OTP')" onmouseout="tooltipMouseOut('OTP')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementOTP">{{ secret }}</a></h6>
-                        <span id="tooltipValueOTP" hidden>{{ secret }}</span>
+                        <h6 class="text-break">Setup Key: <a href="javascript:copyToClipBoard('OTP')" onmouseout="tooltipMouseOut('OTP')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementOTP">{{ secretToken }}</a></h6>
+                        <span id="tooltipValueOTP" hidden>{{ secretToken }}</span>
                         <div class="QRCode_wrapper">
-                            <img src="{{ qrCodePath }}" alt="Google Authenticator OTP QR Code" class="QRCode">
+                            <img src="data:image/png;base64,{{ QRCodeBytes }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode">
                         </div>
                     </div>
                     <div class="col-12 text-white">
-                        <input type="hidden" name="secret" value="{{ secret }}">
+                        <input type="hidden" name="secretToken" value="{{ secretToken }}">
                         {{ render_field(form.twoFAOTP, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <a href="/user_profile" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
+                        <a href="{{ url_for('userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
                         <button type="submit" class="btn btn-colour text-white float-end">Submit</button>
                     </div>
                 </form>

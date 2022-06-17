@@ -1,6 +1,6 @@
-{% if accType == None %}
+{% if session.get("role") == None %}
 	{% extends "guest_base.html" %}
-{% elif accType == "Admin" %}
+{% elif session.get("role") == "Admin" %}
 	{% extends "admin_base.html" %}
 {% else %}
 	{% extends "user_base.html" %}
