@@ -22,6 +22,8 @@ import requests as req
 
 # For Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
 
 """------------------------------ Define Constants ------------------------------"""
@@ -47,7 +49,12 @@ PASSWORD_REGEX = re.compile(r"""
 $                                                                   # end of password
 """, re.VERBOSE)
 
+# for TOTP token
 OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
+
+# for email coursefinity logo image
+with open(PARENT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
+    LOGO_BYTES = f.read()
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -128,7 +135,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
             print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
             return []
 
-def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", messageText:str="") -> dict:
+def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", message:str="", name:str=None) -> dict:
     """
     Create a message for an email.
     
@@ -136,16 +143,35 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     - sender: Email address of the sender.
     - to: Email address of the receiver.
     - subject: The subject of the email message.
-    - messageText: The text of the email message. (Can be HTML)
+    - message: The text of the email message. (Can be HTML)
+    - name: The name of the receipient.
 
     Returns:
     A dictionary containing a base64url encoded email object.
     """
-    message = MIMEText(messageText, "html")
-    message["To"] = to
-    message["From"] = sender
-    message["Subject"] = subject
-    return {"raw": urlsafe_b64encode(message.as_string().encode()).decode()}
+    htmlMessage = MIMEMultipart(_subtype="related")
+    mainBody = f"""<p>Hello{f' {name}' if (name is not None) else ''},</p>
+
+{message}
+
+<p>
+  Sincerely,<br>
+  <strong>CourseFinity Support Team</strong>
+</p>
+<img src="cid:logo" alt="CourseFinity Logo" style="border-radius: 5px; width: min(250px, 40%);">
+"""
+    htmlMessage.attach(MIMEText(mainBody, _subtype="html"))
+
+    # attach the logo image
+    logoImage = MIMEImage(LOGO_BYTES, "png")
+    logoImage.add_header("Content-ID", "<logo>")
+    logoImage.add_header("Content-Disposition", "inline", filename="coursefinity_logo.png")
+    htmlMessage.attach(logoImage)
+
+    htmlMessage["To"] = to
+    htmlMessage["From"] = sender
+    htmlMessage["Subject"] = subject
+    return {"raw": urlsafe_b64encode(htmlMessage.as_string().encode()).decode()}
 
 def send_email(to:str="", subject:str="", body:str="") -> Union[dict, None]:
     """
@@ -164,7 +190,7 @@ def send_email(to:str="", subject:str="", body:str="") -> Union[dict, None]:
     sentMessage = None
     try:
         # creates a message object and sets the sender, recipient, and subject.
-        message = create_message(to=to, subject=subject, messageText=body)
+        message = create_message(to=to, subject=subject, message=body)
 
         # send the message
         sentMessage = (GOOGLE_SERVICE.users().messages().send(userId="me", body=message).execute())
