@@ -323,9 +323,9 @@ def twoFactorAuthSetup():
         qrCodeData.save(stream)
 
         # get the image from the memory buffer and encode it into base64
-        QRCodeBytes = base64.b64encode(stream.getvalue()).decode()
+        qrCodeEncodedBase64 = base64.b64encode(stream.getvalue()).decode()
 
-        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, QRCodeBytes=QRCodeBytes, secretToken=secretToken)
+        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         # POST request code below

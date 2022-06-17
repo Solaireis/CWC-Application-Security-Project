@@ -40,7 +40,7 @@
                         <h6 class="text-break">Setup Key: <a href="javascript:copyToClipBoard('OTP')" onmouseout="tooltipMouseOut('OTP')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementOTP">{{ secretToken }}</a></h6>
                         <span id="tooltipValueOTP" hidden>{{ secretToken }}</span>
                         <div class="QRCode_wrapper">
-                            <img src="data:image/png;base64,{{ QRCodeBytes }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode">
+                            <img src="data:image/png;base64,{{ qrCodeEncodedBase64 }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode">
                         </div>
                     </div>
                     <div class="col-12 text-white">
