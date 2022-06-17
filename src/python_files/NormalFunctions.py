@@ -155,8 +155,8 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
 {message}
 
 <p>
-  Sincerely,<br>
-  <strong>CourseFinity Support Team</strong>
+    Sincerely,<br>
+    <strong>CourseFinity Support Team</strong>
 </p>
 <img src="cid:logo" alt="CourseFinity Logo" style="border-radius: 5px; width: min(250px, 40%);">
 """
