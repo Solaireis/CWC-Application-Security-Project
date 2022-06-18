@@ -18,6 +18,7 @@
 #### Implemented:
 - Secure Flask Secret Key
 - Argon2 for hashing passwords
+- Using Google OAuth2 for login/signup (removed the need for storing passwords)
 
 ---
 
