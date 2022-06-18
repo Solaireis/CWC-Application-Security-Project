@@ -568,6 +568,12 @@ def updatePassword():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
 
+        # check if user logged in via Google OAuth2
+        loginViaGoogle = True if (userInfo[4] is None) else False
+        if (loginViaGoogle):
+            # if so, redirect to user profile as they cannot change their password
+            return redirect(url_for("userProfile"))
+
         create_update_password_form = CreateChangePasswordForm(request.form)
         if (request.method == "POST") and (create_update_password_form.validate()):
             currentPassword = create_update_password_form.currentPassword.data
