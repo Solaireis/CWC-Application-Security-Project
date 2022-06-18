@@ -12,6 +12,8 @@ import sqlite3, json
 from datetime import datetime, timedelta
 from typing import Union
 from time import sleep
+import mysql.connector
+import os
 
 # import third party libraries
 from dicebear import DAvatar, DStyle
@@ -105,16 +107,17 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     Returns the returned value from the SQL operation.
     """
     returnValue = con = None
-    # timeout is in seconds to give time to other threads that is connected to the SQL database.
-    # After the timeout, an OperationalError will be raised, stating "database is locked".
-    while (1):
-        try:
-            con = sqlite3.connect(app.config["SQL_DATABASE"], timeout=10)
-            break
-        except (sqlite3.OperationalError):
-            print("Database is locked, waiting...")
-            sleep(1) # wait one second before trying again
-            continue
+
+    try:
+        con = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password=os.environ['SQL_PASS'],
+            database= "appsecdatabase",
+        )
+
+    except (mysql.connector.errors.ProgrammingError):
+        print("Database Not Found. Please create one first")
 
     try:
         if (table == "user"):
@@ -131,7 +134,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "2fa_token"):
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
-    except (sqlite3.OperationalError, sqlite3.DatabaseError, sqlite3.IntegrityError) as e:
+    except (mysql.connector.Error) as e:
         # to ensure that the connection is closed even if an error with sqlite3 occurs
         print("Error caught:")
         print(e)
@@ -139,7 +142,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     con.close()
     return returnValue
 
-def twofa_token_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[bool, str, None]:
+def twofa_token_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -180,7 +183,7 @@ def twofa_token_sql_operation(connection:sqlite3.Connection, mode:str=None, **kw
         cur.execute("DELETE FROM twofa_token WHERE user_id = ?", (userID,))
         connection.commit()
 
-def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> None:
+def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
@@ -232,7 +235,7 @@ def login_attempts_sql_operation(connection:sqlite3.Connection, mode:str=None, *
         cur.execute("DELETE FROM login_attempts WHERE reset_date < ?", (datetime.now(),))
         connection.commit()
 
-def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, bool, None]:
+def session_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
@@ -308,7 +311,7 @@ def session_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs
         cur.execute("DELETE FROM session WHERE user_id = ? AND session_id != ?", (userID, sessionID))
         connection.commit()
 
-def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
+def user_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
     
@@ -620,7 +623,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         connection.commit()
 
 # May not be used
-def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
+def course_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
     
@@ -748,7 +751,7 @@ def course_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kw
         return resultsList
 
 # May not be used
-def cart_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
+def cart_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the cart table
     
@@ -791,7 +794,7 @@ def cart_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwar
         connection.commit()
     
 # May not be used
-def purchased_sql_operation(connection:sqlite3.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
+def purchased_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
     
@@ -828,7 +831,7 @@ def purchased_sql_operation(connection:sqlite3.Connection=None, mode:str=None, *
         cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
         connection.commit()
 
-def review_sql_operation(connection:sqlite3.Connection=None, mode: str=None, **kwargs) -> Union[list, None]:
+def review_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
 
