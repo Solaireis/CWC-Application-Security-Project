@@ -70,9 +70,6 @@ app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 # duration for locked accounts before user can try to login again
 app.config["LOCKED_ACCOUNT_DURATION"] = 30 # 
 
-# google client id from credentials.json (saved in a system environment variable)
-app.config["GOOGLE_CLIENT_ID"] = environ.get("GOOGLE_CLIENT_ID")
-
 # remove this in production environment so that Google OAuth2.0 will only work in https
 environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
 
@@ -82,6 +79,11 @@ environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 def before_first_request():
     # get ip address blacklist from a github repo or the saved file
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+
+    # load google client id from credentials.json
+    with open(app.root_path + r"\credentials.json", "r") as f:
+        credentials = json.load(f)
+    app.config["GOOGLE_CLIENT_ID"] = credentials["web"]["client_id"]
 
     # get Google oauth flow object
     app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
