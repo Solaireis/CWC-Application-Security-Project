@@ -99,6 +99,10 @@ def before_request():
             session.clear()
             return
 
+        """
+        Sign up does occur = account is added
+        But sid session dont exist
+        """
         if (sql_operation(table="session", mode="if_session_exists", sessionID=session["sid"])):
             # if session exists
             if (not sql_operation(table="session", mode="check_if_valid", sessionID=session["sid"], userID=session["user"])):
@@ -284,6 +288,8 @@ def signup():
 
             session["user"] = returnedVal # i.e. successful signup, returned the user ID
             session["role"] = "Student"
+            session["sid"] = add_session(returnedVal)
+
             return redirect(url_for("home"))
 
         # post request but form inputs are not valid
@@ -492,6 +498,10 @@ def userProfile():
         loginViaGoogle = True if (userInfo[4] is None) else False # check if the password is NoneType
 
         twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
+
+        """
+        Updates to teacher but page does not change
+        """
 
         return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle)
     else:
