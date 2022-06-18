@@ -14,6 +14,7 @@
 - Profile page (change credentials)
 - Hashing of passwords
 - Asymmetric encryption for sensitive information
+- Host and use HTTPS
 
 #### Implemented:
 - Secure Flask Secret Key
@@ -38,6 +39,7 @@
 - Maximum of 10 failed login attempts per account (will reset after 30 mins)
 - Session timeout after 30 mins of inactivity
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
+- Using Google OAuth2 for authenticating users
 
 ---
 

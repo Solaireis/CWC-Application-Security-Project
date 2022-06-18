@@ -230,6 +230,7 @@ def loginCallback():
     # add to db if user does not exist and retrieve the role of the user
     role = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
 
+    session.clear()
     session["user"] = userID
     session["role"] = role
     session["sid"] = add_session(userID)
