@@ -39,7 +39,8 @@
 - Maximum of 10 failed login attempts per account (will reset after 30 mins)
 - Session timeout after 30 mins of inactivity
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
-- Using Google OAuth2 for authenticating users
+- Using Google OAuth2 for authenticating users 
+  - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
 
 ---
 
