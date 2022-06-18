@@ -52,7 +52,7 @@ cur.execute("""CREATE TABLE IF NOT EXISTS course (
     course_category VARCHAR(255) NOT NULL,
     course_total_rating INTEGER NOT NULL,
     course_rating_count INTEGER NOT NULL,
-    date_created DATE NOT NULL,
+    date_created DATETIME(fsp) NOT NULL,
     video_path VARCHAR(255) NOT NULL,
     FOREIGN KEY (teacher_id) REFERENCES user(id)
 )""")

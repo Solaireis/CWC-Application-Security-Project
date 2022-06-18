@@ -138,7 +138,6 @@ def add_header(response):
 def home():
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
     threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
-    print(latestThreeCourses, threeHighlyRatedCourses)
 
     userPurchasedCourses = []
     imageSrcPath = None

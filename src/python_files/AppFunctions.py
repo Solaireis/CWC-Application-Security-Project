@@ -164,7 +164,7 @@ def twofa_token_sql_operation(connection:mysql.connector.connection.MySQLConnect
 
     elif (mode == "get_token"):
         userID = kwargs.get("userID")
-        cur.execute("SELECT token FROM twofa_token WHERE user_id = ?", (userID,))
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
         if (matchedToken is None):
             connection.close()
@@ -174,13 +174,13 @@ def twofa_token_sql_operation(connection:mysql.connector.connection.MySQLConnect
 
     elif (mode == "check_if_user_has_2fa"):
         userID = kwargs.get("userID")
-        cur.execute("SELECT token FROM twofa_token WHERE user_id = ?", (userID,))
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
         return True if (matchedToken is not None) else False
 
     elif (mode == "delete_token"):
         userID = kwargs.get("userID")
-        cur.execute("DELETE FROM twofa_token WHERE user_id = ?", (userID,))
+        cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
 def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
@@ -667,7 +667,7 @@ def course_sql_operation(connection:mysql.connector.connection.MySQLConnection=N
         video_path = kwargs.get("videoPath")
         course_total_rating = 0
         course_rating_count = 0
-        date_created = datetime.now().strftime("%Y-%m-%d")
+        date_created = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         
         data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
         cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
@@ -697,7 +697,7 @@ def course_sql_operation(connection:mysql.connector.connection.MySQLConnection=N
             if (not teacherID):
                 cur.execute(f"{statement} ORDER BY date_created DESC LIMIT 3")
             else:
-                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY ROWID DESC LIMIT 3")
+                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY date_created DESC LIMIT 3")
         else:
             # get top 3 highly rated courses
             if (not teacherID):
