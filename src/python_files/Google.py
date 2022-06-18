@@ -10,7 +10,8 @@ TOKEN_PATH = PARENT_FOLDER_PATH.joinpath("token.json")
 CREDENTIALS_PATH = PARENT_FOLDER_PATH.joinpath("credentials.json")
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.send"]
+# Scopes details: https://developers.google.com/gmail/api/auth/scopes
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 def google_init(quiet:bool=False):
     """
