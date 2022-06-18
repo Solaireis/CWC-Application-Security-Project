@@ -139,12 +139,14 @@
                                             {% endif %}
                                         </td>
                                     </tr>
+                                    {% if loginViaGoogle != True %}
                                     <tr>
                                         <td>
                                             <h6>Password:</h6>
                                         </td>
                                         <td><a href="{{ url_for('updatePassword') }}">Change Password</a></td>
                                     </tr>
+                                    {% endif %}
                                     <tr>
                                         <td>
                                             <h6>Two Factor Authentication:</h6>
