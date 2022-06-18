@@ -17,4 +17,4 @@ google-auth-oauthlib>=0.5.2
 CacheControl>=0.12.11
 splunk-sdk>=1.7.0
 mysql-connector-python>=8.0.29
-splunk-appinspect
+# splunk-appinspect
