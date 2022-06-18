@@ -329,19 +329,21 @@ def user_sql_operation(connection:mysql.connector.connection.MySQLConnection, mo
 
     cur = connection.cursor()
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
-        id PRIMARY KEY, 
-        role TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE, 
-        email TEXT NOT NULL UNIQUE, 
-        password TEXT, -- can be null for user who signed in using Google OAuth2
-        profile_image TEXT, 
+        id VARCHAR(255) PRIMARY KEY, 
+        role VARCHAR(255) NOT NULL,
+        username VARCHAR(255) NOT NULL UNIQUE, 
+        email VARCHAR(255) NOT NULL UNIQUE, 
+        password VARCHAR(255), -- can be null for user who signed in using Google OAuth2
+        profile_image VARCHAR(255), 
         date_joined DATE NOT NULL,
-        card_name TEXT,
+        card_name VARCHAR(255),
         card_no INTEGER, -- May not be unique since one might have alt accounts.
-        card_exp TEXT,
-        cart_courses TEXT NOT NULL,
-        purchased_courses TEXT NOT NULL
+        card_exp VARCHAR(255),
+        cart_courses VARCHAR(255) NOT NULL,
+        purchased_courses VARCHAR(255) NOT NULL
     )""")
+
+    """Honestly IDK wether need a not"""
     connection.commit()
 
     if (mode == "verify_userID_existence"):
