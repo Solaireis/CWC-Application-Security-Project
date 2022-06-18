@@ -199,16 +199,16 @@ def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConn
 
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
-        userID = cur.execute("SELECT id FROM user WHERE email = ?", (emailInput,)).fetchone()
+        userID = cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput}).fetchone()
         if (userID is None):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
         userID = userID[0]
-        cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = ?", (userID,))
+        cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (?, ?, ?)", (userID, 1, datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])))
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)d, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
         else:
             # comparing the reset datetime with the current datetime
             if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
@@ -223,16 +223,16 @@ def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConn
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = ?, reset_date = ? WHERE user_id = ?", (currentAttempts + 1, datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), userID))
+            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)d, reset_date = %(reset_date)s WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), "userID":userID})
         connection.commit()
 
     elif (mode == "reset_user_attempts"):
         userID = kwargs.get("userID")
-        cur.execute("DELETE FROM login_attempts WHERE user_id = ?", (userID,))
+        cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date"):
-        cur.execute("DELETE FROM login_attempts WHERE reset_date < ?", (datetime.now(),))
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now()})
         connection.commit()
 
 def session_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
