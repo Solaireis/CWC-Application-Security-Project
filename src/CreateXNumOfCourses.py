@@ -9,19 +9,19 @@ con = sqlite3.connect(pyFilePath)
 cur = con.cursor()
 
 cur.execute("""CREATE TABLE IF NOT EXISTS user (
-        id PRIMARY KEY, 
-        role TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE, 
-        email TEXT NOT NULL UNIQUE, 
-        password TEXT NOT NULL, 
-        profile_image TEXT, 
+        id VARCHAR(255) PRIMARY KEY, 
+        role VARCHAR(255) NOT NULL,
+        username VARCHAR(255) NOT NULL UNIQUE, 
+        email VARCHAR(255) NOT NULL UNIQUE, 
+        password VARCHAR(255) NOT NULL, 
+        profile_image VARCHAR(255), 
         date_joined DATE NOT NULL,
-        card_name TEXT,
+        card_name VARCHAR(255),
         card_no INTEGER UNIQUE,
-        card_exp TEXT,
+        card_exp VARCHAR(255),
         card_cvv INTEGER,
-        cart_courses TEXT NOT NULL,
-        purchased_courses TEXT NOT NULL
+        cart_courses VARCHAR(255) NOT NULL,
+        purchased_courses VARCHAR(255) NOT NULL
     )""")
 
 res = cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'").fetchall()
@@ -32,17 +32,17 @@ if (not res):
     con.commit()
 
 cur.execute("""CREATE TABLE IF NOT EXISTS course (
-        course_id PRIMARY KEY, 
-        teacher_id TEXT NOT NULL,
-        course_name TEXT NOT NULL,
-        course_description TEXT,
-        course_image_path TEXT,
+        course_id VARCHAR(255) PRIMARY KEY, 
+        teacher_id VARCHAR(255) NOT NULL,
+        course_name VARCHAR(255) NOT NULL,
+        course_description VARCHAR(255),
+        course_image_path VARCHAR(255),
         course_price FLOAT NOT NULL,
-        course_category TEXT NOT NULL,
-        course_total_rating INT NOT NULL,
-        course_rating_count INT NOT NULL,
+        course_category VARCHAR(255) NOT NULL,
+        course_total_rating INTEGER NOT NULL,
+        course_rating_count INTEGER NOT NULL,
         date_created DATE NOT NULL,
-        video_path TEXT NOT NULL,
+        video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
