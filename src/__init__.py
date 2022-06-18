@@ -81,7 +81,7 @@ def before_first_request():
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
     # load google client id from credentials.json
-    with open(app.root_path + r"\credentials.json", "r") as f:
+    with open(Path(app.root_path).joinpath("credentials.json"), "r") as f:
         credentials = json.load(f)
     app.config["GOOGLE_CLIENT_ID"] = credentials["web"]["client_id"]
 
