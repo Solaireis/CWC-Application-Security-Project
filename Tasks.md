@@ -34,7 +34,7 @@
 - Blacklisting of known malicious IP addresses
 - Verification of passwords if the passwords has been leaked in the dark web using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
   - Verified whenever the user signs up or changes his/her password
-- Maximum of 6 failed login attempts per account (will reset after 4 hrs)
+- Maximum of 10 failed login attempts per account (will reset after 30 mins)
 - Session timeout after 30 mins of inactivity
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 

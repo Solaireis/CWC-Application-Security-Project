@@ -50,7 +50,7 @@
                     </div>
                     <div class="col-12 text-white">
                         <input type="hidden" name="secretToken" value="{{ secretToken }}">
-                        {{ render_field(form.twoFAOTP, class="form-control") }}
+                        {{ render_field(form.twoFATOTP, class="form-control") }}
                     </div>
                     <div class="col-12">
                         {% if session.get("role") == "Admin" %}

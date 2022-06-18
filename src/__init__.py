@@ -1,4 +1,5 @@
 # import third party libraries
+from re import L
 from limits.storage import base
 from werkzeug.utils import secure_filename
 import requests as req
@@ -7,6 +8,11 @@ from dicebear import DOptions
 from argon2 import PasswordHasher as PH
 import pyotp, qrcode
 import qrcode.image.svg
+
+# for Google OAuth 2.0 login
+from cachecontrol import CacheControl
+from google.auth.transport.requests import Request as GoogleRequest
+from google.oauth2 import id_token
 
 # import flask libraries
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
@@ -25,6 +31,7 @@ from datetime import datetime
 from pathlib import Path
 import base64
 from io import BytesIO
+from os import environ
 
 """Web app configurations"""
 
@@ -37,7 +44,7 @@ scheduler = BackgroundScheduler()
 limiter = Limiter(app, key_func=get_remote_address, default_limits=["30 per second"])
 
 # Maximum file size for uploading anything to the web app's server
-app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024 # 200MiB
+app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # Configurations for dicebear api for user profile image options
 app.config["DICEBEAR_OPTIONS"] = DOptions(
@@ -65,12 +72,21 @@ app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 # duration for locked accounts before user can try to login again
 app.config["LOCKED_ACCOUNT_DURATION"] = 30 # 
 
+# google client id from credentials.json (saved in a system environment variable)
+app.config["GOOGLE_CLIENT_ID"] = environ.get("GOOGLE_CLIENT_ID")
+
+# remove this in production environment so that Google OAuth2.0 will only work in https
+environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
+
 """End of Web app configurations"""
 
 @app.before_first_request # called at the very first request to the web app
 def before_first_request():
     # get ip address blacklist from a github repo or the saved file
-    app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist() 
+    app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+
+    # get Google oauth flow object
+    app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
 
 @app.before_request # called before each request to the application.
 def before_request():
@@ -183,6 +199,43 @@ def login():
             return render_template("users/guest/login.html", form = loginForm)
     else:
         return redirect(url_for("home"))
+
+@app.route("/login-google")
+def loginViaGoogle():
+    if ("user" not in session):
+        authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url()
+        session["state"] = state
+        return redirect(authorisationUrl)
+    else:
+        return redirect(url_for("home"))
+
+@app.route("/login-callback")
+def loginCallback():
+    if ("user" in session):
+        return redirect(url_for("home"))
+
+    app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
+    if (session["state"] != request.args.get("state")):
+        abort(500) # when state does not match (protect against CSRF attacks)
+
+    credentials = app.config["GOOGLE_OAUTH_FLOW"].credentials
+    requestSession = req.session()
+    cachedSession = CacheControl(requestSession)
+    tokenRequest = GoogleRequest(session=cachedSession)
+
+    idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, app.config["GOOGLE_CLIENT_ID"])
+    userID = idInfo["sub"]
+    email = idInfo["email"]
+    username = idInfo["name"]
+    profilePicture = idInfo["picture"]
+
+    # add to db if user does not exist and retrieve the role of the user
+    role = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+
+    session["user"] = userID
+    session["role"] = role
+    session["sid"] = add_session(userID)
+    return redirect(url_for("home"))
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -428,17 +481,18 @@ def editPayment():
     # invalid form inputs
     return redirect(url_for("paymentSettings"))
 
-@app.route("/user_profile", methods=["GET","POST"])
+@app.route("/user-profile", methods=["GET","POST"])
 def userProfile():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
         username = userInfo[2]
         email = userInfo[3]
+        loginViaGoogle = True if (userInfo[4] is None) else False # check if the password is NoneType
 
         twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
 
-        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled)
+        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle)
     else:
         return redirect(url_for("login"))
 
@@ -469,12 +523,18 @@ def updateUsername():
     else:
         return redirect(url_for("login"))
 
-@app.route("/change_email", methods=["GET","POST"])
+@app.route("/change-email", methods=["GET","POST"])
 def updateEmail():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
         oldEmail = userInfo[2]
+
+        # check if user logged in via Google OAuth2
+        loginViaGoogle = True if (userInfo[4] is None) else False
+        if (loginViaGoogle):
+            # if so, redirect to user profile as they cannot change their email
+            return redirect(url_for("userProfile"))
 
         create_update_email_form = CreateChangeEmail(request.form)
         if (request.method == "POST") and (create_update_email_form.validate()):
@@ -503,7 +563,7 @@ def updateEmail():
     else:
         return redirect(url_for("login"))
 
-@app.route("/change_password", methods=["GET","POST"])
+@app.route("/change-password", methods=["GET","POST"])
 def updatePassword():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -540,7 +600,7 @@ def updatePassword():
     else:
         return redirect(url_for("login"))
 
-@app.route("/change_account_type", methods=["GET","POST"])
+@app.route("/change-account-type", methods=["GET","POST"])
 def changeAccountType():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -558,7 +618,7 @@ def changeAccountType():
     else:
         return redirect(url_for("login"))
 
-@app.route("/upload_profile_pic" , methods=["GET","POST"])
+@app.route("/upload-profile-pic" , methods=["GET","POST"])
 def uploadPic():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -590,7 +650,7 @@ def uploadPic():
     else:
         return redirect(url_for("login"))
 
-@app.route("/create_course", methods=["GET","POST"])
+@app.route("/create-course", methods=["GET","POST"])
 def createCourse():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)

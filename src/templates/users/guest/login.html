@@ -54,6 +54,10 @@
                     </div>
                 </form>
                 <hr class="mt-4 text-white">
+                <div class="col-12 d-flex justify-content-center">
+                    <a class="btn btn-light text-dark" href="{{ url_for('loginViaGoogle') }}"><img src="{{ url_for('static', filename='/images/logos/google-logo.png') }}"> Login with Google!</a>
+                </div>
+                <br>
                 <div class="col-12">
                     <p class="text-center mb-0 text-white">Not a registered user?</p>
                     <p class="text-center mb-0"><a class="text-white fw-bold" href="{{ url_for('signup') }}">Sign up here!</a></p>

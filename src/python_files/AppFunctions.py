@@ -5,6 +5,7 @@ flask web application's app variable from __init__.py.
 
 # import Flask web application configs
 from __init__ import app
+from flask import url_for
 
 # import python standard libraries
 import sqlite3, json
@@ -17,16 +18,30 @@ from dicebear import DAvatar, DStyle
 from argon2 import PasswordHasher as PH
 from argon2.exceptions import VerifyMismatchError
 
+# for google oauth login
+from google_auth_oauthlib.flow import Flow
+
 # import local python files
 from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
+from .Google import CREDENTIALS_PATH
 
 """------------------------------ Define Constants ------------------------------"""
 
 MAX_LOGIN_ATTEMPTS = 10
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def get_google_flow() -> Flow:
+    """
+    Returns the Google OAuth2 flow.
+    """
+    flow = Flow.from_client_secrets_file(
+        CREDENTIALS_PATH,
+        ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], redirect_uri=url_for("loginCallback", _external=True)
+    )
+    return flow
 
 def add_session(userID:str) -> str:
     """
@@ -315,7 +330,7 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         role TEXT NOT NULL,
         username TEXT NOT NULL UNIQUE, 
         email TEXT NOT NULL UNIQUE, 
-        password TEXT NOT NULL, 
+        password TEXT, -- can be null for user who signed in using Google OAuth2
         profile_image TEXT, 
         date_joined DATE NOT NULL,
         card_name TEXT,
@@ -357,6 +372,34 @@ def user_sql_operation(connection:sqlite3.Connection, mode:str=None, **kwargs) -
         cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
         connection.commit()
         return userID
+
+    elif (mode == "check_if_using_google_oauth2"):
+        userID = kwargs.get("userID")
+        cur.execute("SELECT password FROM user WHERE id=?", (userID,))
+        password = cur.fetchone()
+        # since those using Google OAuth2 will have a null password, we can check if it is null
+        if (password[0] is None):
+            return True
+        else:
+            return False
+
+    elif (mode == "login_google_oauth2"):
+        userID = kwargs.get("userID")
+        username = kwargs.get("username")
+        email = kwargs.get("email")
+        googleProfilePic = kwargs.get("googleProfilePic")
+
+        # check if the userID exists
+        cur.execute("SELECT role FROM user WHERE id=?", (userID,))
+        matched = cur.fetchone()
+        if (matched is None):
+            data = (userID, "Student", username, email, None, googleProfilePic, datetime.now().strftime("%Y-%m-%d"), None, None, None, "[]", "[]")
+            cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+            connection.commit()
+            return "Student"
+        else:
+            # return the role of the user
+            return matched[0]
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")

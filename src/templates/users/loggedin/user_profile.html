@@ -122,7 +122,9 @@
                                                     data-bs-placement="top" title="Copy to clipboard"
                                                     id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a>
                                             </h6>
-                                            <a href="{{ url_for('updateEmail') }}">Change Email</a>
+                                            {% if loginViaGoogle != True %}
+                                                <a href="{{ url_for('updateEmail') }}">Change Email</a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     <tr>
@@ -130,8 +132,8 @@
                                             <h6>Account Type:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm">{{ accType }}</h6>
-                                            {% if accType == "Student" %}
+                                            <h6 class="margin-btm">{{ session.get("role") }}</h6>
+                                            {% if session.get("role") == "Student" %}
                                             <span><a href="#" onclick="return false;" data-bs-toggle="modal"
                                                     data-bs-target="#becomeTeacher">Become a Teacher!</a></span>
                                             {% endif %}
@@ -157,7 +159,7 @@
                                             {% endif %}
                                         </td>
                                     </tr>
-                                    {# if accType == "Teacher" #}
+                                    {# if session.get("role") == "Teacher" #}
                                     <!-- <tr>
                                         <td colspan="2">
                                             {# if teacherBio == "" #}
@@ -207,7 +209,7 @@
                                     {# endif #} -->
                                 </table>
                             </div>
-                            {% if accType == "Student" %}
+                            {% if session.get("role") == "Student" %}
                             <div class="modal fade" id="becomeTeacher" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="becomeTeacherLabel"
                                 aria-hidden="true">
