@@ -45,16 +45,8 @@ def google_init(quiet:bool=False):
             token.write(creds.to_json())
 
     try:
-        # Try calling Gmail API
+        # Build the Gmail service from the credentials
         service = build("gmail", "v1", credentials=creds)
-        results = service.users().labels().list(userId="me").execute()
-        labels = results.get("labels", [])
-
-        if (labels is None): # should have labels
-            # if there are no labels, then something might have went wrong
-            if (not quiet):
-                print("Something went wrong!")
-            return
 
         if (not quiet):
             print("\nStatus OK! token.json is valid.", end="\n\n")
