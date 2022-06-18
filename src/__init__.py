@@ -1,6 +1,4 @@
 # import third party libraries
-from re import L
-from limits.storage import base
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
