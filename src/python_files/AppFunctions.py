@@ -8,17 +8,16 @@ from __init__ import app
 from flask import url_for
 
 # import python standard libraries
-import sqlite3, json
+import json
 from datetime import datetime, timedelta
 from typing import Union
-from time import sleep
-import mysql.connector
-import os
+from os import environ
 
 # import third party libraries
 from dicebear import DAvatar, DStyle
 from argon2 import PasswordHasher as PH
 from argon2.exceptions import VerifyMismatchError
+import mysql.connector as MySQLCon
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow
@@ -28,6 +27,7 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
 from .Google import CREDENTIALS_PATH
+from .MySQL_init import init as MySQLInitialise
 
 """------------------------------ Define Constants ------------------------------"""
 
@@ -108,16 +108,22 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     """
     returnValue = con = None
 
-    try:
-        con = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password=os.environ['SQL_PASS'],
-            database= "appsecdatabase",
-        )
+    # uses Google Cloud SQL Public Address if debug mode is False else uses localhost
+    host = "34.143.163.29" if (not app.config["DEBUG_FLAG"]) else "localhost"
+    password = environ["REMOTE_SQL_PASS"] if (not app.config["DEBUG_FLAG"]) else environ["SQL_PASS"]
 
-    except (mysql.connector.errors.ProgrammingError):
-        print("Database Not Found. Please create one first")
+    try:
+        con = MySQLCon.connect( 
+            host=host,
+            user="root",
+            password=password,
+            database="coursefinity",
+        )
+    except (MySQLCon.ProgrammingError):
+        print("Database Not Found...")
+        print("Creating Database...")
+        con = MySQLInitialise(debug=app.config["DEBUG_FLAG"])
+        print("Created the neccessary tables for the database!\n")
 
     try:
         if (table == "user"):
@@ -134,15 +140,15 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "2fa_token"):
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
-    except (mysql.connector.Error) as e:
-        # to ensure that the connection is closed even if an error with sqlite3 occurs
+    except (MySQLCon.IntegrityError, MySQLCon.OperationalError, MySQLCon.InternalError, MySQLCon.DataError, MySQLCon.PoolError) as e:
+        # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
         print(e)
 
     con.close()
     return returnValue
 
-def twofa_token_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
+def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -183,7 +189,7 @@ def twofa_token_sql_operation(connection:mysql.connector.connection.MySQLConnect
         cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
-def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
+def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
@@ -235,7 +241,7 @@ def login_attempts_sql_operation(connection:mysql.connector.connection.MySQLConn
         cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now()})
         connection.commit()
 
-def session_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
+def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
@@ -311,7 +317,7 @@ def session_sql_operation(connection:mysql.connector.connection.MySQLConnection,
         cur.execute("DELETE FROM session WHERE user_id = ? AND session_id != ?", (userID, sessionID))
         connection.commit()
 
-def user_sql_operation(connection:mysql.connector.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
+def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
     
@@ -625,7 +631,7 @@ def user_sql_operation(connection:mysql.connector.connection.MySQLConnection, mo
         connection.commit()
 
 # May not be used
-def course_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
+def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
     
@@ -753,7 +759,7 @@ def course_sql_operation(connection:mysql.connector.connection.MySQLConnection=N
         return resultsList
 
 # May not be used
-def cart_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
+def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the cart table
     
@@ -796,7 +802,7 @@ def cart_sql_operation(connection:mysql.connector.connection.MySQLConnection=Non
         connection.commit()
     
 # May not be used
-def purchased_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
+def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
     
@@ -833,7 +839,7 @@ def purchased_sql_operation(connection:mysql.connector.connection.MySQLConnectio
         cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
         connection.commit()
 
-def review_sql_operation(connection:mysql.connector.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
+def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
 

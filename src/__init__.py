@@ -35,7 +35,14 @@ from os import environ
 
 # general Flask configurations
 app = Flask(__name__)
+
+# secret key mainly for digitally signing the session cookie
 app.config["SECRET_KEY"] = "secret" # secrets.token_hex(32) # 32 bytes/256 bits
+
+# Debug flag (will be set to false when deployed)
+app.config["DEBUG_FLAG"] = True
+
+# for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
 
 # rate limiter configuration using flask limiter
