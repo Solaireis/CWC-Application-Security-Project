@@ -267,6 +267,11 @@ def signup():
             passwordInput = signupForm.password.data
             confirmPasswordInput = signupForm.cfm_password.data
 
+            """
+            Software Data Integrity, encrypt the email & username?
+            Includes encrypting when updating in later functions
+            """
+
             # some checks on the password input
             if (passwordInput != confirmPasswordInput):
                 flash("Passwords did not match!")
@@ -739,6 +744,12 @@ def createCourse():
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
             coursePrice = float(courseForm.coursePrice.data)
+
+            """
+            Encrypt video data? Software data integrity
+
+            Why : Hackers can edit videos and prevent availability to wanted resources
+            """
 
             file = request.files.get("courseThumbnail")
             filename = file.filename
