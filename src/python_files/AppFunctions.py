@@ -4,6 +4,7 @@ flask web application's app variable from __init__.py.
 """
 
 # import Flask web application configs
+import re
 from __init__ import app
 from flask import url_for
 
@@ -25,7 +26,7 @@ from google_auth_oauthlib.flow import Flow
 # import local python files
 from .Course import Course
 from .Errors import *
-from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
+from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, RSA_decrypt
 from .Google import CREDENTIALS_PATH
 from .MySQL_init import mysql_init_tables as MySQLInitialise
 
@@ -70,7 +71,7 @@ def add_session(userID:str) -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
     return sessionID
 
-def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
+def get_image_path(userID:bytes, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
     
@@ -80,12 +81,13 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     If returnUserInfo is True, it will return a tuple of the user's record.
     
     Args:
-        - userID: The user's ID
+        - userID: The user's ID (encrypted)
+            - Will decrypt the encrypted userID
         - returnUserInfo: If True, it will return a tuple of the user's record.
     """
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=RSA_decrypt(userID))
     imageSrcPath = userInfo[5]
-    if (not imageSrcPath):
+    if (imageSrcPath is None):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
 
@@ -148,6 +150,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "2fa_token"):
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "user_ip_addresses"):
+            returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
     except (MySQLCon.IntegrityError, MySQLCon.OperationalError, MySQLCon.InternalError, MySQLCon.DataError, MySQLCon.PoolError) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
@@ -155,6 +159,39 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     con.close()
     return returnValue
+
+def user_ip_addresses_sql_operation(connection:MySQLCon, mode:str, **kwargs) ->  Union[list, None]:
+    if (mode is None):
+        connection.close()
+        raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
+
+    cur = connection.cursor(buffered=True)
+
+    # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
+    # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
+    if (mode == "add_ip_address"):
+        userID = kwargs.get("userID")
+        ipAddress = kwargs.get("ipAddress")
+
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%s, INET6_ATON(%s))", (userID, ipAddress))
+        connection.commit()
+
+    elif (mode == "get_ip_addresses"):
+        userID = kwargs.get("userID")
+
+        cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = (%s)", (userID,))
+        returnValue = cur.fetchall()
+        ipAddressList = [ipAddress[0] for ipAddress in returnValue]
+        return ipAddressList        
+
+    elif (mode == "add_ip_address_only_if_unique"):
+        userID = kwargs.get("userID")
+        ipAddress = kwargs.get("ipAddress")
+
+        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = (%s) AND INET6_NTOA(ip_address) = (%s)", (userID, ipAddress))
+        if (cur.fetchone()[0] == 0):
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%s, INET6_ATON(%s))", (userID, ipAddress))
+            connection.commit()
 
 def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
@@ -172,7 +209,6 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mo
     #     user_id VARCHAR(255) NOT NULL,
     #     FOREIGN KEY (user_id) REFERENCES user(id)
     # )""")
-    connection.commit()
 
     if (mode == "add_token"):
         token = kwargs.get("token")
@@ -231,7 +267,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
             cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
         else:
             # comparing the reset datetime with the current datetime
-            if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
+            if (attempts[1] > datetime.now().replace(microseconds=0)):
                 # if not past the reset datetime
                 currentAttempts = attempts[0]
             else:
@@ -252,7 +288,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date"):
-        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now()})
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now().replace(microseconds=0)})
         connection.commit()
 
 def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
@@ -267,7 +303,6 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
     #     expiry_date DATE NOT NULL,
     #     FOREIGN KEY (user_id) REFERENCES user(id)
     # )""")
-    connection.commit()
 
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
@@ -365,9 +400,6 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
     #     purchased_courses VARCHAR(255) NOT NULL
     # )""")
 
-    """Honestly IDK wether need a not"""
-    connection.commit()
-
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
         if (not userID):
@@ -447,6 +479,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
+        if (matched[2] is None):
+            connection.close()
+            raise IncorrectPwdError("User is using Google OAuth2, please use Google OAuth2 to login!")
+
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":matched[0]})
         lockedAccount = cur.fetchone()
 
@@ -474,6 +510,17 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
             return False
         return matched
 
+    elif (mode == "change_profile_picture"):
+        userID = kwargs.get("userID")
+        profileImagePath = kwargs.get("profileImagePath")
+        cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":profileImagePath, "userID":userID})
+        connection.commit()
+
+    elif (mode == "delete_profile_picture"):
+        userID = kwargs.get("userID")
+        cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":None, "userID":userID})
+        connection.commit()
+
     elif (mode == "change_username"):
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
@@ -484,7 +531,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
             connection.close()
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
 
-        cur.execute("UPDATE user SET username= %(usernameInput)s WHERE id= %(userID)s", {"usernameInput": usernameInput, "userID": userID})
+        cur.execute("UPDATE user SET username=%(usernameInput)s WHERE id=%(userID)s", {"usernameInput": usernameInput, "userID": userID})
         connection.commit()
 
     elif (mode == "change_email"):
@@ -694,7 +741,6 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     #     video_path VARCHAR(255) NOT NULL,
     #     FOREIGN KEY (teacher_id) REFERENCES user(id)
     # )""")
-    connection.commit()
 
     if (mode == "insert"):
         course_id = generate_id()

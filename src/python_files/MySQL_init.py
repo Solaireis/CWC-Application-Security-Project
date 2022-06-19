@@ -63,7 +63,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
 
     cur.execute("""CREATE TABLE IF NOT EXISTS course (
         course_id CHAR(32) PRIMARY KEY, 
-        teacher_id CHAR(32) NOT NULL,
+        teacher_id VARCHAR(32) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
         course_description VARCHAR(255),
         course_image_path VARCHAR(255),
@@ -76,14 +76,21 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS user_ip_addresses (
+        user_id VARCHAR(32) NOT NULL,
+        ip_address VARBINARY(16) NOT NULL,
+        PRIMARY KEY (user_id, ip_address),
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
         token CHAR(32) PRIMARY KEY,
-        user_id CHAR(32) NOT NULL,
+        user_id VARCHAR(32) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
-        user_id CHAR(32) PRIMARY KEY,
+        user_id VARCHAR(32) PRIMARY KEY,
         attempts INTEGER NOT NULL,
         reset_date DATETIME NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
@@ -91,13 +98,13 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
 
     cur.execute("""CREATE TABLE IF NOT EXISTS session (
         session_id CHAR(32) PRIMARY KEY,
-        user_id VARCHAR(255) NOT NULL,
+        user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS cart (
-        user_id CHAR(32),
+        user_id VARCHAR(32),
         course_id CHAR(32),
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id),
@@ -105,7 +112,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
-        user_id CHAR(32),
+        user_id VARCHAR(32),
         course_id CHAR(32),
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id),
@@ -113,7 +120,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS review (
-        user_id CHAR(32),
+        user_id VARCHAR(32),
         course_id CHAR(32),
         course_rating INTEGER,
         review_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

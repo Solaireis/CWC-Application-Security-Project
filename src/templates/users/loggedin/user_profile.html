@@ -65,12 +65,12 @@
                         <div class="col-md-5 image-center">
                             <!---Dicebear uses Links so cannot use url_for-->
                             <img src="{{ imageSrcPath }}" alt="User Profile Icon" id="user-icon-setting">
-                            {% if userProfileFilenameSaved %}
-                            <form action="" method="POST">
+                            {% if "https" not in imageSrcPath %}
+                            <form action="{{ url_for('deletePic') }}" method="POST">
                                 <input type="hidden" name="submittedForm" value="resetUserIcon">
                                 <button type="submit" id="submitResetProfileIcon" hidden></button>
                             </form>
-                            <label for="submitResetProfileIcon" class="btn btn-link">Delete Profile Icon</label>
+                            <label for="submitResetProfileIcon" class="btn btn-link text-danger">Delete Profile Icon</label>
                             {% endif %}
                             <div class="mb-9">
                                 <button class="btn btn-primary" id="editProfileButton">Edit Profile Image</button>

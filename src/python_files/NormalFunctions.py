@@ -6,7 +6,8 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-import uuid, re
+import uuid, re, pathlib
+from six import ensure_binary
 from datetime import datetime, timedelta, timezone
 from typing import Union
 from base64 import urlsafe_b64encode
@@ -15,6 +16,7 @@ from hashlib import sha1
 from pathlib import Path
 from json import dumps
 from inspect import getframeinfo, stack
+from os import environ
 
 # import local python files
 from .Errors import *
@@ -22,12 +24,22 @@ from .Google import PARENT_FOLDER_PATH, google_init
 
 # import third party libraries
 import requests as req
+import PIL
+from PIL import Image as PillowImage
 
 # For Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
+
+# For Google KMS (key management service) API (Third-party libraries)
+import crcmod
+import google.api_core.exceptions as GoogleErrors
+from google.cloud import kms
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 """------------------------------ Define Constants ------------------------------"""
 
@@ -59,7 +71,163 @@ OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
 with open(PARENT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
     LOGO_BYTES = f.read()
 
+# For Google KMS 
+environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(PARENT_FOLDER_PATH.joinpath("kms_service_account.json"))
+PROJECT_ID = "coursefinity-339412"
+LOCATION_ID = "asia-southeast1"
+KEY_RING_ID = "coursefinity"
+
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def crc32c(data):
+    """
+    Calculates the CRC32C checksum of the provided data
+    
+    Args:
+    - data: the bytes over which the checksum should be calculated
+    
+    Returns:
+    - An int representing the CRC32C checksum of the provided bytes
+    """
+    crc32cFunction = crcmod.predefined.mkPredefinedCrcFun("crc-32c")
+    return crc32cFunction(ensure_binary(data))
+
+def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", versionID:int=1) -> bytes:
+    """
+    Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
+    
+    Args:
+    - plaintext (str): The plaintext to encrypt
+    - keyID (str): The ID of the key to use for decryption.
+        - Defaults to "encrypt-decrypt-key"
+    - versionID (int): The version ID of the key to use for decryption.
+        - Defaults to 1
+    
+    Returns:
+    - The encrypted plaintext (bytes)
+    """
+
+    # Create the client.
+    client = kms.KeyManagementServiceClient()
+
+    # Build the key version name.
+    keyVersionName = client.crypto_key_version_path(PROJECT_ID, LOCATION_ID, KEY_RING_ID, keyID, versionID)
+
+    # get the public key
+    publicKey = client.get_public_key(request={"name": keyVersionName})
+
+    # Extract and parse the public key as a PEM-encoded RSA key
+    pem = publicKey.pem.encode("utf-8")
+    rsaKey = serialization.load_pem_public_key(pem, default_backend())
+
+    # Construct the padding
+    sha512 = hashes.SHA512()
+    mgf = padding.MGF1(sha512)
+    pad = padding.OAEP(mgf=mgf, algorithm=sha512, label=None)
+
+    # Encrypt the data using the public key
+    plaintext = plaintext.encode("utf-8")
+    ciphertext = rsaKey.encrypt(plaintext, pad)
+    return ciphertext
+
+def RSA_decrypt(cipherText:bytes=b"", keyID:str="encrypt-decrypt-key", versionID:int=1) -> Union[str, None]:
+    """
+    Decrypts the ciphertext using Google KMS (RSA/asymmetric encryption)
+    
+    Args:
+    - cipherText (bytes): The ciphertext to decrypt. 
+    - keyID (str): The ID of the key to use for decryption.
+        - Defaults to "encrypt-decrypt-key"
+    - versionID (int): The version ID of the key to use for decryption.
+        - Defaults to 1
+
+    Returns:
+    - The decrypted ciphertext (str)
+    
+    Raises:
+    - CiphertextIsNotBytesError: If the ciphertext is not bytes
+    """
+    if (isinstance(cipherText, str)):
+        raise CiphertextIsNotBytesError(f"The ciphertext, {cipherText}, is in string format. Please pass in bytes format.")
+
+    if (not isinstance(cipherText, bytes)):
+        raise CiphertextIsNotBytesError(f"The ciphertext, {cipherText} is not in bytes format. Please pass in bytes format.")
+
+    # Create the client
+    client = kms.KeyManagementServiceClient()
+
+    # Build the key version name.
+    keyVersionName = client.crypto_key_version_path(PROJECT_ID, LOCATION_ID, KEY_RING_ID, keyID, versionID)
+
+    # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
+    cipherTextCRC32C = crc32c(cipherText)
+
+    # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
+    try:
+        response = client.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": cipherText, "ciphertext_crc32c": cipherTextCRC32C})
+    except (GoogleErrors.InvalidArgument) as e:
+        print("Error caught:")
+        print(e)
+        raise DecryptionError("Decryption failed or ciphertext is not 512 in length.")
+
+    # Perform some integrity checks on the decrypted data that Google Cloud KMS API returned
+    # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
+    if (not response.verified_ciphertext_crc32c):
+        # request sent to Google Cloud KMS was corrupted in-transit
+        raise CRC32ChecksumError("Ciphertext CRC32C checksum does not match.")
+    if (response.plaintext_crc32c != crc32c(response.plaintext)):
+        # response received from Google Cloud KMS was corrupted in-transit
+        raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
+
+    return response.plaintext.decode("utf-8")
+
+def compress_and_resize_image(imageData:bytes=None, imagePath:pathlib.Path=None, dimensions:tuple=None, quality:int=75, optimise:bool=True) -> str:
+    """
+    Resizes the image at the given path to the given dimensions and compresses it with the given quality.
+    
+    Converts the image to webp format as well for smaller image file size and saves the image to the given path.
+    
+    Args:
+    - imageData (bytes): The image data to compress and resize
+    - imagePath (pathlib.Path): The path to the image to resize
+    - dimensions (tuple): The dimensions to resize the image to
+        - Must be a tuple of two integers, e.g. (500, 500)
+    - quality (int): The quality of the image to resize to
+        - Must be an integer between 1 and 100
+        - Defaults to 75
+    - optimise (bool): Whether to optimise the image or not
+        - Defaults to True
+    
+    Returns:
+    - The path to the compressed image (pathlib.Path)
+    
+    Raises:
+    - UnidentifiedImageError: If the image at the given path is not a valid image
+    """
+    try:
+        # open image file
+        image = PillowImage.open(imageData).convert("RGB")
+    except (PIL.UnidentifiedImageError) as e:
+        print("Error in resizing and compressing image...")
+        print("Error message caught:")
+        print(e)
+        raise InvalidProfilePictureError("The image is not a valid image file.")
+
+    # resize image if dimensions are defined
+    if (dimensions is not None):
+        resizedImage = image.resize(dimensions)
+    else:
+        resizedImage = image
+
+    # changes the extension to .webp
+    newImagePath = imagePath.with_suffix(".webp")
+
+    # remove the image file if user has already uploaded one before
+    newImagePath.unlink(missing_ok=True)
+
+    # save the new and compressed image as webp
+    resizedImage.save(newImagePath, format="webp", optimize=optimise, quality=quality)
+    return newImagePath
 
 def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
     """
