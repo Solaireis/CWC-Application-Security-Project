@@ -228,7 +228,7 @@ def loginCallback():
     cachedSession = CacheControl(requestSession)
     tokenRequest = GoogleRequest(session=cachedSession)
 
-    idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, app.config["GOOGLE_CLIENT_ID"])
+    idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=1)
     userID = idInfo["sub"]
     email = idInfo["email"]
     username = idInfo["name"]
@@ -310,6 +310,9 @@ def logout():
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
 def enter2faTOTP():
+    """
+    This page is only accessible to users who have 2FA enabled and is trying to login.
+    """
     if ("user" in session):
         return redirect(url_for("home"))
 
@@ -348,6 +351,16 @@ def disableTwoFactorAuth():
     if ("user" not in session):
         return redirect(url_for("login"))
 
+    # check if user logged in via Google OAuth2
+    try:
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=session["user"])
+    except (UserDoesNotExist):
+        abort(403) # if for whatever reason, a user does not exist, abort
+
+    if (loginViaGoogle):
+        # if so, redirect to user profile as the authentication security is handled by Google themselves
+        return redirect(url_for("userProfile"))
+
     if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])):
         sql_operation(table="2fa_token", mode="delete_token", userID=session["user"])
         flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
@@ -360,6 +373,16 @@ def disableTwoFactorAuth():
 def twoFactorAuthSetup():
     if ("user" not in session):
         return redirect(url_for("login"))
+
+    # check if user logged in via Google OAuth2
+    try:
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=session["user"])
+    except (UserDoesNotExist):
+        abort(403) # if for whatever reason, a user does not exist, abort
+
+    if (loginViaGoogle):
+        # if so, redirect to user profile as the authentication security is handled by Google themselves
+        return redirect(url_for("userProfile"))
 
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
@@ -498,7 +521,9 @@ def userProfile():
         email = userInfo[3]
         loginViaGoogle = True if (userInfo[4] is None) else False # check if the password is NoneType
 
-        twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
+        twoFAEnabled = False
+        if (not loginViaGoogle):
+            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
 
         """
         Updates to teacher but page does not change

@@ -1,3 +1,8 @@
+class UserDoesNotExist(Exception):
+    """
+    Raised when a user does not exist.
+    """
+
 class ReusedUsernameError(Exception):
     """
     Raised when a user tries to create an account with a username that is already in use or

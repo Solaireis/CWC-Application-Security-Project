@@ -147,6 +147,7 @@
                                         <td><a href="{{ url_for('updatePassword') }}">Change Password</a></td>
                                     </tr>
                                     {% endif %}
+                                    {% if loginViaGoogle != True %}
                                     <tr>
                                         <td>
                                             <h6>Two Factor Authentication:</h6>
@@ -161,6 +162,7 @@
                                             {% endif %}
                                         </td>
                                     </tr>
+                                    {% endif %}
                                     {# if session.get("role") == "Teacher" #}
                                     <!-- <tr>
                                         <td colspan="2">

@@ -400,6 +400,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         userID = kwargs.get("userID")
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
+        if (password is None):
+            connection.close()
+            raise UserDoesNotExist("User does not exist!")
+
         # since those using Google OAuth2 will have a null password, we can check if it is null
         if (password[0] is None):
             return True
