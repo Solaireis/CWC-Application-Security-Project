@@ -10,7 +10,7 @@ def delete_mysql_tables(debug:bool=False) -> None:
     """
     if (debug):
         host = "localhost"
-        password = environ["SQL_PASS"]
+        password = environ["LOCAL_SQL_PASS"]
     else:
         host = "34.143.163.29" # Google Cloud SQL Public address
         password = environ["REMOTE_SQL_PASS"]
@@ -28,6 +28,13 @@ def delete_mysql_tables(debug:bool=False) -> None:
     mydb.close()
 
 if (__name__ == "__main__"):
-    debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
-    debugFlag = True if (debugPrompt != "n") else False
+    while (1):
+        debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
+        if (debugPrompt not in ("y", "n", "")):
+            print("Invalid input", end="\n\n")
+            continue
+        else:
+            debugFlag = True if (debugPrompt != "n") else False
+            break
+
     delete_mysql_tables(debug=debugFlag)

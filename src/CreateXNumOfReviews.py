@@ -1,5 +1,6 @@
 import sqlite3, pathlib, uuid
-import mysql.connector, os
+import mysql.connector
+from os import environ
 from datetime import datetime
 from random import randint
 from python_files.NormalFunctions import generate_id
@@ -8,14 +9,29 @@ from python_files.NormalFunctions import generate_id
 
 # con = sqlite3.connect(pyFilePath)
 
+while (1):
+    debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
+    if (debugPrompt not in ("y", "n", "")):
+        print("Invalid input", end="\n\n")
+        continue
+    else:
+        debugFlag = True if (debugPrompt != "n") else False
+        break
+
+if (debugFlag):
+    host = "localhost"
+    password = environ["LOCAL_SQL_PASS"]
+else:
+    host = "34.143.163.29" # Google Cloud SQL Public address
+    password = environ["REMOTE_SQL_PASS"]
+
 try:
     con = mysql.connector.connect(
-        host="localhost",
+        host=host,
         user="root",
-        password=os.environ['SQL_PASS'],
-        database= "appsecdatabase",
+        password=password,
+        database="coursefinity",
     )
-
 except (mysql.connector.errors.ProgrammingError):
     print("Database Not Found. Please create one first")
 cur = con.cursor()

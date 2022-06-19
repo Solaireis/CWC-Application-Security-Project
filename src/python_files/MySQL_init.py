@@ -13,7 +13,7 @@ def init(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
     """
     if (debug):
         host = "localhost"
-        password = environ["SQL_PASS"]
+        password = environ["LOCAL_SQL_PASS"]
     else:
         host = "34.143.163.29" # Google Cloud SQL Public address
         password = environ["REMOTE_SQL_PASS"]

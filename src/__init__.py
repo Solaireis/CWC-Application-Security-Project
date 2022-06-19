@@ -52,9 +52,7 @@ limiter = Limiter(app, key_func=get_remote_address, default_limits=["30 per seco
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # Configurations for dicebear api for user profile image options
-app.config["DICEBEAR_OPTIONS"] = DOptions(
-    size=250
-)
+app.config["DICEBEAR_OPTIONS"] = DOptions(size=250)
 
 # for image uploads file path
 app.config["PROFILE_UPLOAD_PATH"] = r"static\images\user"
@@ -106,10 +104,6 @@ def before_request():
             session.clear()
             return
 
-        """
-        Sign up does occur = account is added
-        But sid session dont exist
-        """
         if (sql_operation(table="session", mode="if_session_exists", sessionID=session["sid"])):
             # if session exists
             if (not sql_operation(table="session", mode="check_if_valid", sessionID=session["sid"], userID=session["user"])):
