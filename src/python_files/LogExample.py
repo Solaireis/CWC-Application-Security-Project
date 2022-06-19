@@ -15,7 +15,7 @@ def log_event(levelname, message):
     - None
     """
     
-    logPath = Path(__file__).parent.parent.joinpath('databases', 'logs')
+    logPath = Path(__file__).parent.parent.joinpath('logs')
 
     # Get line number, module when this function was called, through stacking function frames
     lineNo = getframeinfo(stack()[1][0]).lineno
