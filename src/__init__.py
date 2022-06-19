@@ -1102,5 +1102,4 @@ if (__name__ == "__main__"):
     scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour="23", minute="58", second="0", id="deleteExpiredSessions")
     scheduler.add_job(lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), trigger="cron", hour="23", minute="59", second="0", id="resetLockedAccounts")
     scheduler.start()
-    app.run(debug=True)
-    # app.run(debug=True, use_reloader=False)
+    app.run(debug=app.config["DEBUG_FLAG"])
