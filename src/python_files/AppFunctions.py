@@ -214,11 +214,6 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mo
     The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
     """
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
-    #     token VARCHAR(255) PRIMARY KEY,
-    #     user_id VARCHAR(255) NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
 
     if (mode == "add_token"):
         token = kwargs.get("token")
@@ -254,12 +249,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
-    #     user_id VARCHAR(255) PRIMARY KEY,
-    #     attempts INTEGER NOT NULL,
-    #     reset_date DATE NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
+
     connection.commit()
 
     if (mode == "add_attempt"):
@@ -307,12 +297,6 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         raise ValueError("You must specify a mode in the session_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS session (
-    #     session_id VARCHAR(255) PRIMARY KEY,
-    #     user_id VARCHAR(255) NOT NULL,
-    #     expiry_date DATE NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
 
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
@@ -395,20 +379,6 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS user (
-    #     id VARCHAR(255) PRIMARY KEY, 
-    #     role VARCHAR(255) NOT NULL,
-    #     username VARCHAR(255) NOT NULL UNIQUE, 
-    #     email VARCHAR(255) NOT NULL UNIQUE, 
-    #     password VARCHAR(255), -- can be null for user who signed in using Google OAuth2
-    #     profile_image VARCHAR(255), 
-    #     date_joined DATE NOT NULL,
-    #     card_name VARCHAR(255),
-    #     card_no INTEGER, -- May not be unique since one might have alt accounts.
-    #     card_exp VARCHAR(255),
-    #     cart_courses VARCHAR(255) NOT NULL,
-    #     purchased_courses VARCHAR(255) NOT NULL
-    # )""")
 
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
@@ -737,20 +707,6 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS course (
-    #     course_id VARCHAR(255) PRIMARY KEY, 
-    #     teacher_id VARCHAR(255) NOT NULL,
-    #     course_name VARCHAR(255) NOT NULL,
-    #     course_description VARCHAR(255),
-    #     course_image_path VARCHAR(255),
-    #     course_price FLOAT NOT NULL,
-    #     course_category VARCHAR(255) NOT NULL,
-    #     course_total_rating INTEGER NOT NULL,
-    #     course_rating_count INTEGER NOT NULL,
-    #     date_created DATE NOT NULL,
-    #     video_path VARCHAR(255) NOT NULL,
-    #     FOREIGN KEY (teacher_id) REFERENCES user(id)
-    # )""")
 
     if (mode == "insert"):
         course_id = generate_id()
@@ -870,11 +826,6 @@ def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         raise ValueError("You must specify a mode in the cart_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS cart (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
 
@@ -913,11 +864,6 @@ def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None,
         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
 
@@ -950,13 +896,6 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         raise ValueError("You must specify a mode in the review_sql_operation function!")
     
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS review (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     course_rating INTEGER,
-        
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
     courseID = kwargs.get("courseID")
