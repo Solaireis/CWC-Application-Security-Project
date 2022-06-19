@@ -7,11 +7,14 @@ This is to prevent circular imports.
 
 # import python standard libraries
 import uuid, re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Union
 from base64 import urlsafe_b64encode
 from time import sleep
 from hashlib import sha1
+from pathlib import Path
+from json import dumps
+from inspect import getframeinfo, stack
 
 # import local python files
 from .Errors import *
@@ -280,3 +283,46 @@ def two_fa_token_is_valid(token:str) -> bool:
     - True if the token is valid, False otherwise.
     """
     return True if (re.fullmatch(OTP_REGEX, token)) else False
+
+def log_event(levelname: str, message: str) -> None:
+    """Logs an event to the log file.
+
+    Parameters:
+    - levelname   'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+    - message     Additional notes for log.
+
+    Returns: None
+    """
+
+    # Validation
+    levelname = levelname.upper()
+    if levelname not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+        raise Exception("Level must be 'DEBUG', 'INFO', 'WARNING', 'ERROR' or 'CRITICAL'.")
+
+    logPath = Path(__file__).parent.parent.joinpath('logs')
+
+    # Get line number, module when this function was called, through stacking function frames
+    lineNo = getframeinfo(stack()[1][0]).lineno
+    module = Path(getframeinfo(stack()[1][0]).filename).stem
+
+    # creates a folder for logs and dc if the folder alrd exists
+    logPath.mkdir(parents=True, exist_ok=True)
+
+    # Get date as log name
+    time = datetime.now(timezone.utc).astimezone()
+    readableDate = time.strftime('%Y-%m-%d')
+    readableTime = time.strftime('%H:%M:%S')
+
+    filename = logPath.joinpath(f'{readableDate}.log')
+
+
+    # Log event to file    
+    with open(filename, 'a') as log:
+        # Based on logging module format
+        log.write(f"{readableTime} [{levelname}] line {lineNo}, in {module}: {message}\n")
+
+    # Log event to database
+    data = dumps({'asctime' : readableTime,
+                'levelname' : levelname,
+                'module' : module,
+                'message' : message})

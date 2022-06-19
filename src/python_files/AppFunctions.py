@@ -153,7 +153,12 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mo
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
 
-    cur = connection.cursor()
+    """
+    Set buffered = True 
+
+    The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
+    """
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
     #     token VARCHAR(255) PRIMARY KEY,
     #     user_id VARCHAR(255) NOT NULL,
@@ -194,7 +199,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
     #     user_id VARCHAR(255) PRIMARY KEY,
     #     attempts INTEGER NOT NULL,
@@ -205,7 +210,8 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
 
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
-        userID = cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput}).fetchone()
+        cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput})
+        userID = cur.fetchone()
         if (userID is None):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
@@ -214,7 +220,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)d, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
         else:
             # comparing the reset datetime with the current datetime
             if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
@@ -229,7 +235,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)d, reset_date = %(reset_date)s WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), "userID":userID})
+            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = %(reset_date)s WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), "userID":userID})
         connection.commit()
 
     elif (mode == "reset_user_attempts"):
@@ -246,7 +252,7 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS session (
     #     session_id VARCHAR(255) PRIMARY KEY,
     #     user_id VARCHAR(255) NOT NULL,
@@ -259,38 +265,43 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
         expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
-        cur.execute("INSERT INTO session VALUES (?, ?, ?)", (sessionID, userID, expiryDate))
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, %(expiryDate)s)", {"sessionID":sessionID, "userID":userID, "expiryDate":expiryDate})
         connection.commit()
 
     elif (mode == "get_user_id"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT user_id FROM session WHERE session_id = ?", (sessionID,))
+        cur.execute("SELECT user_id FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         userID = cur.fetchone()[0]
         return userID
 
     elif (mode == "get_session"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT * FROM session WHERE session_id = ?", (sessionID,))
+        cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         return returnValue
 
     elif (mode == "delete_session"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("DELETE FROM session WHERE session_id = ?", (sessionID,))
+        cur.execute("DELETE FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         connection.commit()
 
     elif (mode == "update_session"):
         sessionID = kwargs.get("sessionID")
         expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
-        cur.execute("UPDATE session SET expiry_date = ? WHERE session_id = ?", (expiryDate, sessionID))
+        cur.execute("UPDATE session SET expiry_date = %(expiryDate)s WHERE session_id = %(sessionID)s", {"expiryDate": expiryDate, "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = ?", (sessionID,))
+        cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
-        expiryDate = datetime.strptime(result[1], "%Y-%m-%d %H:%M:%S.%f")
-        if (expiryDate >= datetime.now()):
+        """
+        Error here, first strptime first argument not supposed to be a date
+
+        """
+        expiryDate = result[1].strftime("%Y-%m-%d")
+        # expiryDate = datetime.strptime(result[1], "%Y-%m-%d %H:%M:%S.%f")
+        if (expiryDate >= datetime.now().strftime("%Y-%m-%d")):
             # not expired, check if the userID matches the sessionID
             return kwargs.get("userID") == result[0]
         else:
@@ -298,12 +309,12 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
             return False
 
     elif (mode == "delete_expired_sessions"):
-        cur.execute("DELETE FROM session WHERE expiry_date < ?", (datetime.now(),))
+        cur.execute("DELETE FROM session WHERE expiry_date < %(expry_date)s", {"expiry_date":datetime.now()})
         connection.commit()
 
     elif (mode == "if_session_exists"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT * FROM session WHERE session_id = ?", (sessionID,))
+        cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         if (returnValue):
             return True
@@ -314,7 +325,7 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         # delete all session of a user except the current session id
         userID = kwargs.get("userID")
         sessionID = kwargs.get("sessionID")
-        cur.execute("DELETE FROM session WHERE user_id = ? AND session_id != ?", (userID, sessionID))
+        cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
 
 def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
@@ -333,7 +344,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         connection.close()
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS user (
     #     id VARCHAR(255) PRIMARY KEY, 
     #     role VARCHAR(255) NOT NULL,
@@ -357,7 +368,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         if (not userID):
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
-        cur.execute("SELECT * FROM user WHERE id=?", (userID,))
+        cur.execute("SELECT * FROM user WHERE id=%(userID)s",{"userID":userID})
         return bool(cur.fetchone())
 
     # elif (mode == "get_username"):
@@ -370,8 +381,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         emailInput = kwargs.get("email")
         usernameInput = kwargs.get("username")
 
-        emailDupe = bool(cur.execute(f"SELECT * FROM user WHERE email='{emailInput}'").fetchone())
-        usernameDupes = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchone())
+        cur.execute("SELECT * FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        emailDupe = bool(cur.fetchone())
+        cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
+        usernameDupes = bool(cur.fetchone())
 
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
@@ -379,14 +392,13 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         # add to the sqlite3 database
         userID = generate_id()
         passwordInput = kwargs.get("password")
-        data = (userID, "Student", usernameInput, emailInput, passwordInput, None, datetime.now().strftime("%Y-%m-%d"), None, None, None, "[]", "[]")
-        cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        cur.execute("INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", {"userID":userID, "role":"Student", "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"})
         connection.commit()
         return userID
 
     elif (mode == "check_if_using_google_oauth2"):
         userID = kwargs.get("userID")
-        cur.execute("SELECT password FROM user WHERE id=?", (userID,))
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
         # since those using Google OAuth2 will have a null password, we can check if it is null
         if (password[0] is None):
@@ -401,11 +413,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         googleProfilePic = kwargs.get("googleProfilePic")
 
         # check if the userID exists
-        cur.execute("SELECT role FROM user WHERE id=?", (userID,))
+        cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is None):
-            data = (userID, "Student", username, email, None, googleProfilePic, datetime.now().strftime("%Y-%m-%d"), None, None, None, "[]", "[]")
-            cur.execute("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+            cur.execute("INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", {"userID":userID, "role":"Student", "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"})
             connection.commit()
             return "Student"
         else:
@@ -415,20 +426,22 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
-        cur.execute(f"SELECT id, role, password FROM user WHERE email='{emailInput}'")
+        cur.execute("SELECT id, role, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
         if (not matched):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
-        lockedAccount = cur.execute("SELECT attempts FROM login_attempts WHERE user_id=?", (matched[0],)).fetchone()
+        cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":matched[0]})
+        lockedAccount = cur.fetchone()
+
         if (lockedAccount):
             if (lockedAccount[0] > MAX_LOGIN_ATTEMPTS):
                 connection.close()
                 raise AccountLockedError("Account is locked!")
             else:
                 # reset the attempts
-                cur.execute("DELETE FROM login_attempts WHERE user_id=?", (matched[0],))
+                cur.execute("DELETE FROM login_attempts WHERE user_id=%(userID)s", {"userID":matched[0]})
                 connection.commit()
 
         try:
@@ -440,7 +453,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
 
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
-        cur.execute(f"SELECT * FROM user WHERE id='{userID}'")
+        cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (not matched):
             return False
@@ -449,13 +462,14 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
     elif (mode == "change_username"):
         userID = kwargs.get("userID")
         usernameInput = kwargs.get("username")
-        reusedUsername = bool(cur.execute(f"SELECT * FROM user WHERE username='{usernameInput}'").fetchone())
+        cur.execute("SELECT * FROM user WHERE username=%(username)s", {"username":usernameInput})
+        reusedUsername = bool(cur.fetchone())
 
         if (reusedUsername):
             connection.close()
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
 
-        cur.execute(f"UPDATE user SET username='{usernameInput}' WHERE id='{userID}'")
+        cur.execute("UPDATE user SET username= %(usernameInput)s WHERE id= %(userID)s", {"usernameInput": usernameInput, "userID": userID})
         connection.commit()
 
     elif (mode == "change_email"):
@@ -463,7 +477,8 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         currentPasswordInput = kwargs.get("currentPassword")
         emailInput = kwargs.get("email")
 
-        reusedEmail = cur.execute(f"SELECT id, password FROM user WHERE email='{emailInput}'").fetchone()
+        cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        reusedEmail = cur.fetchone()
         if (reusedEmail is not None):
             if (reusedEmail[0] == userID):
                 connection.close()
@@ -472,10 +487,12 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                 connection.close()
                 raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
-        currentPassword = cur.execute(f"SELECT password FROM user WHERE id='{userID}'").fetchone()
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        currentPassword = cur.fetchone()
+
         try:
             if (PH().verify(currentPassword[0], currentPasswordInput)):
-                cur.execute(f"UPDATE user SET email='{emailInput}' WHERE id='{userID}'")
+                cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()
@@ -485,7 +502,8 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         userID = kwargs.get("userID")
         oldPasswordInput = kwargs.get("oldPassword") # to authenticate the changes
         passwordInput = kwargs.get("password")
-        currentPasswordHash = cur.execute(f"SELECT password FROM user WHERE id='{userID}'").fetchone()[0]
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        currentPasswordHash = cur.fetchone()[0]
 
         try:
             # check if the supplied old password matches the current password
@@ -502,7 +520,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
-                cur.execute(f"UPDATE user SET password='{PH().hash(passwordInput)}' WHERE id='{userID}'")
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": PH().hash(passwordInput), "userID": userID})
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()
@@ -512,7 +530,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         userID = kwargs.get("userID")
         getCardInfo = kwargs.get("getCardInfo")
 
-        cur.execute(f"SELECT card_name, card_no, card_exp FROM user WHERE id='{userID}'")
+        cur.execute("SELECT card_name, card_no, card_exp FROM user WHERE id=%(userID)s", {"userID":userID})
         cardInfo = cur.fetchone()
         if (cardInfo is None):
             connection.close()
@@ -522,7 +540,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
             if (info is None):
                 # if any information is missing which should not be possible, 
                 # the card will then be considered to not exist and will reset the card info to Null
-                cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id='{userID}'")
+                cur.execute("UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id=%(userID)s", {"userID":userID})
                 connection.commit()
                 raise CardDoesNotExistError("Credit card is missing some information!")
 
@@ -535,36 +553,37 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         cardNo = kwargs.get("cardNo")
         cardExp = kwargs.get("cardExpiry")
 
-        cur.execute(f"UPDATE user SET card_name='{cardName}', card_no={cardNo}, card_exp='{cardExp}' WHERE id='{userID}'")
+        cur.execute("UPDATE user SET card_name=%(cardName)s, card_no=%(cardNo)s, card_exp=%(cardExp)s WHERE id=%(userID)s", {"cardName": cardName, "cardNo": cardNo, "cardExp": cardExp, "userID":userID})
         connection.commit()
 
     elif (mode == "delete_card"):
         userID = kwargs.get("userID")
-        cur.execute(f"UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id='{userID}'")
+        cur.execute("UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "update_card"):
         userID = kwargs.get("userID")
         cardExp = kwargs.get("cardExpiry")
         cardCvv = kwargs.get("cardCVV")
-        cur.execute(f"UPDATE user SET card_exp='{cardExp}' WHERE id='{userID}'")
+        cur.execute("UPDATE user SET card_exp=%(cardExp)s WHERE id=%(userID)s", {"cardExp": cardExp, "userID": userID})
         connection.commit()
 
     elif (mode == "delete_user"):
         userID = kwargs.get("userID")
-        cur.execute(f"DELETE FROM user WHERE id='{userID}'")
+        cur.execute("DELETE FROM user WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "update_to_teacher"):
         userID = kwargs.get("userID")
 
-        currentRole = cur.execute(f"SELECT role FROM user WHERE id='{userID}'").fetchone()
+        cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
+        currentRole = cur.fetchone()
         isTeacher = False
         if (currentRole):
             isTeacher = True if (currentRole[0] == "Teacher") else False
 
         if (not isTeacher):
-            cur.execute(f"UPDATE user SET role='Teacher' WHERE id='{userID}'")
+            cur.execute("UPDATE user SET role='Teacher' WHERE id=%(userID)s", {"userID":userID})
             connection.commit()
         else:
             connection.close()
@@ -572,49 +591,49 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
 
     elif (mode == "get_user_purchases"):
         userID = kwargs.get("userID")
-        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "get_user_cart":
         userID = kwargs.get("userID")
-        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "add_to_cart":
         userID = kwargs.get("userID")
         courseID = kwargs.get("courseID")
 
-        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
 
-        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
         
         if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs:
             cartCourseIDs.append(courseID)
-            cur.execute(f"UPDATE user SET cart_courses='{json.dumps(cartCourseIDs)}' WHERE id='{userID}'")
+            cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
             connection.commit()
 
     elif mode == "remove_from_cart":
         userID = kwargs.get("userID")
         courseID = kwargs.get("courseID")
 
-        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
 
         if courseID in cartCourseIDs:
             cartCourseIDs.remove(courseID)
-            cur.execute(f"UPDATE user SET cart_courses='{json.dumps(cartCourseIDs)}' WHERE id='{userID}'")
+            cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
             connection.commit()
 
     elif mode == "purchase_courses":
 
         userID = kwargs.get("userID")
 
-        cur.execute(f"SELECT cart_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
 
-        cur.execute(f"SELECT purchased_courses FROM user WHERE id='{userID}'")
+        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
 
         for courseID in cartCourseIDs:
@@ -623,10 +642,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                 purchasedCourseIDs.append(courseID)
         
         # Add to purchases
-        cur.execute(f"UPDATE user SET purchased_courses='{json.dumps(purchasedCourseIDs)}' WHERE id='{userID}'")        
+        cur.execute("UPDATE user SET purchased_courses=%(purchased)s WHERE id=%(userID)s", {"purchased":json.dumps(purchasedCourseIDs), "userID":userID})        
         
         # Empty cart
-        cur.execute(f"UPDATE user SET cart_courses='[]' WHERE id='{userID}'")
+        cur.execute("UPDATE user SET cart_courses='[]' WHERE id=%(userID)s", {"userID":userID})
 
         connection.commit()
 
@@ -645,7 +664,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         connection.close()
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS course (
     #     course_id VARCHAR(255) PRIMARY KEY, 
     #     teacher_id VARCHAR(255) NOT NULL,
@@ -673,16 +692,15 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         video_path = kwargs.get("videoPath")
         course_total_rating = 0
         course_rating_count = 0
-        date_created = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        date_created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        data = (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path)
-        cur.execute("INSERT INTO course VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+        cur.execute("INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)", {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "date_created":date_created, "video_path":video_path})
         connection.commit()
 
     elif (mode == "get_course_data"):
         course_id = kwargs.get("courseID")
         print(course_id)
-        cur.execute(f"SELECT * FROM course WHERE course_id='{course_id}'")
+        cur.execute("SELECT * FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         matched = cur.fetchone()
         print(matched)
         if (not matched):
@@ -691,25 +709,25 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 
     elif (mode == "delete"):
         course_id = kwargs.get("courseID")
-        cur.execute(f"DELETE FROM course WHERE course_id='{course_id}'")
+        cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         connection.commit()
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
-        statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
+        # statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
 
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (not teacherID):
-                cur.execute(f"{statement} ORDER BY date_created DESC LIMIT 3")
+                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY date_created DESC LIMIT 3")
             else:
-                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY date_created DESC LIMIT 3")
+                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY date_created DESC LIMIT 3", {"teacherID":teacherID})
         else:
             # get top 3 highly rated courses
             if (not teacherID):
-                cur.execute(f"{statement} ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
+                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
             else:
-                cur.execute(f"{statement} WHERE teacher_id='{teacherID}' ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
+                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3", {"teacherID":teacherID})
 
         matchedList = cur.fetchall()
         if (not matchedList):
@@ -721,7 +739,8 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
             if (not teacherID):
                 teacherIDList = [teacherID[1] for teacherID in matchedList]
                 for i, teacherID in enumerate(teacherIDList):
-                    res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+                    cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
+                    res = cur.fetchone()
                     teacherUsername = res[0]
                     teacherProfile = res[1]
                     teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
@@ -729,7 +748,8 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
                     courseInfoList.append(Course(((teacherUsername, teacherProfile), matchedList[i])))
                 return courseInfoList
             else:
-                res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+                cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
+                res = cur.fetchone()
                 teacherUsername = res[0]
                 teacherProfile = res[1]
                 teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
@@ -746,10 +766,12 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         searchInput = kwargs.get("searchInput")
         resultsList = []
 
-        foundResults = cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'").fetchall()
+        cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
+        foundResults = cur.fetchall()
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
-            res = cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'").fetchone()
+            cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
+            res = cur.fetchone()
             teacherUsername = res[0]
             teacherProfile = res[1]
             teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
@@ -773,7 +795,7 @@ def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         connection.close()
         raise ValueError("You must specify a mode in the cart_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS cart (
     #     user_id VARCHAR(255),
     #     course_id VARCHAR(255),
@@ -784,21 +806,22 @@ def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
 
     if mode == "insert":
         courseID = kwargs.get("courseID")
-        cur.execute("INSERT INTO cart VALUES (?, ?)", (userID, courseID))
+        cur.execute("INSERT INTO cart VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
         connection.commit()
 
     elif mode == "get_cart_courses":
         # List of course IDs in cart
-        courseID_list = cur.execute(f"SELECT course_id FROM cart WHERE user_id = '{userID}'").fetchall()
+        cur.execute("SELECT course_id FROM cart WHERE user_id = %(userID)s", {"userID":userID})
+        courseID_list = cur.fetchall()
         return courseID_list
 
     elif mode == "remove":
         courseID = kwargs.get("courseID")
-        cur.execute("DELETE FROM cart WHERE user_id = '{userID}' AND course_id = '{courseID}'")
+        cur.execute("DELETE FROM cart WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         connection.commit()
 
     elif mode == "empty":
-        cur.execute("DELETE FROM cart WHERE user_id = '{userID}'")
+        cur.execute("DELETE FROM cart WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
     
 # May not be used
@@ -815,7 +838,7 @@ def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None,
         connection.close()
         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
 
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
     #     user_id VARCHAR(255),
     #     course_id VARCHAR(255),
@@ -826,17 +849,18 @@ def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None,
 
     if mode == "insert":
         courseID = kwargs.get("courseID")
-        cur.execute("INSERT INTO purchased VALUES (?, ?)", (userID, courseID))
+        cur.execute("INSERT INTO purchased VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
         connection.commit()
 
     elif mode == "get_purchased_courses":
         # List of course IDs in purchased
-        courseID_list = cur.execute(f"SELECT course_id FROM purchased WHERE user_id = '{userID}'").fetchall()
+        cur.execute("SELECT course_id FROM purchased WHERE user_id = %(userID)s", {"userID":userID})
+        courseID_list = cur.fetchall()
         return courseID_list
 
     elif mode == "delete":
         courseID = kwargs.get("courseID")
-        cur.execute("DELETE FROM purchased WHERE user_id = '{userID}' AND course_id = '{courseID}'")
+        cur.execute("DELETE FROM purchased WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         connection.commit()
 
 def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
@@ -851,7 +875,7 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         connection.close()
         raise ValueError("You must specify a mode in the review_sql_operation function!")
     
-    cur = connection.cursor()
+    cur = connection.cursor(buffered=True)
     # cur.execute("""CREATE TABLE IF NOT EXISTS review (
     #     user_id VARCHAR(255),
     #     course_id VARCHAR(255),
@@ -865,11 +889,12 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     courseID = kwargs.get("courseID")
 
     if mode == "retrieve":
-        review_list = cur.execute(f"SELECT course_rating, course_review FROM review WHERE user_id = '{userID}' AND course_id = '{courseID}'").fetchall()
+        cur.execute("SELECT course_rating, course_review FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
+        review_list = cur.fetchall()
         return review_list
 
     if mode == "insert":
         courseRating = kwargs.get("courseRating")
         courseReview = kwargs.get("courseReview")
-        cur.execute("INSERT INTO review VALUES (?, ?, ?, ?)", (userID, courseID, courseRating, courseReview))
+        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
