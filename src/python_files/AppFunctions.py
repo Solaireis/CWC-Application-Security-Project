@@ -109,7 +109,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     returnValue = con = None
 
     # uses Google Cloud SQL Public Address if debug mode is False else uses localhost
-    host = "34.143.163.29" if (not app.config["DEBUG_FLAG"]) else "localhost"
+    host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] if (not app.config["DEBUG_FLAG"]) else "localhost"
     password = environ["REMOTE_SQL_PASS"] if (not app.config["DEBUG_FLAG"]) else environ["LOCAL_SQL_PASS"]
 
     try:
