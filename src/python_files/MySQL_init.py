@@ -47,7 +47,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
-        id CHAR(32) PRIMARY KEY, 
+        id VARCHAR(32) PRIMARY KEY, 
         role VARCHAR(255) NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
         email VARCHAR(255) NOT NULL UNIQUE, 

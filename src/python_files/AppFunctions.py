@@ -295,13 +295,9 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         sessionID = kwargs.get("sessionID")
         cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
-        """
-        Error here, first strptime first argument not supposed to be a date
-
-        """
-        expiryDate = result[1].strftime("%Y-%m-%d")
-        # expiryDate = datetime.strptime(result[1], "%Y-%m-%d %H:%M:%S.%f")
-        if (expiryDate >= datetime.now().strftime("%Y-%m-%d")):
+        expiryDate = result[1]
+        currentDatetime = datetime.now().replace(microsecond=0)
+        if (expiryDate >= currentDatetime):
             # not expired, check if the userID matches the sessionID
             return kwargs.get("userID") == result[0]
         else:
@@ -309,7 +305,8 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
             return False
 
     elif (mode == "delete_expired_sessions"):
-        cur.execute("DELETE FROM session WHERE expiry_date < %(expry_date)s", {"expiry_date":datetime.now()})
+        currentDatetime = datetime.now().replace(microsecond=0)
+        cur.execute("DELETE FROM session WHERE expiry_date < %(currentDatetime)s", {"currentDatetime":currentDatetime})
         connection.commit()
 
     elif (mode == "if_session_exists"):
@@ -392,7 +389,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         # add to the sqlite3 database
         userID = generate_id()
         passwordInput = kwargs.get("password")
-        cur.execute("INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", {"userID":userID, "role":"Student", "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"})
+        cur.execute(
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", 
+            {"userID":userID, "role":"Student", "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"}
+        )
         connection.commit()
         return userID
 
@@ -420,7 +420,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is None):
-            cur.execute("INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", {"userID":userID, "role":"Student", "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"})
+            cur.execute(
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", 
+                {"userID":userID, "role":"Student", "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"}
+            )
             connection.commit()
             return "Student"
         else:
@@ -698,7 +701,10 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         course_rating_count = 0
         date_created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        cur.execute("INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)", {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "date_created":date_created, "video_path":video_path})
+        cur.execute(
+            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)", 
+            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "date_created":date_created, "video_path":video_path}
+        )
         connection.commit()
 
     elif (mode == "get_course_data"):
@@ -884,7 +890,6 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     #     user_id VARCHAR(255),
     #     course_id VARCHAR(255),
     #     course_rating INTEGER,
-    #     course_review VARCHAR(255),
         
     #     PRIMARY KEY (user_id, course_id)
     # )""")
@@ -893,12 +898,11 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     courseID = kwargs.get("courseID")
 
     if mode == "retrieve":
-        cur.execute("SELECT course_rating, course_review FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
+        cur.execute("SELECT course_rating FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         review_list = cur.fetchall()
         return review_list
 
     if mode == "insert":
         courseRating = kwargs.get("courseRating")
-        courseReview = kwargs.get("courseReview")
-        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
+        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating})
         connection.commit()
