@@ -101,7 +101,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
 
             if (date >= lastUpdated):
                 print("\nIP Address Blacklist is up to date!")
-                print("Successfully loaded IP Address Blacklist from thq saved file.\n")
+                print("Successfully loaded IP Address Blacklist from the saved file.\n")
                 return blacklist[1:] # return the blacklist if it is up to date
             else:
                 print("\nIP Address Blacklist is outdated!", end="")
