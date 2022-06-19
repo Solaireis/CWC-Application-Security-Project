@@ -105,6 +105,16 @@ def get_dicebear_image(username:str) -> str:
     )
     return av.url_svg
 
+"""
+If using stored procedures:
+
+cursor.callproc('procedure_name', [arg1, arg2, ...])
+for i in cursor.stored_results():
+    result = i.fetchall()
+    OR
+    result = i.fetchone()
+"""
+
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
     Connects to the database and returns the connection object

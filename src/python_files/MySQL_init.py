@@ -24,6 +24,8 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         password=password
     )
 
+    definer = f"root@{host}"
+
     cur = mydb.cursor()
     cur.execute("CREATE DATABASE coursefinity")
     mydb.commit()
@@ -129,6 +131,16 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
 
+    """Stored Procedures"""
+
+    """Template"""
+    # cur.execute("""
+    #     CREATE DEFINER=%(definer)s PROCEDURE `procedurename`(arguments)
+    #     BEGIN
+    #         query statement;
+    #     END
+    # """, {"definer":definer})
+    
     mydb.commit()
     return mydb
 

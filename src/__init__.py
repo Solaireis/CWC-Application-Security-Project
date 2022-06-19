@@ -544,7 +544,7 @@ def userProfile():
             twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
 
         """
-        Updates to teacher but page does not change
+        Updates to teacher but page does not change, requires refresh
         """
 
         return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle)
