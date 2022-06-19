@@ -35,6 +35,14 @@ MAX_LOGIN_ATTEMPTS = 10
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
+def accepted_image_extension(filename:str) -> bool:
+    """
+    Returns True if the image extension is accepted.
+    """
+    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
+    # e.g. "profile.test.png" -> ["profile.test", "png"]
+    return ("." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_IMAGE_EXTENSIONS"])
+
 def get_google_flow() -> Flow:
     """
     Returns the Google OAuth2 flow.

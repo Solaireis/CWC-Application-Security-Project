@@ -55,8 +55,8 @@ app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 app.config["DICEBEAR_OPTIONS"] = DOptions(size=250)
 
 # for image uploads file path
-app.config["PROFILE_UPLOAD_PATH"] = r"static\images\user"
-app.config["THUMBNAIL_UPLOAD_PATH"] = r"static\images\courses\thumbnails"
+app.config["PROFILE_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "user")
+app.config["THUMBNAIL_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "courses", "thumbnails")
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
@@ -664,26 +664,36 @@ def changeAccountType():
 @app.route("/upload-profile-pic" , methods=["GET","POST"])
 def uploadPic():
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
         userID = userInfo[0]
 
         if (request.method == "POST"):
-            if "profilePic" not in request.files:
+            if ("profilePic" not in request.files):
                 print("No File Sent")
                 return redirect(url_for("userProfile"))
 
             file = request.files["profilePic"]
             filename = file.filename
+            if (filename.strip() == ""):
+                abort(500)
+
+            if (not accepted_image_extension(filename)):
+                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
+                return redirect(url_for("userProfile"))
+
+            fileExtension = filename.rsplit(".", 1)[1]
+            filename = f"{userID}.{fileExtension}"
+
             print(f"This is the filename for the inputted file : {filename}")
 
-            filepath = Path(app.config["PROFILE_UPLOAD_PATH"]).joinpath(filename)
-            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
+            filepath = app.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
             print(f"This is the filepath for the inputted file: {filepath}")
-            
-            file.save(Path("src/Insecure/").joinpath(filepath))
+
+            file.save(filepath)
             # file.save(os.path.join("src/Insecure/", filepath))
 
             # no more mode="edit"
+            imageUrlToStore = url_for("static", filename=f"images/users/{filename}", _external=True)
             # sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
 
             return redirect(url_for("userProfile"))
