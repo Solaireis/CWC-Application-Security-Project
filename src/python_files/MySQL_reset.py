@@ -1,9 +1,9 @@
 import mysql.connector
 from os import environ
 
-def delete_mysql_tables(debug:bool=False) -> None:
+def delete_mysql_database(debug:bool=False) -> None:
     """
-    Delete the database tables (run this if you want to reset the database)
+    Delete the database (run this if you want to reset the database)
 
     Args:
         debug (bool): If true, will delete locally, else will delete remotely
@@ -37,4 +37,5 @@ if (__name__ == "__main__"):
             debugFlag = True if (debugPrompt != "n") else False
             break
 
-    delete_mysql_tables(debug=debugFlag)
+    delete_mysql_database(debug=debugFlag)
+    print("Deleted the database, \"coursefinity\"...")

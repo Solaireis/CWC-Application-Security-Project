@@ -27,7 +27,7 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
 from .Google import CREDENTIALS_PATH
-from .MySQL_init import init as MySQLInitialise
+from .MySQL_init import mysql_init_tables as MySQLInitialise
 
 """------------------------------ Define Constants ------------------------------"""
 
