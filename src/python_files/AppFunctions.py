@@ -183,13 +183,13 @@ def user_ip_addresses_sql_operation(connection:MySQLCon, mode:str, **kwargs) -> 
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%s, INET6_ATON(%s))", (userID, ipAddress))
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
         userID = kwargs.get("userID")
 
-        cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = (%s)", (userID,))
+        cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
         returnValue = cur.fetchall()
         ipAddressList = [ipAddress[0] for ipAddress in returnValue]
         return ipAddressList        
@@ -198,9 +198,9 @@ def user_ip_addresses_sql_operation(connection:MySQLCon, mode:str, **kwargs) -> 
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
 
-        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = (%s) AND INET6_NTOA(ip_address) = (%s)", (userID, ipAddress))
+        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = (%(userID)s) AND INET6_NTOA(ip_address) = (%(ipAddress)s)", {"userID":userID, "ipAddress":ipAddress})
         if (cur.fetchone()[0] == 0):
-            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%s, INET6_ATON(%s))", (userID, ipAddress))
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
             connection.commit()
 
 def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
