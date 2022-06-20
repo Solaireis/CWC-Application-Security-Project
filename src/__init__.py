@@ -41,7 +41,7 @@ app = Flask(__name__)
 app.config["DEBUG_FLAG"] = True
 
 # secret key mainly for digitally signing the session cookie
-app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else secrets.token_hex(32) # 32 bytes/256 bits
+app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else secrets.token_hex(128) # 128 bytes/1024 bits
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()

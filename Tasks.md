@@ -17,7 +17,9 @@
 - Host and use HTTPS
 
 #### Implemented:
-- Secure Flask Secret Key using `os.urandom(32)`
+- Secure Flask Secret Key using `os.urandom(128)` (1024 bits)
+  - Unlikely to be guessed (2^128 possible keys)
+  - Prevent session cookie from being tampered with
 - Argon2 for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
@@ -31,6 +33,10 @@
   - Which meets the OWASP minimum requirements
 - Using Google OAuth2 for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier
+  - Preventing the cookie from being sniffed
+- Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
+  - Each user has a unique symmetric key for encryption and decryption
+  - Encrypted the Argon2 hash of the password
 
 ---
 
