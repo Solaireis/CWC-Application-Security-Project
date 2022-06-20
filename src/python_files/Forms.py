@@ -51,7 +51,7 @@ class AdminResetPasswordForm(Form):
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
 
 class twoFAForm(Form):
-    twoFATOTP = StringField("Enter 2FA OTP:", [validators.Length(min=6, max=6), validators.DataRequired()])
+    twoFATOTP = StringField("Enter the 6 Digit Code:", [validators.Length(min=6, max=6), validators.DataRequired()])
 
 """End of WTForms by Jason"""
 

@@ -4,7 +4,7 @@ from flask import Flask, session
 VALUE_CHANGE_INPUT = "657a9e3f44e64e7890f378ed4ea6efc0" 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "a secret key" # same as the web server secret key
+app.config["SECRET_KEY"] = "secret" # same as the web server secret key
 
 @app.route('/')
 def home():

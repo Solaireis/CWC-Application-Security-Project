@@ -4,6 +4,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from google.auth.exceptions import RefreshError
 
 PARENT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
 TOKEN_PATH = PARENT_FOLDER_PATH.joinpath("token.json")
@@ -29,8 +30,14 @@ def google_init(quiet:bool=False):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow 
     # completes for the first time.
-    if (TOKEN_PATH.exists()):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    if (TOKEN_PATH.is_file()):
+        try:
+            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+        except (RefreshError) as e:
+            print("Error caught:")
+            print(e)
+            print("\nWill proceed to delete invalid token.json and create a new one...\n")
+            TOKEN_PATH.unlink(missing_ok=True)
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):

@@ -37,5 +37,8 @@ if (__name__ == "__main__"):
             debugFlag = True if (debugPrompt != "n") else False
             break
 
-    delete_mysql_database(debug=debugFlag)
-    print("Deleted the database, \"coursefinity\"...")
+    try:
+        delete_mysql_database(debug=debugFlag)
+        print("Deleted the database, \"coursefinity\"...")
+    except (mysql.connector.errors.DatabaseError):
+        print("Error: Database \"coursefinity\" does not exist...")

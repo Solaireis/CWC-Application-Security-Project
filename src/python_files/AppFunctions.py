@@ -18,6 +18,7 @@ from dicebear import DAvatar, DStyle
 from argon2 import PasswordHasher as PH
 from argon2.exceptions import VerifyMismatchError
 import mysql.connector as MySQLCon
+import pyotp
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow
@@ -25,7 +26,8 @@ from google_auth_oauthlib.flow import Flow
 # import local python files
 from .Course import Course
 from .Errors import *
-from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong
+from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
+                             RSA_decrypt, symmetric_encrypt, symmetric_decrypt, create_symmetric_key
 from .Google import CREDENTIALS_PATH
 from .MySQL_init import mysql_init_tables as MySQLInitialise
 
@@ -70,7 +72,7 @@ def add_session(userID:str) -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
     return sessionID
 
-def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
+def get_image_path(userID:Union[dict, str], returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
     
@@ -80,12 +82,16 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     If returnUserInfo is True, it will return a tuple of the user's record.
     
     Args:
-        - userID: The user's ID
+        - userID: The user's ID (optionally encrypted)
+            - Will decrypt the encrypted userID (if userID is in dict type)
         - returnUserInfo: If True, it will return a tuple of the user's record.
     """
+    if (isinstance(userID, dict)):
+        userID = RSA_decrypt(userID)
+
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
     imageSrcPath = userInfo[5]
-    if (not imageSrcPath):
+    if (imageSrcPath is None):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
 
@@ -102,6 +108,16 @@ def get_dicebear_image(username:str) -> str:
         options=app.config["DICEBEAR_OPTIONS"]
     )
     return av.url_svg
+
+"""
+If using stored procedures:
+
+cursor.callproc('procedure_name', [arg1, arg2, ...])
+for i in cursor.stored_results():
+    result = i.fetchall()
+    OR
+    result = i.fetchone()
+"""
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
@@ -148,6 +164,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "2fa_token"):
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "user_ip_addresses"):
+            returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
     except (MySQLCon.IntegrityError, MySQLCon.OperationalError, MySQLCon.InternalError, MySQLCon.DataError, MySQLCon.PoolError) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
@@ -156,7 +174,40 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     con.close()
     return returnValue
 
-def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[bool, str, None]:
+def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
+    if (mode is None):
+        connection.close()
+        raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
+
+    cur = connection.cursor(buffered=True)
+
+    # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
+    # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
+    if (mode == "add_ip_address"):
+        userID = kwargs.get("userID")
+        ipAddress = kwargs.get("ipAddress")
+
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
+        connection.commit()
+
+    elif (mode == "get_ip_addresses"):
+        userID = kwargs.get("userID")
+
+        cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
+        returnValue = cur.fetchall()
+        ipAddressList = [ipAddress[0] for ipAddress in returnValue]
+        return ipAddressList        
+
+    elif (mode == "add_ip_address_only_if_unique"):
+        userID = kwargs.get("userID")
+        ipAddress = kwargs.get("ipAddress")
+
+        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = (%(userID)s) AND INET6_NTOA(ip_address) = (%(ipAddress)s)", {"userID":userID, "ipAddress":ipAddress})
+        if (cur.fetchone()[0] == 0):
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
+            connection.commit()
+
+def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -167,12 +218,6 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection, mo
     The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
     """
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
-    #     token VARCHAR(255) PRIMARY KEY,
-    #     user_id VARCHAR(255) NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
-    connection.commit()
 
     if (mode == "add_token"):
         token = kwargs.get("token")
@@ -208,13 +253,6 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
-    #     user_id VARCHAR(255) PRIMARY KEY,
-    #     attempts INTEGER NOT NULL,
-    #     reset_date DATE NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
-    connection.commit()
 
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
@@ -231,7 +269,7 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
             cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
         else:
             # comparing the reset datetime with the current datetime
-            if (datetime.strptime(attempts[1], "%Y-%m-%d %H:%M:%S.%f") > datetime.now()):
+            if (attempts[1] > datetime.now().replace(microseconds=0)):
                 # if not past the reset datetime
                 currentAttempts = attempts[0]
             else:
@@ -252,22 +290,15 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date"):
-        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now()})
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now().replace(microseconds=0)})
         connection.commit()
 
-def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, bool, None]:
+def session_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS session (
-    #     session_id VARCHAR(255) PRIMARY KEY,
-    #     user_id VARCHAR(255) NOT NULL,
-    #     expiry_date DATE NOT NULL,
-    #     FOREIGN KEY (user_id) REFERENCES user(id)
-    # )""")
-    connection.commit()
 
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
@@ -333,7 +364,7 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:s
         cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
 
-def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
+def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
     
@@ -350,37 +381,14 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS user (
-    #     id VARCHAR(255) PRIMARY KEY, 
-    #     role VARCHAR(255) NOT NULL,
-    #     username VARCHAR(255) NOT NULL UNIQUE, 
-    #     email VARCHAR(255) NOT NULL UNIQUE, 
-    #     password VARCHAR(255), -- can be null for user who signed in using Google OAuth2
-    #     profile_image VARCHAR(255), 
-    #     date_joined DATE NOT NULL,
-    #     card_name VARCHAR(255),
-    #     card_no INTEGER, -- May not be unique since one might have alt accounts.
-    #     card_exp VARCHAR(255),
-    #     cart_courses VARCHAR(255) NOT NULL,
-    #     purchased_courses VARCHAR(255) NOT NULL
-    # )""")
-
-    """Honestly IDK wether need a not"""
-    connection.commit()
 
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
         if (not userID):
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
-        cur.execute("SELECT * FROM user WHERE id=%(userID)s",{"userID":userID})
+        cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
-
-    # elif (mode == "get_username"):
-    #     userID = kwargs.get("userID")
-    #     cur.execute("SELECT username FROM user WHERE id=?", (userID,))
-    #     username = cur.fetchone()
-    #     return username[0] if (username is not None) else None
 
     elif (mode == "signup"):
         emailInput = kwargs.get("email")
@@ -388,25 +396,41 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
 
         cur.execute("SELECT * FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         emailDupe = bool(cur.fetchone())
+
         cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
         usernameDupes = bool(cur.fetchone())
 
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
 
+        # create symmetric key for the user and store it in Google Cloud KMS API
+        if (app.config["DEBUG_FLAG"]):
+            keyName = "test-key"
+        else:
+            keyName = f"key-{generate_id()}"
+            create_symmetric_key(keyName=keyName)
+
         # add to the sqlite3 database
         userID = generate_id()
-        passwordInput = kwargs.get("password")
+        passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
+
+        cur.callproc("get_role_id", ("Student",))
+        for result in cur.stored_results():
+            roleID = result.fetchone()[0]
+
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", 
-            {"userID":userID, "role":"Student", "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)", 
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
+
+        user_ip_addresses_sql_operation(connection=connection, mode="add_ip_address", userID=userID, ipAddress=kwargs["ipAddress"])
+
         return userID
 
     elif (mode == "check_if_using_google_oauth2"):
         userID = kwargs.get("userID")
-        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT password, id FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
         if (password is None):
             connection.close()
@@ -425,30 +449,47 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         googleProfilePic = kwargs.get("googleProfilePic")
 
         # check if the userID exists
-        cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is None):
+            # user does not exist, create new user with the given information
+
+            # get role id
+            cur.callproc("get_role_id", ("Student",))
+            for result in cur.stored_results():
+                roleID = result.fetchone()[0]
+
+            # create symmetric key for the user and store it in Google Cloud KMS API
+            if (app.config["DEBUG_FLAG"]):
+                keyName = "test-key"
+            else:
+                keyName = f"key-{generate_id()}"
+                create_symmetric_key(keyName=keyName)
+
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(cart_courses)s, %(purchased_courses)s)", 
-                {"userID":userID, "role":"Student", "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "cart_courses":"[]", "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)", 
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
-            return "Student"
-        else:
-            # return the role of the user
-            return matched[0]
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
-        cur.execute("SELECT id, role, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        cur.execute("SELECT id, password, key_name, username, role FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
         if (not matched):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
+        if (matched[1] is None):
+            connection.close()
+            raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
+
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":matched[0]})
         lockedAccount = cur.fetchone()
+
+        requestIpAddress = kwargs["ipAddress"]
+        ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=matched[0], ipAddress=requestIpAddress)
 
         if (lockedAccount):
             if (lockedAccount[0] > MAX_LOGIN_ATTEMPTS):
@@ -459,9 +500,26 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                 cur.execute("DELETE FROM login_attempts WHERE user_id=%(userID)s", {"userID":matched[0]})
                 connection.commit()
 
+        newIpAddress = False
+        decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
         try:
-            if (PH().verify(matched[2], passwordInput)):
-                return (matched[0], matched[1])
+            if (PH().verify(decryptedPasswordHash, passwordInput)):
+                # check if the login request is from the same IP address as the one that made the request
+                if (requestIpAddress not in ipAddressList):
+                    newIpAddress = True
+
+                # convert the role id to a readable format
+                cur.callproc("get_role_name", (matched[4],))
+                for result in cur.stored_results():
+                    roleName = result.fetchone()[0]
+
+                # encrypt the password again as the encryption key will rotate every 30 days
+                # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
+                encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=matched[2])
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", \
+                            {"password":encryptedPasswordHash, "userID":matched[0]})
+                connection.commit()
+                return (matched[0], newIpAddress, matched[3], roleName)
         except (VerifyMismatchError):
             connection.close()
             raise IncorrectPwdError("Incorrect password!")
@@ -472,7 +530,24 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         matched = cur.fetchone()
         if (not matched):
             return False
-        return matched
+
+        cur.callproc("get_role_name", (matched[1],))
+        for result in cur.stored_results():
+            roleMatched = result.fetchone()
+        matched = list(matched)
+        matched[1] = roleMatched[0]
+        return tuple(matched)
+
+    elif (mode == "change_profile_picture"):
+        userID = kwargs.get("userID")
+        profileImagePath = kwargs.get("profileImagePath")
+        cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":profileImagePath, "userID":userID})
+        connection.commit()
+
+    elif (mode == "delete_profile_picture"):
+        userID = kwargs.get("userID")
+        cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":None, "userID":userID})
+        connection.commit()
 
     elif (mode == "change_username"):
         userID = kwargs.get("userID")
@@ -484,7 +559,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
             connection.close()
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
 
-        cur.execute("UPDATE user SET username= %(usernameInput)s WHERE id= %(userID)s", {"usernameInput": usernameInput, "userID": userID})
+        cur.execute("UPDATE user SET username=%(usernameInput)s WHERE id=%(userID)s", {"usernameInput": usernameInput, "userID": userID})
         connection.commit()
 
     elif (mode == "change_email"):
@@ -492,6 +567,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         currentPasswordInput = kwargs.get("currentPassword")
         emailInput = kwargs.get("email")
 
+        # check if the email is already in use
         cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         reusedEmail = cur.fetchone()
         if (reusedEmail is not None):
@@ -502,11 +578,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                 connection.close()
                 raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
-        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT password, key_name FROM user WHERE id=%(userID)s", {"userID":userID})
         currentPassword = cur.fetchone()
 
         try:
-            if (PH().verify(currentPassword[0], currentPasswordInput)):
+            if (PH().verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
                 cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
         except (VerifyMismatchError):
@@ -517,8 +593,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         userID = kwargs.get("userID")
         oldPasswordInput = kwargs.get("oldPassword") # to authenticate the changes
         passwordInput = kwargs.get("password")
-        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
-        currentPasswordHash = cur.fetchone()[0]
+
+        cur.execute("SELECT password, key_name FROM user WHERE id=%(userID)s", {"userID":userID})
+        matched = cur.fetchone()
+        keyName = matched[1]
+        currentPasswordHash = symmetric_decrypt(ciphertext=matched[0], keyID=keyName)
 
         try:
             # check if the supplied old password matches the current password
@@ -535,7 +614,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
-                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": PH().hash(passwordInput), "userID": userID})
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH().hash(passwordInput), keyID=keyName), "userID": userID})
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()
@@ -592,13 +671,17 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=
         userID = kwargs.get("userID")
 
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
-        currentRole = cur.fetchone()
-        isTeacher = False
-        if (currentRole):
-            isTeacher = True if (currentRole[0] == "Teacher") else False
+        currentRoleID = cur.fetchone()[0]
+        cur.callproc("get_role_name", (currentRoleID,))
+        for result in cur.stored_results():
+            currentRole = result.fetchone()[0]
 
+        isTeacher = True if (currentRole == "Teacher") else False
         if (not isTeacher):
-            cur.execute("UPDATE user SET role='Teacher' WHERE id=%(userID)s", {"userID":userID})
+            cur.callproc("get_role_id", ("Teacher",))
+            for result in cur.stored_results():
+                teacherRoleID = result.fetchone()[0]
+            cur.execute("UPDATE user SET role=%(teacherRoleID)s WHERE id=%(userID)s", {"teacherRoleID": teacherRoleID, "userID":userID})
             connection.commit()
         else:
             connection.close()
@@ -680,21 +763,6 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS course (
-    #     course_id VARCHAR(255) PRIMARY KEY, 
-    #     teacher_id VARCHAR(255) NOT NULL,
-    #     course_name VARCHAR(255) NOT NULL,
-    #     course_description VARCHAR(255),
-    #     course_image_path VARCHAR(255),
-    #     course_price FLOAT NOT NULL,
-    #     course_category VARCHAR(255) NOT NULL,
-    #     course_total_rating INTEGER NOT NULL,
-    #     course_rating_count INTEGER NOT NULL,
-    #     date_created DATE NOT NULL,
-    #     video_path VARCHAR(255) NOT NULL,
-    #     FOREIGN KEY (teacher_id) REFERENCES user(id)
-    # )""")
-    connection.commit()
 
     if (mode == "insert"):
         course_id = generate_id()
@@ -814,11 +882,6 @@ def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         raise ValueError("You must specify a mode in the cart_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS cart (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
 
@@ -857,11 +920,6 @@ def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None,
         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
 
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
 
@@ -894,13 +952,6 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         raise ValueError("You must specify a mode in the review_sql_operation function!")
     
     cur = connection.cursor(buffered=True)
-    # cur.execute("""CREATE TABLE IF NOT EXISTS review (
-    #     user_id VARCHAR(255),
-    #     course_id VARCHAR(255),
-    #     course_rating INTEGER,
-        
-    #     PRIMARY KEY (user_id, course_id)
-    # )""")
 
     userID = kwargs.get("userID")
     courseID = kwargs.get("courseID")

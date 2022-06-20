@@ -91,3 +91,33 @@ class No2FATokenError(Exception):
     """
     Raised if the user tries to login but they have not enabled 2FA.
     """
+
+class CRC32ChecksumError(Exception):
+    """
+    Raised if the CRC32C checksum does not match during decryption.
+    """
+
+class CiphertextIsNotBytesError(Exception):
+    """
+    Raised if the ciphertext is not bytes type.
+    """
+
+class DecryptionError(Exception):
+    """
+    Raised if the decryption fails.
+    """
+
+class InvalidProfilePictureError(Exception):
+    """
+    Raised if the profile image is not a valid image.
+    """
+
+class UserIsUsingOauth2Error(Exception):
+    """
+    Raised if the user tries to login but is not using Google OAuth2 to login.
+    """
+
+class LoginFromNewIpAddressError(Exception):
+    """
+    Raised if the user tries to login from a new IP address.
+    """

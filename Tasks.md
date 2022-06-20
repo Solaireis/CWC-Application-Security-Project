@@ -17,7 +17,9 @@
 - Host and use HTTPS
 
 #### Implemented:
-- Secure Flask Secret Key
+- Secure Flask Secret Key using `os.urandom(128)` (1024 bits)
+  - Unlikely to be guessed (2^128 possible keys)
+  - Prevent session cookie from being tampered with
 - Argon2 for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
@@ -30,6 +32,11 @@
     - 4 degrees of parallelism when hashing
   - Which meets the OWASP minimum requirements
 - Using Google OAuth2 for login/signup (removed the need for storing passwords)
+- Encrypting the sensitive cookie values such as session identifier
+  - Preventing the cookie from being sniffed
+- Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
+  - Each user has a unique symmetric key for encryption and decryption
+  - Encrypted the Argon2 hash of the password
 
 ---
 
@@ -51,6 +58,10 @@
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using Google OAuth2 for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
+- Asymmetric encryption of session identifier in the cookie value (Using RSA)
+- IP address based authentication
+  - Checks against known IP addresses of users against the login request
+  - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
 
 ---
 

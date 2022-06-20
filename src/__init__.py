@@ -11,6 +11,7 @@ import qrcode.image.svg
 from cachecontrol import CacheControl
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token
+from google.auth.exceptions import GoogleAuthError
 
 # import flask libraries
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
@@ -36,11 +37,11 @@ from os import environ
 # general Flask configurations
 app = Flask(__name__)
 
-# secret key mainly for digitally signing the session cookie
-app.config["SECRET_KEY"] = "secret" # secrets.token_hex(32) # 32 bytes/256 bits
-
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = True
+
+# secret key mainly for digitally signing the session cookie
+app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else secrets.token_hex(128) # 128 bytes/1024 bits
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
@@ -75,8 +76,9 @@ app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 # duration for locked accounts before user can try to login again
 app.config["LOCKED_ACCOUNT_DURATION"] = 30 # 
 
-# remove this in production environment so that Google OAuth2.0 will only work in https
-environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
+# To allow Google OAuth2.0 to work as it will only work in https if this not set to 1/True
+if (app.config["DEBUG_FLAG"]):
+    environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
 
 """End of Web app configurations"""
 
@@ -98,22 +100,29 @@ def before_request():
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
     elif ("user" in session):
-        if (not sql_operation(table="user", mode="verify_userID_existence", userID=session["user"])):
+        try:
+            userID = RSA_decrypt(session["user"])
+            sessionID = RSA_decrypt(session["sid"])
+        except (DecryptionError):
+            session.clear()
+            abort(500)
+
+        if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
             # if user session is invalid as the user does not exist anymore
-            sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
+            sql_operation(table="session", mode="delete_session", sessionID=sessionID)
             session.clear()
             return
 
-        if (sql_operation(table="session", mode="if_session_exists", sessionID=session["sid"])):
+        if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
             # if session exists
-            if (not sql_operation(table="session", mode="check_if_valid", sessionID=session["sid"], userID=session["user"])):
+            if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID)):
                 # if user session is expired or the userID does not match with the sessionID
-                sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
+                sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                 session.clear()
                 return
 
             # update session expiry time
-            sql_operation(table="session", mode="update_session", sessionID=session["sid"])
+            sql_operation(table="session", mode="update_session", sessionID=sessionID)
             return
         else:
             # if session does not exist in the db
@@ -145,15 +154,16 @@ def home():
     threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
 
     userPurchasedCourses = []
-    imageSrcPath = None
+    accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = userInfo[-1]
+        accType = userInfo[1]
 
     return render_template("users/general/home.html", imageSrcPath=imageSrcPath,   
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
-        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("2 per second")
@@ -164,12 +174,20 @@ def login():
             return render_template("users/guest/login.html", form=loginForm)
 
         if (request.method == "POST" and loginForm.validate()):
+            requestIPAddress = get_remote_address()
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
 
-            successfulLogin = userHasTwoFA = False
+            userInfo = isAdmin = successfulLogin = userHasTwoFA = False
             try:
-                userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput)
+                # returns the userID, boolean if user logged in from a new IP address, username, role
+                userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
+                isAdmin = True if (userInfo[3] == "Admin") else False
+                raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
+
+                if (userInfo[1]):
+                    # login from new ip address
+                    raise LoginFromNewIpAddressError("Login from a new IP address!")
 
                 successfulLogin = True
                 sql_operation(table="login_attempts", mode="reset_user_attempts", userID=userInfo[0])
@@ -187,16 +205,35 @@ def login():
             except (AccountLockedError):
                 print("Account locked")
                 flash("Too many failed login attempts, please try again later.", "Danger")
+            except (UserIsUsingOauth2Error):
+                flash("Please check your entries and try again!", "Danger")
+            except (LoginFromNewIpAddressError):
+                # sends an email with a generated TOTP code to authenticate the user
+
+                generatedTOTPSecretToken = pyotp.random_base32(length=205) # 1025 bits/205 characters in length (5 bits per base32 character)
+                generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
+
+                messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
+                send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
+
+                session["temp_uid"] = RSA_encrypt(userInfo[0])
+                session["username"] = userInfo[2]
+                session["token"] = RSA_encrypt(generatedTOTPSecretToken)
+                session["is_admin"] = RSA_encrypt(str(isAdmin))
+                flash("An email has been sent to you with your special access code!", "Success")
+                return redirect(url_for("enterGuardTOTP"))
 
             if (successfulLogin and not userHasTwoFA):
-                session["sid"] = add_session(userInfo[0])
-                session["user"] = userInfo[0]
-                session["role"] = userInfo[1]
+                session["sid"] = RSA_encrypt(add_session(userInfo[0]))
+                if (not isAdmin):
+                    session["user"] = RSA_encrypt(userInfo[0])
+                else:
+                    session["admin"] = RSA_encrypt(userInfo[0])
                 print(f"Successful Login: email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             elif (successfulLogin and userHasTwoFA):
-                session["temp_uid"] = userInfo[0]
-                session["temp_role"] = userInfo[1]
+                session["temp_uid"] = RSA_encrypt(userInfo[0])
+                session["is_admin"] = RSA_encrypt(str(isAdmin))
                 return redirect(url_for("enter2faTOTP"))
             else:
                 return render_template("users/guest/login.html", form=loginForm)
@@ -205,11 +242,48 @@ def login():
     else:
         return redirect(url_for("home"))
 
+@app.route("/verify-login", methods=["GET", "POST"])
+def enterGuardTOTP():
+    """
+    This page is only accessible to users who are logging but from a new IP address.
+    """
+    if ("user" in session):
+        return redirect(url_for("home"))
+
+    if ("temp_uid" not in session or "token" not in session or "is_admin" not in session):
+        return redirect(url_for("login"))
+
+    guardAuthForm = twoFAForm(request.form)
+    htmlTitle = "Verify Login"
+    formHeader = "Verify That It's You!"
+    formBody = "You are seeing this as our system have detected that you are logging in from a new IP address. Please enter the generated code that was sent to your email below to authenticate yourself."
+    if (request.method == "GET"):
+        return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+    if (request.method == "POST" and guardAuthForm.validate()):
+        totpInput = guardAuthForm.twoFATOTP.data
+        totpSecretToken = RSA_decrypt(session["token"])
+        if (pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
+            userID = session["temp_uid"]
+            session.clear()
+            session["sid"] = RSA_encrypt(add_session(RSA_decrypt(userID)))
+            if (bool(RSA_decrypt(session["is_admin"]))):
+                session["admin"] = userID
+            else:
+                session["user"] = userID
+            return redirect(url_for("home"))
+        else:
+            flash("Please check your entries and try again!", "Danger")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+    # post request with invalid form values
+    return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
 @app.route("/login-google")
 def loginViaGoogle():
     if ("user" not in session):
         authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url()
-        session["state"] = state
+        session["state"] = RSA_encrypt(state)
         return redirect(authorisationUrl)
     else:
         return redirect(url_for("home"))
@@ -220,7 +294,7 @@ def loginCallback():
         return redirect(url_for("home"))
 
     app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
-    if (session["state"] != request.args.get("state")):
+    if (RSA_decrypt(session["state"]) != request.args.get("state")):
         abort(500) # when state does not match (protect against CSRF attacks)
 
     credentials = app.config["GOOGLE_OAUTH_FLOW"].credentials
@@ -228,19 +302,23 @@ def loginCallback():
     cachedSession = CacheControl(requestSession)
     tokenRequest = GoogleRequest(session=cachedSession)
 
-    idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=1)
+    try:
+        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=0)
+    except (ValueError, GoogleAuthError):
+        flash("Failed to verify Google login! Please try again!", "Danger")
+        return redirect(url_for("login"))
+
     userID = idInfo["sub"]
     email = idInfo["email"]
     username = idInfo["name"]
     profilePicture = idInfo["picture"]
 
     # add to db if user does not exist and retrieve the role of the user
-    role = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+    sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
 
     session.clear()
-    session["user"] = userID
-    session["role"] = role
-    session["sid"] = add_session(userID)
+    session["user"] = RSA_encrypt(userID)
+    session["sid"] = RSA_encrypt(add_session(userID))
     return redirect(url_for("home"))
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -257,6 +335,11 @@ def signup():
             passwordInput = signupForm.password.data
             confirmPasswordInput = signupForm.cfm_password.data
 
+            """
+            Software Data Integrity, encrypt the email & username?
+            Includes encrypting when updating in later functions
+            """
+
             # some checks on the password input
             if (passwordInput != confirmPasswordInput):
                 flash("Passwords did not match!")
@@ -272,9 +355,10 @@ def signup():
                 return render_template("users/guest/signup.html", form=signupForm)
 
             passwordInput = PH().hash(passwordInput)
-            print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}")
+            ipAddress = get_remote_address()
+            print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}, ip: {ipAddress}")
 
-            returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput)
+            returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 
             if (isinstance(returnedVal, tuple)):
                 emailDupe = returnedVal[0]
@@ -287,9 +371,8 @@ def signup():
                     flash("Username already exists!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            session["user"] = returnedVal # i.e. successful signup, returned the user ID
-            session["role"] = "Student"
-            session["sid"] = add_session(returnedVal)
+            session["user"] = RSA_encrypt(returnedVal) # i.e. successful signup, returned the user ID
+            session["sid"] = RSA_encrypt(add_session(returnedVal))
 
             return redirect(url_for("home"))
 
@@ -300,10 +383,11 @@ def signup():
 
 @app.route("/logout")
 def logout():
-    if ("user" not in session):
+    if ("user" not in session and "admin" not in session):
+        print('test')
         return redirect(url_for("login"))
 
-    sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
+    sql_operation(table="session", mode="delete_session", sessionID=RSA_decrypt(session["sid"]))
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("home"))
@@ -313,47 +397,60 @@ def enter2faTOTP():
     """
     This page is only accessible to users who have 2FA enabled and is trying to login.
     """
-    if ("user" in session):
+    if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
-    if ("temp_uid" not in session and "temp_role" not in session):
+    if ("temp_uid" not in session and "is_admin" not in session):
         return redirect(url_for("login"))
 
+    htmlTitle = "Enter 2FA OTP"
+    formHeader = "Enter your 2FA OTP"
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-        return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
+        userID = RSA_decrypt(session["temp_uid"])
         try:
-            getSecretToken = sql_operation(table="2fa_token", mode="get_token", userID=session["temp_uid"])
+            getSecretToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
         except (No2FATokenError):
             # if for whatever reasons, the user has no 2FA token (which shouldn't happen), redirect to login
             return redirect(url_for("login"))
 
         if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
-            userID = session["temp_uid"]
-            role = session["temp_role"]
-            session.clear()
-            session["user"] = userID
-            session["role"] = role
-            session["sid"] = add_session(userID)
+            isAdmin = bool(RSA_decrypt(session["is_admin"]))
+            if (isAdmin):
+                session["admin"] = session["temp_uid"]
+            else:
+                session["user"] = session["temp_uid"]
+
+            session["sid"] = RSA_encrypt(add_session(userID))
+
+            # clear the temp_uid and temp_role
+            session.pop("temp_uid", None)
+            session.pop("is_admin", None)
             return redirect(url_for("home"))
         else:
-            flash("Invalid 2FA code, please try again!")
-            return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+            flash("Invalid 2FA code, please try again!", "Danger")
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader)
 
     # post request but form inputs are not valid
-    return render_template("users/guest/enter_2fa.html", form=twoFactorAuthForm)
+    return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader)
 
-@app.route("/disable-2fa")
+@app.post("/disable-2fa")
 def disableTwoFactorAuth():
-    if ("user" not in session):
+    if ("user" not in session and "admin" not in session):
         return redirect(url_for("login"))
+
+    if ("user" in session):
+        userID = RSA_decrypt(session["user"])
+    elif ("admin" in session):
+        userID = RSA_decrypt(session["admin"])
 
     # check if user logged in via Google OAuth2
     try:
-        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=session["user"])
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userID)
     except (UserDoesNotExist):
         abort(403) # if for whatever reason, a user does not exist, abort
 
@@ -361,8 +458,8 @@ def disableTwoFactorAuth():
         # if so, redirect to user profile as the authentication security is handled by Google themselves
         return redirect(url_for("userProfile"))
 
-    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])):
-        sql_operation(table="2fa_token", mode="delete_token", userID=session["user"])
+    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+        sql_operation(table="2fa_token", mode="delete_token", userID=userID)
         flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
     else:
         flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
@@ -371,12 +468,18 @@ def disableTwoFactorAuth():
 
 @app.route("/setup-2fa", methods=["GET", "POST"])
 def twoFactorAuthSetup():
-    if ("user" not in session):
+    if ("user" not in session and "admin" not in session):
         return redirect(url_for("login"))
+
+    if ("user" in session):
+        userID = session["user"]
+    elif ("admin" in session):
+        userID = session["admin"]
+    imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
 
     # check if user logged in via Google OAuth2
     try:
-        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=session["user"])
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userInfo[0])
     except (UserDoesNotExist):
         abort(403) # if for whatever reason, a user does not exist, abort
 
@@ -386,7 +489,6 @@ def twoFactorAuthSetup():
 
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
         # for google authenticator setup key (20 byte)
         secretToken = pyotp.random_base32() # MUST be kept secret
@@ -394,7 +496,7 @@ def twoFactorAuthSetup():
         imageSrcPath = get_image_path(session["user"])
 
         # generate a QR code for the user to scan
-        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo[2], issuer_name='CourseFinity')
+        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo[2], issuer_name="CourseFinity")
 
         # to save the image in the memory buffer
         # instead of saving the qrcode png as a file in the web server
@@ -409,7 +511,7 @@ def twoFactorAuthSetup():
         # get the image from the memory buffer and encode it into base64
         qrCodeEncodedBase64 = base64.b64encode(stream.getvalue()).decode()
 
-        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken)
+        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo[1])
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         # POST request code below
@@ -422,7 +524,7 @@ def twoFactorAuthSetup():
         # check if the TOTP is valid
         if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
             # update the user's 2FA status to True
-            sql_operation(table="2fa_token", mode="add_token", userID=session["user"], token=secretToken)
+            sql_operation(table="2fa_token", mode="add_token", userID=userInfo[0], token=secretToken)
             flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
             return redirect(url_for("userProfile"))
         else:
@@ -437,8 +539,9 @@ def paymentSettings():
     if ("user" not in session):
         return redirect(url_for("login"))
 
+    userID = RSA_decrypt(session["user"])
     try:
-        cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
+        cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
         print(cardExists)
     except (CardDoesNotExistError):
         cardExists = False
@@ -447,8 +550,8 @@ def paymentSettings():
 
     # GET method codes below
     if (request.method == "GET"):
-        imageSrcPath = get_image_path(session["user"], returnUserInfo=False)
-        
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+
         cardName = cardNumber = cardExpiry = None
         if (cardExists):
             cardInfo = cardExists[0]
@@ -456,7 +559,7 @@ def paymentSettings():
             cardNumber = cardInfo[1]
             cardExpiry = cardInfo[2]
 
-        return render_template("users/loggedin/payment_settings.html", form=paymentForm, imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry)
+        return render_template("users/loggedin/payment_settings.html", form=paymentForm, imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry, accType=userInfo[1])
 
     # POST method codes below
     if (paymentForm.validate() and not cardExists):
@@ -465,7 +568,7 @@ def paymentSettings():
         cardNameInput = paymentForm.cardName.data
         cardExpiryInput = paymentForm.cardExpiry.data
 
-        sql_operation(table="user", mode="add_card", userID=session["user"], cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput)
+        sql_operation(table="user", mode="add_card", userID=userID, cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput)
         return redirect(url_for("paymentSettings"))
 
     # invalid form inputs or already has a card
@@ -476,11 +579,12 @@ def deletePayment():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"])
+    userID = RSA_decrypt(session["user"])
+    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID)
     if (not cardExists):
         return redirect(url_for("paymentSettings"))
 
-    sql_operation(table="user", mode="delete_card", userID=session["user"])
+    sql_operation(table="user", mode="delete_card", userID=userID)
     return redirect(url_for("paymentSettings"))
 
 @app.route("/edit-payment", methods=["GET", "POST"])
@@ -488,25 +592,26 @@ def editPayment():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=session["user"], getCardInfo=True)
+    userID = RSA_decrypt(session["user"])
+    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
     if (not cardExists):
         return redirect(url_for("paymentSettings"))
 
     editPaymentForm = CreateEditPaymentForm(request.form)
 
     if (request.method == "GET"):
-        imageSrcPath = get_image_path(session["user"], returnUserInfo=False)
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         cardInfo = cardExists[0]
         cardName = cardInfo[0]
         cardExpiry = cardInfo[2]
 
-        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry)
+        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry, accType=userInfo[1])
 
     if (editPaymentForm.validate()):
         # POST request code below
         cardExpiryInput = editPaymentForm.cardExpiry.data
 
-        sql_operation(table="user", mode="update_card", userID=session["user"], cardExpiry=cardExpiryInput)
+        sql_operation(table="user", mode="update_card", userID=userID, cardExpiry=cardExpiryInput)
         return redirect(url_for("paymentSettings"))
 
     # invalid form inputs
@@ -523,13 +628,13 @@ def userProfile():
 
         twoFAEnabled = False
         if (not loginViaGoogle):
-            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=session["user"])
+            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
 
         """
-        Updates to teacher but page does not change
+        Updates to teacher but page does not change, requires refresh
         """
 
-        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle)
+        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo[1])
     else:
         return redirect(url_for("login"))
 
@@ -554,9 +659,9 @@ def updateUsername():
             if (changed):
                 return redirect(url_for("userProfile"))
             else:
-                return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
         else:
-            return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
     else:
         return redirect(url_for("login"))
 
@@ -590,13 +695,13 @@ def updateEmail():
                 flash("Sorry, please check your current password and try again!")
 
             if (not changed):
-                return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
                 flash("Your email has been successfully changed.", "Account Details Updated!")
                 return redirect(url_for("userProfile"))
         else:
-            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
     else:
         return redirect(url_for("login"))
 
@@ -620,7 +725,7 @@ def updatePassword():
 
             if (updatedPassword != confirmPassword):
                 flash("Passwords Do Not Match!")
-                return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
+                return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
             else:
                 changed = False
                 try:
@@ -637,18 +742,17 @@ def updatePassword():
                     flash("Your password has been successfully changed.", "Account Details Updated!")
                     return redirect(url_for("userProfile"))
                 else:
-                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
+                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
         else:
-            return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath)
+            return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
     else:
         return redirect(url_for("login"))
 
-@app.route("/change-account-type", methods=["GET","POST"])
+@app.post("/change-account-type")
 def changeAccountType():
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
-        if (request.method == "POST") and (request.form["changeAccountType"] == "changeToTeacher"):
+        userID = RSA_decrypt(session["user"])
+        if (request.form["changeAccountType"] == "changeToTeacher"):
             try:
                 sql_operation(table="user", mode="update_to_teacher", userID=userID)
                 flash("Your account has been successfully upgraded to a Teacher.", "Account Details Updated!")
@@ -656,49 +760,53 @@ def changeAccountType():
                 flash("You are already a teacher!", "Failed to Update!")
             return redirect(url_for("userProfile"))
         else:
-            print("Not POST request or did not have relevant hidden field.")
+            print("Did not have relevant hidden field.")
             return redirect(url_for("userProfile"))
     else:
         return redirect(url_for("login"))
 
-@app.route("/upload-profile-pic" , methods=["GET","POST"])
+@app.post("/delete-profile-picture")
+def deletePic():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if ("https" not in imageSrcPath):
+            fileName = imageSrcPath.rsplit("/", 1)[-1]
+            Path(app.config["PROFILE_UPLOAD_PATH"]).joinpath(fileName).unlink(missing_ok=True)
+            sql_operation(table="user", mode="delete_profile_picture", userID=userInfo[0])
+            flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
+        return redirect(url_for("userProfile"))
+    else:
+        return redirect(url_for("login"))
+
+@app.post("/upload-profile-picture")
 def uploadPic():
     if ("user" in session):
-        userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-        userID = userInfo[0]
-
-        if (request.method == "POST"):
-            if ("profilePic" not in request.files):
-                print("No File Sent")
-                return redirect(url_for("userProfile"))
-
-            file = request.files["profilePic"]
-            filename = file.filename
-            if (filename.strip() == ""):
-                abort(500)
-
-            if (not accepted_image_extension(filename)):
-                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
-                return redirect(url_for("userProfile"))
-
-            fileExtension = filename.rsplit(".", 1)[1]
-            filename = f"{userID}.{fileExtension}"
-
-            print(f"This is the filename for the inputted file : {filename}")
-
-            filepath = app.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
-            print(f"This is the filepath for the inputted file: {filepath}")
-
-            file.save(filepath)
-            # file.save(os.path.join("src/Insecure/", filepath))
-
-            # no more mode="edit"
-            imageUrlToStore = url_for("static", filename=f"images/users/{filename}", _external=True)
-            # sql_operation(table="user", mode="edit", userID=userID, profileImagePath=str(filepath), newAccType=False)
-
+        userID = RSA_decrypt(session["user"])
+        if ("profilePic" not in request.files):
+            print("No File Sent")
             return redirect(url_for("userProfile"))
 
-        # if request is not post
+        file = request.files["profilePic"]
+        filename = file.filename
+        if (filename.strip() == ""):
+            abort(500)
+
+        if (not accepted_image_extension(filename)):
+            flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
+            return redirect(url_for("userProfile"))
+
+        filename = f"{userID}.webp"
+        print(f"This is the filename for the inputted file : {filename}")
+
+        filePath = app.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
+        print(f"This is the filepath for the inputted file: {filePath}")
+
+        imageData = BytesIO(file.read())
+        compress_and_resize_image(imageData=imageData, imagePath=filePath, dimensions=(500, 500))
+
+        imageUrlToStore = url_for("static", filename=f"images/user/{filename}")
+        sql_operation(table="user", mode="change_profile_picture", userID=userID, profileImagePath=imageUrlToStore)
+
         return redirect(url_for("userProfile"))
     else:
         return redirect(url_for("login"))
@@ -714,6 +822,12 @@ def createCourse():
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
             coursePrice = float(courseForm.coursePrice.data)
+
+            """
+            Encrypt video data? Software data integrity
+
+            Why : Hackers can edit videos and prevent availability to wanted resources
+            """
 
             file = request.files.get("courseThumbnail")
             filename = file.filename
@@ -745,7 +859,7 @@ def createCourse():
 
             return redirect(url_for("home"))
         else:
-            return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form = courseForm)
+            return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1])
     else:
         return redirect(url_for("login"))
 
@@ -756,17 +870,18 @@ def teacherPage(teacherID):
 
     teacherProfilePath = get_image_path(teacherID)
 
-    imageSrcPath = None
+    accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"])
-        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo[-1]
+        accType = userInfo[1]
 
     return render_template("users/general/teacher_page.html",                              
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
         teacherProfilePath=teacherProfilePath,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
-        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses))
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
 @app.route("/course/<courseID>")
 def coursePage(courseID):
@@ -798,29 +913,31 @@ def coursePage(courseID):
     teacherName = teacherRecords[2]
 
 
-    imageSrcPath = None
+    accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"])
-        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo[-1]
+        accType = userInfo[1]
 
     return render_template("users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
 
 @app.route("/course-review/<courseID>")
 def courseReview(courseID):
-    imageSrcPath = None
+    accType = imageSrcPath = None
     userPurchasedCourses = {}
     courses = sql_operation(table="course", mode="", courseID=courseID)
     
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"])
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+        accType = userInfo[1]
 
     return render_template("users/general/course_page_review.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID)
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID, accType=accType)
 
 @app.route("/purchase-view/<courseID>")
 def purchaseView(courseID):
@@ -847,27 +964,27 @@ def purchaseView(courseID):
     print("course",courses[1])
 
     teacherProfilePath = get_image_path(teacherID)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID, )
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID)
     print(teacherRecords)
     teacherName = teacherRecords[2]
 
 
-    imageSrcPath = None
+    accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"])
-        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo[-1]
+        accType = userInfo[1]
 
     return render_template("users/general/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath)
-        
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
 
 @app.post("/add_to_cart/<courseID>")
 def addToCart(courseID):
     if ("user" in session):
-        sql_operation(table = "user", mode = "add_to_cart", userID = session["user"], courseID = courseID)
+        sql_operation(table="user", mode="add_to_cart", userID=RSA_decrypt(session["user"]), courseID=courseID)
         return redirect(url_for("cart"))
     else:
         return redirect(url_for("login"))
@@ -875,17 +992,17 @@ def addToCart(courseID):
 @app.route("/shopping_cart", methods=["GET", "POST"])
 def cart():
     if "user" in session:
-        
+        userID = RSA_decrypt(session["user"])
         if request.method == "POST":
             # Remove item from cart
             courseID = request.form.get("courseID")
-            sql_operation(table = "user", mode = "remove_from_cart", userID = session["user"], courseID = courseID)
+            sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
 
             return redirect(url_for("cart"))
 
         else:
-
-            cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
+            imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
+            cartCourseIDs = userInfo[-2]
             # print(cartCourseIDs)
             
             courseList = []
@@ -893,11 +1010,11 @@ def cart():
 
             for courseID in cartCourseIDs:
                 
-                course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
+                course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
                 courseList.append({"courseID" : course[0],
                                    "courseOwnerLink" : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
-                                   "courseOwnerUsername" : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                                   "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
                                    "courseOwnerImagePath" : get_image_path(course[1]),
                                    "courseName" : course[2],
                                    "courseDescription" : course[3],
@@ -907,7 +1024,7 @@ def cart():
 
                 subtotal += course[5]
 
-            return render_template("users/loggedin/shopping_cart.html", courseList = courseList, subtotal = f"{subtotal:,.2f}", imageSrcPath = get_image_path(session["user"]))
+            return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=imageSrcPath, accType=userInfo[1])
 
     else:
         return redirect(url_for("login"))
@@ -915,6 +1032,8 @@ def cart():
 @app.route("/checkout", methods = ["GET", "POST"])
 def checkout():
     if "user" in session:
+
+        userID = RSA_encrypt(session["user"])
 
         if request.method == "POST":
 
@@ -953,16 +1072,15 @@ def checkout():
             else:
 
                 if cardSave != None:
-                    sql_operation(table = "user", mode = "edit", userID = session["user"], cardNo = cardNo, cardExpiry = cardExpiry, cardCVV = cardCVV, cardName = cardName)
+                    sql_operation(table="user", mode="edit", userID=userID, cardNo=cardNo, cardExpiry=cardExpiry, cardCVV=cardCVV, cardName=cardName)
 
                 # Make Purchase
-                # sql_operation(table = "user", mode = "purchase_courses", userID = session["user"])
+                # sql_operation(table="user", mode="purchase_courses", userID=userID)
 
                 return redirect(url_for("purchaseHistory"))
 
         else:
-
-            userInfo = sql_operation(table = "user", mode = "get_user_data", userID = session["user"])
+            userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
 
             cardInfo = {"cardName": "",
                         "cardNo": "",
@@ -979,41 +1097,46 @@ def checkout():
                 cardInfo["cardExpYear"] = int(userInfo[9].split("-")[1])
                 cardInfo["cardCVV"] = userInfo[10]
 
-            cartCourseIDs = sql_operation(table = "user", mode = "get_user_cart", userID = session["user"])
+            cartCourseIDs = sql_operation(table="user", mode="get_user_cart", userID=userID)
             cartCount = len(cartCourseIDs)
 
             subtotal = 0
 
             for courseID in cartCourseIDs:
-                course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
+                course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
                 subtotal += course[5]
 
             currentYear = datetime.today().year
 
-            if 'cardErrors' not in session:
+            if "cardErrors" not in session:
                 cardErrors = []
             else:
-                cardErrors = session['cardErrors']
+                try:
+                    cardErrors = session['cardErrors']
+                except (DecryptionError):
+                    session.pop("cardErrors", None)
+                    abort(500)
 
             print(cardErrors)
 
-            return render_template("users/loggedin/checkout.html", cardErrors = cardErrors , cartCount = cartCount, subtotal = f"{subtotal:,.2f}", cardInfo = cardInfo, currentYear = currentYear, imageSrcPath = get_image_path(session["user"]))
+            return render_template("users/loggedin/checkout.html", cardErrors=cardErrors , cartCount=cartCount, subtotal=f"{subtotal:,.2f}", cardInfo=cardInfo, currentYear=currentYear, imageSrcPath=get_image_path(session["user"]), accType=userInfo[1])
 
     else:
         return redirect(url_for("login"))
 
 @app.route("/purchase_history")
 def purchaseHistory():
-    purchasedCourseIDs = sql_operation(table = "user", mode = "get_user_purchases", userID = session["user"])
+    imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+    purchasedCourseIDs = userInfo[-1]
     courseList = []
-    
+
     for courseID in purchasedCourseIDs:
-    
-        course = sql_operation(table = "course", mode = "get_course_data", courseID = courseID)
-    
+
+        course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+
         courseList.append({"courseID" : course[0],
                             "courseOwnerLink" : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
-                            "courseOwnerUsername" : sql_operation(table = "user", mode = "get_user_data", userID = course[1])[2],
+                            "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
                             "courseOwnerImagePath" : get_image_path(course[1]),
                             "courseName" : course[2],
                             "courseDescription" : course[3],
@@ -1021,35 +1144,35 @@ def purchaseHistory():
                             "coursePrice" : f"{course[5]:,.2f}",
                             })
 
-    return render_template("users/loggedin/purchase_history.html", courseList = courseList, imageSrcPath = get_image_path(session["user"]))
+    return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
 
 @app.route("/purchase-view/<courseID>")
 def purchaseDetails(courseID):
 
-    return render_template("users/loggedin/purchase_view.html", courseID = courseID)
+    return render_template("users/loggedin/purchase_view.html", courseID=courseID)
 
 @app.route("/search", methods=["GET","POST"])
 def search():
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
     if ("user" in session):
-        imageSrcPath = get_image_path(session["user"]) 
-        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath)
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True) 
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, accType = userInfo[1])
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
 
 @app.route("/admin-profile", methods=["GET","POST"])
 def adminProfile():
+    # for logged users that are not admins
+    if ("user" in session):
+        return redirect(url_for("userProfile"))
+
     if ("admin" in session):
         imageSrcPath, userInfo = get_image_path(session["admin"], returnUserInfo=True)
         userID = userInfo[0]
         userUsername = userInfo[1]
         userEmail = userInfo[2]
 
-        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userID=userID)
-    
-    # for logged users that are not admins
-    if ("user" in session):
-        return redirect(url_for("userProfile"))
+        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userID=userID, accType=userInfo[1])
 
     # for guests
     return redirect(url_for("login"))
