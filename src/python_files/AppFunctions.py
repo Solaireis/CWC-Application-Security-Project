@@ -448,8 +448,8 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         email = kwargs.get("email")
         googleProfilePic = kwargs.get("googleProfilePic")
 
-        # check if the userID exists
-        cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
+        # check if the email exists
+        cur.execute("SELECT * FROM user WHERE email=%(email)s", {"email":email})
         matched = cur.fetchone()
         if (matched is None):
             # user does not exist, create new user with the given information
@@ -471,6 +471,12 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
                 {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
+        else:
+            # user exists, check if the user had used Google OAuth2 to sign up
+            # by checking if the password is null
+            if (matched[4] is not None):
+                # user has not signed up using Google OAuth2, return the generated userID from the database
+                return matched[0]
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")

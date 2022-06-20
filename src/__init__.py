@@ -303,7 +303,8 @@ def loginCallback():
     tokenRequest = GoogleRequest(session=cachedSession)
 
     try:
-        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=0)
+        # clock_skew_in_seconds=30 seconds as it might take some time to retreive the token from Google API
+        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=30) 
     except (ValueError, GoogleAuthError):
         flash("Failed to verify Google login! Please try again!", "Danger")
         return redirect(url_for("login"))
@@ -314,10 +315,13 @@ def loginCallback():
     profilePicture = idInfo["picture"]
 
     # add to db if user does not exist and retrieve the role of the user
-    sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+    returnedID = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
 
+    # if returnedID is not None, ignore the userID from Google
+    # This happens if the user signed up through CourseFinity but used Google OAuth2 to sign in
+    userID = returnedID or userID
     session.clear()
-    session["user"] = RSA_encrypt(userID)
+    session["user"] = RSA_encrypt(userID) 
     session["sid"] = RSA_encrypt(add_session(userID))
     return redirect(url_for("home"))
 
