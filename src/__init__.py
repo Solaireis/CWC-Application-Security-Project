@@ -33,7 +33,6 @@ from io import BytesIO
 from os import environ
 
 """Web app configurations"""
-
 # general Flask configurations
 app = Flask(__name__)
 
@@ -1257,5 +1256,6 @@ if (__name__ == "__main__"):
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
     scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour="23", minute="58", second="0", id="deleteExpiredSessions")
     scheduler.add_job(lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), trigger="cron", hour="23", minute="59", second="0", id="resetLockedAccounts")
+    # scheduler.add_job(lambda: )
     scheduler.start()
     app.run(debug=app.config["DEBUG_FLAG"])

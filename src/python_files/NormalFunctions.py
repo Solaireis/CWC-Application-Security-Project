@@ -6,15 +6,16 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-import uuid, re, pathlib, time
 from six import ensure_binary
+import uuid, re
+import requests as req
 from datetime import datetime, timedelta, timezone
 from typing import Union
 from base64 import urlsafe_b64encode
-from time import sleep
+from time import time, sleep
 from hashlib import sha1
 from pathlib import Path
-from json import dumps
+from json import loads, dumps
 from inspect import getframeinfo, stack
 from os import environ
 
@@ -23,7 +24,6 @@ from .Errors import *
 from .Google import PARENT_FOLDER_PATH, google_init
 
 # import third party libraries
-import requests as req
 import PIL
 from PIL import Image as PillowImage
 
@@ -221,7 +221,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
             "seconds": 60 * 60 * 24 * 30, # 30 days
         },  
         "next_rotation_time": {
-            "seconds": int(time.time()) + 60 * 60 * 24, # 24 hours from now
+            "seconds": int(time()) + 60 * 60 * 24, # 24 hours from now
         }
     }
 
@@ -318,7 +318,7 @@ def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID
 
     return response.plaintext.decode("utf-8")
 
-def compress_and_resize_image(imageData:bytes=None, imagePath:pathlib.Path=None, dimensions:tuple=None, quality:int=75, optimise:bool=True) -> str:
+def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensions:tuple=None, quality:int=75, optimise:bool=True) -> str:
     """
     Resizes the image at the given path to the given dimensions and compresses it with the given quality.
     
@@ -588,21 +588,46 @@ def two_fa_token_is_valid(token:str) -> bool:
     """
     return True if (re.fullmatch(OTP_REGEX, token)) else False
 
-def log_event(levelname: str, message: str) -> None:
+def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
+    """
+    Retrieves the Splunk token from Splunk server. 
+    Since the token is different for every implementation, it cannot be hardcoded.
+    
+    Returns:
+    - The Splunk token.
+    """
+
+    response = req.get(url = 'https://localhost:8089/services/data/inputs/http',
+                       auth = ('coursefinity', environ.get("EMAIL_PASS")), 
+                       params = {'output_mode': 'json'}, 
+                       verify = False
+                      )
+    
+    # print(response.content)
+    response = loads(response.content)['entry']
+
+    for respond in response:
+        if re.sub('http://|https://', "", respond['name']) == eventCollectorName:
+            token = respond['content']['token']
+
+    return token
+
+def log_event(levelname: str, details: str, userID: str, IP: str, eventCollectorIndex: str = 'main') -> None:
     """Logs an event to the log file.
 
     Parameters:
     - levelname   'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
-    - message     Additional notes for log.
+    - details     Additional notes for log.
 
-    Returns: None
+    Returns:
+    - None
     """
 
-    # Validation
+    # Input Validation
     levelname = levelname.upper()
     if levelname not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
         raise Exception("Level must be 'DEBUG', 'INFO', 'WARNING', 'ERROR' or 'CRITICAL'.")
-
+    
     logPath = Path(__file__).parent.parent.joinpath('logs')
 
     # Get line number, module when this function was called, through stacking function frames
@@ -613,19 +638,157 @@ def log_event(levelname: str, message: str) -> None:
     logPath.mkdir(parents=True, exist_ok=True)
 
     # Get date as log name
-    time = datetime.now(timezone.utc).astimezone()
-    readableDate = time.strftime('%Y-%m-%d')
-    readableTime = time.strftime('%H:%M:%S')
+    utcTime = datetime.now(timezone.utc).astimezone()
+    readableDate = utcTime.strftime('%Y-%m-%d')
+    readableTime = utcTime.strftime('%H:%M:%S')
 
     filename = logPath.joinpath(f'{readableDate}.log')
 
     # Log event to file    
     with open(filename, 'a') as log:
         # Based on logging module format
-        log.write(f"{readableTime} [{levelname}] line {lineNo}, in {module}: {message}\n")
+        log.write(f"{readableTime} [{levelname}] line {lineNo}, in {module}: {details}\n")
+        # userID?
+        # IP?
 
-    # Log event to database
-    data = dumps({'asctime' : readableTime,
-                'levelname' : levelname,
-                'module' : module,
-                'message' : message})
+    # Log event to Splunk
+
+    data = dumps({'index' : eventCollectorIndex,
+                  'source' : module,
+                  'time'  : time(),
+                  'event' : {'levelName' : levelname,
+                             'userID'  : userID,
+                             'IP'      : IP,
+                             'line'    : lineNo,
+                             'details' : details
+                            }
+                })
+
+    splunk_log(data)
+
+def splunk_log_integrity_check(ackID):
+
+    eventCollectorName = 'Logging'
+
+    # Get event collector token (differs per implementation)
+    response = req.get(url = 'https://localhost:8089/services/data/inputs/http', 
+                   auth = ('coursefinity', environ.get("EMAIL_PASS")), 
+                   params = {'output_mode': 'json'}, 
+                   verify = False
+                  )
+    # print(response.content)
+
+    response = loads(response.content)['entry']
+
+    for respond in response:
+        if re.sub('http://|https://', "", respond['name']) == eventCollectorName:
+            token = respond['content']['token']
+
+    response = req.post(url = 'http://127.0.0.1:8088/services/collector/ack',
+
+                        params = {
+                                  'channel': '8cfb8d79-4d19-4841-a868-18867be0eae6' # Same UUID as in LogExample.py, NormalFunction.py
+                                 },
+
+                        headers = {
+                                   'Authorization': f'Splunk {token}',
+                                   'Content-Type': 'application/x-www-form-urlencoded',
+                                  },
+
+                        data = dumps({
+                                      'acks' : [ackID]
+                                    })
+                       )
+    return loads(response.content)["acks"][str(ackID)]
+
+def splunk_log(data: str, attempts: int = 5) -> bool:
+    # Log event to database: https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector
+    
+    response = req.post(url = 'http://127.0.0.1:8088/services/collector/event',
+
+                        headers = {
+                                   'Authorization': f"Splunk {get_splunk_token()}",
+                                   "X-Splunk-Request-Channel": '8cfb8d79-4d19-4841-a868-18867be0eae6', # Static UUID value
+                                   "Content-Type": "application/json",
+                                  },
+
+                        data = data
+                       )
+    # print(data)
+    print(response.content)
+    ackID = loads(response.content)['ackId']
+    
+    # Check if the event was logged successfully
+    while not splunk_log_integrity_check(ackID):
+        attempts -= 1
+        if attempts == 0:
+            splunk_fail_log()
+            temp_splunk_backup(data)
+            
+            break
+
+def temp_splunk_backup(data):
+    # creates a folder for logs and dc if the folder alrd exists
+    bakPath = Path(__file__).parent.parent.joinpath('logs')
+    bakPath.mkdir(parents=True, exist_ok=True)
+
+    filename = bakPath.joinpath('splunk_backup.bak')
+    # print(data)
+    
+    with open(filename, 'a') as backup:
+        backup.write(f"{data}\n")
+
+def splunk_fail_log():
+    logPath = Path(__file__).parent.parent.joinpath('logs')
+
+    # Get line number, module when this function was called, through stacking function frames
+    lineNo = getframeinfo(stack()[3][0]).lineno
+    module = Path(getframeinfo(stack()[3][0]).filename).stem
+
+    # creates a folder for logs and dc if the folder alrd exists
+    logPath.mkdir(parents=True, exist_ok=True)
+
+    # Get date as log name
+    utcTime = datetime.now(timezone.utc).astimezone()
+    readableDate = utcTime.strftime('%Y-%m-%d')
+    readableTime = utcTime.strftime('%H:%M:%S')
+
+    filename = logPath.joinpath('splunk_failure.log')
+
+    levelname = 'WARNING'
+
+    # Log event to file    
+    with open(filename, 'a') as log:
+        # Based on logging module format
+        log.write(f"{readableDate} {readableTime} [{levelname}] line {lineNo}, in {module}: Splunk Server Logging Failure\n")
+
+def splunk_log_retry():
+
+    # creates a folder for logs and dc if the folder alrd exists
+    logPath = Path(__file__).parent.parent.joinpath('logs')
+    logPath.mkdir(parents=True, exist_ok=True)
+
+    fileName = logPath.joinpath('splunk_backup.bak')
+    with open(fileName, 'r+') as backup:
+        lines = backup.readlines()
+
+        if lines == []: # No need to query if nothing to query
+            return
+
+        data = "".join((line[:-1] for line in lines)) # Tuple faster
+
+        response = req.post(url = 'http://127.0.0.1:8088/services/collector', 
+                            headers = {
+                                       'Authorization': f'Splunk {get_splunk_token()}',
+                                      }, 
+                            params = {
+                                      'channel': '8cfb8d79-4d19-4841-a868-18867be0eae6' # Same UUID as in LogExample.py, NormalFunction.py
+                                     },
+                            data = data
+                           )
+
+        print(response.content)
+        ackID = loads(response.content)['ackId']
+
+        if splunk_log_integrity_check(ackID):
+            backup.truncate(0)  # Delete all temporary lines
