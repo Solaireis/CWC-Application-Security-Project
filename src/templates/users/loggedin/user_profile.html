@@ -132,8 +132,8 @@
                                             <h6>Account Type:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm">{{ session.get("role") }}</h6>
-                                            {% if session.get("role") == "Student" %}
+                                            <h6 class="margin-btm">{{ accType }}</h6>
+                                            {% if accType == "Student" %}
                                             <span><a href="#" onclick="return false;" data-bs-toggle="modal"
                                                     data-bs-target="#becomeTeacher">Become a Teacher!</a></span>
                                             {% endif %}
@@ -155,7 +155,9 @@
                                         <td>
                                             {% if twoFAEnabled %}
                                             <h6 class="text-success">Enabled</h6>
-                                            <a href="{{ url_for('disableTwoFactorAuth') }}">Disable 2FA</a>
+                                            <form action="{{ url_for('disableTwoFactorAuth') }}" method="POST">
+                                                <button type="submit" class="btn btn-link text-danger">Disable 2FA</button>
+                                            </form>
                                             {% else %}
                                             <h6 class="text-danger">Not Enabled</h6>
                                             <a href="{{ url_for('twoFactorAuthSetup') }}">Enable 2FA</a>
@@ -163,7 +165,7 @@
                                         </td>
                                     </tr>
                                     {% endif %}
-                                    {# if session.get("role") == "Teacher" #}
+                                    {# if accType == "Teacher" #}
                                     <!-- <tr>
                                         <td colspan="2">
                                             {# if teacherBio == "" #}
@@ -213,7 +215,7 @@
                                     {# endif #} -->
                                 </table>
                             </div>
-                            {% if session.get("role") == "Student" %}
+                            {% if accType == "Student" %}
                             <div class="modal fade" id="becomeTeacher" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="becomeTeacherLabel"
                                 aria-hidden="true">

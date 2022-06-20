@@ -1,4 +1,4 @@
-{% if session.get("role") == "Admin" %}
+{% if accType == "Admin" %}
     {% extends "admin_base.html" %}
 {% else %}
     {% extends "user_base.html" %}

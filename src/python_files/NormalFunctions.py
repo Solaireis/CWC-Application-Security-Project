@@ -6,7 +6,7 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-import uuid, re, pathlib
+import uuid, re, pathlib, time
 from six import ensure_binary
 from datetime import datetime, timedelta, timezone
 from typing import Union
@@ -27,6 +27,9 @@ import requests as req
 import PIL
 from PIL import Image as PillowImage
 
+# For Google Cloud API Errors
+import google.api_core.exceptions as GoogleErrors
+
 # For Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -35,8 +38,8 @@ from googleapiclient.errors import HttpError
 
 # For Google KMS (key management service) API (Third-party libraries)
 import crcmod
-import google.api_core.exceptions as GoogleErrors
 from google.cloud import kms
+from google.cloud.kms_v1.types import resources
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -46,9 +49,6 @@ from cryptography.hazmat.primitives.asymmetric import padding
 # for comparing the date on the github repo
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 BLACKLIST_FILEPATH = PARENT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
-
-# Create an authorized Gmail API service instance.
-GOOGLE_SERVICE = google_init(quiet=True)
 
 # password regex follows OWASP's recommendations
 # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -72,14 +72,36 @@ with open(PARENT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"
     LOGO_BYTES = f.read()
 
 # For Google KMS 
-environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(PARENT_FOLDER_PATH.joinpath("kms_service_account.json"))
 PROJECT_ID = "coursefinity-339412"
 LOCATION_ID = "asia-southeast1"
-KEY_RING_ID = "coursefinity"
+SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
+environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(PARENT_FOLDER_PATH.joinpath("kms_service_account.json"))
+KMS_CLIENT = kms.KeyManagementServiceClient()
+
+# Create an authorized Gmail API service instance.
+GOOGLE_SERVICE = google_init(quiet=True)
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
-def crc32c(data):
+def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
+    """
+    Get information about a key in Google Cloud KMS API.
+    
+    Args:
+    - keyRingID (str): The ID of the key ring.
+    - keyName (str): the name of the key to get information about
+    
+    Returns:
+    - keyInfo (google.cloud.kms_v1.types.resources.CryptoKey): the key information
+    """
+    # Construct the key name
+    keyName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+
+    # call Google Cloud KMS API to get the key's information
+    response = KMS_CLIENT.get_crypto_key(request={"name": keyName})
+    return response
+
+def crc32c(data) -> int:
     """
     Calculates the CRC32C checksum of the provided data
     
@@ -92,7 +114,125 @@ def crc32c(data):
     crc32cFunction = crcmod.predefined.mkPredefinedCrcFun("crc-32c")
     return crc32cFunction(ensure_binary(data))
 
-def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", versionID:int=1) -> bytes:
+def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
+    """
+    Using Google Symmetric Encryption Algorithm, encrypt the provided plaintext.
+    
+    Args:
+    - plaintext (str): the plaintext to encrypt
+    - keyRingID (str): the key ring ID
+        - Defaults to "coursefinity-users"
+    - keyID (str): the key ID/name of the key
+    
+    Returns:
+    - ciphertext (bytes): the ciphertext
+    """
+    plaintext = plaintext.encode("utf-8")
+
+    # compute the plaintext's CRC32C checksum before sending it to Google Cloud KMS API
+    plaintextCRC32C = crc32c(plaintext)
+
+    # Construct the key version name
+    keyVersionName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+
+    # construct and send the request to Google Cloud KMS API to encrypt the plaintext
+    response = KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
+
+    # Perform some integrity checks on the encrypted data that Google Cloud KMS API returned
+    # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
+    if (not response.verified_plaintext_crc32c):
+        # request sent to Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
+    if (response.ciphertext_crc32c != crc32c(response.ciphertext)):
+        # response received from Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Ciphertext CRC32C checksum does not match.")
+
+    return response.ciphertext
+
+def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", keyID:str="") -> str:
+    """
+    Using Google Symmetric Encryption Algorithm, decrypt the provided ciphertext.
+    
+    Args:
+    - ciphertext (bytes): the ciphertext to decrypt
+    - keyRingID (str): the key ring ID
+        - Defaults to "coursefinity-users"
+    - keyID (str): the key ID/name of the key
+    
+    Returns:
+    - plaintext (str): the plaintext
+    
+    Raises:
+    - CiphertextIsNotBytesError: If the ciphertext is not bytes
+    - DecryptionError: If the decryption failed
+    - CRC32ChecksumError: If the CRC32C checksum does not match
+    """
+    if (isinstance(ciphertext, bytearray)):
+        ciphertext = bytes(ciphertext)
+    
+    if (not isinstance(ciphertext, bytes)):
+        raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
+
+    # Construct the key version name
+    keyVersionName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+
+    # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
+    cipherTextCRC32C = crc32c(ciphertext)
+
+    # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
+    try:
+        response = KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
+    except (GoogleErrors.InvalidArgument) as e:
+        print("Error caught while decrypting (symmetric):")
+        print(e)
+        raise DecryptionError("Symmetric Decryption failed.")
+
+    # Perform a integrity check on the decrypted data that Google Cloud KMS API returned
+    # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
+    if (response.plaintext_crc32c != crc32c(response.plaintext)):
+        # response received from Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
+
+    return response.plaintext.decode("utf-8")
+
+def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> None:
+    """
+    Create a new symmetric key.
+
+    Args:
+    - keyRingID (str): the key ring ID
+    - keyName (str): the name of the key to create (acts as the key ID)
+    """
+    # Construct the parent key ring name
+    keyRingName = KMS_CLIENT.key_ring_path(PROJECT_ID, LOCATION_ID, keyRingID)
+
+    # construct the key
+    purpose = kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
+    algorithm = kms.CryptoKeyVersion.CryptoKeyVersionAlgorithm.GOOGLE_SYMMETRIC_ENCRYPTION
+
+    # configure key settings
+    key = {
+        "purpose": purpose,
+        "version_template": {
+            "algorithm": algorithm,
+            "protection_level": kms.ProtectionLevel.HSM
+        },
+        "rotation_period": {
+            "seconds": 60 * 60 * 24 * 30, # 30 days
+        },  
+        "next_rotation_time": {
+            "seconds": int(time.time()) + 60 * 60 * 24, # 24 hours from now
+        }
+    }
+
+    # call Google Cloud KMS API to create the key
+    try:
+        response = KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
+        print("created key: {}".format(response.name))
+    except (GoogleErrors.AlreadyExists):
+        print("key already exists...")
+
+def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
     
@@ -100,21 +240,21 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", versionID:int
     - plaintext (str): The plaintext to encrypt
     - keyID (str): The ID of the key to use for decryption.
         - Defaults to "encrypt-decrypt-key"
+    - keyRingID (str): The ID of the key ring to use.
+        - Defaults to "coursefinity"
     - versionID (int): The version ID of the key to use for decryption.
-        - Defaults to 1
+        - Defaults to the defined SESSION_COOKIE_ENCRYPTION_VERSION variable
     
     Returns:
-    - The encrypted plaintext (bytes)
+    - A dictionary containing the following keys:
+        - ciphertext (bytes): The ciphertext
+        - version (int): The version of the key used for encryption
     """
-
-    # Create the client.
-    client = kms.KeyManagementServiceClient()
-
     # Build the key version name.
-    keyVersionName = client.crypto_key_version_path(PROJECT_ID, LOCATION_ID, KEY_RING_ID, keyID, versionID)
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
 
     # get the public key
-    publicKey = client.get_public_key(request={"name": keyVersionName})
+    publicKey = KMS_CLIENT.get_public_key(request={"name": keyVersionName})
 
     # Extract and parse the public key as a PEM-encoded RSA key
     pem = publicKey.pem.encode("utf-8")
@@ -128,43 +268,40 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", versionID:int
     # Encrypt the data using the public key
     plaintext = plaintext.encode("utf-8")
     ciphertext = rsaKey.encrypt(plaintext, pad)
-    return ciphertext
+    return {"ciphertext": ciphertext, "version": versionID}
 
-def RSA_decrypt(cipherText:bytes=b"", keyID:str="encrypt-decrypt-key", versionID:int=1) -> Union[str, None]:
+def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity") -> str:
     """
     Decrypts the ciphertext using Google KMS (RSA/asymmetric encryption)
     
     Args:
-    - cipherText (bytes): The ciphertext to decrypt. 
+    - cipherData (dict): A dictionary containing the ciphertext and the version of the key used for encryption
     - keyID (str): The ID of the key to use for decryption.
         - Defaults to "encrypt-decrypt-key"
-    - versionID (int): The version ID of the key to use for decryption.
-        - Defaults to 1
-
+    - keyRingID (str): The ID of the key ring to use.
+        - Defaults to "coursefinity"
+    
     Returns:
     - The decrypted ciphertext (str)
     
     Raises:
     - CiphertextIsNotBytesError: If the ciphertext is not bytes
+    - DecryptionError: If the decryption failed
+    - CRC32ChecksumError: If the CRC32C checksum does not match
     """
-    if (isinstance(cipherText, str)):
-        raise CiphertextIsNotBytesError(f"The ciphertext, {cipherText}, is in string format. Please pass in bytes format.")
-
-    if (not isinstance(cipherText, bytes)):
-        raise CiphertextIsNotBytesError(f"The ciphertext, {cipherText} is not in bytes format. Please pass in bytes format.")
-
-    # Create the client
-    client = kms.KeyManagementServiceClient()
+    if (not isinstance(cipherData, dict)):
+        raise CiphertextIsNotBytesError(f"The cipher data, {cipherData} is in \"{type(cipherData)}\" format. Please pass in a dictionary type variable.")
 
     # Build the key version name.
-    keyVersionName = client.crypto_key_version_path(PROJECT_ID, LOCATION_ID, KEY_RING_ID, keyID, versionID)
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version"])
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
-    cipherTextCRC32C = crc32c(cipherText)
+    ciphertext = cipherData["ciphertext"]
+    cipherTextCRC32C = crc32c(ciphertext)
 
     # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
     try:
-        response = client.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": cipherText, "ciphertext_crc32c": cipherTextCRC32C})
+        response = KMS_CLIENT.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
         print("Error caught:")
         print(e)
@@ -173,10 +310,10 @@ def RSA_decrypt(cipherText:bytes=b"", keyID:str="encrypt-decrypt-key", versionID
     # Perform some integrity checks on the decrypted data that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
     if (not response.verified_ciphertext_crc32c):
-        # request sent to Google Cloud KMS was corrupted in-transit
+        # request sent to Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Ciphertext CRC32C checksum does not match.")
     if (response.plaintext_crc32c != crc32c(response.plaintext)):
-        # response received from Google Cloud KMS was corrupted in-transit
+        # response received from Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
 
     return response.plaintext.decode("utf-8")
@@ -237,8 +374,8 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
     it acts as another layer of security.
     
     Args:
-        - checkForUpdates:  If True, the function will check for updates to the blacklist.
-                            Otherwise, it will just load from the saved text file if found.
+    - checkForUpdates:  If True, the function will check for updates to the blacklist.
+                        Otherwise, it will just load from the saved text file if found.
 
     Returns:
         - A tuple containing the IP address to blacklist
@@ -341,10 +478,10 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
 
     htmlMessage["To"] = to
     htmlMessage["From"] = sender
-    htmlMessage["Subject"] = subject
+    htmlMessage["Subject"] = " ".join(["[CourseFinity]", subject])
     return {"raw": urlsafe_b64encode(htmlMessage.as_string().encode()).decode()}
 
-def send_email(to:str="", subject:str="", body:str="") -> Union[dict, None]:
+def send_email(to:str="", subject:str="", body:str="", name:str=None) -> Union[dict, None]:
     """
     Create and send an email message.
     
@@ -352,16 +489,15 @@ def send_email(to:str="", subject:str="", body:str="") -> Union[dict, None]:
     - to: Email address of the receiver.
     - subject: The subject of the email message.
     - body: The text of the email message. (Can be HTML)
+    - name: The name of the recipient.
     
     Returns: 
     Message object, including message id or None if there was an error.
     """
-    # creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-
     sentMessage = None
     try:
         # creates a message object and sets the sender, recipient, and subject.
-        message = create_message(to=to, subject=subject, message=body)
+        message = create_message(to=to, subject=subject, message=body, name=name)
 
         # send the message
         sentMessage = (GOOGLE_SERVICE.users().messages().send(userId="me", body=message).execute())
@@ -403,10 +539,10 @@ def pwd_has_been_pwned(password:str) -> bool:
     leaked in the dark web through breaches from other services/websites.
     
     Args:
-        - password: The password to check
+    - password: The password to check
     
     Returns:
-        - True if the password is in the database, False otherwise.
+    - True if the password is in the database, False otherwise.
     """
     # hash the password (plaintext) using sha1 to check against the database
     passwordHash = sha1(password.encode("utf-8")).hexdigest().upper()
@@ -482,7 +618,6 @@ def log_event(levelname: str, message: str) -> None:
     readableTime = time.strftime('%H:%M:%S')
 
     filename = logPath.joinpath(f'{readableDate}.log')
-
 
     # Log event to file    
     with open(filename, 'a') as log:

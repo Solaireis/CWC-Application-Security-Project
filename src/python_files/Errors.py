@@ -111,3 +111,13 @@ class InvalidProfilePictureError(Exception):
     """
     Raised if the profile image is not a valid image.
     """
+
+class UserIsUsingOauth2Error(Exception):
+    """
+    Raised if the user tries to login but is not using Google OAuth2 to login.
+    """
+
+class LoginFromNewIpAddressError(Exception):
+    """
+    Raised if the user tries to login from a new IP address.
+    """

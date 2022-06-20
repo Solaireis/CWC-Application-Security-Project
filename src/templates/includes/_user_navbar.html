@@ -129,7 +129,7 @@
 				<li class="nav-item dropdown">
 					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="{{ imageSrcPath }}" id="user_profile" alt="User profile icon"></a>
 					<ul class="dropdown-menu shadow">
-						{% if session.get("role") == "Teacher" %}
+						{% if accType == "Teacher" %}
 						<!-- <li><a href="{{ url_for('teacherPage', teacherID=session.get('user')) }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li> -->
 						<li><a href="{{ url_for('createCourse') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->

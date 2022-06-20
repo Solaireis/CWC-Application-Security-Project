@@ -20,4 +20,5 @@ mysql-connector-python>=8.0.29
 google-cloud-kms>=2.11.2
 crcmod>=1.7
 cryptography>=37.0.2
+Authlib>=1.0.1
 # splunk-appinspect

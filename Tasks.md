@@ -52,6 +52,10 @@
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using Google OAuth2 for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
+- Asymmetric encryption of session identifier in the cookie value (Using RSA)
+- IP address based authentication
+  - Checks against known IP addresses of users against the login request
+  - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
 
 ---
 
