@@ -33,7 +33,7 @@
   - Which meets the OWASP minimum requirements
 - Using Google OAuth2 for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier
-  - Preventing the cookie from being sniffed
+  - Preventing sensitive data from being sniffed and exposed such as the session identifier
 - Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
   - Each user has a unique symmetric key for encryption and decryption
   - Encrypted the Argon2 hash of the password
