@@ -22,9 +22,8 @@ if (debugFlag):
     host = "localhost"
     password = environ["LOCAL_SQL_PASS"]
 else:
-    host = "34.143.163.29" # Google Cloud SQL Public address
+    host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
     password = environ["REMOTE_SQL_PASS"]
-
 try:
     con = mysql.connector.connect(
         host=host,
