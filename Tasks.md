@@ -50,6 +50,12 @@
 
 #### Implemented:
 - Minimum Password Complexity Policy using regex
+  - At least 1 uppercase letter
+  - At least 1 lowercase letter
+  - At least 1 digit
+  - At least 1 special character
+  - At least 10 characters
+  - Not more than 2 repeated characters
 - Blacklisting of known malicious IP addresses
 - Verification of passwords if the passwords has been leaked in the dark web using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
   - Verified whenever the user signs up or changes his/her password
@@ -59,6 +65,7 @@
 - Using Google OAuth2 for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
 - Asymmetric encryption of session identifier in the cookie value (Using RSA)
+  - Preventing the session identifier from being sniffed
 - IP address based authentication
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
