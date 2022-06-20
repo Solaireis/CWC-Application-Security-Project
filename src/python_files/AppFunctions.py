@@ -254,8 +254,6 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
 
     cur = connection.cursor(buffered=True)
 
-    connection.commit()
-
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
         cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput})
@@ -428,8 +426,6 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
 
         user_ip_addresses_sql_operation(connection=connection, mode="add_ip_address", userID=userID, ipAddress=kwargs["ipAddress"])
 
-        # guard_token_sql_operation(connection=connection, mode="add_guard_token", userOrAdminID=userID, typeOfUser="user", userKeyName=keyName)
-
         return userID
 
     elif (mode == "check_if_using_google_oauth2"):
@@ -505,13 +501,24 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
                 connection.commit()
 
         newIpAddress = False
+        decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
         try:
-            if (PH().verify(symmetric_decrypt(ciphertext=matched[1], keyID=matched[2]), passwordInput)):
+            if (PH().verify(decryptedPasswordHash, passwordInput)):
+                # check if the login request is from the same IP address as the one that made the request
                 if (requestIpAddress not in ipAddressList):
                     newIpAddress = True
+
+                # convert the role id to a readable format
                 cur.callproc("get_role_name", (matched[4],))
                 for result in cur.stored_results():
                     roleName = result.fetchone()[0]
+
+                # encrypt the password again as the encryption key will rotate every 30 days
+                # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
+                encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=matched[2])
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", \
+                            {"password":encryptedPasswordHash, "userID":matched[0]})
+                connection.commit()
                 return (matched[0], newIpAddress, matched[3], roleName)
         except (VerifyMismatchError):
             connection.close()
