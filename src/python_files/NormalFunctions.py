@@ -75,8 +75,7 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
 # For Google KMS 
 LOCATION_ID = "asia-southeast1"
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
-environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(GOOGLE_KMS_JSON_PATH)
-KMS_CLIENT = kms.KeyManagementServiceClient()
+KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_json(filename=GOOGLE_KMS_JSON_PATH)
 
 # Create an authorized Gmail API service instance.
 GOOGLE_SERVICE = google_init(quiet=True)
