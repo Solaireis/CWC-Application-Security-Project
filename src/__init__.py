@@ -6,13 +6,13 @@ from dicebear import DOptions
 from argon2 import PasswordHasher as PH
 import pyotp, qrcode
 
-# for Google OAuth 2.0 login
+# for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
 from google.auth.transport.requests import Request as GoogleRequest
 from google.oauth2 import id_token
 from google.auth.exceptions import GoogleAuthError
 
-# import flask libraries
+# import flask libraries (Third-party libraries)
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -22,6 +22,7 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
+from python_files.Constants import GOOGLE_CREDENTIALS_PATH
 
 # import python standard libraries
 import secrets
@@ -86,7 +87,7 @@ def before_first_request():
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
     # load google client id from credentials.json
-    with open(Path(app.root_path).joinpath("credentials.json"), "r") as f:
+    with open(GOOGLE_CREDENTIALS_PATH, "r") as f:
         credentials = json.load(f)
     app.config["GOOGLE_CLIENT_ID"] = credentials["web"]["client_id"]
 

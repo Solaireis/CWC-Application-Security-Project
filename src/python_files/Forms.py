@@ -1,5 +1,7 @@
+# import python standard libraries
 import json
 
+# import third party libraries
 from wtforms import Form, validators, ValidationError, StringField, RadioField, SelectField, TextAreaField, EmailField, DateField, TimeField, HiddenField, FormField, IntegerField, PasswordField, BooleanField, FileField
 from wtforms.widgets import Select as BaseSelectWidget
 

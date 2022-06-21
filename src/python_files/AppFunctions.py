@@ -27,12 +27,18 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              RSA_decrypt, symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .Google import CREDENTIALS_PATH
+from .Constants import GOOGLE_CREDENTIALS_PATH, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 from .MySQL_init import mysql_init_tables as MySQLInitialise
 
 """------------------------------ Define Constants ------------------------------"""
 
+# for defining the maximum login attempts
+# before locking a user account
 MAX_LOGIN_ATTEMPTS = 10
+
+# for connecting to the MySQL database, coursefinity
+SQL_CONFIG = LOCAL_SQL_SERVER_CONFIG.copy() if (app.config["DEBUG_FLAG"]) else REMOTE_SQL_SERVER_CONFIG.copy()
+SQL_CONFIG["database"] = DATABASE_NAME
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -49,7 +55,7 @@ def get_google_flow() -> Flow:
     Returns the Google OAuth2 flow.
     """
     flow = Flow.from_client_secrets_file(
-        CREDENTIALS_PATH,
+        GOOGLE_CREDENTIALS_PATH,
         ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], redirect_uri=url_for("loginCallback", _external=True)
     )
     return flow
@@ -132,16 +138,9 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     returnValue = con = None
 
     # uses Google Cloud SQL Public Address if debug mode is False else uses localhost
-    host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] if (not app.config["DEBUG_FLAG"]) else "localhost"
-    password = environ["REMOTE_SQL_PASS"] if (not app.config["DEBUG_FLAG"]) else environ["LOCAL_SQL_PASS"]
 
     try:
-        con = MySQLCon.connect( 
-            host=host,
-            user="root",
-            password=password,
-            database="coursefinity",
-        )
+        con = MySQLCon.connect(**SQL_CONFIG)
     except (MySQLCon.ProgrammingError):
         print("Database Not Found...")
         print("Creating Database...")

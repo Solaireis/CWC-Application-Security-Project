@@ -1,3 +1,4 @@
+# import python standard libraries
 from requests import get, post
 from json import loads, dumps
 from os import environ

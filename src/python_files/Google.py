@@ -1,4 +1,4 @@
-import pathlib
+# import third party libraries
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -6,9 +6,11 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
 
-PARENT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
-TOKEN_PATH = PARENT_FOLDER_PATH.joinpath("token.json")
-CREDENTIALS_PATH = PARENT_FOLDER_PATH.joinpath("credentials.json")
+# import local python libraries
+if (__package__ is None or __package__ == ""):
+    from Constants import GOOGLE_TOKEN_PATH, GOOGLE_CREDENTIALS_PATH
+else:
+    from .Constants import GOOGLE_TOKEN_PATH, GOOGLE_CREDENTIALS_PATH
 
 # If modifying these scopes, delete the file token.json.
 # Scopes details: https://developers.google.com/gmail/api/auth/scopes
@@ -30,25 +32,25 @@ def google_init(quiet:bool=False):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow 
     # completes for the first time.
-    if (TOKEN_PATH.is_file()):
+    if (GOOGLE_TOKEN_PATH.is_file()):
         try:
-            creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+            creds = Credentials.from_authorized_user_file(GOOGLE_TOKEN_PATH, SCOPES)
         except (RefreshError) as e:
             print("Error caught:")
             print(e)
             print("\nWill proceed to delete invalid token.json and create a new one...\n")
-            TOKEN_PATH.unlink(missing_ok=True)
+            GOOGLE_TOKEN_PATH.unlink(missing_ok=True)
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):
         if (creds and creds.expired and creds.refresh_token):
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(GOOGLE_CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
-        with open(TOKEN_PATH, "w") as token:
+        with open(GOOGLE_TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
 
     try:

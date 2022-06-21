@@ -20,8 +20,9 @@ from inspect import getframeinfo, stack
 from os import environ
 
 # import local python files
+from .Constants import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON_PATH, GOOGLE_PROJECT_ID
 from .Errors import *
-from .Google import PARENT_FOLDER_PATH, google_init
+from .Google import google_init
 
 # import third party libraries
 import PIL
@@ -48,7 +49,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 # for comparing the date on the github repo
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-BLACKLIST_FILEPATH = PARENT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+BLACKLIST_FILEPATH = ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
 
 # password regex follows OWASP's recommendations
 # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -68,14 +69,13 @@ $                                                                   # end of pas
 OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
 
 # for email coursefinity logo image
-with open(PARENT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
+with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
     LOGO_BYTES = f.read()
 
 # For Google KMS 
-PROJECT_ID = "coursefinity-339412"
 LOCATION_ID = "asia-southeast1"
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
-environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(PARENT_FOLDER_PATH.joinpath("kms_service_account.json"))
+environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(GOOGLE_KMS_JSON_PATH)
 KMS_CLIENT = kms.KeyManagementServiceClient()
 
 # Create an authorized Gmail API service instance.
@@ -95,7 +95,7 @@ def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     - keyInfo (google.cloud.kms_v1.types.resources.CryptoKey): the key information
     """
     # Construct the key name
-    keyName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
 
     # call Google Cloud KMS API to get the key's information
     response = KMS_CLIENT.get_crypto_key(request={"name": keyName})
@@ -133,7 +133,7 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+    keyVersionName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID)
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
     response = KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
@@ -174,7 +174,7 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
         raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
 
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+    keyVersionName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID)
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     cipherTextCRC32C = crc32c(ciphertext)
@@ -204,7 +204,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
     - keyName (str): the name of the key to create (acts as the key ID)
     """
     # Construct the parent key ring name
-    keyRingName = KMS_CLIENT.key_ring_path(PROJECT_ID, LOCATION_ID, keyRingID)
+    keyRingName = KMS_CLIENT.key_ring_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID)
 
     # construct the key
     purpose = kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
@@ -251,7 +251,7 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str
         - version (int): The version of the key used for encryption
     """
     # Build the key version name.
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
 
     # get the public key
     publicKey = KMS_CLIENT.get_public_key(request={"name": keyVersionName})
@@ -293,7 +293,7 @@ def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID
         raise CiphertextIsNotBytesError(f"The cipher data, {cipherData} is in \"{type(cipherData)}\" format. Please pass in a dictionary type variable.")
 
     # Build the key version name.
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version"])
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version"])
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     ciphertext = cipherData["ciphertext"]

@@ -1,5 +1,14 @@
+# import third party libraries
 import mysql.connector
+
+# import python standard libraries
 from os import environ
+
+# import local python libraries
+if (__package__ is None or __package__ == ""):
+    from Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+else:
+    from .Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 
 def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
     """
@@ -12,32 +21,21 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         The connection to the database (mysql connection object)
     """
     if (debug):
-        host = "localhost"
-        password = environ["LOCAL_SQL_PASS"]
+        definer = "root`@`localhost"
+        config = LOCAL_SQL_SERVER_CONFIG.copy()
     else:
-        host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
-        password = environ["REMOTE_SQL_PASS"]
+        definer = f"root`@`{environ['GOOGLE_CLOUD_MYSQL_SERVER']}"
+        config = REMOTE_SQL_SERVER_CONFIG.copy()
 
-    mydb = mysql.connector.connect(
-        host=host,
-        user="root",
-        password=password
-    )
-
-    definer = f"root`@`{host}"
-
+    mydb = mysql.connector.connect(**config)
     cur = mydb.cursor()
+
     cur.execute("CREATE DATABASE coursefinity")
     mydb.commit()
-
     mydb.close()
 
-    mydb = mysql.connector.connect(
-        host=host,
-        user="root",
-        password=password,
-        database="coursefinity"
-    )
+    config["database"] = DATABASE_NAME
+    mydb = mysql.connector.connect(**config)
     cur = mydb.cursor()
 
     cur.execute("""CREATE TABLE IF NOT EXISTS role (

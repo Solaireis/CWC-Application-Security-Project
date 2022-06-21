@@ -1,10 +1,15 @@
+# import third party libraries
 from argon2 import PasswordHasher as PH
 import mysql.connector
+
+# import python standard libraries
 from os import environ
-from python_files.NormalFunctions import generate_id
 from sys import exit as sysExit
 import re
-from python_files.NormalFunctions import symmetric_encrypt
+
+# import local python libraries
+from python_files.NormalFunctions import generate_id, symmetric_encrypt
+from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG
 
 NUMBER_REGEX = re.compile(r"^\d+$")
 MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much, otherwise you pay for the Google Cloud :prayge:
@@ -19,24 +24,16 @@ while (1):
         break
 
 if (debugFlag):
-    host = "localhost"
-    password = environ["LOCAL_SQL_PASS"]
+    config = LOCAL_SQL_SERVER_CONFIG.copy()
 else:
     print("Remote Mode is not done yet!")
     print("Please wait for it to be completed!")
     sysExit(1)
-    # host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
-    # password = environ["REMOTE_SQL_PASS"]
+    config = REMOTE_SQL_SERVER_CONFIG.copy()
 
-host = "localhost"
-password = environ["LOCAL_SQL_PASS"]
+config["database"] = "coursefinity"
 try:
-    con = mysql.connector.connect(
-        host=host,
-        user="root",
-        password=password,
-        database="coursefinity",
-    )
+    con = mysql.connector.connect(**config)
 except (mysql.connector.errors.ProgrammingError):
     print("Database Not Found. Please create one first")
     sysExit(1)

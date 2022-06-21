@@ -1,13 +1,14 @@
-import sqlite3, pathlib, uuid
+# import third party libraries
 import mysql.connector
+
+# import local python libraries
 from os import environ
 from datetime import datetime
 from random import randint
+
+# import local python libraries
 from python_files.NormalFunctions import generate_id
-
-# pyFilePath = pathlib.Path(__file__).parent.absolute().joinpath("databases", "database.db")
-
-# con = sqlite3.connect(pyFilePath)
+from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
@@ -19,18 +20,13 @@ while (1):
         break
 
 if (debugFlag):
-    host = "localhost"
-    password = environ["LOCAL_SQL_PASS"]
+    config = LOCAL_SQL_SERVER_CONFIG.copy()
 else:
-    host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
-    password = environ["REMOTE_SQL_PASS"]
+    config = REMOTE_SQL_SERVER_CONFIG.copy()
+
+config["database"] = DATABASE_NAME
 try:
-    con = mysql.connector.connect(
-        host=host,
-        user="root",
-        password=password,
-        database="coursefinity",
-    )
+    con = mysql.connector.connect(**config)
 except (mysql.connector.errors.ProgrammingError):
     print("Database Not Found. Please create one first")
 cur = con.cursor()

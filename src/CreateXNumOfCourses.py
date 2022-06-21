@@ -1,13 +1,16 @@
+# import third party libraries
 import mysql.connector
 from argon2 import PasswordHasher as PH
+
+# import python standard libraries
 from os import environ
 from datetime import datetime
 from random import randint
+
+# import local python libraries
 from python_files.NormalFunctions import generate_id, symmetric_encrypt
+from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
 
-# pyFilePath = pathlib.Path(__file__).parent.absolute().joinpath("databases", "database.db")
-
-# con = sqlite3.connect(pyFilePath)
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
     if (debugPrompt not in ("y", "n", "")):
@@ -18,21 +21,16 @@ while (1):
         break
 
 if (debugFlag):
-    host = "localhost"
-    password = environ["LOCAL_SQL_PASS"]
+    config = LOCAL_SQL_SERVER_CONFIG.copy()
 else:
-    host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
-    password = environ["REMOTE_SQL_PASS"]
+    config = REMOTE_SQL_SERVER_CONFIG.copy()
 
+config["database"] = DATABASE_NAME
 try:
-    con = mysql.connector.connect(
-        host=host,
-        user="root",
-        password=password,
-        database="coursefinity",
-    )
+    con = mysql.connector.connect(**config)
 except (mysql.connector.errors.ProgrammingError):
     print("Database Not Found. Please create one first")
+
 cur = con.cursor(buffered=True)
 TEACHER_ROLE_ID = STUDENT_ROLE_ID = None
 cur.callproc("get_role_id", ("Teacher",))
@@ -42,22 +40,6 @@ for result in cur.stored_results():
 cur.callproc("get_role_id", ("Student",))
 for result in cur.stored_results():
     STUDENT_ROLE_ID = result.fetchone()[0]
-
-# cur.execute("""CREATE TABLE IF NOT EXISTS user (
-#         id VARCHAR(255) PRIMARY KEY, 
-#         role VARCHAR(255) NOT NULL,
-#         username VARCHAR(255) NOT NULL UNIQUE, 
-#         email VARCHAR(255) NOT NULL UNIQUE, 
-#         password VARCHAR(255) NOT NULL, 
-#         profile_image VARCHAR(255), 
-#         date_joined DATE NOT NULL,
-#         card_name VARCHAR(255),
-#         card_no INTEGER UNIQUE,
-#         card_exp VARCHAR(255),
-#         card_cvv INTEGER,
-#         cart_courses VARCHAR(255) NOT NULL,
-#         purchased_courses VARCHAR(255) NOT NULL
-#     )""")
 
 TEACHER_UID = "30a749defdd843ecae5da3b26b6d6b9b"
 cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'")

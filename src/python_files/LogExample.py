@@ -1,11 +1,14 @@
+# import python standard libraries
 from os import environ
 from pathlib import Path
 from datetime import datetime, timezone
 from time import time
 from json import loads, dumps
-import requests
 from inspect import getframeinfo, stack
 from re import sub
+
+# import third party libraries
+import requests
 
 def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
     """
