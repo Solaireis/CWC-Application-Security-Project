@@ -1,2 +1,2 @@
 from LogExample import log_event
-log_event('WARNING', 'This is a warning.')
+log_event('DEBUG', 'This is a test.', None, None)
