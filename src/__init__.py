@@ -283,7 +283,18 @@ def enterGuardTOTP():
 @app.route("/login-google")
 def loginViaGoogle():
     if ("user" not in session or "admin" not in session):
-        authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url()
+        # https://developers.google.com/identity/protocols/oauth2/web-server#python
+        authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
+            # Enable offline access so that you can refresh an 
+            # access token without re-prompting the user for permission
+            access_type="offline", 
+
+            # Enable incremental authorization
+            # Recommended as a best practice according to Google documentation
+            include_granted_scopes="true"
+        )
+
+        # Store the state so the callback can verify the auth server response
         session["state"] = RSA_encrypt(state)
         return redirect(authorisationUrl)
     else:
@@ -293,6 +304,9 @@ def loginViaGoogle():
 def loginCallback():
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
+
+    if ("state" not in session):
+        return redirect(url_for("login"))
 
     app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
     if (RSA_decrypt(session["state"]) != request.args.get("state")):
