@@ -17,7 +17,7 @@
 - Host and use HTTPS
 
 #### Implemented:
-- Secure Flask Secret Key using `os.urandom(512)` (4096 bits)
+- Secure Flask Secret Key using `secrets.token_bytes(512)` (4096 bits)
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
   - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Secret Manager API](https://cloud.google.com/secret-manager)
@@ -32,7 +32,7 @@
     - 3 count of iterations
     - 4 degrees of parallelism when hashing
   - Which meets the OWASP minimum requirements
-- Using Google OAuth2 for login/signup (removed the need for storing passwords)
+- Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
@@ -65,7 +65,7 @@
 - Maximum of 10 failed login attempts per account (will reset after 30 mins)
 - Session timeout after 30 mins of inactivity
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
-- Using Google OAuth2 for authenticating users 
+- Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with Google
 - Asymmetric encryption of session identifier in the cookie value (Using RSA)
