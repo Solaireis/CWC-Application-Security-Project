@@ -22,7 +22,7 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE
+from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE, FLASK_SECRET_KEY_NAME, get_secret_payload
 
 # import python standard libraries
 import secrets
@@ -40,7 +40,8 @@ app = Flask(__name__)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
 
 # secret key mainly for digitally signing the session cookie
-app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else secrets.token_hex(128) # 128 bytes/1024 bits
+# if not in debug mode, it will retrieve the secret key from Google Secret Manager API
+app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else get_secret_payload(secretID=FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()

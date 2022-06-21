@@ -2,6 +2,7 @@
 import pathlib, json
 from os import environ
 from sys import exit as sysExit
+from typing import Union
 
 # import third party libraries
 from mysql.connector.constants import ClientFlag
@@ -14,13 +15,14 @@ from google.cloud import secretmanager
 
 """------------------------ START OF DEFINING FUNCTIONS ------------------------"""
 
-def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
+def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:bool=True) -> Union[str, bytes]:
     """
     Get the secret payload from Google Cloud Secret Manager API.
     
     Args:
     - secretID (str): The ID of the secret.
     - versionID (str): The version ID of the secret.
+    - decodeSecret (bool): If true, decode the returned secret bytes payload to string type.
     
     Returns:
     - secretPayload (str): the secret payload
@@ -38,7 +40,8 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
         return
 
     # return the secret payload
-    return response.payload.data.decode("utf-8")
+    secret = response.payload.data
+    return secret.decode("utf-8") if (decodeSecret) else secret
 
 """------------------------ END OF DEFINING FUNCTIONS ------------------------"""
 
@@ -49,8 +52,9 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
 # This should be set to True for local development, and False for production
 DEBUG_MODE = True 
 
-# Password
-PASSWORD = get_secret_payload(secretID="Password")
+# For the Flask secret key when retrieving the secret key
+# from Google Secret Manager API
+FLASK_SECRET_KEY_NAME = "flask-secret-key"
 
 # path to the root directory of the project
 ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
@@ -70,6 +74,9 @@ SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(f
 
 # for Google Cloud API
 GOOGLE_PROJECT_ID = "coursefinity-339412"
+
+# Password
+PASSWORD = get_secret_payload(secretID="Password")
 
 # For Google GMAIL API
 if (DEBUG_MODE):
