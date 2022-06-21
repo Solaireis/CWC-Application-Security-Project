@@ -21,11 +21,11 @@ from os import environ
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID, CONFIG_FOLDER_PATH, DEBUG_MODE
+    from Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID
     from Errors import *
     from Google import google_init
 else:
-    from .Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID, CONFIG_FOLDER_PATH, DEBUG_MODE
+    from .Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID
     from .Errors import *
     from .Google import google_init
 
@@ -80,13 +80,10 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
 # For Google KMS 
 LOCATION_ID = "asia-southeast1"
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
-if (DEBUG_MODE):
-    KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_json(filename=GOOGLE_KMS_JSON)
-else:
-    KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
+KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
 
 # Create an authorized Gmail API service instance.
-GOOGLE_SERVICE = google_init(quiet=True)
+GOOGLE_SERVICE = google_init()
 
 """------------------------------ End of Defining Constants ------------------------------"""
 

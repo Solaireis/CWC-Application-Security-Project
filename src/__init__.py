@@ -40,8 +40,8 @@ app = Flask(__name__)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
 
 # secret key mainly for digitally signing the session cookie
-# if not in debug mode, it will retrieve the secret key from Google Secret Manager API
-app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else get_secret_payload(secretID=FLASK_SECRET_KEY_NAME, decodeSecret=False)
+# it will retrieve the secret key from Google Secret Manager API
+app.config["SECRET_KEY"] = get_secret_payload(secretID=FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
@@ -88,12 +88,7 @@ def before_first_request():
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
     # load google client id from credentials.json
-    if (not isinstance(GOOGLE_CREDENTIALS, dict)):
-        with open(GOOGLE_CREDENTIALS, "r") as f:
-            credentials = json.load(f)
-    else:
-        credentials = GOOGLE_CREDENTIALS
-    app.config["GOOGLE_CLIENT_ID"] = credentials["web"]["client_id"]
+    app.config["GOOGLE_CLIENT_ID"] = GOOGLE_CREDENTIALS["web"]["client_id"]
 
     # get Google oauth flow object
     app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
@@ -380,7 +375,7 @@ def signup():
 
             passwordInput = PH().hash(passwordInput)
             ipAddress = get_remote_address()
-            print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}, ip: {ipAddress}")
+            # print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}, ip: {ipAddress}")
 
             returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 

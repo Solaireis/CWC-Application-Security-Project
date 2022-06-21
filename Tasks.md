@@ -20,7 +20,8 @@
 - Secure Flask Secret Key using `os.urandom(512)` (4096 bits)
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
-- Argon2 for hashing passwords
+  - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Secret Manager API](https://cloud.google.com/secret-manager)
+- [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
     - 15728KB/15MiB of memory

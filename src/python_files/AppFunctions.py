@@ -53,18 +53,11 @@ def get_google_flow() -> Flow:
     """
     Returns the Google OAuth2 flow.
     """
-    if (app.config["DEBUG_FLAG"]):
-        flow = Flow.from_client_secrets_file(
-            GOOGLE_CREDENTIALS,
-            ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
-            redirect_uri=url_for("loginCallback", _external=True)
-        )
-    else:
-        flow = Flow.from_client_config(
-            GOOGLE_CREDENTIALS,
-            ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
-            redirect_uri=url_for("loginCallback", _external=True)
-        )
+    flow = Flow.from_client_config(
+        GOOGLE_CREDENTIALS,
+        ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
+        redirect_uri=url_for("loginCallback", _external=True)
+    )
     return flow
 
 def add_session(userID:str) -> str:

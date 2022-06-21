@@ -48,8 +48,6 @@ def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:boo
 """------------------------ START OF DEFINING CONSTANTS ------------------------"""
 
 # Debug flag
-# If true, will load the .json file locally, else will load the .json file from Google Cloud Secret Manager
-# This should be set to True for local development, and False for production
 DEBUG_MODE = True 
 
 # For the Flask secret key when retrieving the secret key
@@ -79,18 +77,11 @@ GOOGLE_PROJECT_ID = "coursefinity-339412"
 PASSWORD = get_secret_payload(secretID="Password")
 
 # For Google GMAIL API
-if (DEBUG_MODE):
-    GOOGLE_CREDENTIALS = CONFIG_FOLDER_PATH.joinpath("google-credentials.json")
-    GOOGLE_TOKEN = CONFIG_FOLDER_PATH.joinpath("google-token.json")
-else:
-    GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-    GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
+GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
+GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
 
 # For Google Key Management Service API
-if (DEBUG_MODE):
-    GOOGLE_KMS_JSON = CONFIG_FOLDER_PATH.joinpath("google-kms.json")
-else:
-    GOOGLE_KMS_JSON = json.loads(get_secret_payload(secretID="google-kms"))
+GOOGLE_KMS_JSON = json.loads(get_secret_payload(secretID="google-kms"))
 
 # for SQL SSL connection
 SQL_SERVER_CA = CONFIG_FOLDER_PATH.joinpath("sql-server-ca.pem")
@@ -112,13 +103,8 @@ del _SQL_SSL_DICT
 
 # for SQL connection configuration
 DATABASE_NAME = "coursefinity"
-
-if (DEBUG_MODE):
-    REMOTE_SQL_SERVER_PASS = environ["REMOTE_SQL_PASS"]
-    REMOTE_SQL_SERVER_IP = environ["GOOGLE_CLOUD_MYSQL_SERVER"]
-else:
-    REMOTE_SQL_SERVER_IP = get_secret_payload(secretID="SQL-IP-Address")
-    REMOTE_SQL_SERVER_PASS = PASSWORD
+REMOTE_SQL_SERVER_IP = get_secret_payload(secretID="SQL-IP-Address")
+REMOTE_SQL_SERVER_PASS = PASSWORD
 
 LOCAL_SQL_SERVER_CONFIG = {
     "host": "localhost",
@@ -140,23 +126,14 @@ REMOTE_SQL_SERVER_CONFIG = {
 """------------------------ START OF VERIFYING CONSTANTS ------------------------"""
 
 # Do some checks that all the necessary file paths exists 
-# if debug mode is enabled.
-# Not that GOOGLE_TOKEN_PATH will not be checked 
-# as it will be generated after running Google.py.
-# Furthermore, it's already checked when running
-# the main __init__.py file.
-if (DEBUG_MODE):
-    _ALL_PATH_LIST = [
-        SQL_SERVER_CA,
-        SQL_CLIENT_CERT,
-        SQL_CLIENT_KEY,
-        GOOGLE_CREDENTIALS,
-        GOOGLE_KMS_JSON,
-        GOOGLE_SM_JSON_PATH
-    ]
-    if (not all([path.exists() for path in _ALL_PATH_LIST])):
-        raise FileNotFoundError("Some files are missing. Please ensure that all the files are in the correct folder!")
+_ALL_PATH_LIST = [
+    SQL_SERVER_CA,
+    SQL_CLIENT_CERT,
+    SQL_CLIENT_KEY
+]
+if (not all([path.exists() for path in _ALL_PATH_LIST])):
+    raise FileNotFoundError("Some files are missing. Please ensure that all the files are in the correct folder!")
 
-    del _ALL_PATH_LIST
+del _ALL_PATH_LIST
 
 """------------------------ END OF VERIFYING CONSTANTS ------------------------"""
