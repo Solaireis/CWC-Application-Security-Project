@@ -776,7 +776,7 @@ def splunk_log_retry():
             return
 
         data = "".join((line[:-1] for line in lines)) # Tuple faster
-
+        
         response = req.post(url = 'http://127.0.0.1:8088/services/collector', 
                             headers = {
                                        'Authorization': f'Splunk {get_splunk_token()}',
@@ -792,3 +792,4 @@ def splunk_log_retry():
 
         if splunk_log_integrity_check(ackID):
             backup.truncate(0)  # Delete all temporary lines
+        
