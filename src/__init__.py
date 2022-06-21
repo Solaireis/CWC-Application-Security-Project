@@ -183,7 +183,7 @@ def login():
                 # returns the userID, boolean if user logged in from a new IP address, username, role
                 userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
                 isAdmin = True if (userInfo[3] == "Admin") else False
-                raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
+                # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
                 if (userInfo[1]):
                     # login from new ip address
@@ -263,18 +263,22 @@ def enterGuardTOTP():
     if (request.method == "POST" and guardAuthForm.validate()):
         totpInput = guardAuthForm.twoFATOTP.data
         totpSecretToken = RSA_decrypt(session["token"])
-        if (pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
-            userID = session["temp_uid"]
-            session.clear()
-            session["sid"] = RSA_encrypt(add_session(RSA_decrypt(userID)))
-            if (bool(RSA_decrypt(session["is_admin"]))):
-                session["admin"] = userID
-            else:
-                session["user"] = userID
-            return redirect(url_for("home"))
-        else:
+        if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
             flash("Please check your entries and try again!", "Danger")
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+        userID = session["temp_uid"]
+        session.clear()
+
+        decryptedUserID = RSA_decrypt(userID)
+        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=decryptedUserID, ipAddress=get_remote_address())
+        session["sid"] = RSA_encrypt(add_session(decryptedUserID))
+
+        if (bool(RSA_decrypt(session["is_admin"]))):
+            session["admin"] = userID
+        else:
+            session["user"] = userID
+        return redirect(url_for("home"))
 
     # post request with invalid form values
     return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
@@ -388,7 +392,6 @@ def signup():
 @app.route("/logout")
 def logout():
     if ("user" not in session and "admin" not in session):
-        print('test')
         return redirect(url_for("login"))
 
     sql_operation(table="session", mode="delete_session", sessionID=RSA_decrypt(session["sid"]))

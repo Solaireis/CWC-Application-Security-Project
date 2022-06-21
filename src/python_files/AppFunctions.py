@@ -202,7 +202,7 @@ def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnecti
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
 
-        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = (%(userID)s) AND INET6_NTOA(ip_address) = (%(ipAddress)s)", {"userID":userID, "ipAddress":ipAddress})
+        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = %(userID)s AND INET6_NTOA(ip_address) = %(ipAddress)s", {"userID":userID, "ipAddress":ipAddress})
         if (cur.fetchone()[0] == 0):
             cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
             connection.commit()
