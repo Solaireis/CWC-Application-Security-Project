@@ -18,7 +18,7 @@
 
 #### Implemented:
 - Secure Flask Secret Key using `os.urandom(128)` (1024 bits)
-  - Unlikely to be guessed ($2^128$ possible keys)
+  - Unlikely to be guessed ($2^{128}$ possible keys)
   - Prevent session cookie from being tampered with
 - Argon2 for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
