@@ -318,8 +318,12 @@ def loginCallback():
 
     # add to db if user does not exist and retrieve the role of the user
     returnedValue = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
-    returnedID = None if (returnedValue is None) else returnedValue[0]
-    returnedRole = returnedValue[1]
+    if (returnedValue is None):
+        returnedID = None
+        returnedRole = "Student"
+    else:
+        returnedID = returnedValue[0]
+        returnedRole = returnedValue[1]
 
     # if returnedID is not None, ignore the userID from Google
     # This happens if the user signed up through CourseFinity but used Google OAuth2 to sign in
