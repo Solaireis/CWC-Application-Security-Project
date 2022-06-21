@@ -9,21 +9,24 @@ from python_files.NormalFunctions import symmetric_encrypt
 NUMBER_REGEX = re.compile(r"^\d+$")
 MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much, otherwise you pay for the Google Cloud :prayge:
 
-# while (1):
-#     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
-#     if (debugPrompt not in ("y", "n", "")):
-#         print("Invalid input", end="\n\n")
-#         continue
-#     else:
-#         debugFlag = True if (debugPrompt != "n") else False
-#         break
+while (1):
+    debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
+    if (debugPrompt not in ("y", "n", "")):
+        print("Invalid input", end="\n\n")
+        continue
+    else:
+        debugFlag = True if (debugPrompt != "n") else False
+        break
 
-# if (debugFlag):
-#     host = "localhost"
-#     password = environ["LOCAL_SQL_PASS"]
-# else:
-#     host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
-#     password = environ["REMOTE_SQL_PASS"]
+if (debugFlag):
+    host = "localhost"
+    password = environ["LOCAL_SQL_PASS"]
+else:
+    print("Remote Mode is not done yet!")
+    print("Please wait for it to be completed!")
+    sysExit(1)
+    # host = environ["GOOGLE_CLOUD_MYSQL_SERVER"] # Google Cloud SQL Public address
+    # password = environ["REMOTE_SQL_PASS"]
 
 host = "localhost"
 password = environ["LOCAL_SQL_PASS"]
@@ -120,5 +123,4 @@ def main() -> None:
             input("Please press ENTER to exit...")
             sysExit(0)
 
-if (__name__ == "__main__"):
-    main()
+main()
