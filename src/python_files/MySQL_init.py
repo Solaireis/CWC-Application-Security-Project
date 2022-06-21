@@ -50,15 +50,15 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         role INT UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
         email VARCHAR(255) NOT NULL UNIQUE, 
-        password VARBINARY(1024), -- can be null for user who signed in using Google OAuth2
-        profile_image VARCHAR(255), 
+        password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
+        profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        card_name VARCHAR(255),
-        card_no INTEGER UNSIGNED, -- May not be unique since one might have alt accounts.
-        card_exp VARCHAR(255),
+        card_name VARCHAR(255) DEFAULT NULL,
+        card_no INTEGER UNSIGNED DEFAULT NULL, -- May not be unique since one might have alt accounts.
+        card_exp VARCHAR(255) DEFAULT NULL,
         key_name CHAR(36) NOT NULL,
-        cart_courses VARCHAR(255), -- can be null for normal user
-        purchased_courses VARCHAR(255), -- can be null for normal user
+        cart_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
+        purchased_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
 
@@ -66,8 +66,8 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         course_id CHAR(32) PRIMARY KEY, 
         teacher_id VARCHAR(32) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
-        course_description VARCHAR(255),
-        course_image_path VARCHAR(255),
+        course_description VARCHAR(255) DEFAULT NULL,
+        course_image_path VARCHAR(255) DEFAULT NULL,
         course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
         course_category VARCHAR(255) NOT NULL,
         course_total_rating INTEGER NOT NULL,
