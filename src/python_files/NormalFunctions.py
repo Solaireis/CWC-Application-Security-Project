@@ -668,7 +668,7 @@ def log_event(levelname: str, details: str, userID: str, IP: str, eventCollector
 
 def splunk_log_integrity_check(ackID):
 
-    eventCollectorName = 'Logging'
+    eventCollectorName = 'CourseFinity Logging'
 
     # Get event collector token (differs per implementation)
     response = req.get(url = 'https://localhost:8089/services/data/inputs/http', 
