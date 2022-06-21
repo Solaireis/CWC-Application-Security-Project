@@ -56,7 +56,7 @@ cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'")
 res = cur.fetchall()
 if (not res):
     # add to the sqlite3 database
-    data = ("30a749defdd843ecae5da3b26b6d6b9b", "Teacher", "Daniel", "test@teacher.com", "123123", None, "2022-05-22", None, None, None,"test-key", "[]", "[]")
+    data = ("30a749defdd843ecae5da3b26b6d6b9b", 2, "Daniel", "test@teacher.com", "123123", None, "2022-05-22", None, None, None,"test-key", "[]", "[]")
     cur.execute("INSERT INTO user VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", data)
     con.commit()
 
@@ -117,7 +117,7 @@ if (not res):
     cart_data = f'["{course_id_list[0]}", "{course_id_list[1]}", "{course_id_list[2]}", "{course_id_list[3]}", "{course_id_list[4]}"]'
     purchased_data = f'["{course_id_list[5]}", "{course_id_list[6]}", "{course_id_list[7]}", "{course_id_list[8]}", "{course_id_list[9]}"]'
 
-    data = ("76456a9aa7104d7db2c89b24cab697c4", "Student", "Chloe", "test@student.com", "456456", None, "2022-06-04", None, None, None, "test-key", cart_data, purchased_data)
+    data = ("76456a9aa7104d7db2c89b24cab697c4", 1, "Chloe", "test@student.com", "456456", None, "2022-06-04", None, None, None, "test-key", cart_data, purchased_data)
     cur.execute("INSERT INTO user VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", data)
     con.commit()
 
