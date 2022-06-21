@@ -56,8 +56,8 @@ cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'")
 res = cur.fetchall()
 if (not res):
     # add to the sqlite3 database
-    data = ("30a749defdd843ecae5da3b26b6d6b9b", "Teacher", "Daniel", "test@teacher.com", "123123", None, "2022-05-22", None, None, None, "[]", "[]")
-    cur.execute("INSERT INTO user VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", data)
+    data = ("30a749defdd843ecae5da3b26b6d6b9b", "Teacher", "Daniel", "test@teacher.com", "123123", None, "2022-05-22", None, None, None,"test-key", "[]", "[]")
+    cur.execute("INSERT INTO user VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", data)
     con.commit()
 
 # cur.execute("""CREATE TABLE IF NOT EXISTS course (
