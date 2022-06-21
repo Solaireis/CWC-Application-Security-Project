@@ -86,7 +86,7 @@ def main() -> None:
             cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
             existingAdminCount = cur.fetchone()[0]
 
-            if (existingAdminCount >= MAX_NUMBER_OF_ADMINS):
+            if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
                 count = 0
                 profilePic = "/static/images/user/default.png"
                 for i in range(noOfAdmin - existingAdminCount):
