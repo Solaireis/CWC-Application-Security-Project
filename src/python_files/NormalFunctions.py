@@ -27,7 +27,7 @@ from .Google import PARENT_FOLDER_PATH, google_init
 import PIL
 from PIL import Image as PillowImage
 
-# For Google Cloud API Errors
+# For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
 
 # For Gmail API (Third-party libraries)

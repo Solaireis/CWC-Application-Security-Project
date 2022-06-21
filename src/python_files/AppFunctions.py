@@ -18,7 +18,6 @@ from dicebear import DAvatar, DStyle
 from argon2 import PasswordHasher as PH
 from argon2.exceptions import VerifyMismatchError
 import mysql.connector as MySQLCon
-import pyotp
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow

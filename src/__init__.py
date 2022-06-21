@@ -5,7 +5,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
 from argon2 import PasswordHasher as PH
 import pyotp, qrcode
-import qrcode.image.svg
 
 # for Google OAuth 2.0 login
 from cachecontrol import CacheControl
@@ -28,7 +27,7 @@ from python_files.Errors import *
 import secrets
 from datetime import datetime
 from pathlib import Path
-import base64
+from base64 import b64encode
 from io import BytesIO
 from os import environ
 
@@ -515,7 +514,7 @@ def twoFactorAuthSetup():
         qrCodeData.save(stream)
 
         # get the image from the memory buffer and encode it into base64
-        qrCodeEncodedBase64 = base64.b64encode(stream.getvalue()).decode()
+        qrCodeEncodedBase64 = b64encode(stream.getvalue()).decode()
 
         return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo[1])
 
