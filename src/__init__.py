@@ -319,9 +319,11 @@ def loginCallback():
     # add to db if user does not exist and retrieve the role of the user
     returnedValue = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
     if (returnedValue is None):
+        # if user does not exist yet
         returnedID = None
         returnedRole = "Student"
     else:
+        # if user exist, use the returned value for the userID and role of the user
         returnedID = returnedValue[0]
         returnedRole = returnedValue[1]
 
