@@ -19,6 +19,7 @@ while (1):
         print("Invalid input", end="\n\n")
         continue
     else:
+        print()
         debugFlag = True if (debugPrompt != "n") else False
         break
 
