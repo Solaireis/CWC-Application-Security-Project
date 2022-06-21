@@ -3,13 +3,12 @@ import mysql.connector
 from argon2 import PasswordHasher as PH
 
 # import python standard libraries
-from os import environ
 from datetime import datetime
 from random import randint
 
 # import local python libraries
 from python_files.NormalFunctions import generate_id, symmetric_encrypt
-from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
+from python_files.Constants_Init import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()

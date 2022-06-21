@@ -1,14 +1,11 @@
 # import third party libraries
 import mysql.connector
 
-# import python standard libraries
-from os import environ
-
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
 else:
-    from .Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from .Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
 
 def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
     """
@@ -24,7 +21,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         definer = "root`@`localhost"
         config = LOCAL_SQL_SERVER_CONFIG.copy()
     else:
-        definer = f"root`@`{environ['GOOGLE_CLOUD_MYSQL_SERVER']}"
+        definer = f"root`@`{REMOTE_SQL_SERVER_IP}"
         config = REMOTE_SQL_SERVER_CONFIG.copy()
 
     mydb = mysql.connector.connect(**config)

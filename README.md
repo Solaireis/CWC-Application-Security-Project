@@ -9,7 +9,8 @@ CourseFinity Web Application using Flask
 ---
 
 ## Forked Project for IT2555 App Security Project [4 members]
-This project consists of us making a web application using Flask as its framework.
+
+This project consists of us making a SECURE web application using Flask as its framework.
 
 **Group Members:**
 >1. Eden (Group Leader)

@@ -11,7 +11,6 @@ from flask import url_for
 import json
 from datetime import datetime, timedelta
 from typing import Union
-from os import environ
 
 # import third party libraries
 from dicebear import DAvatar, DStyle
@@ -26,9 +25,9 @@ from google_auth_oauthlib.flow import Flow
 from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
-                             RSA_decrypt, symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .Constants import GOOGLE_CREDENTIALS_PATH, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
-from .MySQL_init import mysql_init_tables as MySQLInitialise
+                             symmetric_encrypt, symmetric_decrypt, create_symmetric_key
+from .Constants_Init import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+from .MySQL_Init import mysql_init_tables as MySQLInitialise
 
 """------------------------------ Define Constants ------------------------------"""
 
@@ -54,10 +53,18 @@ def get_google_flow() -> Flow:
     """
     Returns the Google OAuth2 flow.
     """
-    flow = Flow.from_client_secrets_file(
-        GOOGLE_CREDENTIALS_PATH,
-        ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], redirect_uri=url_for("loginCallback", _external=True)
-    )
+    if (app.config["DEBUG_FLAG"]):
+        flow = Flow.from_client_secrets_file(
+            GOOGLE_CREDENTIALS,
+            ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
+            redirect_uri=url_for("loginCallback", _external=True)
+        )
+    else:
+        flow = Flow.from_client_config(
+            GOOGLE_CREDENTIALS,
+            ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
+            redirect_uri=url_for("loginCallback", _external=True)
+        )
     return flow
 
 def add_session(userID:str) -> str:

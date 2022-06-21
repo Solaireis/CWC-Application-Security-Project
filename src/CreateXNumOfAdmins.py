@@ -3,13 +3,12 @@ from argon2 import PasswordHasher as PH
 import mysql.connector
 
 # import python standard libraries
-from os import environ
 from sys import exit as sysExit
 import re
 
 # import local python libraries
 from python_files.NormalFunctions import generate_id, symmetric_encrypt
-from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG
+from python_files.Constants_Init import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG
 
 NUMBER_REGEX = re.compile(r"^\d+$")
 MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much, otherwise you pay for the Google Cloud :prayge:

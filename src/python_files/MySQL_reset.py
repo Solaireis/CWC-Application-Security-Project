@@ -1,14 +1,11 @@
 # import third party libraries
 import mysql.connector
 
-# import python standard libraries
-from os import environ
-
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 else:
-    from .Constants import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from .Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 
 def delete_mysql_database(debug:bool=False) -> None:
     """

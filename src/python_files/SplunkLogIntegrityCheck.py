@@ -1,8 +1,13 @@
 # import python standard libraries
 from requests import get, post
 from json import loads, dumps
-from os import environ
 from re import sub
+
+# import local python libraries
+if (__package__ is None or __package__ == ""):
+    from Constants_Init import PASSWORD
+else:
+    from .Constants_Init import PASSWORD
 
 def splunk_log_integrity_check(ackID):
 
@@ -10,7 +15,7 @@ def splunk_log_integrity_check(ackID):
 
     # Get event collector token (differs per implementation)
     response = get(url = 'https://localhost:8089/services/data/inputs/http', 
-                   auth = ('coursefinity', environ.get("EMAIL_PASS")), 
+                   auth = ('coursefinity', PASSWORD), 
                    params = {'output_mode': 'json'}, 
                    verify = False
                   )

@@ -8,7 +8,7 @@ from random import randint
 
 # import local python libraries
 from python_files.NormalFunctions import generate_id
-from python_files.Constants import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
+from python_files.Constants_Init import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()

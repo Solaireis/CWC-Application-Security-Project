@@ -22,7 +22,7 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.Constants import GOOGLE_CREDENTIALS_PATH
+from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE
 
 # import python standard libraries
 import secrets
@@ -37,7 +37,7 @@ from os import environ
 app = Flask(__name__)
 
 # Debug flag (will be set to false when deployed)
-app.config["DEBUG_FLAG"] = True
+app.config["DEBUG_FLAG"] = DEBUG_MODE
 
 # secret key mainly for digitally signing the session cookie
 app.config["SECRET_KEY"] = "secret" if (app.config["DEBUG_FLAG"]) else secrets.token_hex(128) # 128 bytes/1024 bits
@@ -87,8 +87,11 @@ def before_first_request():
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
     # load google client id from credentials.json
-    with open(GOOGLE_CREDENTIALS_PATH, "r") as f:
-        credentials = json.load(f)
+    if (not isinstance(GOOGLE_CREDENTIALS, dict)):
+        with open(GOOGLE_CREDENTIALS, "r") as f:
+            credentials = json.load(f)
+    else:
+        credentials = GOOGLE_CREDENTIALS
     app.config["GOOGLE_CLIENT_ID"] = credentials["web"]["client_id"]
 
     # get Google oauth flow object
@@ -99,8 +102,8 @@ def before_request():
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
     elif ("user" in session):
+        userID = session["user"]
         try:
-            userID = session["user"]
             sessionID = RSA_decrypt(session["sid"])
         except (DecryptionError):
             session.clear()
