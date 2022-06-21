@@ -52,6 +52,8 @@ if (not res):
     password = symmetric_encrypt(plaintext=PH().hash("User123!"), keyID=keyName)
     cur.execute("INSERT INTO user (id, role, username, email, password, key_name) VALUES (%s, %s, %s, %s, %s, %s)", (userID, TEACHER_ROLE_ID, username, email, password, keyName))
     con.commit()
+    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
+    con.commit()
 
 demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
 while (demoCourse < 10):
@@ -101,6 +103,8 @@ if (res is None):
     password = symmetric_encrypt(plaintext=PH().hash("User123!"), keyID=keyName)
 
     cur.execute("INSERT INTO user (id, role, username, email, password, key_name, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, keyName, cartData, purchasedData))
+    con.commit()
+    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
     con.commit()
 
 con.commit()

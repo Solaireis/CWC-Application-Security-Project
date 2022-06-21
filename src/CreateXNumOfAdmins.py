@@ -79,7 +79,7 @@ def main() -> None:
                     continue
                 else:
                     noOfAdmin = int(noOfAdmin) % MAX_NUMBER_OF_ADMINS
-                    print(f"Creating {noOfAdmin} admins...")
+                    print(f"\nCreating {noOfAdmin} admins...", end="")
                     break
 
             # count number of existing admin accounts
@@ -89,7 +89,7 @@ def main() -> None:
             if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
                 count = 0
                 profilePic = "/static/images/user/default.png"
-                for i in range(noOfAdmin - existingAdminCount):
+                for i in range(existingAdminCount, noOfAdmin - existingAdminCount):
                     adminID = generate_id()
                     username = f"Admin-{i}"
                     email = f"admin{i}@coursefinity.com"
@@ -101,9 +101,14 @@ def main() -> None:
                         "INSERT INTO user (id, role, username, email, password, profile_image, key_name) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, %(password)s, %(profilePic)s, %(keyName)s)", \
                         {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": profilePic, "keyName": keyName}
                     )
+                    con.commit()
+
+                    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(adminID)s, %(ipAddress)s)", {"adminID": adminID, "ipAddress": "127.0.0.1"})
+                    con.commit()
+
                     count += 1
-                con.commit()
-                print(f"{count} admin accounts created!")
+
+                print(f"\r{count} admin accounts created!")
             else:
                 print(f"Maximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
             print()
