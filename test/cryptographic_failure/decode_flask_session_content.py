@@ -1,3 +1,4 @@
+# import python standard libraries
 import base64, zlib
 
 # add === for padding to decode flask session

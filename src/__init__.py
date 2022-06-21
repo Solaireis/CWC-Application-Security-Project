@@ -100,7 +100,7 @@ def before_request():
         abort(403)
     elif ("user" in session):
         try:
-            userID = RSA_decrypt(session["user"])
+            userID = session["user"]
             sessionID = RSA_decrypt(session["sid"])
         except (DecryptionError):
             session.clear()
@@ -215,24 +215,24 @@ def login():
                 messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
                 send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
 
-                session["temp_uid"] = RSA_encrypt(userInfo[0])
+                session["temp_uid"] = userInfo[0]
                 session["username"] = userInfo[2]
                 session["token"] = RSA_encrypt(generatedTOTPSecretToken)
-                session["is_admin"] = RSA_encrypt(str(isAdmin))
+                session["is_admin"] = isAdmin
                 flash("An email has been sent to you with your special access code!", "Success")
                 return redirect(url_for("enterGuardTOTP"))
 
             if (successfulLogin and not userHasTwoFA):
                 session["sid"] = RSA_encrypt(add_session(userInfo[0]))
                 if (not isAdmin):
-                    session["user"] = RSA_encrypt(userInfo[0])
+                    session["user"] = userInfo[0]
                 else:
-                    session["admin"] = RSA_encrypt(userInfo[0])
+                    session["admin"] = userInfo[0]
                 print(f"Successful Login: email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             elif (successfulLogin and userHasTwoFA):
-                session["temp_uid"] = RSA_encrypt(userInfo[0])
-                session["is_admin"] = RSA_encrypt(str(isAdmin))
+                session["temp_uid"] = userInfo[0]
+                session["is_admin"] = isAdmin
                 return redirect(url_for("enter2faTOTP"))
             else:
                 return render_template("users/guest/login.html", form=loginForm)
@@ -269,11 +269,10 @@ def enterGuardTOTP():
         userID = session["temp_uid"]
         session.clear()
 
-        decryptedUserID = RSA_decrypt(userID)
-        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=decryptedUserID, ipAddress=get_remote_address())
-        session["sid"] = RSA_encrypt(add_session(decryptedUserID))
+        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address())
+        session["sid"] = RSA_encrypt(add_session(userID))
 
-        if (bool(RSA_decrypt(session["is_admin"]))):
+        if (session["is_admin"]):
             session["admin"] = userID
         else:
             session["user"] = userID
@@ -335,9 +334,9 @@ def loginCallback():
 
     # assign the session accordingly based on the role of the user
     if (returnedRole != "Admin"):
-        session["user"] = RSA_encrypt(userID)
+        session["user"] = userID
     else:
-        session["admin"] = RSA_encrypt(userID)
+        session["admin"] = userID
 
     session["sid"] = RSA_encrypt(add_session(userID))
     return redirect(url_for("home"))
@@ -392,7 +391,7 @@ def signup():
                     flash("Username already exists!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            session["user"] = RSA_encrypt(returnedVal) # i.e. successful signup, returned the user ID
+            session["user"] = returnedVal # i.e. successful signup, returned the user ID
             session["sid"] = RSA_encrypt(add_session(returnedVal))
 
             return redirect(url_for("home"))
@@ -431,7 +430,7 @@ def enter2faTOTP():
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
-        userID = RSA_decrypt(session["temp_uid"])
+        userID = session["temp_uid"]
         try:
             getSecretToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
         except (No2FATokenError):
@@ -439,11 +438,11 @@ def enter2faTOTP():
             return redirect(url_for("login"))
 
         if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
-            isAdmin = bool(RSA_decrypt(session["is_admin"]))
+            isAdmin = session["is_admin"]
             if (isAdmin):
-                session["admin"] = session["temp_uid"]
+                session["admin"] = userID
             else:
-                session["user"] = session["temp_uid"]
+                session["user"] = userID
 
             session["sid"] = RSA_encrypt(add_session(userID))
 
@@ -464,9 +463,9 @@ def disableTwoFactorAuth():
         return redirect(url_for("login"))
 
     if ("user" in session):
-        userID = RSA_decrypt(session["user"])
+        userID = session["user"]
     elif ("admin" in session):
-        userID = RSA_decrypt(session["admin"])
+        userID = session["admin"]
 
     # check if user logged in via Google OAuth2
     try:
@@ -559,7 +558,7 @@ def paymentSettings():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    userID = RSA_decrypt(session["user"])
+    userID = session["user"]
     try:
         cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
         print(cardExists)
@@ -599,7 +598,7 @@ def deletePayment():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    userID = RSA_decrypt(session["user"])
+    userID = session["user"]
     cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID)
     if (not cardExists):
         return redirect(url_for("paymentSettings"))
@@ -612,7 +611,7 @@ def editPayment():
     if ("user" not in session):
         return redirect(url_for("login"))
 
-    userID = RSA_decrypt(session["user"])
+    userID = session["user"]
     cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
     if (not cardExists):
         return redirect(url_for("paymentSettings"))
@@ -771,7 +770,7 @@ def updatePassword():
 @app.post("/change-account-type")
 def changeAccountType():
     if ("user" in session):
-        userID = RSA_decrypt(session["user"])
+        userID = session["user"]
         if (request.form["changeAccountType"] == "changeToTeacher"):
             try:
                 sql_operation(table="user", mode="update_to_teacher", userID=userID)
@@ -801,7 +800,7 @@ def deletePic():
 @app.post("/upload-profile-picture")
 def uploadPic():
     if ("user" in session):
-        userID = RSA_decrypt(session["user"])
+        userID = session["user"]
         if ("profilePic" not in request.files):
             print("No File Sent")
             return redirect(url_for("userProfile"))
@@ -1004,7 +1003,7 @@ def purchaseView(courseID):
 @app.post("/add_to_cart/<courseID>")
 def addToCart(courseID):
     if ("user" in session):
-        sql_operation(table="user", mode="add_to_cart", userID=RSA_decrypt(session["user"]), courseID=courseID)
+        sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
         return redirect(url_for("cart"))
     else:
         return redirect(url_for("login"))
@@ -1012,7 +1011,7 @@ def addToCart(courseID):
 @app.route("/shopping_cart", methods=["GET", "POST"])
 def cart():
     if "user" in session:
-        userID = RSA_decrypt(session["user"])
+        userID = session["user"]
         if request.method == "POST":
             # Remove item from cart
             courseID = request.form.get("courseID")
@@ -1053,10 +1052,9 @@ def cart():
 def checkout():
     if "user" in session:
 
-        userID = RSA_encrypt(session["user"])
+        userID = session["user"]
 
         if request.method == "POST":
-
             cardNo = request.form.get("cardNo")
             cardExpiryMonth  = request.form.get('cardExpMonth')
             cardExpiryYear = request.form.get('cardExpYear')

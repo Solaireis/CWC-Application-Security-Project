@@ -9,6 +9,7 @@
 # ignore other files
 *test*.*
 blacklist.txt
+*.bin
 
 # ignore uploaded files for user profiles and thumbnails
 src/static/images/user/*.webp

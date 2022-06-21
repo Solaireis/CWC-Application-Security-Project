@@ -77,7 +77,7 @@ def add_session(userID:str) -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
     return sessionID
 
-def get_image_path(userID:Union[dict, str], returnUserInfo:bool=False) -> Union[str, tuple]:
+def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
     
@@ -87,13 +87,9 @@ def get_image_path(userID:Union[dict, str], returnUserInfo:bool=False) -> Union[
     If returnUserInfo is True, it will return a tuple of the user's record.
     
     Args:
-        - userID: The user's ID (optionally encrypted)
-            - Will decrypt the encrypted userID (if userID is in dict type)
+        - userID: The user's ID
         - returnUserInfo: If True, it will return a tuple of the user's record.
     """
-    if (isinstance(userID, dict)):
-        userID = RSA_decrypt(userID)
-
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
     imageSrcPath = userInfo[5]
     if (imageSrcPath is None):
