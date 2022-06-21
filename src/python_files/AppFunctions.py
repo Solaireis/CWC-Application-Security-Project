@@ -474,8 +474,12 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
             # user exists, check if the user had used Google OAuth2 to sign up
             # by checking if the password is null
             if (matched[4] is not None):
-                # user has not signed up using Google OAuth2, return the generated userID from the database
-                return matched[0]
+                # user has not signed up using Google OAuth2, 
+                # return the generated userID from the database and the role name associated with the user
+                cur.callproc("get_role_name", (matched[1],))
+                for result in cur.stored_results():
+                    roleName = result.fetchone()[0]
+                return (matched[0], roleName)
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")

@@ -207,8 +207,8 @@ def login():
                 flash("Please check your entries and try again!", "Danger")
             except (LoginFromNewIpAddressError):
                 # sends an email with a generated TOTP code to authenticate the user
-
-                generatedTOTPSecretToken = pyotp.random_base32(length=205) # 1025 bits/205 characters in length (5 bits per base32 character)
+                # 1025 bits/205 characters in length (5 bits per base32 character)
+                generatedTOTPSecretToken = pyotp.random_base32(length=205) 
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
                 messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
@@ -283,7 +283,7 @@ def enterGuardTOTP():
 
 @app.route("/login-google")
 def loginViaGoogle():
-    if ("user" not in session):
+    if ("user" not in session or "admin" not in session):
         authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url()
         session["state"] = RSA_encrypt(state)
         return redirect(authorisationUrl)
@@ -292,7 +292,7 @@ def loginViaGoogle():
 
 @app.route("/login-callback")
 def loginCallback():
-    if ("user" in session):
+    if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
     app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
@@ -317,13 +317,21 @@ def loginCallback():
     profilePicture = idInfo["picture"]
 
     # add to db if user does not exist and retrieve the role of the user
-    returnedID = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+    returnedValue = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+    returnedID = returnedValue[0]
+    returnedRole = returnedValue[1]
 
     # if returnedID is not None, ignore the userID from Google
     # This happens if the user signed up through CourseFinity but used Google OAuth2 to sign in
     userID = returnedID or userID
     session.clear()
-    session["user"] = RSA_encrypt(userID) 
+
+    # assign the session accordingly based on the role of the user
+    if (returnedRole != "Admin"):
+        session["user"] = RSA_encrypt(userID)
+    else:
+        session["admin"] = RSA_encrypt(userID)
+
     session["sid"] = RSA_encrypt(add_session(userID))
     return redirect(url_for("home"))
 
