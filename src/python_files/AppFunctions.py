@@ -25,9 +25,15 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
+<<<<<<< HEAD
+from .Constants_Init import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
+                            DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
+from .MySQL_init import mysql_init_tables as MySQLInitialise
+=======
 from .ConstantsInit import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
                            DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
 from .MySQLInit import mysql_init_tables as MySQLInitialise
+>>>>>>> a68670f2aa1f73709b20a55411d0f4b8f940c02c
 
 """------------------------------ Define Constants ------------------------------"""
 
