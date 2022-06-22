@@ -1240,10 +1240,13 @@ def search():
     validate_session()
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
+
+    accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True) 
         return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, accType = userInfo[1])
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults))
+    
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), accType=accType)
 
 @app.route("/admin-profile", methods=["GET","POST"])
 def adminProfile():
