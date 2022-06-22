@@ -1,5 +1,4 @@
 # import python standard libraries
-from re import L
 from secrets import token_bytes
 from sys import modules
 import pathlib
