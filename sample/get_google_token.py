@@ -23,26 +23,9 @@ GOOGLE_TOKEN_SECRET_NAME = "google-token"
 PROJECT_ID = "coursefinity-339412"
 SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(SM_FILE_PATH)
 
-def shutdown() -> None:
-    """
-    For UX, prints shutdown message.
-    """
-    print()
-    print("Shutting down...")
-    input("Please press ENTER to exit...")
-
-def crc32c(data:Union[bytes, str]) -> int:
-    """
-    Calculates the CRC32C checksum of the provided data
-    
-    Args:
-    - data (str, bytes): the bytes of the data which the checksum should be calculated
-        - If the data is in string format, it will be encoded to bytes
-    
-    Returns:
-    - An int representing the CRC32C checksum of the provided bytes
-    """
-    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
+# If modifying these scopes, delete the file token.json.
+# Scopes details: https://developers.google.com/gmail/api/auth/scopes
+SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     """
@@ -69,6 +52,30 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
 
     # return the secret payload
     return response.payload.data.decode("utf-8")
+
+GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
+GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
+
+def shutdown() -> None:
+    """
+    For UX, prints shutdown message.
+    """
+    print()
+    print("Shutting down...")
+    input("Please press ENTER to exit...")
+
+def crc32c(data:Union[bytes, str]) -> int:
+    """
+    Calculates the CRC32C checksum of the provided data
+    
+    Args:
+    - data (str, bytes): the bytes of the data which the checksum should be calculated
+        - If the data is in string format, it will be encoded to bytes
+    
+    Returns:
+    - An int representing the CRC32C checksum of the provided bytes
+    """
+    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def create_token(quiet:bool=False) -> None:
     """
@@ -160,10 +167,6 @@ def create_token(quiet:bool=False) -> None:
             print()
             sysExit(1)
 
-# If modifying these scopes, delete the file token.json.
-# Scopes details: https://developers.google.com/gmail/api/auth/scopes
-SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-
 while (1):
     try:
         prompt = input("Do you want to save a new google-token.json? (y/N): ").lower().strip()
@@ -182,6 +185,4 @@ while (1):
         print(f"Will proceed to generate a new google-token.json. if it is invalid...", end="\n\n")
         break
 
-GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
 create_token()
