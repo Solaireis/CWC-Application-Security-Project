@@ -29,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 from base64 import b64encode
 from io import BytesIO
-from os import environ
+from os import environ, mkdir
 
 """Web app configurations"""
 # general Flask configurations
@@ -60,7 +60,7 @@ app.config["THUMBNAIL_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "im
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
-app.config["COURSE_VIDEO_FOLDER"] = r"static\course_videos"
+app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
 # database folder path
@@ -887,56 +887,105 @@ def uploadPic():
     else:
         return redirect(url_for("login"))
 
+@app.route("/video-upload", methods=["GET", "POST"])
+def videoUpload():
+    validate_session()
+    if ("user" in session):
+        courseID = generate_id()
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if (userInfo[1] != "Teacher"):
+            abort(500)
+
+        if (request.method == "POST"):
+            if (request.files["courseVideo"].filename == ""):
+                flash("Please Upload a Video")
+                return redirect(url_for("videoUpload"))
+            
+            file = request.files.get("courseVideo")
+            filename = secure_filename(file.filename)
+
+            print(f"This is the filename for the inputted file : {filename}")
+
+            filepath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+            print(f"This is the folder for the inputted file: {filepath}")
+            
+            try:
+                # Create target Directory
+                mkdir(filepath)
+                print("Directory " , filepath ,  " Created ") 
+            except FileExistsError:
+                print("Directory " , filepath ,  " already exists")
+
+            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
+            file.save(Path(filepath).joinpath(filename))
+            
+            session["course-data"] = (courseID, filePathToStore)
+            return redirect(url_for("createCourse"))
+        else:
+            return render_template("users/teacher/video_upload.html",imageSrcPath=imageSrcPath, accType=userInfo[1])
+    else:
+        return redirect(url_for("login"))
+
+"""
+Software data integrity
+
+Why : Hackers can edit videos and prevent availability to wanted resources
+solution : Encrypt video data
+"""
 @app.route("/create-course", methods=["GET","POST"])
 def createCourse():
     validate_session()
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
-        courseForm = CreateCourse(request.form)
-        if (request.method == "POST"):
-            courseTitle = courseForm.courseTitle.data
-            courseDescription = courseForm.courseDescription.data
-            courseTagInput = request.form.get("courseTag")
-            coursePrice = float(courseForm.coursePrice.data)
+        if ("course-data" in session):
+            courseData = session["course-data"]
+            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+            if (userInfo[1] != "Teacher"):
+                abort(500)
 
-            """
-            Encrypt video data? Software data integrity
+            courseForm = CreateCourse(request.form)
+            if (request.method == "POST"):
+                courseTitle = courseForm.courseTitle.data
+                courseDescription = courseForm.courseDescription.data
+                courseTagInput = request.form.get("courseTag")
+                coursePrice = float(courseForm.coursePrice.data)
 
-            Why : Hackers can edit videos and prevent availability to wanted resources
-            """
+                file = request.files.get("courseThumbnail")
+                filename = file.filename
+                if (filename.strip() == ""):
+                    abort(500)
 
-            file = request.files.get("courseThumbnail")
-            filename = file.filename
+                filename = f"{courseData[0]}.webp"
+                print(f"This is the filename for the inputted file : {filename}")
 
-            print(f"This is the filename for the inputted file : {filename}")
+                filePath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
+                print(f"This is the Directory for the inputted file: {filePath}")
+                try:
+                    # Create target Directory
+                    mkdir(filePath)
+                    print("Directory " , filePath ,  " Created ") 
+                except FileExistsError:
+                    print("Directory " , filePath ,  " already exists")
 
-            filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
-            print(f"This is the filepath for the inputted file: {filepath}")
-            
-            file.save(Path("src/Insecure/").joinpath(filepath))
+                imageData = BytesIO(file.read())
+                compress_and_resize_image(imageData=imageData, imagePath=Path(filePath).joinpath(filename), dimensions=(500, 500))
 
-            if (request.files["courseVideo"].filename == ""):
-                flash("Please Upload a Video Or Link")
-                return redirect(url_for("createCourse"))
+                imageUrlToStore = (f"{courseData[0]}/{filename}")
 
+                # print(f"This is the filename for the inputted file : {filename}")
+                # filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
+                # print(f"This is the filepath for the inputted file: {filepath}")            
+                # file.save(filepath)
 
-            file = request.files.get("courseVideo")
-            filename = file.filename
-            filepath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(filename)
-            # filepath = os.path.join(app.config["PROFILE_UPLOAD_PATH"], filename)
-            print(f"This is the filepath for the inputted file: {filepath}")
+                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherId=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
 
-            file.save(Path("src/Insecure/").joinpath(filepath))
-
-            # imageResized, webpFilePath = resize_image(newFilePath, (1920, 1080))
-
-            sql_operation(table="course", mode="insert",teacherId=userID, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=filename, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=filename)
-
-            return redirect(url_for("home"))
+                session.pop("course-data")
+                flash("Course Created")
+                return redirect(url_for("userProfile"))
+            else:
+                return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1])
         else:
-            return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1])
+            flash("No Video Uploaded")
+            return redirect(url_for("videoUpload"))
     else:
         return redirect(url_for("login"))
 

@@ -773,7 +773,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     cur = connection.cursor(buffered=True)
 
     if (mode == "insert"):
-        course_id = generate_id()
+        course_id = kwargs.get("courseID")
         teacher_id = kwargs.get("teacherId")
         course_name = kwargs.get("courseName")
         course_description = kwargs.get("courseDescription")

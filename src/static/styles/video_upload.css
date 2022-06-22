@@ -1,4 +1,4 @@
-/* Dropzone.js css to overwrite default */
+/* Dropzone.js css to overwrite default
 
 .dropzone {
   margin-top: 10px;
@@ -23,4 +23,71 @@
 
 .btn-margin {
   margin-right: 10px;
+} */
+
+/*taken from https://purecodingweb.blogspot.com/2020/11/responsive-file-upload-html-template.html */
+
+
+.file__upload {
+    width: 400px;
+    height: 445px;
+    margin: auto;
+    box-shadow: 0 0 5px rgba(0,0,0,.3);
+}
+
+.file__upload .header {
+    width: 100%;
+    height: 145px;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px 5px 0 0;
+}
+
+.file__upload .header p {
+    color: #FFF;
+}
+
+.file__upload .header p i.fa {
+    margin-right: 10px;
+}
+
+.file__upload .header p span {
+    font-size: 2rem;
+    font-weight: 100;
+}
+
+.file__upload .header p span span {
+    font-weight: 600;
+}
+
+.file__upload .body {
+    background: #FFF;
+    width: 100%;
+    height: calc(100% - 145px);
+    border-radius: 0 0 5px 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.file__upload .body input[type="file"] {
+    display: none;
+}
+
+.file__upload .body i.fa {
+    color: #d3d3d3;
+    margin-bottom: 20px;
+}
+
+.file__upload .body p strong {
+    color: #009DF8;
+}
+
+.file__upload .body p span {
+    color: #009DF8;
+    text-decoration: underline;
 }
