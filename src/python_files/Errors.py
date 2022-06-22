@@ -50,13 +50,11 @@ class PwdTooShortError(Exception):
 class PwdTooLongError(Exception):
     """
     Raised if the password is too long.
-
+    
     Reason: 
-        - Due to limitations of the password hashing algorithm, the password cannot be longer than
-        around 64 characters.
-        - Since argon2 uses a default length of 16 for its salt, the max length of the password I've
-        set is 48 characters.
-
+        - Due to limitations of the password hashing algorithm, the password cannot be too long.
+        - Set the limit to 128 characters as defined in Constants_Init.py
+    
     More details:
         https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls
     """

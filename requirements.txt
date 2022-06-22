@@ -22,4 +22,3 @@ crcmod>=1.7
 cryptography>=37.0.2
 Authlib>=1.0.1
 google-cloud-secret-manager>=2.11.1
-# splunk-appinspect

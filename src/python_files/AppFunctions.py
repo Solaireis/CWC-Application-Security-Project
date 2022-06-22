@@ -14,7 +14,6 @@ from typing import Union
 
 # import third party libraries
 from dicebear import DAvatar, DStyle
-from argon2 import PasswordHasher as PH
 from argon2.exceptions import VerifyMismatchError
 import mysql.connector as MySQLCon
 
@@ -26,7 +25,8 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .Constants_Init import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+from .Constants_Init import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
+                            DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
 from .MySQL_Init import mysql_init_tables as MySQLInitialise
 
 """------------------------------ Define Constants ------------------------------"""
@@ -507,7 +507,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         newIpAddress = False
         decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
         try:
-            if (PH().verify(decryptedPasswordHash, passwordInput)):
+            if (PH.verify(decryptedPasswordHash, passwordInput)):
                 # check if the login request is from the same IP address as the one that made the request
                 if (requestIpAddress not in ipAddressList):
                     newIpAddress = True
@@ -586,7 +586,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         currentPassword = cur.fetchone()
 
         try:
-            if (PH().verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
+            if (PH.verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
                 cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
         except (VerifyMismatchError):
@@ -605,20 +605,20 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
 
         try:
             # check if the supplied old password matches the current password
-            if (PH().verify(currentPasswordHash, oldPasswordInput)):
+            if (PH.verify(currentPasswordHash, oldPasswordInput)):
                 if (len(passwordInput) < 10):
                     connection.close()
                     raise PwdTooShortError("The password must be at least 10 characters long!")
 
-                if (len(passwordInput) > 48):
+                if (len(passwordInput) > MAX_PASSWORD_LENGTH):
                     connection.close()
-                    raise PwdTooLongError("The password must be less than 48 characters long!")
+                    raise PwdTooLongError(f"The password must be less than {MAX_PASSWORD_LENGTH} characters long!")
 
                 if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
-                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH().hash(passwordInput), keyID=keyName), "userID": userID})
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH.hash(passwordInput), keyID=keyName), "userID": userID})
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()

@@ -1,5 +1,4 @@
 # import third party libraries
-from argon2 import PasswordHasher as PH
 import mysql.connector
 import crcmod
 
@@ -187,7 +186,7 @@ def main() -> None:
                     email = f"admin{i}@coursefinity.com"
                     keyName = "test-key"
                     # for debug purposes only (in real world use, use a more secure password)
-                    password = symmetric_encrypt(plaintext=PH().hash("Admin123!"), keyID=keyName)
+                    password = symmetric_encrypt(plaintext=Constants_Init.PH.hash("Admin123!"), keyID=keyName)
 
                     cur.execute(
                         "INSERT INTO user (id, role, username, email, password, profile_image, key_name) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, %(password)s, %(profilePic)s, %(keyName)s)", \

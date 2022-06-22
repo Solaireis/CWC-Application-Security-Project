@@ -24,13 +24,13 @@
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
-    - 15728KB/15MiB of memory
+    - 15MiB of memory
     - 2 count of iterations 
     - 1 degree of parallelism
-  - Argon2 default configurations:
-    - 65536KB/64MiB of memory
-    - 3 count of iterations
-    - 4 degrees of parallelism when hashing
+  - Manually tweaked Argon2 configurations:
+    - 256MiB of memory
+    - 12 count of iterations
+    - 12 degrees of parallelism when hashing
   - Which meets the OWASP minimum requirements
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier

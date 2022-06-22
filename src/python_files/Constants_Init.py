@@ -1,10 +1,13 @@
 # import python standard libraries
 import pathlib, json
 from os import environ
+from multiprocessing import cpu_count
 from sys import exit as sysExit
 from typing import Union
 
 # import third party libraries
+from argon2 import PasswordHasher
+from argon2 import Type as Argon2Type
 from mysql.connector.constants import ClientFlag
 
 # For Google Cloud API Errors (Third-party libraries)
@@ -49,6 +52,24 @@ def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:boo
 
 # Debug flag
 DEBUG_MODE = True 
+
+# For hashing passwords
+MAX_PASSWORD_LENGTH = 128
+
+# Configured Argon2id default configurations so that it will take 
+# at least 500ms/0.5s to hash a plaintext password.
+PH = PasswordHasher(
+    time_cost=12,            # 12 count of iterations
+    salt_len=64,             # 64 bytes salt
+    hash_len=64,             # 64 bytes hash
+    parallelism=cpu_count(), # number of cores * 2
+    memory_cost=256*1024,    # 256 MiB
+    type=Argon2Type.ID       # using hybrids of Argon2i and Argon2d
+)
+# More helpful details on choosing the parameters for argon2id:
+# https://www.ory.sh/choose-recommended-argon2-parameters-password-hashing/#argon2s-cryptographic-password-hashing-parameters
+# https://www.twelve21.io/how-to-choose-the-right-parameters-for-argon2/
+# https://argon2-cffi.readthedocs.io/en/stable/parameters.html
 
 # For the Flask secret key when retrieving the secret key
 # from Google Secret Manager API

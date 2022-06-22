@@ -3,7 +3,6 @@ from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
-from argon2 import PasswordHasher as PH
 import pyotp, qrcode
 
 # for Google OAuth 2.0 login (Third-party libraries)
@@ -22,10 +21,10 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE, FLASK_SECRET_KEY_NAME, get_secret_payload
+from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE, \
+                                        FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH
 
 # import python standard libraries
-import secrets
 from datetime import datetime
 from pathlib import Path
 from base64 import b64encode
@@ -254,7 +253,6 @@ def login():
                     session["user"] = userInfo[0]
                 else:
                     session["admin"] = userInfo[0]
-                print(f"Successful Login: email: {emailInput}, password: {passwordInput}")
                 return redirect(url_for("home"))
             elif (successfulLogin and userHasTwoFA):
                 session["temp_uid"] = userInfo[0]
@@ -412,14 +410,14 @@ def signup():
             if (len(passwordInput) < 10):
                 flash("Password must be at least 10 characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) > 48):
-                flash("Password cannot be more than 48 characters long!")
+            if (len(passwordInput) > MAX_PASSWORD_LENGTH):
+                flash(f"Password cannot be more than {MAX_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            passwordInput = PH().hash(passwordInput)
+            passwordInput = PH.hash(passwordInput)
             ipAddress = get_remote_address()
             # print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}, ip: {ipAddress}")
 
@@ -809,7 +807,7 @@ def updatePassword():
                 except (ChangePwdError):
                     flash("Please check your entries and try again.")
                 except (PwdTooShortError, PwdTooLongError):
-                    flash("Password must be between 10 and 48 characters long.")
+                    flash(f"Password must be between 10 and {MAX_PASSWORD_LENGTH} characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
 

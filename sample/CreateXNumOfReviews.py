@@ -2,7 +2,6 @@
 import mysql.connector
 
 # import local python libraries
-from os import environ
 from datetime import datetime
 from random import randint
 import pathlib, uuid
