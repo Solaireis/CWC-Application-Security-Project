@@ -11,7 +11,21 @@ from google.auth.exceptions import RefreshError
 # import python standard libraries
 from sys import exit as sysExit
 import pathlib, json
+
+# Define constants
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
+SM_FILE_PATH = FILE_PATH.parent.joinpath("src", "config_files", "google-sm.json")
+GOOGLE_TOKEN_SECRET_NAME = "google-token"
+PROJECT_ID = "coursefinity-339412"
+SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(SM_FILE_PATH)
+
+def shutdown() -> None:
+    """
+    For UX, prints shutdown message.
+    """
+    print()
+    print("Shutting down...")
+    input("Please press ENTER to exit...")
 
 def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     """
@@ -24,16 +38,8 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     Returns:
     - secretPayload (str): the secret payload
     """
-    CONFIG_FOLDER_PATH = FILE_PATH.parent.joinpath("src", "config_files", "google-sm.json")
-    if (not CONFIG_FOLDER_PATH.is_file()):
-        print("\nError: Google Cloud Secret Manager configuration file not found!")
-        print("Please create a configuration file in the config_files folder.")
-        sysExit(1)
-
-    SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(filename=CONFIG_FOLDER_PATH)
-    
     # construct the resource name of the secret version
-    secretName = SM_CLIENT.secret_version_path("coursefinity-339412", secretID, versionID)
+    secretName = SM_CLIENT.secret_version_path(PROJECT_ID, secretID, versionID)
 
     # get the secret version
     try:
@@ -47,76 +53,89 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     # return the secret payload
     return response.payload.data.decode("utf-8")
 
-def google_init(quiet:bool=False):
+def create_token(quiet:bool=False) -> None:
     """
-    Initialise Google API by trying to authenticate with token.json
+    Will try to initialise Google API by trying to authenticate with token.json
+    stored inside the config_files folder (inside the src folder).
+    
     On success, will not ask for credentials again.
     Otherwise, will ask to authenticate with Google.
     
     Args:
-        - quiet: If True, will not print any messages.
-
+    - quiet: If True, will not print any messages.
+    
     Returns:
-        - Google API resource object if successful, None otherwise.
+    - None
     """
+    generatedNewToken = False
     creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow 
-    # completes for the first time.
-    if (GOOGLE_TOKEN.is_file()):
-        try:
-            creds = Credentials.from_authorized_user_file(GOOGLE_TOKEN, SCOPES)
-        except (RefreshError) as e:
-            print("Error caught:")
-            print(e)
-            print("\nWill proceed to delete invalid token.json and create a new one...\n")
-            GOOGLE_TOKEN.unlink(missing_ok=True)
+
+    # The file google-token.json stores the user's access and refresh tokens,
+    # and is stored in Google Secret Manager API.
+    # It is created automatically when the authorization flow 
+    # completes for the first time and will be saved to Google Secret Manager API.
+    try:
+        creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
+    except (RefreshError):
+        print("Token is no longer valid as there is an refresh error!\n")
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):
         if (creds and creds.expired and creds.refresh_token):
             creds.refresh(Request())
         else:
-            if (GOOGLE_CREDENTIALS != "n"):
-                flow = InstalledAppFlow.from_client_secrets_file(GOOGLE_CREDENTIALS, SCOPES)
-            else:
-                flow = InstalledAppFlow.from_client_config(GOOGLE_CREDENTIALS, SCOPES)
+            flow = InstalledAppFlow.from_client_config(GOOGLE_CREDENTIALS, SCOPES)
             creds = flow.run_local_server(port=0)
 
-        # Save the credentials for the next run
-        with open(GOOGLE_TOKEN, "w") as token:
-            token.write(creds.to_json())
-        print("Generated token.json successfully!")
+        generatedNewToken = True
+
+        # Save the credentials for the next run to Google Secret Manager API
+        # construct the secret path to the secret key ID
+        secretPath = SM_CLIENT.secret_path(PROJECT_ID, GOOGLE_TOKEN_SECRET_NAME)
+
+        # encode the credentials token to bytes
+        secretData = creds.to_json().encode("utf-8")
+
+        # Now add the secret version and send to Google Secret Management API
+        response = SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData})
+        print("Secret version created:", response.name, "\n")
 
     try:
         # Build the Gmail service from the credentials
         service = build("gmail", "v1", credentials=creds)
 
         if (not quiet):
-            print("\nStatus OK! token.json is valid.")
-        return service
+            print(f"Status OK! {'Generated' if (generatedNewToken) else 'Loaded'} token.json is valid.")
+
+        service.close() # close the gmail api service object
     except HttpError as error:
         if (not quiet):
             print(f"\nAn error has occurred:\n{error}")
             print()
+            sysExit(1)
 
 # If modifying these scopes, delete the file token.json.
 # Scopes details: https://developers.google.com/gmail/api/auth/scopes
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
 while (1):
-    loadLocally = input("Do you want to load credentials.json locally? (Y/n): ").lower().strip()
-    if (loadLocally not in ("y", "n", "")):
+    try:
+        prompt = input("Do you want to save a new google-token.json? (y/N): ").lower().strip()
+    except (KeyboardInterrupt):
+        shutdown()
+        sysExit(0)
+
+    if (prompt not in ("y", "n", "")):
         print("Invalid input. Please try again.", end="\n\n")
         continue
+    elif (prompt != "y"):
+        print("\nShutting down...")
+        input("Please press ENTER to exit...")
+        sysExit(0)
     else:
-        print(f"Will proceed to load credentials.json {'locally' if (loadLocally != 'n') else 'from Google Secret Manager API'}...", end="\n\n")
+        print(f"Will proceed to generate a new google-token.json. if it is invalid...", end="\n\n")
         break
 
-if (loadLocally != "n"):
-    GOOGLE_CREDENTIALS = str(FILE_PATH.parent.joinpath("src", "config_files", "google-credentials.json"))
-else:
-    GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-
-GOOGLE_TOKEN = FILE_PATH.joinpath("google-token.json")
-google_init()
+GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
+GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
+create_token()

@@ -75,6 +75,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     cur.execute("""CREATE TABLE IF NOT EXISTS user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
         ip_address VARBINARY(16) NOT NULL,
+        last_accessed DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")

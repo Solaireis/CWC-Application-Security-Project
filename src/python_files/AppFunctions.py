@@ -201,6 +201,10 @@ def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnecti
             cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
             connection.commit()
 
+    elif (mode == "remove_last_accessed_more_than_10_days"):
+        cur.execute("DELETE FROM user_ip_addresses WHERE DATEDIFF(NOW(), last_accessed) > 10")
+        connection.commit()
+
 def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
