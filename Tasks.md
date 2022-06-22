@@ -151,12 +151,23 @@
 ### Injection
 
 #### Plan:
-- Use SQL instead of shelve
+- Avoid Bad Coding Practices that lead to Injection Attacks
 - Prevent SQL injections
 - Remember to use multithreading for writing account info to the SQL database
 
 #### Implemented:
--
+- SQL Injection
+  - Implement Parameterised Queries
+  - Implement Stored Procedures
+- Server Side Template Injection
+  - Avoid using render_template_string(template)
+    - render_template() is safer because users are unable to modify the template
+- Code Injection
+  - Avoid using eval()
+- Cross Site Scripting
+  - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
+  - In Jinja, everything is escaped by default except for values explicitly marked with the |safe filter.
+    - If required use Markup()
 
 ---
 
@@ -169,6 +180,6 @@
     (check hash between original and downloaded files)
 
 #### Implemented:
--
+- Implemented MySQL
 
 ---
