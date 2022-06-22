@@ -1018,8 +1018,8 @@ def coursePage(courseID):
     # the course id is 
     #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    #courseName = courses[0][1]
-    print(courses)
+    # courseName = courses[0][1]
+    # print(courses)
     if courses == False: #raise exception
         abort(404)
     #create variable to store these values
