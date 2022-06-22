@@ -19,6 +19,9 @@ from googleapiclient.discovery import build, Resource
 # For Google SM (Secret Manager) API (Third-party libraries)
 from google.cloud import secretmanager, kms
 
+# For Google CLoud Logging API (Third-party libraries)
+from google.cloud import logging as g_logging
+
 """------------------------ START OF DEFINING FUNCTIONS ------------------------"""
 
 def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:bool=True) -> Union[str, bytes]:
@@ -119,6 +122,9 @@ GOOGLE_PROJECT_ID = "coursefinity-339412"
 
 # Password
 PASSWORD = get_secret_payload(secretID="Password")
+
+# For Google Cloud Logging API
+LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(get_secret_payload(secretID="google-logging")))
 
 # For Google GMAIL API
 GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
