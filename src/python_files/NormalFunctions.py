@@ -21,13 +21,11 @@ from os import environ
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID
+    from Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
     from Errors import *
-    from Google import google_init
 else:
-    from .Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID
+    from .Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
     from .Errors import *
-    from .Google import google_init
 
 # import third party libraries
 import PIL
@@ -70,18 +68,12 @@ PASSWORD_REGEX = re.compile(r"""
 $                                                                   # end of password
 """, re.VERBOSE)
 
-# for TOTP token
-OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
-
 # for email coursefinity logo image
 with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
     LOGO_BYTES = f.read()
 
 # For Google KMS asymmetric encryption and decryption
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
-
-# Create an authorized Gmail API service instance.
-GOOGLE_SERVICE = google_init()
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -633,7 +625,7 @@ def generate_id() -> str:
     """
     return uuid.uuid4().hex
 
-def two_fa_token_is_valid(token:str) -> bool:
+def two_fa_token_is_valid(token:str, length=32) -> bool:
     """
     Checks if the 2FA token is valid.
     
@@ -643,7 +635,8 @@ def two_fa_token_is_valid(token:str) -> bool:
     Returns:
     - True if the token is valid, False otherwise.
     """
-    return True if (re.fullmatch(OTP_REGEX, token)) else False
+    # regex, ^[A-Z\d]{length}$
+    return True if (re.fullmatch("".join([r"^[A-Z\d]{", f"{length}", r"}$"]), token)) else False
 
 def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
     """
