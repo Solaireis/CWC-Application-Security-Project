@@ -8,30 +8,33 @@
 
 ### Cryptographic Failures
 
-#### Plan:
-- Login and signup pages
-- Storing of credit card
-- Profile page (change credentials)
-- Hashing of passwords
-- Asymmetric encryption for sensitive information
-- Host and use HTTPS
-
 #### Implemented:
 - Secure Flask Secret Key using `secrets.token_bytes(512)` (4096 bits)
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
   - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Secret Manager API](https://cloud.google.com/secret-manager)
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
-  - Argon2 will generate a random salt using `os.urandom(16)` which is more secure than setting your own salt
+  - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
     - 15MiB of memory
     - 2 count of iterations 
     - 1 degree of parallelism
-  - Manually tweaked Argon2 configurations:
+  - Default Argon2 configuration (Meets the minimum requirements):
+    - 64MiB of memory
+    - 3 count of iterations
+    - 4 degree of parallelism
+    - 16 bytes salt, `os.urandom(16)`
+    - 32 bytes hash
+    - Argon2id (hybrid type of Argon2i and Argon2d)
+    - On average, the time taken to hash a password is about 0.05+ seconds.
+  - Manually tweaked Argon2 configurations (Meets the minimum requirements):
     - 256MiB of memory
     - 12 count of iterations
-    - 12 degrees of parallelism when hashing
-  - Which meets the OWASP minimum requirements
+    - 12 degrees of parallelism
+    - 64 bytes salt, `os.urandom(64)`
+    - 64 bytes hash
+    - Argon2id (hybrid type of Argon2i and Argon2d)
+    - On average, the time taken to hash a password is about 0.5+ seconds.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
@@ -44,12 +47,6 @@
 ---
 
 ### Identification and Authentication Failures
-
-#### Plan:
-- Brute forcing/credential stuffing logins
-- Implement 2FA
-- Invalidate session after several mins of inactivity
-- Block weak passwords
 
 #### Implemented:
 - Minimum Password Complexity Policy using regex
