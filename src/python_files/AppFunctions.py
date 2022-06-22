@@ -25,15 +25,9 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-<<<<<<< HEAD
-from .Constants_Init import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
-                            DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
-from .MySQL_init import mysql_init_tables as MySQLInitialise
-=======
 from .ConstantsInit import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
                            DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
 from .MySQLInit import mysql_init_tables as MySQLInitialise
->>>>>>> a68670f2aa1f73709b20a55411d0f4b8f940c02c
 
 """------------------------------ Define Constants ------------------------------"""
 
@@ -866,8 +860,13 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         searchInput = kwargs.get("searchInput")
         resultsList = []
 
-        cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
-        foundResults = cur.fetchall()
+        # cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
+        # foundResults = cur.fetchall()
+
+        cur.callproc("search_for", (searchInput,))
+        for result in cur.stored_results():
+            foundResults = result.fetchall()
+
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
