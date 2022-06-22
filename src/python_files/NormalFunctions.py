@@ -199,6 +199,59 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
 
     return response.plaintext.decode("utf-8")
 
+def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", versionID:str=None) -> None:
+    """
+    Set a new key version as the primary key version for encryption and decryption.
+    
+    Args:
+    - keyRingID (str): the key ring ID
+    - keyName (str): the name of the key to create (acts as the key ID)
+    - versionID (str): the key version to set the primary key version for the specificed keyName (e.g. "1")
+    
+    Returns:
+    - None
+    """
+    # Construct the parent key name
+    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+
+    # call the Google Cloud KMS API
+    KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
+
+def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
+    """
+    In the event that the key ID already exists
+    
+    because Google Cloud KMS API does not allow deletion of keys but only the key versions and materials,
+    
+    hence, use this function to create a new key version for that existing key ID.
+    
+    Args:
+    - keyRingID (str): the key ring ID
+    - keyName (str): the name of the key to create (acts as the key ID)
+    - setNewKeyAsPrimary (bool): Whether to set the new key version as the primary key
+        - If true, the new key version will be set as the primary key version for encryption and decryption
+        - Must be careful as old data encrypted with the old key version may not be able to be decrypted after 30 to 3 hours.
+        - More details: https://cloud.google.com/kms/docs/consistency#key_versions
+    
+    Returns:
+    - None
+    """
+    # Construct the parent key name
+    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+
+    # build the key version
+    version = {}
+
+    # call the Google Cloud KMS API
+    response = KMS_CLIENT.create_crypto_key_version(request={"parent": keyName, "crypto_key_version": version})
+
+    if (setNewKeyAsPrimary):
+        # get the latest version from the response
+        latestVersion = response.name.rsplit("/", 1)[-1]
+
+        # set the latest version as the primary key version
+        update_key_set_primary(keyRingID=keyRingID, keyName=keyName, versionID=latestVersion)
+
 def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> None:
     """
     Create a new symmetric key.
@@ -206,6 +259,9 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
     Args:
     - keyRingID (str): the key ring ID
     - keyName (str): the name of the key to create (acts as the key ID)
+    
+    Returns:
+    - None
     """
     # Construct the parent key ring name
     keyRingName = KMS_CLIENT.key_ring_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID)
@@ -231,10 +287,9 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
 
     # call Google Cloud KMS API to create the key
     try:
-        response = KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
-        print("created key: {}".format(response.name))
+        KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
-        print("key already exists...")
+        create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
 
 def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """

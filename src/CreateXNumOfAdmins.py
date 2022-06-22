@@ -10,6 +10,34 @@ import re
 from python_files.NormalFunctions import generate_id, symmetric_encrypt
 from python_files.Constants_Init import REMOTE_SQL_SERVER_CONFIG, LOCAL_SQL_SERVER_CONFIG
 
+def shutdown() -> None:
+    """
+    For UX, prints shutdown message.
+    """
+    print()
+    print("Shutting down...")
+    input("Please press ENTER to exit...")
+    sysExit(0)
+
+def print_menu(adminCount:int=0) -> None:
+    """
+    Prints the menu
+    
+    Args
+    - adminCount (int): Number of admin accounts in the database.
+    """
+    MENU = f"""----------- Menu (Debug Mode) -------------
+
+> Note: This is only for DEBUG purposes.
+> Admin Count: {adminCount}
+
+1. Create X number of admins
+2. Delete all admins
+X. Close program
+
+-------------------------------------------"""
+    print(MENU)
+AVAILABLE_OPTIONS = ("1", "2", "x")
 NUMBER_REGEX = re.compile(r"^\d+$")
 MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much, otherwise you pay for the Google Cloud :prayge:
 
@@ -50,20 +78,13 @@ if (ADMIN_ROLE_ID is None):
     con.close()
     sysExit(1)
 
-MENU = """----------- Menu (Debug Mode) -------------
-
-> Note: This is only for DEBUG purposes.
-
-1. Create X number of admins
-2. Delete all admins
-X. Close program
-
--------------------------------------------"""
-AVAILABLE_OPTIONS = ("1", "2", "x")
-
 def main() -> None:
     while (1):
-        print(MENU)
+        # count number of existing admin accounts
+        cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
+        existingAdminCount = cur.fetchone()[0]
+        print_menu(adminCount=existingAdminCount)
+
         cmdOption = input("Enter option: ").lower().strip()
         if (cmdOption not in AVAILABLE_OPTIONS):
             print("Invalid input", end="\n\n")
@@ -78,18 +99,20 @@ def main() -> None:
                     print("Please enter a number!", end="\n\n")
                     continue
                 else:
-                    noOfAdmin = int(noOfAdmin) % MAX_NUMBER_OF_ADMINS
+                    try:
+                        noOfAdmin = int(noOfAdmin)
+                        differences = MAX_NUMBER_OF_ADMINS - existingAdminCount
+                        if (noOfAdmin > differences):
+                            noOfAdmin = differences
+                    except (ZeroDivisionError):
+                        noOfAdmin = 0
                     print(f"\nCreating {noOfAdmin} admins...", end="")
                     break
-
-            # count number of existing admin accounts
-            cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
-            existingAdminCount = cur.fetchone()[0]
 
             if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
                 count = 0
                 profilePic = "/static/images/user/default.png"
-                for i in range(existingAdminCount, noOfAdmin - existingAdminCount):
+                for i in range(existingAdminCount, noOfAdmin + existingAdminCount):
                     adminID = generate_id()
                     username = f"Admin-{i}"
                     email = f"admin{i}@coursefinity.com"
@@ -108,21 +131,32 @@ def main() -> None:
 
                     count += 1
 
+                existingAdminCount += count
                 print(f"\r{count} admin accounts created!")
             else:
-                print(f"Maximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
+                print(f"\rMaximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
             print()
 
         elif (cmdOption == "2"):
+            # delete ip address data of all admins (due to foriegn key constraints)
+            cur.execute("SELECT id FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
+            listOfAdmins = cur.fetchall()
+            listOfAdmins = [adminID[0] for adminID in listOfAdmins]
+            for adminID in listOfAdmins:
+                cur.execute("DELETE FROM session WHERE user_id = %(adminID)s", {"adminID": adminID})
+                cur.execute("DELETE FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID": adminID})
+
             cur.execute("DELETE FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
             con.commit()
             print("All admin accounts deleted!\n")
+            existingAdminCount = 0
 
         elif (cmdOption == "x"):
             con.close()
-            print()
-            print("Shutting down...")
-            input("Please press ENTER to exit...")
-            sysExit(0)
+            shutdown()
 
-main()
+try:
+    main()
+except (KeyboardInterrupt):
+    con.close()
+    shutdown()

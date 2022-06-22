@@ -88,17 +88,16 @@ SQL_SERVER_CA = CONFIG_FOLDER_PATH.joinpath("sql-server-ca.pem")
 SQL_CLIENT_CERT = CONFIG_FOLDER_PATH.joinpath("sql-client-cert.pem")
 SQL_CLIENT_KEY = CONFIG_FOLDER_PATH.joinpath("sql-client-key.pem")
 
-# Get the SQL SSL certificate from Google Cloud Secret Manager API and save 
-# it to the local file system if it is not already there.
+# Get the SQL SSL certificate from Google Cloud Secret Manager API 
+# and save/overwrite it to the local file system.
 _SQL_SSL_DICT = {
     SQL_SERVER_CA: "sql-server-ca",
     SQL_CLIENT_CERT: "sql-client-cert",
     SQL_CLIENT_KEY: "sql-client-key"
 }
 for path in _SQL_SSL_DICT:
-    if (not pathlib.Path(path).exists()):
-        with open(path, "w") as f:
-            f.write(get_secret_payload(secretID=_SQL_SSL_DICT[path]))
+    with open(path, "w") as f:
+        f.write(get_secret_payload(secretID=_SQL_SSL_DICT[path]))
 del _SQL_SSL_DICT
 
 # for SQL connection configuration
