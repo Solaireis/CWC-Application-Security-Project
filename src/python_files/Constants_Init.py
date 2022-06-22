@@ -1,7 +1,6 @@
 # import python standard libraries
 import pathlib, json
 from os import environ
-from multiprocessing import cpu_count
 from sys import exit as sysExit
 from typing import Union
 
@@ -59,12 +58,12 @@ MAX_PASSWORD_LENGTH = 128
 # Configured Argon2id default configurations so that it will take 
 # at least 500ms/0.5s to hash a plaintext password.
 PH = PasswordHasher(
-    time_cost=12,            # 12 count of iterations
-    salt_len=64,             # 64 bytes salt
-    hash_len=64,             # 64 bytes hash
-    parallelism=cpu_count(), # number of cores * 2
-    memory_cost=256*1024,    # 256 MiB
-    type=Argon2Type.ID       # using hybrids of Argon2i and Argon2d
+    time_cost=12,         # 12 count of iterations
+    salt_len=64,          # 64 bytes salt
+    hash_len=64,          # 64 bytes hash
+    parallelism=12,       # 12 threads
+    memory_cost=256*1024, # 256 MiB
+    type=Argon2Type.ID    # using hybrids of Argon2i and Argon2d
 )
 # More helpful details on choosing the parameters for argon2id:
 # https://www.ory.sh/choose-recommended-argon2-parameters-password-hashing/#argon2s-cryptographic-password-hashing-parameters
