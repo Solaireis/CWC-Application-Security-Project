@@ -1,14 +1,14 @@
 # import third party libraries
 import mysql.connector
-import crcmod
+from google_crc32c import Checksum as g_crc32c
 
 # import python standard libraries
-from datetime import datetime
 from random import randint
 from six import ensure_binary
 import pathlib, uuid
 from sys import modules
 from importlib.util import spec_from_file_location, module_from_spec
+from typing import Union
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -28,18 +28,18 @@ def generate_id() -> str:
     """
     return uuid.uuid4().hex
 
-def crc32c(data) -> int:
+def crc32c(data:Union[bytes, str]) -> int:
     """
     Calculates the CRC32C checksum of the provided data
     
     Args:
-    - data: the bytes over which the checksum should be calculated
+    - data (str, bytes): the bytes of the data which the checksum should be calculated
+        - If the data is in string format, it will be encoded to bytes
     
     Returns:
     - An int representing the CRC32C checksum of the provided bytes
     """
-    crc32cFunction = crcmod.predefined.mkPredefinedCrcFun("crc-32c")
-    return crc32cFunction(ensure_binary(data))
+    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
     """

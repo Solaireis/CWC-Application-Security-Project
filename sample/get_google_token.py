@@ -7,10 +7,14 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
+from google_crc32c import Checksum as g_crc32c
+from google.api_core.exceptions import FailedPrecondition
 
 # import python standard libraries
 from sys import exit as sysExit
 import pathlib, json
+from typing import Union
+from six import ensure_binary
 
 # Define constants
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -26,6 +30,19 @@ def shutdown() -> None:
     print()
     print("Shutting down...")
     input("Please press ENTER to exit...")
+
+def crc32c(data:Union[bytes, str]) -> int:
+    """
+    Calculates the CRC32C checksum of the provided data
+    
+    Args:
+    - data (str, bytes): the bytes of the data which the checksum should be calculated
+        - If the data is in string format, it will be encoded to bytes
+    
+    Returns:
+    - An int representing the CRC32C checksum of the provided bytes
+    """
+    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     """
@@ -87,6 +104,7 @@ def create_token(quiet:bool=False) -> None:
             flow = InstalledAppFlow.from_client_config(GOOGLE_CREDENTIALS, SCOPES)
             creds = flow.run_local_server(port=0)
 
+        print(f"Adding new secret version to secret ID, {GOOGLE_TOKEN_SECRET_NAME}...", end="")
         generatedNewToken = True
 
         # Save the credentials for the next run to Google Secret Manager API
@@ -96,9 +114,37 @@ def create_token(quiet:bool=False) -> None:
         # encode the credentials token to bytes
         secretData = creds.to_json().encode("utf-8")
 
+        # calculate the credentials token payload crc32c checksum
+        crc32cPayload = crc32c(secretData)
+
         # Now add the secret version and send to Google Secret Management API
-        response = SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData})
-        print("Secret version created:", response.name, "\n")
+        response = SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData, "data_crc32c": crc32cPayload})
+        print(f"\rNew secret version, {GOOGLE_TOKEN_SECRET_NAME}, created:", response.name, "\n")
+
+        while (1):
+            disableAllPastVer = input("Do you want to disable all past versions? (Y/n): ").lower().strip()
+            if (disableAllPastVer not in ("y", "n", "")):
+                print("Please enter a valid input!")
+                continue
+            else:
+                disableAllPastVer = True if (disableAllPastVer != "n") else False
+                break
+
+        # disable all past versions if user wishes to do so
+        if (disableAllPastVer):
+            print("Disabling all past versions...", end="")
+
+            # get the latest secret version
+            latestVer = int(response.name.split("/")[-1])
+
+            for version in range(latestVer - 1, 0, -1):
+                secretVersionPath = SM_CLIENT.secret_version_path(PROJECT_ID, GOOGLE_TOKEN_SECRET_NAME, version)
+                try:
+                    SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
+                except (FailedPrecondition):
+                    # key is already destroyed
+                    pass
+            print("\rDisabled all past versions!", end="\n\n")
 
     try:
         # Build the Gmail service from the credentials

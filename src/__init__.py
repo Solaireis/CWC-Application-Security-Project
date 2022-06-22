@@ -21,8 +21,8 @@ from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.Constants_Init import GOOGLE_CREDENTIALS, DEBUG_MODE, \
-                                        FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH
+from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
+                                       FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH
 
 # import python standard libraries
 from datetime import datetime

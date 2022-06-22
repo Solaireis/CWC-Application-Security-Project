@@ -138,13 +138,13 @@ SQL_CLIENT_KEY = CONFIG_FOLDER_PATH.joinpath("sql-client-key.pem")
 # Get the SQL SSL certificate from Google Cloud Secret Manager API 
 # and save/overwrite it to the local file system.
 _SQL_SSL_DICT = {
-    SQL_SERVER_CA: "sql-server-ca",
-    SQL_CLIENT_CERT: "sql-client-cert",
-    SQL_CLIENT_KEY: "sql-client-key"
+    "sql-server-ca": SQL_SERVER_CA,
+    "sql-client-cert": SQL_CLIENT_CERT,
+    "sql-client-key": SQL_CLIENT_KEY
 }
-for path in _SQL_SSL_DICT:
+for secretID, path in _SQL_SSL_DICT.items():
     with open(path, "w") as f:
-        f.write(get_secret_payload(secretID=_SQL_SSL_DICT[path]))
+        f.write(get_secret_payload(secretID=secretID))
 del _SQL_SSL_DICT
 
 # for SQL connection configuration
@@ -158,7 +158,7 @@ LOCAL_SQL_SERVER_CONFIG = {
     "password": environ["LOCAL_SQL_PASS"]
 }
 REMOTE_SQL_SERVER_CONFIG = {
-    "host": REMOTE_SQL_SERVER_PASS, # Google Cloud SQL Public address
+    "host": REMOTE_SQL_SERVER_IP, # Google Cloud SQL Public address
     "user": "root",
     "password": REMOTE_SQL_SERVER_PASS,
     "client_flags": [ClientFlag.SSL],

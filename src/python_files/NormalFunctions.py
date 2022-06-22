@@ -21,10 +21,10 @@ from os import environ
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
+    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
     from Errors import *
 else:
-    from .Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
+    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
     from .Errors import *
 
 # import third party libraries
@@ -41,7 +41,7 @@ from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
 
 # For Google KMS (key management service) API (Third-party libraries)
-import crcmod
+from google_crc32c import Checksum as g_crc32c
 from google.cloud import kms
 from google.cloud.kms_v1.types import resources
 from cryptography.hazmat.backends import default_backend
@@ -95,18 +95,18 @@ def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     response = KMS_CLIENT.get_crypto_key(request={"name": keyName})
     return response
 
-def crc32c(data) -> int:
+def crc32c(data:Union[bytes, str]) -> int:
     """
     Calculates the CRC32C checksum of the provided data
     
     Args:
-    - data: the bytes over which the checksum should be calculated
+    - data (str, bytes): the bytes of the data which the checksum should be calculated
+        - If the data is in string format, it will be encoded to bytes
     
     Returns:
     - An int representing the CRC32C checksum of the provided bytes
     """
-    crc32cFunction = crcmod.predefined.mkPredefinedCrcFun("crc-32c")
-    return crc32cFunction(ensure_binary(data))
+    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
     """
