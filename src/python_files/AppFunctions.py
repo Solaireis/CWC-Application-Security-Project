@@ -801,6 +801,44 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
             return False
         return matched
 
+    # Added just in case want to do updating
+
+    elif (mode == "update_course_title"):
+        course_id = kwargs.get("courseID")
+        course_title = kwargs.get("courseTitle")
+        cur.execute("UPDATE course SET course_name=%(course_name)s WHERE course_id=%(courseID)s", {"course_name":course_title, "courseID":course_id})
+        connection.commit()
+
+    elif (mode == "update_course_description"):
+        course_id = kwargs.get("courseID")
+        course_description = kwargs.get("courseDescription")
+        cur.execute("UPDATE course SET course_description=%(course_description)s WHERE course_id=%(courseID)s", {"course_description":course_description, "courseID":course_id})
+        connection.commit()
+
+    elif (mode == "update_course_category"):
+        course_id = kwargs.get("courseID")
+        course_category = kwargs.get("course_category")
+        cur.execute("UPDATE course SET course_category=%(course_category)s WHERE course_id=%(courseID)s", {"course_category":course_category, "courseID":course_id})
+        connection.commit()
+
+    elif (mode == "update_course_price"):
+        course_id = kwargs.get("courseID")
+        course_price = kwargs.get("coursePrice")
+        cur.execute("UPDATE course SET course_price=%(course_price)s WHERE course_id=%(courseID)s", {"course_price":course_price, "courseID":course_id})
+        connection.commit()
+
+    elif (mode == "update_course_thumbnail"):
+        course_id = kwargs.get("courseID")
+        course_image_path = kwargs.get("courseImagePath")
+        cur.execute("UPDATE course SET course_image_path=%(course_image_path)s WHERE course_id=%(courseID)s", {"course_image_path":course_image_path, "courseID":course_id})
+        connection.commit()
+
+    elif (mode == "update_course_video"):
+        course_id = kwargs.get("courseID")
+        video_path = kwargs.get("videoPath")
+        cur.execute("UPDATE course SET video_path=%(video_path)s WHERE course_id=%(courseID)s", {"video_path":video_path, "courseID":course_id})
+        connection.commit()
+
     elif (mode == "delete"):
         course_id = kwargs.get("courseID")
         cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
