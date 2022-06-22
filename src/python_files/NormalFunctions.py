@@ -10,7 +10,7 @@ from six import ensure_binary
 import uuid, re
 import requests as req
 from datetime import datetime, timedelta, timezone
-from typing import Union
+from typing import Union, Optional
 from base64 import urlsafe_b64encode
 from time import time, sleep
 from hashlib import sha1
@@ -21,10 +21,12 @@ from os import environ
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
+    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
+                              LOGGING_CLIENT
     from Errors import *
 else:
-    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE
+    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
+                               LOGGING_CLIENT
     from .Errors import *
 
 # import third party libraries
@@ -76,6 +78,53 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def write_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:str=Optional[None]) -> None:
+    """
+    Writes an entry to the given log location.
+    
+    Args:
+    - logLocation (str): The location of the log to write to
+        - Defaults to "test-logs"
+        - Will log to that location in the default log bucket
+    - logMessage (str, dict): The message to write to the log
+        - If str, the message is written to the log with the given severity
+        - If dict, you can define your log message together with the severity in the dict.
+            - Generally you will have a "message" key in the dict that contains the log entry
+            and a "severity" key that contains the severity of the log entry.
+        - More details on how to write the log messages:
+            - https://cloud.google.com/logging/docs/samples/logging-write-log-entry
+    - severity (str, optional): The severity of the log entry
+        - If severity is defined in the dict type logMessage, you can leave the severity argument out
+        - If the logMessage is a str, the severity argument is required
+        - If severity is not defined, it will be set to "DEFAULT" severity
+        - Available severity levels:
+            - DEFAULT
+            - DEBUG
+            - INFO
+            - NOTICE
+            - WARNING
+            - ERROR
+            - CRITICAL
+            - ALERT
+            - EMERGENCY
+        - More details on the severity type:
+            - https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+    """
+    if (logMessage is None):
+        raise ValueError("logMessage must be defined!")
+
+    if (severity is None):
+        severity = "DEFAULT"
+
+    logger = LOGGING_CLIENT.logger(logLocation)
+
+    if (isinstance(logMessage, dict)):
+        logger.log_struct(logMessage)
+    elif (isinstance(logMessage, str)):
+        logger.log_text(logMessage, severity=severity)
+    else:
+        raise ValueError("logMessage must be a str or dict")
 
 def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     """
