@@ -3,9 +3,9 @@ import mysql.connector
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
+    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
 else:
-    from .Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
+    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
 
 def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
     """
@@ -175,7 +175,7 @@ if (__name__ == "__main__"):
             debugFlag = True if (debugPrompt != "n") else False
             break
 
-    from MySQL_reset import delete_mysql_database
+    from MySQLReset import delete_mysql_database
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised the tables in the database, \"coursefinity\"!")

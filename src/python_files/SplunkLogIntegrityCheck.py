@@ -5,9 +5,9 @@ from re import sub
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import PASSWORD
+    from ConstantsInit import PASSWORD
 else:
-    from .Constants_Init import PASSWORD
+    from .ConstantsInit import PASSWORD
 
 def splunk_log_integrity_check(ackID):
 

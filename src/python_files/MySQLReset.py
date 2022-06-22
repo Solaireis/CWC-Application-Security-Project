@@ -3,9 +3,9 @@ import mysql.connector
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 else:
-    from .Constants_Init import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
 
 def delete_mysql_database(debug:bool=False) -> None:
     """
