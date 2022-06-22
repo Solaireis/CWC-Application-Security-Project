@@ -149,6 +149,12 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
             SELECT role_id FROM role WHERE role_name=roleName;
         END
         """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `search_for`(IN search_term VARCHAR(255))
+        BEGIN
+            SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE CONCAT('%', search_term , '%');
+        END
+    """)
 
     # end of stored procedures
     mydb.commit()

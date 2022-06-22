@@ -860,8 +860,13 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         searchInput = kwargs.get("searchInput")
         resultsList = []
 
-        cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
-        foundResults = cur.fetchall()
+        # cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
+        # foundResults = cur.fetchall()
+
+        cur.callproc("search_for", (searchInput,))
+        for result in cur.stored_results():
+            foundResults = result.fetchall()
+
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")

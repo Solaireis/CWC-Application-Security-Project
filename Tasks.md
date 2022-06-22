@@ -165,6 +165,7 @@
   - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
   - In Jinja, everything is escaped by default except for values explicitly marked with the |safe filter.
     - If required use Markup()
+  - Using url_for() in href tags instead of passing in variables 
 
 ---
 
