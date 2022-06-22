@@ -9,7 +9,7 @@ from argon2 import PasswordHasher
 
 # import Constants_Init.py local python module using absolute path
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.parent.joinpath("src", "python_files", "Constants_Init.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.parent.joinpath("src", "python_files", "ConstantsInit.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
@@ -21,7 +21,7 @@ REPEAT_NUM = 5
 
 passwordInput = input("Enter password to hash: ")
 
-print("\nAverage time taken for hashing the password, \"", passwordInput, f"\", {REPEAT_NUM} times...", sep="", end="\n\n")
+print("\nAverage time taken for hashing the password,\n\"", passwordInput, f"\", {REPEAT_NUM} times...", sep="", end="\n\n")
 
 print("Default:", sum(repeat(
     stmt=f"DEFAULT_PH.hash('{passwordInput}')", 

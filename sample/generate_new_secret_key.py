@@ -36,7 +36,7 @@ FILE_PATH = pathlib.Path(__file__).parent.absolute()
 NUM_OF_BYTES = 512 # 512 bytes or 4096 bits
 
 # import Constants_Init.py local python module using absolute path
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants_Init.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "ConstantsInit.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
