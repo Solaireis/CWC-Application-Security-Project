@@ -11,7 +11,7 @@ from mysql.connector.constants import ClientFlag
 import google.api_core.exceptions as GoogleErrors
 
 # For Google SM (Secret Manager) API (Third-party libraries)
-from google.cloud import secretmanager
+from google.cloud import secretmanager, kms
 
 """------------------------ START OF DEFINING FUNCTIONS ------------------------"""
 
@@ -81,7 +81,9 @@ GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"
 GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
 
 # For Google Key Management Service API
+LOCATION_ID = "asia-southeast1"
 GOOGLE_KMS_JSON = json.loads(get_secret_payload(secretID="google-kms"))
+KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
 
 # for SQL SSL connection
 SQL_SERVER_CA = CONFIG_FOLDER_PATH.joinpath("sql-server-ca.pem")

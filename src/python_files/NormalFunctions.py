@@ -21,11 +21,11 @@ from os import environ
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID
+    from Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID
     from Errors import *
     from Google import google_init
 else:
-    from .Constants_Init import ROOT_FOLDER_PATH, GOOGLE_KMS_JSON, GOOGLE_PROJECT_ID
+    from .Constants_Init import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID
     from .Errors import *
     from .Google import google_init
 
@@ -77,10 +77,8 @@ OTP_REGEX = re.compile(r"^[A-Z\d]{32}$")
 with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
     LOGO_BYTES = f.read()
 
-# For Google KMS 
-LOCATION_ID = "asia-southeast1"
+# For Google KMS asymmetric encryption and decryption
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
-KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
 
 # Create an authorized Gmail API service instance.
 GOOGLE_SERVICE = google_init()
