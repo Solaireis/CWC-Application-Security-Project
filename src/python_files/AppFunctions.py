@@ -165,6 +165,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "user_ip_addresses"):
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
+        else:
+            raise ValueError("Invalid table name")
     except (MySQLCon.IntegrityError, MySQLCon.OperationalError, MySQLCon.InternalError, MySQLCon.DataError, MySQLCon.PoolError) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
@@ -210,6 +212,10 @@ def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnecti
         cur.execute("DELETE FROM user_ip_addresses WHERE DATEDIFF(NOW(), last_accessed) > 10")
         connection.commit()
 
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
+
 def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
@@ -226,6 +232,11 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=Non
         token = kwargs.get("token")
         userID = kwargs.get("userID")
 
+        # get symmetric key name from user table
+        cur.execute("SELECT key_name FROM user WHERE id = %(userID)s", {"userID":userID})
+        keyName = cur.fetchone()[0]
+        token = symmetric_encrypt(plaintext=token, keyID=keyName)
+
         cur.execute("INSERT INTO twofa_token (token, user_id) VALUES (%(token)s, %(userID)s)", {"token":token, "userID":userID})
         connection.commit()
 
@@ -237,7 +248,13 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=Non
             connection.close()
             raise No2FATokenError("No 2FA OTP found for this user!")
 
-        return matchedToken[0]
+        # get symmetric key name from user table
+        cur.execute("SELECT key_name FROM user WHERE id = %(userID)s", {"userID":userID})
+        keyName = cur.fetchone()[0]
+
+        # decrypt the encrypted secret token for 2fa
+        token = symmetric_decrypt(ciphertext=matchedToken[0], keyID=keyName)
+        return token
 
     elif (mode == "check_if_user_has_2fa"):
         userID = kwargs.get("userID")
@@ -249,6 +266,10 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=Non
         userID = kwargs.get("userID")
         cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
+
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the twofa_token_sql_operation function!")
 
 def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
     if (mode is None):
@@ -295,6 +316,10 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
     elif (mode == "reset_attempts_past_reset_date"):
         cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now().replace(microseconds=0)})
         connection.commit()
+
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the login_attempts_sql_operation function!")
 
 def session_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
@@ -366,6 +391,10 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, m
         sessionID = kwargs.get("sessionID")
         cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
+
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the session_sql_operation function!")
 
 def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
@@ -760,6 +789,10 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
 
         connection.commit()
 
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the session_sql_operation function!")
+
 # May not be used
 def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
@@ -922,78 +955,82 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 
         return resultsList
 
-# May not be used
-def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
-    """
-    Do CRUD operations on the cart table
-    
-    insert keywords: userID, courseID
-    get_cart_data keywords: userID
-    remove keywords: userID, courseID
-    empty keywords: userID
-    """
-
-    if mode is None:
+    else:
         connection.close()
-        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+        raise ValueError("Invalid mode in the session_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
-
-    userID = kwargs.get("userID")
-
-    if mode == "insert":
-        courseID = kwargs.get("courseID")
-        cur.execute("INSERT INTO cart VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
-        connection.commit()
-
-    elif mode == "get_cart_courses":
-        # List of course IDs in cart
-        cur.execute("SELECT course_id FROM cart WHERE user_id = %(userID)s", {"userID":userID})
-        courseID_list = cur.fetchall()
-        return courseID_list
-
-    elif mode == "remove":
-        courseID = kwargs.get("courseID")
-        cur.execute("DELETE FROM cart WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
-        connection.commit()
-
-    elif mode == "empty":
-        cur.execute("DELETE FROM cart WHERE user_id = %(userID)s", {"userID":userID})
-        connection.commit()
-    
 # May not be used
-def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
-    """
-    Do CRUD operations on the purchased table
+# def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
+#     """
+#     Do CRUD operations on the cart table
     
-    insert keywords: userID, courseID
-    get_purchased_data keywords: userID
-    delete keywords: userID, courseID
-    """
+#     insert keywords: userID, courseID
+#     get_cart_data keywords: userID
+#     remove keywords: userID, courseID
+#     empty keywords: userID
+#     """
 
-    if mode is None:
-        connection.close()
-        raise ValueError("You must specify a mode in the purchased_sql_operation function!")
+#     if mode is None:
+#         connection.close()
+#         raise ValueError("You must specify a mode in the cart_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+#     cur = connection.cursor(buffered=True)
 
-    userID = kwargs.get("userID")
+#     userID = kwargs.get("userID")
 
-    if mode == "insert":
-        courseID = kwargs.get("courseID")
-        cur.execute("INSERT INTO purchased VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
-        connection.commit()
+#     if mode == "insert":
+#         courseID = kwargs.get("courseID")
+#         cur.execute("INSERT INTO cart VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
+#         connection.commit()
 
-    elif mode == "get_purchased_courses":
-        # List of course IDs in purchased
-        cur.execute("SELECT course_id FROM purchased WHERE user_id = %(userID)s", {"userID":userID})
-        courseID_list = cur.fetchall()
-        return courseID_list
+#     elif mode == "get_cart_courses":
+#         # List of course IDs in cart
+#         cur.execute("SELECT course_id FROM cart WHERE user_id = %(userID)s", {"userID":userID})
+#         courseID_list = cur.fetchall()
+#         return courseID_list
 
-    elif mode == "delete":
-        courseID = kwargs.get("courseID")
-        cur.execute("DELETE FROM purchased WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
-        connection.commit()
+#     elif mode == "remove":
+#         courseID = kwargs.get("courseID")
+#         cur.execute("DELETE FROM cart WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
+#         connection.commit()
+
+#     elif mode == "empty":
+#         cur.execute("DELETE FROM cart WHERE user_id = %(userID)s", {"userID":userID})
+#         connection.commit()
+
+# May not be used
+# def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
+#     """
+#     Do CRUD operations on the purchased table
+
+#     insert keywords: userID, courseID
+#     get_purchased_data keywords: userID
+#     delete keywords: userID, courseID
+#     """
+
+#     if mode is None:
+#         connection.close()
+#         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
+
+#     cur = connection.cursor(buffered=True)
+
+#     userID = kwargs.get("userID")
+
+#     if mode == "insert":
+#         courseID = kwargs.get("courseID")
+#         cur.execute("INSERT INTO purchased VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
+#         connection.commit()
+
+#     elif mode == "get_purchased_courses":
+#         # List of course IDs in purchased
+#         cur.execute("SELECT course_id FROM purchased WHERE user_id = %(userID)s", {"userID":userID})
+#         courseID_list = cur.fetchall()
+#         return courseID_list
+
+#     elif mode == "delete":
+#         courseID = kwargs.get("courseID")
+#         cur.execute("DELETE FROM purchased WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
+#         connection.commit()
 
 def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
     """
@@ -1006,7 +1043,7 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
     if mode is None:
         connection.close()
         raise ValueError("You must specify a mode in the review_sql_operation function!")
-    
+
     cur = connection.cursor(buffered=True)
 
     userID = kwargs.get("userID")
@@ -1017,7 +1054,11 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         review_list = cur.fetchall()
         return review_list
 
-    if mode == "insert":
+    elif mode == "insert":
         courseRating = kwargs.get("courseRating")
         cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating})
         connection.commit()
+
+    else:
+        connection.close()
+        raise ValueError("Invalid mode in the review_sql_operation function!")

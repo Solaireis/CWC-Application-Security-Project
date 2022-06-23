@@ -156,7 +156,7 @@
                                             {% if twoFAEnabled %}
                                             <h6 class="text-success">Enabled</h6>
                                             <form action="{{ url_for('disableTwoFactorAuth') }}" method="POST">
-                                                <button type="submit" class="btn btn-link text-danger">Disable 2FA</button>
+                                                <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
                                             </form>
                                             {% else %}
                                             <h6 class="text-danger">Not Enabled</h6>

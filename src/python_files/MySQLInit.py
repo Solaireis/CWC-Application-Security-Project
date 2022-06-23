@@ -81,7 +81,7 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
-        token VARBINARY(92) PRIMARY KEY,
+        token VARBINARY(512) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")

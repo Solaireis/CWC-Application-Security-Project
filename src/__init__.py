@@ -109,6 +109,16 @@ def before_request() -> None:
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
 
+    # check if 2fa_token key is in session
+    if ("2fa_token" in session):
+        # remove if the endpoint is not the same as twoFactorAuthSetup
+        # note that since before_request checks for every request, 
+        # meaning the css, js, and images are also checked when a user request the webpage
+        # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
+        # hence, adding allowing if the request endpoint is pointing to a static file
+        if (request.endpoint != "twoFactorAuthSetup" and request.endpoint != "static"):
+            session.pop("2fa_token", None)
+
 def validate_session() -> None:
     """
     Validates the session if user is logged in.
@@ -233,8 +243,12 @@ def login():
                 flash("Please check your entries and try again!", "Danger")
             except (LoginFromNewIpAddressError):
                 # sends an email with a generated TOTP code to authenticate the user
-                # 1025 bits/205 characters in length (5 bits per base32 character)
-                generatedTOTPSecretToken = pyotp.random_base32(length=205) 
+                # 4120 bits/824 characters in length (5 bits per base32 character).
+                # Chose the length of the code to be 824 characters
+                # as it must be a multiple of 8 for a length that is 
+                # a multiple of 8 to avoid unexpected behaviour when verifying the TOTP
+                # https://github.com/pyauth/pyotp/issues/115
+                generatedTOTPSecretToken = pyotp.random_base32(length=824) 
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
                 messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
@@ -560,11 +574,18 @@ def twoFactorAuthSetup():
         # if so, redirect to user profile as the authentication security is handled by Google themselves
         return redirect(url_for("userProfile"))
 
+    # check if user has already setup 2fa
+    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])):
+        return redirect(url_for("userProfile"))
+
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-
         # for google authenticator setup key (20 byte)
-        secretToken = pyotp.random_base32() # MUST be kept secret
+        if ("2fa_token" not in session):
+            secretToken = pyotp.random_base32() # MUST be kept secret
+            session["2fa_token"] = RSA_encrypt(secretToken)
+        else:
+            secretToken = RSA_decrypt(session["2fa_token"])
 
         imageSrcPath = get_image_path(session["user"])
 
@@ -590,8 +611,22 @@ def twoFactorAuthSetup():
         # POST request code below
         twoFATOTP = twoFactorAuthForm.twoFATOTP.data
         secretToken = request.form.get("secretToken")
-        if (secretToken is None or not two_fa_token_is_valid(secretToken)):
+        if (secretToken is None or secretToken != RSA_decrypt(session["2fa_token"])):
             flash("Please check your entry and try again!")
+            return redirect(url_for("twoFactorAuthSetup"))
+
+        # if the secret token and the session token is equal but
+        # the secret token is not base32, then the user has tampered with the session
+        # and the html 2FA secretToken hidden form value
+        secretToken = "awawd12312312356991872"
+        if (not two_fa_token_is_valid(secretToken)):
+            session.pop("2fa_token", None)
+            flash("Invalid 2FA setup key, please try again!", "Danger")
+            write_log_entry(
+                logLocation="coursefinity-web-app", 
+                logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.", 
+                severity="ALERT"
+            )
             return redirect(url_for("twoFactorAuthSetup"))
 
         # check if the TOTP is valid

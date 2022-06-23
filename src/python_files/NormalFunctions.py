@@ -77,9 +77,12 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
 # For Google KMS asymmetric encryption and decryption
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
 
+# For 2FA setup key regex to validate if the setup is a valid base32 setup key 
+COMPILED_2FA_REGEX_DICT = {}
+
 """------------------------------ End of Defining Constants ------------------------------"""
 
-def write_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
+def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
     
@@ -674,9 +677,10 @@ def generate_id() -> str:
     """
     return uuid.uuid4().hex
 
-def two_fa_token_is_valid(token:str, length=32) -> bool:
+def two_fa_token_is_valid(token:str) -> bool:
     """
-    Checks if the 2FA token is valid.
+    Checks if the 2FA token is valid using the regex,
+    ^[A-Z\d]{tokenLength}$
     
     Args:
     - token: The token to check.
@@ -684,8 +688,13 @@ def two_fa_token_is_valid(token:str, length=32) -> bool:
     Returns:
     - True if the token is valid, False otherwise.
     """
-    # regex, ^[A-Z\d]{length}$
-    return True if (re.fullmatch("".join([r"^[A-Z\d]{", f"{length}", r"}$"]), token)) else False
+    # 
+    length = len(token)
+    if (length not in COMPILED_2FA_REGEX_DICT):
+        # compile the regex if it has not been compiled yet
+        COMPILED_2FA_REGEX_DICT[length] = re.compile(fr"^[A-Z2-7]{{{length}}}$")
+
+    return True if (re.fullmatch(COMPILED_2FA_REGEX_DICT[length], token)) else False
 
 def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
     """
