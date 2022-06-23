@@ -43,10 +43,14 @@ csrf = Seasurf(app)
 #flask extension that helps set policies for the web app
 # not done still finding out which src needs what
 csp = {
-    'default-src': '\'self\'',
+    'default-src': [
+        '\'self\'',
+        'cdn.jsdelivr.net',
+    ],
     'img-src': '*',
     'script-src': [
             '\'self\'',
+            'cdn.jsdelivr.net',
         ],
 }
 
@@ -59,7 +63,8 @@ permission_policy = {
     'microphone': '()'
 }
 
-talisman = Talisman(app, content_security_policy=csp, feature_policy=feature_policy, permission_policy=permission_policy, content_security_policy_nonce_in=['script-src','img-src'], x_xss_protection=True)
+#Don't use yet, unsure wether policies will mess up website
+# talisman = Talisman(app, content_security_policy=csp, feature_policy=feature_policy, permission_policy=permission_policy, content_security_policy_nonce_in=['script-src','img-src'], x_xss_protection=True)
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
