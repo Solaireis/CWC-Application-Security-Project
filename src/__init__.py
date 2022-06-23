@@ -1440,6 +1440,5 @@ if (__name__ == "__main__"):
     scheduler.add_job(lambda: sql_operation(table="session", mode="delete_expired_sessions"), trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions")
     scheduler.add_job(lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts")
     scheduler.add_job(lambda: sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days"), trigger="interval", hours=1, id="removeUnusedIPAddresses")
-    scheduler.add_job(lambda: splunk_log_retry(), trigger="cron", hour=1, id="splunkLogRetry")
     scheduler.start()
     app.run(debug=app.config["DEBUG_FLAG"], port=environ.get("PORT", 8080))

@@ -5,9 +5,7 @@ from sys import exit as sysExit
 from typing import Union
 
 # import third party libraries
-from argon2 import PasswordHasher
-from argon2 import Type as Argon2Type
-from mysql.connector.constants import ClientFlag
+from argon2 import PasswordHasher, Type as Argon2Type
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
@@ -21,6 +19,10 @@ from google.cloud import secretmanager, kms
 
 # For Google CLoud Logging API (Third-party libraries)
 from google.cloud import logging as g_logging
+
+# For Google Cloud SQL API (Third-party libraries)
+from google.oauth2 import service_account
+from google.cloud.sql.connector import Connector as MySQLConnector
 
 """------------------------ START OF DEFINING FUNCTIONS ------------------------"""
 
@@ -121,7 +123,7 @@ SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(f
 GOOGLE_PROJECT_ID = "coursefinity-339412"
 
 # Password
-PASSWORD = get_secret_payload(secretID="Password")
+# PASSWORD = get_secret_payload(secretID="Password")
 
 # For Google Cloud Logging API
 LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(get_secret_payload(secretID="google-logging")))
@@ -136,56 +138,19 @@ LOCATION_ID = "asia-southeast1"
 GOOGLE_KMS_JSON = json.loads(get_secret_payload(secretID="google-kms"))
 KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
 
-# for SQL SSL connection
-SQL_SERVER_CA = CONFIG_FOLDER_PATH.joinpath("sql-server-ca.pem")
-SQL_CLIENT_CERT = CONFIG_FOLDER_PATH.joinpath("sql-client-cert.pem")
-SQL_CLIENT_KEY = CONFIG_FOLDER_PATH.joinpath("sql-client-key.pem")
-
-# Get the SQL SSL certificate from Google Cloud Secret Manager API 
-# and save/overwrite it to the local file system.
-_SQL_SSL_DICT = {
-    "sql-server-ca": SQL_SERVER_CA,
-    "sql-client-cert": SQL_CLIENT_CERT,
-    "sql-client-key": SQL_CLIENT_KEY
-}
-for secretID, path in _SQL_SSL_DICT.items():
-    with open(path, "w") as f:
-        f.write(get_secret_payload(secretID=secretID))
-del _SQL_SSL_DICT
+# For Google MySQL Cloud API
+SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
+GOOGLE_SQL_JSON = json.loads(get_secret_payload(secretID="google-mysql"))
+SQL_CLIENT = MySQLConnector(credentials=service_account.Credentials.from_service_account_info(GOOGLE_SQL_JSON))
 
 # for SQL connection configuration
 DATABASE_NAME = "coursefinity"
-REMOTE_SQL_SERVER_IP = get_secret_payload(secretID="SQL-IP-Address")
-REMOTE_SQL_SERVER_PASS = PASSWORD
+REMOTE_SQL_SERVER_IP = get_secret_payload(secretID="sql-ip-address")
 
 LOCAL_SQL_SERVER_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": environ["LOCAL_SQL_PASS"]
 }
-REMOTE_SQL_SERVER_CONFIG = {
-    "host": REMOTE_SQL_SERVER_IP, # Google Cloud SQL Public address
-    "user": "root",
-    "password": REMOTE_SQL_SERVER_PASS,
-    "client_flags": [ClientFlag.SSL],
-    "ssl_ca": str(SQL_SERVER_CA),
-    "ssl_cert": str(SQL_CLIENT_CERT),
-    "ssl_key": str(SQL_CLIENT_KEY)
-}
 
 """------------------------ END OF DEFINING CONSTANTS ------------------------"""
-
-"""------------------------ START OF VERIFYING CONSTANTS ------------------------"""
-
-# Do some checks that all the necessary file paths exists 
-_ALL_PATH_LIST = [
-    SQL_SERVER_CA,
-    SQL_CLIENT_CERT,
-    SQL_CLIENT_KEY
-]
-if (not all([path.exists() for path in _ALL_PATH_LIST])):
-    raise FileNotFoundError("Some files are missing. Please ensure that all the files are in the correct folder!")
-
-del _ALL_PATH_LIST
-
-"""------------------------ END OF VERIFYING CONSTANTS ------------------------"""

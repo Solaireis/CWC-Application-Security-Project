@@ -1,11 +1,44 @@
 # import third party libraries
 import mysql.connector
 
+# import python standard libraries
+from typing import Optional
+
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
+    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME, SQL_CLIENT,DEBUG_MODE, REMOTE_SQL_SERVER_IP, SQL_INSTANCE_LOCATION, get_secret_payload
 else:
-    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME, REMOTE_SQL_SERVER_IP
+    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME, SQL_CLIENT, DEBUG_MODE, REMOTE_SQL_SERVER_IP, SQL_INSTANCE_LOCATION, get_secret_payload
+
+def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_NAME) -> mysql.connector.connection.MySQLConnection:
+    """
+    Get a MySQL connection to the coursefinity database.
+    
+    Args:
+    - debug (bool): whether to connect to the MySQL database locally or to Google CLoud SQL Server
+        - Defaults to DEBUG_MODE defined in ConstantsInit.py
+    - database (str, optional): the name of the database to connect to
+        - Defaults to DATABASE_NAME defined in ConstantsInit.py if not defined
+        - Define database to None if you do not want to connect to a database
+    
+    Returns:
+    A MySQL connection.
+    """
+    if (debug):
+        LOCAL_SQL_CONFIG_COPY = LOCAL_SQL_SERVER_CONFIG.copy()
+        if (database is not None):
+            LOCAL_SQL_CONFIG_COPY["database"] = database
+        connection = mysql.connector.connect(**LOCAL_SQL_CONFIG_COPY)
+        return connection
+    else:
+        connection: mysql.connector.connection.MySQLConnection = SQL_CLIENT.connect(
+            instance_connection_string=SQL_INSTANCE_LOCATION,
+            driver="pymysql",
+            user="root",
+            password=get_secret_payload(secretID="sql-root-password"),
+            database=database
+        )
+        return connection
 
 def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
     """
@@ -19,20 +52,17 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     """
     if (debug):
         definer = "root`@`localhost"
-        config = LOCAL_SQL_SERVER_CONFIG.copy()
     else:
         definer = f"root`@`{REMOTE_SQL_SERVER_IP}"
-        config = REMOTE_SQL_SERVER_CONFIG.copy()
 
-    mydb = mysql.connector.connect(**config)
+    mydb = get_mysql_connection(debug=debug, database=None)
     cur = mydb.cursor()
 
     cur.execute("CREATE DATABASE coursefinity")
     mydb.commit()
     mydb.close()
 
-    config["database"] = DATABASE_NAME
-    mydb = mysql.connector.connect(**config)
+    mydb = get_mysql_connection(debug=debug)
     cur = mydb.cursor()
 
     cur.execute("""CREATE TABLE IF NOT EXISTS role (

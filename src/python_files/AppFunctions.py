@@ -25,19 +25,14 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .ConstantsInit import GOOGLE_CREDENTIALS, LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, \
-                           DATABASE_NAME, PH, MAX_PASSWORD_LENGTH
-from .MySQLInit import mysql_init_tables as MySQLInitialise
+from .ConstantsInit import GOOGLE_CREDENTIALS, PH, MAX_PASSWORD_LENGTH
+from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
 """------------------------------ Define Constants ------------------------------"""
 
 # for defining the maximum login attempts
 # before locking a user account
 MAX_LOGIN_ATTEMPTS = 10
-
-# for connecting to the MySQL database, coursefinity
-SQL_CONFIG = LOCAL_SQL_SERVER_CONFIG.copy() if (app.config["DEBUG_FLAG"]) else REMOTE_SQL_SERVER_CONFIG.copy()
-SQL_CONFIG["database"] = DATABASE_NAME
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -115,16 +110,6 @@ def get_dicebear_image(username:str) -> str:
     )
     return av.url_svg
 
-"""
-If using stored procedures:
-
-cursor.callproc('procedure_name', [arg1, arg2, ...])
-for i in cursor.stored_results():
-    result = i.fetchall()
-    OR
-    result = i.fetchone()
-"""
-
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
     Connects to the database and returns the connection object
@@ -141,7 +126,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     # uses Google Cloud SQL Public Address if debug mode is False else uses localhost
 
     try:
-        con = MySQLCon.connect(**SQL_CONFIG)
+        con = get_mysql_connection(debug=app.config["DEBUG_FLAG"])
     except (MySQLCon.ProgrammingError):
         print("Database Not Found...")
         print("Creating Database...")

@@ -3,9 +3,9 @@ import mysql.connector
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from MySQLInit import get_mysql_connection
 else:
-    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, REMOTE_SQL_SERVER_CONFIG, DATABASE_NAME
+    from .MySQLInit import get_mysql_connection
 
 def delete_mysql_database(debug:bool=False) -> None:
     """
@@ -14,13 +14,7 @@ def delete_mysql_database(debug:bool=False) -> None:
     Args:
         debug (bool): If true, will delete locally, else will delete remotely
     """
-    if (debug):
-        config = LOCAL_SQL_SERVER_CONFIG.copy()
-    else:
-        config = REMOTE_SQL_SERVER_CONFIG.copy()
-
-    config["database"] = DATABASE_NAME
-    mydb = mysql.connector.connect(**config)
+    mydb = get_mysql_connection(debug=debug)
     cur = mydb.cursor()
 
     cur.execute("DROP DATABASE coursefinity")
@@ -40,5 +34,6 @@ if (__name__ == "__main__"):
     try:
         delete_mysql_database(debug=debugFlag)
         print("Deleted the database, \"coursefinity\"...")
-    except (mysql.connector.errors.DatabaseError):
+    except (mysql.connector.errors.DatabaseError) as e:
+        print(e)
         print("Error: Database \"coursefinity\" does not exist...")
