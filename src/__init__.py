@@ -347,8 +347,8 @@ def loginCallback():
     tokenRequest = GoogleRequest(session=cachedSession)
 
     try:
-        # clock_skew_in_seconds=30 seconds as it might take some time to retreive the token from Google API
-        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=30) 
+        # clock_skew_in_seconds=5 seconds as it might take some time to retreive the token from Google API
+        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=5) 
     except (ValueError, GoogleAuthError):
         flash("Failed to verify Google login! Please try again!", "Danger")
         return redirect(url_for("login"))
