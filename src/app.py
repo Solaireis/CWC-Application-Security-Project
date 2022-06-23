@@ -15,6 +15,7 @@ from google.auth.exceptions import GoogleAuthError
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 
 # import local python libraries
 from python_files.AppFunctions import *
@@ -34,6 +35,10 @@ from os import environ
 """Web app configurations"""
 # general Flask configurations
 app = Flask(__name__)
+
+#for Script Injection (undone)
+csp = {}
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'])
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
