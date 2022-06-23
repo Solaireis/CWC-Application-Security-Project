@@ -38,6 +38,9 @@ app = Flask(__name__)
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
 
+# Maintenance mode flag
+app.config["MAINTENANCE_MODE"] = False
+
 # secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
 app.config["SECRET_KEY"] = get_secret_payload(secretID=FLASK_SECRET_KEY_NAME, decodeSecret=False)
@@ -108,6 +111,9 @@ def before_request() -> None:
     """
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
+
+    if (app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
+        return render_template("maintenance.html", estimation="soon!")
 
     # check if 2fa_token key is in session
     if ("2fa_token" in session):

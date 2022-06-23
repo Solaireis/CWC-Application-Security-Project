@@ -1,0 +1,57 @@
+/* credits to https://codepen.io/MrTimcakes/pen/mXBMVE */
+
+html, body {
+    margin: 0 auto;
+    font-family: sans-serif;
+    height: 100%;
+    background: #212529;
+    font-weight: 100;
+    -webkit-user-select: none;
+        -moz-user-select: none;
+            -ms-user-select: none;
+                user-select: none;
+}
+
+main {
+    height: 100%;
+    display: flex;
+    margin: 0 20px;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #FFF;
+}
+main h1 {
+    font-size: 3em;
+    font-weight: 100;
+    color: #75CFFD;
+    margin: 0;
+}
+main h2 {
+    font-size: 1.5em;
+    font-weight: 100;
+    margin-bottom: 0;
+}
+main h3 {
+    font-size: 1.5em;
+    font-weight: 100;
+    margin-top: 0;
+}
+main p, main a {
+    font-size: 1em;
+    font-weight: 300;
+    color: #75CFFD;
+}
+main p {
+    margin: 5px;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 10px;
+    font-weight: 300;
+    color: #FFF;
+}

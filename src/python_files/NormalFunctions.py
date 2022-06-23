@@ -1,6 +1,6 @@
 """
 This python file contains all the functions that does NOT requires the import of the
-flask web application's app variable from __init__.py.
+flask web application's app variable from app.py.
 
 This is to prevent circular imports.
 """

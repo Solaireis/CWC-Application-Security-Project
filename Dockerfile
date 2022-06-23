@@ -8,4 +8,4 @@ WORKDIR /app
 
 ENV PORT 8080
 
-CMD exec gunicorn --bind :$PORT --workers 6--threads 12 __init__:app
+CMD exec gunicorn --bind :$PORT --workers 6--threads 12 app:app

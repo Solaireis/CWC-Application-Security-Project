@@ -1,10 +1,10 @@
 """
 This python file contains all the functions that requires the import of the
-flask web application's app variable from __init__.py.
+flask web application's app variable from app.py.
 """
 
 # import Flask web application configs
-from __init__ import app
+from app import app
 from flask import url_for
 
 # import python standard libraries
