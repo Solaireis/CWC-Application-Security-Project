@@ -12,7 +12,7 @@ def delete_mysql_database(debug:bool=False) -> None:
     Delete the database (run this if you want to reset the database)
 
     Args:
-        debug (bool): If true, will delete locally, else will delete remotely
+    - debug (bool): If true, will delete locally, else will delete remotely
     """
     mydb = get_mysql_connection(debug=debug)
     cur = mydb.cursor()

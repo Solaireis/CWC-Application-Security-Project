@@ -45,10 +45,10 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
     Initialize the database with the necessary tables
 
     Args:
-        debug (bool): If true, will initialise locally, else will initialise remotely
+    - debug (bool): If true, will initialise locally, else will initialise remotely
     
     Returns:
-        The connection to the database (mysql connection object)
+    - The connection to the database (mysql connection object)
     """
     if (debug):
         definer = "root`@`localhost"
