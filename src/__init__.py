@@ -488,11 +488,12 @@ def enter2faTOTP():
     if ("temp_uid" not in session and "is_admin" not in session):
         return redirect(url_for("login"))
 
-    htmlTitle = "Enter 2FA OTP"
-    formHeader = "Enter your 2FA OTP"
+    htmlTitle = "Enter 2FA TOTP"
+    formHeader = "Enter your 2FA TOTP"
+    formBody = "You are seeing this as you have enabled 2FA on your account. Please enter the 6 digit code on the Google Authenticator app installed on your phone to authenticate yourself."
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader)
+        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader, formBody=formBody)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
@@ -518,10 +519,10 @@ def enter2faTOTP():
             return redirect(url_for("home"))
         else:
             flash("Invalid 2FA code, please try again!", "Danger")
-            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader)
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader, formBody=formBody)
 
     # post request but form inputs are not valid
-    return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader)
+    return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader, formBody=formBody)
 
 @app.post("/disable-2fa")
 def disableTwoFactorAuth():
@@ -609,6 +610,9 @@ def twoFactorAuthSetup():
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         # POST request code below
+        if ("2fa_token" not in session):
+            return redirect(url_for("twoFactorAuthSetup"))
+
         twoFATOTP = twoFactorAuthForm.twoFATOTP.data
         secretToken = request.form.get("secretToken")
         if (secretToken is None or secretToken != RSA_decrypt(session["2fa_token"])):
@@ -618,7 +622,6 @@ def twoFactorAuthSetup():
         # if the secret token and the session token is equal but
         # the secret token is not base32, then the user has tampered with the session
         # and the html 2FA secretToken hidden form value
-        secretToken = "awawd12312312356991872"
         if (not two_fa_token_is_valid(secretToken)):
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
