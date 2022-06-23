@@ -29,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 from base64 import b64encode
 from io import BytesIO
-from os import environ, mkdir
+from os import environ
 
 """Web app configurations"""
 # general Flask configurations
@@ -906,18 +906,12 @@ def videoUpload():
 
             print(f"This is the filename for the inputted file : {filename}")
 
-            filepath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-            print(f"This is the folder for the inputted file: {filepath}")
-            
-            try:
-                # Create target Directory
-                mkdir(filepath)
-                print("Directory " , filepath ,  " Created ") 
-            except FileExistsError:
-                print("Directory " , filepath ,  " already exists")
+            filePath = Path(app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+            print(f"This is the folder for the inputted file: {filePath}")
+            filePath.mkdir(parents=True, exist_ok=True)
 
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
-            file.save(Path(filepath).joinpath(filename))
+            file.save(Path(filePath).joinpath(filename))
             
             session["course-data"] = (courseID, filePathToStore)
             return redirect(url_for("createCourse"))
@@ -959,22 +953,17 @@ def createCourse():
 
                 filePath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
                 print(f"This is the Directory for the inputted file: {filePath}")
-                try:
-                    # Create target Directory
-                    mkdir(filePath)
-                    print("Directory " , filePath ,  " Created ") 
-                except FileExistsError:
-                    print("Directory " , filePath ,  " already exists")
+                filePath.mkdir(parents=True, exist_ok=True)
 
                 imageData = BytesIO(file.read())
-                compress_and_resize_image(imageData=imageData, imagePath=Path(filePath).joinpath(filename), dimensions=(500, 500))
+                compress_and_resize_image(imageData=imageData, imagePath=Path(filePath).joinpath(filename), dimensions=(1920, 1080))
 
                 imageUrlToStore = (f"{courseData[0]}/{filename}")
 
                 # print(f"This is the filename for the inputted file : {filename}")
-                # filepath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-                # print(f"This is the filepath for the inputted file: {filepath}")            
-                # file.save(filepath)
+                # filePath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
+                # print(f"This is the filePath for the inputted file: {filePath}")            
+                # file.save(filePath)
 
                 sql_operation(table="course", mode="insert",courseID=courseData[0], teacherId=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
 

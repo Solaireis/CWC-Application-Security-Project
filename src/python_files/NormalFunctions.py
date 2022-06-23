@@ -79,7 +79,7 @@ SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotatio
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
-def write_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:str=Optional[None]) -> None:
+def write_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
     
