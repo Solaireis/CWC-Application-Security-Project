@@ -55,7 +55,12 @@ def get_google_flow() -> Flow:
     """
     flow = Flow.from_client_config(
         GOOGLE_CREDENTIALS,
-        ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"], 
+        [
+            "https://www.googleapis.com/auth/gmail.send", 
+            "https://www.googleapis.com/auth/userinfo.profile", 
+            "https://www.googleapis.com/auth/userinfo.email",
+            "openid"
+        ], 
         redirect_uri=url_for("loginCallback", _external=True)
     )
     return flow
