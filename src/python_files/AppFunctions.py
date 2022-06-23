@@ -58,7 +58,8 @@ def get_google_flow() -> Flow:
         [
             "https://www.googleapis.com/auth/userinfo.profile", 
             "https://www.googleapis.com/auth/userinfo.email",
-            "openid"
+            "openid",
+            "https://www.googleapis.com/auth/gmail.send" # for Google to send security alerts to the user's email
         ], 
         redirect_uri=url_for("loginCallback", _external=True)
     )
