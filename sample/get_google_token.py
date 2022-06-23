@@ -161,7 +161,7 @@ def create_token(quiet:bool=False) -> None:
             print(f"Status OK! {'Generated' if (generatedNewToken) else 'Loaded'} token.json is valid.")
 
         service.close() # close the gmail api service object
-    except HttpError as error:
+    except (HttpError) as error:
         if (not quiet):
             print(f"\nAn error has occurred:\n{error}")
             print()
