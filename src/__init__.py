@@ -353,6 +353,13 @@ def loginCallback():
         flash("Failed to verify Google login! Please try again!", "Danger")
         return redirect(url_for("login"))
 
+    # check if the Google account has its email address verified
+    emailVerificationStatus = idInfo["email_verified"]
+    if (not emailVerificationStatus):
+        session.clear()
+        flash("Sorry, please verify your Google email address before logging in!", "Danger")
+        return redirect(url_for("login"))
+
     userID = idInfo["sub"]
     email = idInfo["email"]
     username = idInfo["name"]
