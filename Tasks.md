@@ -41,6 +41,7 @@
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
 - Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
+    - 156 bits of security
   - Each user has a unique symmetric key for encryption and decryption
   - Encrypted the Argon2 hash of the password
 
@@ -74,6 +75,9 @@
 - Added reCAPTCHA on the login page
   - Prevent automated attacks such as
     - Credential stuffing attacks
+- Made a JWT function for the reset password recovery process
+  - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
+    - 192 bits of security
 
 ---
 
