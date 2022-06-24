@@ -10,10 +10,6 @@ from argon2 import PasswordHasher, Type as Argon2Type
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
 
-# For Google Gmail API (Third-party libraries)
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build, Resource
-
 # For Google SM (Secret Manager) API (Third-party libraries)
 from google.cloud import secretmanager, kms
 
@@ -56,26 +52,6 @@ def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:boo
     # return the secret payload
     secret = response.payload.data
     return secret.decode("utf-8") if (decodeSecret) else secret
-
-def google_init() -> Resource:
-    """
-    Initialise Google API by trying to authenticate with token.json
-    On success, will not ask for credentials again.
-    Otherwise, will ask to authenticate with Google.
-    
-    Returns:
-    - Google API resource object
-    """
-    # If modifying these scopes, delete the file token.json.
-    # Scopes details: https://developers.google.com/gmail/api/auth/scopes
-    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-
-    creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
-
-    # Build the Gmail service from the credentials
-    gmailService = build("gmail", "v1", credentials=creds)
-
-    return gmailService
 
 """------------------------ END OF DEFINING FUNCTIONS ------------------------"""
 
@@ -137,8 +113,6 @@ LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(get_secre
 
 # For Google GMAIL API
 GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
-GOOGLE_SERVICE = google_init()
 
 # For Google reCAPTCHA API
 RECAPTCHA_JSON = json.loads(get_secret_payload(secretID="google-recaptcha"))

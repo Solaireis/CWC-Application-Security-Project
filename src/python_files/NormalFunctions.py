@@ -7,8 +7,7 @@ This is to prevent circular imports.
 
 # import python standard libraries
 from six import ensure_binary
-import uuid, re
-import requests as req
+import requests as req, uuid, re, json
 from datetime import datetime, timedelta
 from typing import Union, Optional
 from base64 import urlsafe_b64encode
@@ -18,27 +17,28 @@ from pathlib import Path
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
-                              LOGGING_CLIENT, RECAPTCHA_CLIENT
+    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, \
+                              LOGGING_CLIENT, RECAPTCHA_CLIENT, get_secret_payload
     from Errors import *
 else:
-    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
-                               LOGGING_CLIENT, RECAPTCHA_CLIENT
+    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, \
+                               LOGGING_CLIENT, RECAPTCHA_CLIENT, get_secret_payload
     from .Errors import *
 
 # import third party libraries
 import PIL
 from PIL import Image as PillowImage
-from flask_limiter.util import get_remote_address
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
 
-# For Gmail API (Third-party libraries)
+# For Google Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build, Resource
 
 # For Google Cloud KMS (key management service) API (Third-party libraries)
 from google_crc32c import Checksum as g_crc32c
@@ -437,7 +437,11 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str
 
     # Encrypt the data using the public key
     plaintext = plaintext.encode("utf-8")
-    ciphertext = rsaKey.encrypt(plaintext, pad)
+    try:
+        ciphertext = rsaKey.encrypt(plaintext, pad)
+    except (ValueError) as e:
+        print("Try reducing the length of the plaintext as RSA encryption can only encrypt small amounts of data.")
+        raise EncryptionError(e)
     return {"ciphertext": ciphertext, "version": versionID}
 
 def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity") -> str:
@@ -669,14 +673,38 @@ def send_email(to:str="", subject:str="", body:str="", name:str=None) -> Union[d
         # creates a message object and sets the sender, recipient, and subject.
         message = create_message(to=to, subject=subject, message=body, name=name)
 
+        # Get the Google Gmail API authorised instance.
+        GMAIL_CLIENT = get_gmail_client()
+
         # send the message
-        sentMessage = (GOOGLE_SERVICE.users().messages().send(userId="me", body=message).execute())
+        sentMessage = (GMAIL_CLIENT.users().messages().send(userId="me", body=message).execute())
         print(f"Email sent!")
     except HttpError as e:
         print("Failed to send email...")
         print(f"Error:\n{e}\n")
 
     return sentMessage
+
+def get_gmail_client() -> Resource:
+    """
+    Initialise Google API by trying to authenticate with token.json
+    On success, will not ask for credentials again.
+    Otherwise, will ask to authenticate with Google.
+    
+    Returns:
+    - Google API resource object
+    """
+    # If modifying these scopes, delete the file token.json.
+    # Scopes details: https://developers.google.com/gmail/api/auth/scopes
+    SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
+
+    # get the token.json file from Google Cloud Secret Manager API
+    GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
+
+    creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
+
+    # Build the Gmail service from the credentials and return it
+    return build("gmail", "v1", credentials=creds)
 
 def pwd_is_strong(password:str) -> bool:
     """

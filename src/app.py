@@ -300,13 +300,15 @@ def login():
                 flash("Please check your entries and try again!", "Danger")
             except (LoginFromNewIpAddressError):
                 # sends an email with a generated TOTP code to authenticate the user
-                # 4120 bits/824 characters in length (5 bits per base32 character).
+                # 640 bits/128 characters in length (5 bits per base32 character).
                 # Chose the length of the code to be 824 characters
-                # as it must be a multiple of 8 for a length that is
-                # a multiple of 8 to avoid unexpected behaviour when verifying the TOTP
+                # as it must be a multiple of 8 for the length
+                # to avoid unexpected behaviour when verifying the TOTP
                 # https://github.com/pyauth/pyotp/issues/115
-                generatedTOTPSecretToken = pyotp.random_base32(length=824)
+                generatedTOTPSecretToken = pyotp.random_base32(length=128)
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
+                print(generatedTOTPSecretToken)
+                print(generatedTOTP)
 
                 messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
                 send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))

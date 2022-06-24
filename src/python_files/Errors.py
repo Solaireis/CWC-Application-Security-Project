@@ -129,3 +129,8 @@ class InvalidRecaptchaActionError(Exception):
     """
     Raised if the user tries to login but the recaptcha action is invalid.
     """
+
+class EncryptionError(Exception):
+    """
+    Raised if the encryption fails.
+    """

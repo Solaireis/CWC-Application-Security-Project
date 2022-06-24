@@ -17,11 +17,12 @@ from .ConstantsInit import STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY
 
 stripe.api_key = STRIPE_SECRET_KEY
 
-with open(Path(__file__).parent.parent.joinpath("config_files/jwt-keys.json")) as jwtKeys:
-    jwtKeys = loads(jwtKeys.read())
-    
-    private = jwtKeys["private"]
-    public = jwtKeys["public"]
+# since the .json file is not shared yet, will comment it out for now
+# with open(Path(__file__).parent.parent.joinpath("config_files/jwt-keys.json")) as jwtKeys:
+#     jwtKeys = loads(jwtKeys.read())
+
+#     private = jwtKeys["private"]
+#     public = jwtKeys["public"]
 
 def stripe_product_create(courseID, courseName, courseDescription, coursePrice, courseImagePath, debug=False) -> None:
     if debug:
