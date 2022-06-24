@@ -464,6 +464,8 @@ def EC_sign(
         - "message": the plaintext message
         - "signature": the signature of the message
         - "versionID": the version of the key
+        - "dataType": the type of the data
+        - "expiry": the expiry date of the signature/token if defined
     - If b64EncodeData is True, the data with the signature will be base64 encoded.
     """
     # Construct the key version name
