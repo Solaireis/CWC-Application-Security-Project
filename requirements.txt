@@ -29,6 +29,4 @@ flask-talisman>=1.0.0
 flask-seasurf>=1.1.1
 cryptography>=37.0.2
 authlib>=1.0.1
-google-cloud-secret-manager>=2.11.1
-google-cloud-logging>=3.1.2
 stripe>=2.73.0
