@@ -17,7 +17,7 @@ from flask import wrappers
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from flask_seasurf import Seasurf
+from flask_seasurf import SeaSurf
 
 # import local python libraries
 from python_files.AppFunctions import *
@@ -251,6 +251,8 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
             recaptchaToken = request.form.get("g-recaptcha-response")
+            # print(recaptchaToken)
+            # print(len(recaptchaToken))
             # if (recaptchaToken is not None and recaptchaToken != ""):
             #     print("creating assessment")
             #     try:
