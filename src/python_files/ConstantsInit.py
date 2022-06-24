@@ -128,6 +128,10 @@ GOOGLE_PROJECT_ID = "coursefinity-339412"
 # Password
 # PASSWORD = get_secret_payload(secretID="Password")
 
+# For Stripe API
+STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
+STRIPE_SECRET_KEY = get_secret_payload(secretID="stripe-secret")
+
 # For Google Cloud Logging API
 LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(get_secret_payload(secretID="google-logging")))
 
