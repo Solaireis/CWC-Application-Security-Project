@@ -138,10 +138,10 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "course"):
             returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-        # elif table == "cart":
-        #     returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
-        # elif table == "purchased":
-        #     returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
+        elif table == "cart":
+            returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
+        elif table == "purchased":
+            returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "session"):
             returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "login_attempts"):
@@ -816,10 +816,10 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 
     elif (mode == "get_course_data"):
         course_id = kwargs.get("courseID")
-        print(course_id)
+        print('Course_ID:', course_id)
         cur.execute("SELECT * FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         matched = cur.fetchone()
-        print(matched)
+        print('Matched:', matched)
         if (not matched):
             return False
         return matched
