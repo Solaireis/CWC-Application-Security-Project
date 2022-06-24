@@ -10,9 +10,9 @@ from six import ensure_binary
 import requests as req, uuid, re, json
 from datetime import datetime, timedelta
 from typing import Union, Optional
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64encode, b64decode, b64encode
 from time import time, sleep
-from hashlib import sha1
+from hashlib import sha1, sha384
 from pathlib import Path
 
 # import local python libraries
@@ -44,9 +44,10 @@ from googleapiclient.discovery import build, Resource
 from google_crc32c import Checksum as g_crc32c
 from google.cloud import kms
 from google.cloud.kms_v1.types import resources
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
@@ -77,7 +78,9 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
     LOGO_BYTES = f.read()
 
 # For Google KMS asymmetric encryption and decryption
-SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
+# TODO: Update the version if there is a rotation of the asymmetric keys
+SESSION_COOKIE_ENCRYPTION_VERSION = 1
+SIGNATURE_VERSION_ID = 1
 
 # For 2FA setup key regex to validate if the setup is a valid base32 setup key
 COMPILED_2FA_REGEX_DICT = {}
@@ -401,6 +404,180 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
+
+class JWTExpiryProperties:
+    def __init__(self, activeDuration:Optional[int]=0, strDate:Optional[str]=None):
+        """
+        Initializes the JWTExpiryProperties object
+        
+        Args:
+        - activeDuration (int, optional): the number of seconds the token is active.
+        - strDate (str, optional): the date in the format of "YYYY-MM-DD HH:MM:SS".
+        - Either one of the two parameters should be provided but NOT both.
+        """
+        if (strDate is None and activeDuration != 0):
+            self.expiryDate = datetime.now().replace(microsecond=0) + timedelta(seconds=activeDuration)
+        elif (strDate is not None and activeDuration == 0):
+            self.expiryDate = datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
+        elif (strDate is not None and activeDuration != 0):
+            raise ValueError("Cannot specify both expirySeconds and strDate")
+        else:
+            raise ValueError("Either expirySeconds or strDate must be provided")
+
+    def get_expiry_str_date(self) -> str:
+        """
+        Returns the expiry date in string type in the format of "YYYY-MM-DD HH:MM:SS"
+        """
+        return self.expiryDate.strftime("%Y-%m-%d %H:%M:%S")
+
+    def is_expired(self) -> bool:
+        """
+        Returns True if the token has expired, False otherwise
+        """
+        return (datetime.now().replace(microsecond=0) > self.expiryDate)
+
+    def __str__(self) -> str:
+        return self.get_expiry_str_date()
+
+    def __repr__(self) -> str:
+        return self.get_expiry_str_date()
+
+def EC_sign(
+    plaintext:str="", keyRingID:str="coursefinity", keyID:str=None, 
+    versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
+    ) -> Union[dict, bytes]:
+    """
+    Sign a message using the public key part of an asymmetric EC key.
+    
+    Args:
+    - plaintext (str): the plaintext to sign
+    - keyRingID: The ID of the key ring.
+    - keyID: The ID of the key.
+    - versionID: The version of the key.
+    - b64EncodeData: Whether to base64 encode the data or not.
+    
+    Returns:
+    - A dictionary containing:
+        - "message": the plaintext message
+        - "signature": the signature of the message
+        - "versionID": the version of the key
+    - If b64EncodeData is True, the data with the signature will be base64 encoded.
+    """
+    # Construct the key version name
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+
+    # Convert the plaintext to bytes
+    if (isinstance(plaintext, dict)):
+        dataType = "dict"
+        plaintext = json.dumps(plaintext)
+    elif (isinstance(plaintext, str)):
+        dataType = "str"
+    else:
+        raise ValueError("plaintext message must be either a dict or a str")
+    encodedPlaintext = plaintext.encode("utf-8")
+
+    # Compute the hash
+    hash_ = sha384(encodedPlaintext).digest()
+
+    # build the digest
+    digest = {"sha384": hash_}
+
+    # Compute the CRC32C checksum for data integrity checks
+    digestCRC32C = crc32c(hash_)
+
+    # Sign the digest by calling Google Cloud KMS API
+    response = KMS_CLIENT.asymmetric_sign(request={"name": keyVersionName, "digest": digest, "digest_crc32c": digestCRC32C})
+
+    # Perform integrity check
+    if (not response.verified_digest_crc32c):
+        raise Exception()
+    if (response.name != keyVersionName):
+        raise Exception()
+    if (response.signature_crc32c != crc32c(response.signature)):
+        raise Exception()
+
+    data = {"message": plaintext, "versionID": versionID, "dataType": dataType}
+    # If expiry is defined, set the expiry date in the data
+    if (expiry is not None):
+        data["expiry"] = expiry.get_expiry_str_date()
+
+    # Return the signature
+    if (b64EncodeData):
+        encodedDataList = [
+            b64encode(json.dumps(data).encode("utf-8")),
+            b64encode(response.signature)
+        ]
+        return b".".join(encodedDataList)
+    else:
+        data["signature"] = response.signature
+        return data
+
+def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:str=None, getData:bool=False) -> Union[dict, bool]:
+    """
+    Verify the signature of an message signed with an asymmetric EC key.
+    
+    Args:
+    - data (dict, bytes): the data to verify
+    - keyRingID: The ID of the key ring.
+    - keyID: The ID of the key.
+    - getData: Whether to return the data or not.
+        - Set this to True if the data is in base64 encoded format.
+    
+    Returns:
+    - bool (true if verified and false otherwise)
+    - dict (if getData is True)
+        - the verified status of the data can be accessed by the key "verified"
+            - e.g. data["verified"]
+    """
+    # Get the plaintext message, the signature, and the version ID
+    if (isinstance(data, dict)):
+        plaintext = data["message"]
+        signature = data["signature"]
+        versionID = data["versionID"]
+    elif (isinstance(data, bytes)):
+        # if data is base64 encoded
+        b64EncodedDataList = data.split(b".")
+        data = json.loads(b64decode(b64EncodedDataList[0]).decode("utf-8"))
+        plaintext = data["message"]
+        signature = b64decode(b64EncodedDataList[1])
+        data["signature"] = signature
+        versionID = data["versionID"]
+    else:
+        raise ValueError("data must be either a dict or bytes")
+
+    # Construct the key version name
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+
+    # Get the public key
+    publicKey = KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+
+    # Extract and parse the public key as a PEM-encoded EC key
+    publicKeyPEM = publicKey.pem.encode("utf-8")
+    ecKey = serialization.load_pem_public_key(publicKeyPEM, default_backend())
+    hash_ = sha384(plaintext.encode("utf-8")).digest()
+
+    # Attempt to verify the signature
+    try:
+        sha384_ = hashes.SHA384()
+        ecKey.verify(signature, hash_, ec.ECDSA(utils.Prehashed(sha384_)))
+        verified = True
+    except (InvalidSignature):
+        verified = False
+
+    # Check if the token has an expiry key defined in the json
+    if (verified and "expiry" in data):
+        # If so, check if the token has expired
+        expiryObj = JWTExpiryProperties(strDate=data["expiry"])
+        verified = False if (expiryObj.is_expired()) else True
+
+    # Return the data if requested
+    if (getData):
+        if (data["dataType"] == "dict"):
+            data["message"] = json.loads(data["message"])
+        data["verified"] = verified
+        return data
+    else:
+        return verified
 
 def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
