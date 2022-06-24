@@ -1,5 +1,5 @@
 # import third party libraries
-import mysql.connector
+import pymysql.cursors
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
@@ -34,6 +34,6 @@ if (__name__ == "__main__"):
     try:
         delete_mysql_database(debug=debugFlag)
         print("Deleted the database, \"coursefinity\"...")
-    except (mysql.connector.errors.DatabaseError) as e:
+    except (pymysql.err.DatabaseError) as e:
         print(e)
         print("Error: Database \"coursefinity\" does not exist...")

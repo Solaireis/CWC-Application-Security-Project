@@ -1,5 +1,5 @@
 # import third party libraries
-import mysql.connector
+import pymysql.cursors
 from google_crc32c import Checksum as g_crc32c
 
 # import python standard libraries
@@ -94,19 +94,24 @@ else:
 
 config["database"] = Constants_Init.DATABASE_NAME
 try:
-    con = mysql.connector.connect(**config)
-except (mysql.connector.errors.ProgrammingError):
+    con = pymysql.connect(**config)
+except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
 
-cur = con.cursor(buffered=True)
+cur = con.cursor()
 TEACHER_ROLE_ID = STUDENT_ROLE_ID = None
-cur.callproc("get_role_id", ("Teacher",))
-for result in cur.stored_results():
-    TEACHER_ROLE_ID = result.fetchone()[0]
 
-cur.callproc("get_role_id", ("Student",))
-for result in cur.stored_results():
-    STUDENT_ROLE_ID = result.fetchone()[0]
+cur.execute("call get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
+TEACHER_ROLE_ID = cur.fetchone()[0]
+# cur.callproc("get_role_id", ("Teacher",))
+# for result in cur.stored_results():
+#     TEACHER_ROLE_ID = result.fetchone()[0]
+
+cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+STUDENT_ROLE_ID = cur.fetchone()[0]
+# cur.callproc("get_role_id", ("Student",))
+# for result in cur.stored_results():
+#     STUDENT_ROLE_ID = result.fetchone()[0]
 
 TEACHER_UID = "30a749defdd843ecae5da3b26b6d6b9b"
 cur.execute("SELECT * FROM user WHERE id='30a749defdd843ecae5da3b26b6d6b9b'")

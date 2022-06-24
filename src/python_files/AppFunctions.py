@@ -15,7 +15,7 @@ from typing import Union
 # import third party libraries
 from dicebear import DAvatar, DStyle
 from argon2.exceptions import VerifyMismatchError
-import mysql.connector as MySQLCon
+import pymysql.cursors
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow
@@ -131,7 +131,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     try:
         con = get_mysql_connection(debug=app.config["DEBUG_FLAG"])
-    except (MySQLCon.ProgrammingError):
+    except (pymysql.ProgrammingError):
         print("Database Not Found...")
         print("Creating Database...")
         con = MySQLInitialise(debug=app.config["DEBUG_FLAG"])
@@ -156,7 +156,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
         else:
             raise ValueError("Invalid table name")
-    except (MySQLCon.IntegrityError, MySQLCon.OperationalError, MySQLCon.InternalError, MySQLCon.DataError, MySQLCon.PoolError) as e:
+    except (pymysql.IntegrityError, pymysql.OperationalError, pymysql.InternalError, pymysql.DataError) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
         print(e)
@@ -164,12 +164,12 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     con.close()
     return returnValue
 
-def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
+def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
     # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
@@ -205,7 +205,7 @@ def user_ip_addresses_sql_operation(connection:MySQLCon.connection.MySQLConnecti
         connection.close()
         raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
 
-def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
+def twofa_token_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -215,7 +215,7 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=Non
 
     The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
     """
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     if (mode == "add_token"):
         token = kwargs.get("token")
@@ -260,12 +260,12 @@ def twofa_token_sql_operation(connection:MySQLCon.connection.MySQLConnection=Non
         connection.close()
         raise ValueError("Invalid mode in the twofa_token_sql_operation function!")
 
-def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection, mode:str=None, **kwargs) -> None:
+def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode:str=None, **kwargs) -> None:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     if (mode == "add_attempt"):
         emailInput = kwargs.get("email")
@@ -310,12 +310,12 @@ def login_attempts_sql_operation(connection:MySQLCon.connection.MySQLConnection,
         connection.close()
         raise ValueError("Invalid mode in the login_attempts_sql_operation function!")
 
-def session_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
+def session_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
@@ -385,7 +385,7 @@ def session_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, m
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
+def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
     
@@ -401,7 +401,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         connection.close()
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
@@ -435,9 +435,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         userID = generate_id()
         passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
 
-        cur.callproc("get_role_id", ("Student",))
-        for result in cur.stored_results():
-            roleID = result.fetchone()[0]
+        cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+        roleID = cur.fetchone()[0]
+        # cur.callproc("get_role_id", ("Student",))
+        # for result in cur.stored_results():
+        #     roleID = result.fetchone()[0]
 
         cur.execute(
             "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)", 
@@ -476,9 +478,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
             # user does not exist, create new user with the given information
 
             # get role id
-            cur.callproc("get_role_id", ("Student",))
-            for result in cur.stored_results():
-                roleID = result.fetchone()[0]
+            cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+            roleID = cur.fetchone()[0]
+            # cur.callproc("get_role_id", ("Student",))
+            # for result in cur.stored_results():
+            #     roleID = result.fetchone()[0]
 
             # create symmetric key for the user and store it in Google Cloud KMS API
             if (app.config["DEBUG_FLAG"]):
@@ -498,9 +502,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
             if (matched[4] is not None):
                 # user has not signed up using Google OAuth2, 
                 # return the generated userID from the database and the role name associated with the user
-                cur.callproc("get_role_name", (matched[1],))
-                for result in cur.stored_results():
-                    roleName = result.fetchone()[0]
+                cur.execute("call get_role_name(%(matched)s)", {"matched":matched[1]})
+                roleName = cur.fetchone()[0]
+                # cur.callproc("get_role_name", (matched[1],))
+                # for result in cur.stored_results():
+                #     roleName = result.fetchone()[0]
                 return (matched[0], roleName)
 
     elif (mode == "login"):
@@ -540,9 +546,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
                     newIpAddress = True
 
                 # convert the role id to a readable format
-                cur.callproc("get_role_name", (matched[4],))
-                for result in cur.stored_results():
-                    roleName = result.fetchone()[0]
+                cur.execute("call get_role_name(%(matched)s)", {"matched":matched[4]})
+                roleName = cur.fetchone()[0]
+                # cur.callproc("get_role_name", (matched[4],))
+                # for result in cur.stored_results():
+                #     roleName = result.fetchone()[0]
 
                 # encrypt the password again as the encryption key will rotate every 30 days
                 # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
@@ -561,10 +569,11 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         matched = cur.fetchone()
         if (not matched):
             return False
-
-        cur.callproc("get_role_name", (matched[1],))
-        for result in cur.stored_results():
-            roleMatched = result.fetchone()
+        cur.execute("call get_role_name(%(matched)s)", {"matched":matched[1]})
+        roleMatched = cur.fetchone()
+        # cur.callproc("get_role_name", (matched[1],))
+        # for result in cur.stored_results():
+        #     roleMatched = result.fetchone()
         matched = list(matched)
         matched[1] = roleMatched[0]
         return tuple(matched)
@@ -703,15 +712,19 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
 
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         currentRoleID = cur.fetchone()[0]
-        cur.callproc("get_role_name", (currentRoleID,))
-        for result in cur.stored_results():
-            currentRole = result.fetchone()[0]
+        cur.execute("call get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
+        currentRole = cur.fetchone()[0]
+        # cur.callproc("get_role_name", (currentRoleID,))
+        # for result in cur.stored_results():
+        #     currentRole = result.fetchone()[0]
 
         isTeacher = True if (currentRole == "Teacher") else False
         if (not isTeacher):
-            cur.callproc("get_role_id", ("Teacher",))
-            for result in cur.stored_results():
-                teacherRoleID = result.fetchone()[0]
+            cur.execute("call get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
+            teacherRoleID = cur.fetchone()[0]
+            # cur.callproc("get_role_id", ("Teacher",))
+            # for result in cur.stored_results():
+            #     teacherRoleID = result.fetchone()[0]
             cur.execute("UPDATE user SET role=%(teacherRoleID)s WHERE id=%(userID)s", {"teacherRoleID": teacherRoleID, "userID":userID})
             connection.commit()
         else:
@@ -783,7 +796,7 @@ def user_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
 # May not be used
-def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
+def course_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
     
@@ -797,7 +810,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         connection.close()
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     if (mode == "insert"):
         course_id = kwargs.get("courseID")
@@ -927,10 +940,11 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 
         # cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
         # foundResults = cur.fetchall()
-
-        cur.callproc("search_for", (searchInput,))
-        for result in cur.stored_results():
-            foundResults = result.fetchall()
+        cur.execute("call search_for(%(searchInput)s)", {"searchInput":searchInput})
+        foundResults = cur.fetchall()
+        # cur.callproc("search_for", (searchInput,))
+        # for result in cur.stored_results():
+        #     foundResults = result.fetchall()
 
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
@@ -963,7 +977,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 #         connection.close()
 #         raise ValueError("You must specify a mode in the cart_sql_operation function!")
 
-#     cur = connection.cursor(buffered=True)
+#     cur = connection.cursor()
 
 #     userID = kwargs.get("userID")
 
@@ -1001,7 +1015,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 #         connection.close()
 #         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
 
-#     cur = connection.cursor(buffered=True)
+#     cur = connection.cursor()
 
 #     userID = kwargs.get("userID")
 
@@ -1021,7 +1035,7 @@ def course_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
 #         cur.execute("DELETE FROM purchased WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
 #         connection.commit()
 
-def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode: str=None, **kwargs) -> Union[list, None]:
+def review_sql_operation(connection:pymysql.connections.Connection=None, mode: str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
 
@@ -1033,7 +1047,7 @@ def review_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mo
         connection.close()
         raise ValueError("You must specify a mode in the review_sql_operation function!")
 
-    cur = connection.cursor(buffered=True)
+    cur = connection.cursor()
 
     userID = kwargs.get("userID")
     courseID = kwargs.get("courseID")

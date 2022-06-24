@@ -1,5 +1,5 @@
 # import third party libraries
-import mysql.connector
+import pymysql.cursors
 
 # import local python libraries
 from datetime import datetime
@@ -44,8 +44,8 @@ else:
 
 config["database"] = Constants_Init.DATABASE_NAME
 try:
-    con = mysql.connector.connect(**config)
-except (mysql.connector.errors.ProgrammingError):
+    con = pymysql.connect(**config)
+except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
 cur = con.cursor()
 

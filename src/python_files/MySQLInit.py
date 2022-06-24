@@ -1,5 +1,5 @@
 # import third party libraries
-import mysql.connector
+import pymysql.cursors
 
 # import python standard libraries
 from typing import Optional
@@ -10,7 +10,7 @@ if (__package__ is None or __package__ == ""):
 else:
     from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME, SQL_CLIENT, DEBUG_MODE, REMOTE_SQL_SERVER_IP, SQL_INSTANCE_LOCATION, get_secret_payload
 
-def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_NAME) -> mysql.connector.connection.MySQLConnection:
+def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_NAME) -> pymysql.connections.Connection:
     """
     Get a MySQL connection to the coursefinity database.
     
@@ -28,10 +28,10 @@ def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_
         LOCAL_SQL_CONFIG_COPY = LOCAL_SQL_SERVER_CONFIG.copy()
         if (database is not None):
             LOCAL_SQL_CONFIG_COPY["database"] = database
-        connection = mysql.connector.connect(**LOCAL_SQL_CONFIG_COPY)
+        connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
         return connection
     else:
-        connection: mysql.connector.connection.MySQLConnection = SQL_CLIENT.connect(
+        connection: pymysql.connections.Connection = SQL_CLIENT.connect(
             instance_connection_string=SQL_INSTANCE_LOCATION,
             driver="pymysql",
             user="root",
@@ -40,7 +40,7 @@ def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_
         )
         return connection
 
-def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConnection:
+def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """
     Initialize the database with the necessary tables
 
@@ -130,22 +130,6 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS cart (
-        user_id VARCHAR(32),
-        course_id CHAR(32),
-        PRIMARY KEY (user_id, course_id),
-        FOREIGN KEY (user_id) REFERENCES user(id),
-        FOREIGN KEY (course_id) REFERENCES course(course_id)
-    )""")
-
-    cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
-        user_id VARCHAR(32),
-        course_id CHAR(32),
-        PRIMARY KEY (user_id, course_id),
-        FOREIGN KEY (user_id) REFERENCES user(id),
-        FOREIGN KEY (course_id) REFERENCES course(course_id)
-    )""")
-
     cur.execute("""CREATE TABLE IF NOT EXISTS review (
         user_id VARCHAR(32),
         course_id CHAR(32),
@@ -155,6 +139,22 @@ def mysql_init_tables(debug:bool=False) -> mysql.connector.connection.MySQLConne
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
+
+    # cur.execute("""CREATE TABLE IF NOT EXISTS cart (
+    #     user_id VARCHAR(32),
+    #     course_id CHAR(32),
+    #     PRIMARY KEY (user_id, course_id),
+    #     FOREIGN KEY (user_id) REFERENCES user(id),
+    #     FOREIGN KEY (course_id) REFERENCES course(course_id)
+    # )""")
+
+    # cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
+    #     user_id VARCHAR(32),
+    #     course_id CHAR(32),
+    #     PRIMARY KEY (user_id, course_id),
+    #     FOREIGN KEY (user_id) REFERENCES user(id),
+    #     FOREIGN KEY (course_id) REFERENCES course(course_id)
+    # )""")
 
     # end of table creation
     mydb.commit()
@@ -215,14 +215,14 @@ if (__name__ == "__main__"):
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised the tables in the database, \"coursefinity\"!")
-    except (mysql.connector.errors.ProgrammingError) as e:
+    except (pymysql.err.ProgrammingError) as e:
         print("\nSyntax error caught!")
         print("More details:")
         print(e)
 
         delete_mysql_database(debug=debugFlag)
         print("\nDeleted all tables as there was a syntax error in the schema.")
-    except (mysql.connector.errors.DatabaseError) as e:
+    except (pymysql.err.DatabaseError) as e:
         print("\nDatabase error caught!")
         print("More details:")
         print(e)

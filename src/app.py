@@ -44,30 +44,29 @@ app = Flask(__name__)
 csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
-# not done still finding out which src needs what
+# temporary, * wildcard allows all
 csp = {
-    "default-src": [
-        "\"self\"",
-        "cdn.jsdelivr.net",
-    ],
     "img-src": "*",
-    "script-src": [
-            "\"self\"",
-            "cdn.jsdelivr.net",
-        ],
+    "script-src": "*",
+    # "script-src": [
+    #         "\"self\"",
+    #         "cdn.jsdelivr.net",
+    #     ],
 }
 
-feature_policy={
-    "geolocation": "\"none\"",
-},
+# Feature Policy and Permissions Policy arise an attribute error 
+# feature_policy={
+#     "geolocation": "\"none\"",
+# },
 
-permission_policy = {
-    "geolocation": "()",
-    "microphone": "()"
-}
+# permissions_policy = {
+#     "geolocation": "()",
+#     "microphone": "()"
+# }
 
-#Don't use yet, unsure wether policies will mess up website
-# talisman = Talisman(app, content_security_policy=csp, feature_policy=feature_policy, permission_policy=permission_policy, content_security_policy_nonce_in=['script-src','img-src'], x_xss_protection=True)
+# xss_protection is already defaulted True
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'], x_xss_protection=True)
+
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = DEBUG_MODE

@@ -1,5 +1,5 @@
 # import third party libraries
-import mysql.connector
+import pymysql.cursors
 from google_crc32c import Checksum as g_crc32c
 
 # import python standard libraries
@@ -130,17 +130,19 @@ else:
 
 config["database"] = "coursefinity"
 try:
-    con = mysql.connector.connect(**config)
-except (mysql.connector.errors.ProgrammingError):
+    con = pymysql.connect(**config)
+except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
     sysExit(1)
-cur = con.cursor(buffered=True)
+cur = con.cursor()
 
 # convert role name to role id
 ADMIN_ROLE_ID = None
-cur.callproc("get_role_id", ("Admin",))
-for result in cur.stored_results():
-    ADMIN_ROLE_ID = result.fetchone()[0]
+cur.execute("call get_role_id(%(Admin)s)", {"Admin":"Admin"})
+ADMIN_ROLE_ID = cur.fetchone()[0]
+# cur.callproc("get_role_id", ("Admin",))
+# for result in cur.stored_results():
+#     ADMIN_ROLE_ID = result.fetchone()[0]
 
 if (ADMIN_ROLE_ID is None):
     print("Error: Role not found")
