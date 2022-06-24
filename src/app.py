@@ -40,7 +40,7 @@ from os import environ
 app = Flask(__name__)
 
 #flask extension that prevents cross site request forgery
-csrf = Seasurf(app)
+csrf = SeaSurf(app)
 
 #flask extension that helps set policies for the web app
 # not done still finding out which src needs what
@@ -251,8 +251,8 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
             recaptchaToken = request.form.get("g-recaptcha-response")
-            # print(recaptchaToken)
-            # print(len(recaptchaToken))
+            print(recaptchaToken)
+            print(len(recaptchaToken))
             # if (recaptchaToken is not None and recaptchaToken != ""):
             #     print("creating assessment")
             #     try:
