@@ -406,7 +406,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
 
 class JWTExpiryProperties:
-    def __init__(self, activeDuration:Optional[int]=0, strDate:Optional[str]=None):
+    def __init__(self, activeDuration:Optional[int]=0, strDate:Optional[str]=None) -> None:
         """
         Initializes the JWTExpiryProperties object
         
@@ -443,18 +443,21 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-    plaintext:str="", keyRingID:str="coursefinity", keyID:str=None, 
+    plaintext:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str=None, 
     versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
     ) -> Union[dict, bytes]:
     """
     Sign a message using the public key part of an asymmetric EC key.
     
     Args:
-    - plaintext (str): the plaintext to sign
+    - plaintext (str|dict): the plaintext to sign
     - keyRingID: The ID of the key ring.
+        - Defaults to "coursefinity
     - keyID: The ID of the key.
     - versionID: The version of the key.
+        - Defaults to SIGNATURE_VERSION_ID defined in NormalFunctions.py
     - b64EncodeData: Whether to base64 encode the data or not.
+        - Set this to True if you want to use the base64 encoded data for JWT.
     
     Returns:
     - A dictionary containing:
@@ -523,9 +526,11 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     Args:
     - data (dict, bytes): the data to verify
     - keyRingID: The ID of the key ring.
+        - Defaults to "coursefinity
     - keyID: The ID of the key.
     - getData: Whether to return the data or not.
         - Set this to True if the data is in base64 encoded format.
+        - Generally True for JWT.
     
     Returns:
     - bool (true if verified and false otherwise)
