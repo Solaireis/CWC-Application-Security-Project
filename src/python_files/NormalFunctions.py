@@ -162,7 +162,7 @@ def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=Non
     - logLocation (str): The location of the log to write to
         - Defaults to "test-logs"
         - Will log to that location in the default log bucket
-    - logMessage (str, dict): The message to write to the log
+    - logMessage (str|dict): The message to write to the log
         - If str, the message is written to the log with the given severity
         - If dict, you can define your log message together with the severity in the dict.
             - Generally you will have a "message" key in the dict that contains the log entry
@@ -224,7 +224,7 @@ def crc32c(data:Union[bytes, str]) -> int:
     Calculates the CRC32C checksum of the provided data
 
     Args:
-    - data (str, bytes): the bytes of the data which the checksum should be calculated
+    - data (str|bytes): the bytes of the data which the checksum should be calculated
         - If the data is in string format, it will be encoded to bytes
 
     Returns:
@@ -526,7 +526,7 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     Verify the signature of an message signed with an asymmetric EC key.
     
     Args:
-    - data (dict, bytes): the data to verify
+    - data (dict|bytes): the data to verify
     - keyRingID: The ID of the key ring.
         - Defaults to "coursefinity
     - keyID: The ID of the key.
@@ -740,7 +740,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
                         Otherwise, it will just load from the saved text file if found.
 
     Returns:
-        - A tuple containing the IP address to blacklist
+    - A tuple containing the IP address to blacklist
     """
     if (checkForUpdates):
         response = req.get("https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt")

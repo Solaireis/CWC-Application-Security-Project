@@ -87,8 +87,12 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     If returnUserInfo is True, it will return a tuple of the user's record.
     
     Args:
-        - userID: The user's ID
-        - returnUserInfo: If True, it will return a tuple of the user's record.
+    - userID: The user's ID
+    - returnUserInfo: If True, it will return a tuple of the user's record.
+    
+    Returns:
+    - The image path (str) only if returnUserInfo is False
+    - The image path (str) and the user's record (tuple) if returnUserInfo is True
     """
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
     imageSrcPath = userInfo[5]
@@ -115,9 +119,9 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     Connects to the database and returns the connection object
     
     Args:
-        - table: The table to connect to ("course", "user")
-        - mode: The mode to use ("insert", "edit", "login", etc.)
-        - kwargs: The keywords to pass into the respective sql operation functions
+    - table: The table to connect to ("course", "user")
+    - mode: The mode to use ("insert", "edit", "login", etc.)
+    - kwargs: The keywords to pass into the respective sql operation functions
     
     Returns the returned value from the SQL operation.
     """

@@ -33,7 +33,7 @@ def crc32c(data:Union[bytes, str]) -> int:
     Calculates the CRC32C checksum of the provided data
     
     Args:
-    - data (str, bytes): the bytes of the data which the checksum should be calculated
+    - data (str|bytes): the bytes of the data which the checksum should be calculated
         - If the data is in string format, it will be encoded to bytes
     
     Returns:

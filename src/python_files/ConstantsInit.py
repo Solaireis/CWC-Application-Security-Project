@@ -35,7 +35,7 @@ def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:boo
     - decodeSecret (bool): If true, decode the returned secret bytes payload to string type.
     
     Returns:
-    - secretPayload (str): the secret payload
+    - secretPayload (str|bytes): the secret payload
     """
     # construct the resource name of the secret version
     secretName = SM_CLIENT.secret_version_path(GOOGLE_PROJECT_ID, secretID, versionID)
