@@ -10,7 +10,7 @@ from six import ensure_binary
 import requests as req, uuid, re, json
 from datetime import datetime, timedelta
 from typing import Union, Optional
-from base64 import urlsafe_b64encode, b64decode, b64encode
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
 from hashlib import sha1, sha384
 from pathlib import Path
@@ -513,8 +513,8 @@ def EC_sign(
     # Return the signature
     if (b64EncodeData):
         encodedDataList = [
-            b64encode(json.dumps(data).encode("utf-8")),
-            b64encode(response.signature)
+            urlsafe_b64encode(json.dumps(data).encode("utf-8")),
+            urlsafe_b64encode(response.signature)
         ]
         return b".".join(encodedDataList)
     else:
@@ -548,9 +548,9 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     elif (isinstance(data, bytes)):
         # if data is base64 encoded
         b64EncodedDataList = data.split(b".")
-        data = json.loads(b64decode(b64EncodedDataList[0]).decode("utf-8"))
+        data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
         plaintext = data["message"]
-        signature = b64decode(b64EncodedDataList[1])
+        signature = urlsafe_b64decode(b64EncodedDataList[1])
         data["signature"] = signature
         versionID = data["versionID"]
     else:
