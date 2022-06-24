@@ -24,6 +24,9 @@ from google.cloud import logging as g_logging
 from google.oauth2 import service_account
 from google.cloud.sql.connector import Connector as MySQLConnector
 
+# For Google Cloud reCAPTCHA API (Third-party libraries)
+from google.cloud import recaptchaenterprise_v1
+
 """------------------------ START OF DEFINING FUNCTIONS ------------------------"""
 
 def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:bool=True) -> Union[str, bytes]:
@@ -132,6 +135,11 @@ LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(get_secre
 GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
 GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
 GOOGLE_SERVICE = google_init()
+
+# For Google reCAPTCHA API
+RECAPTCHA_JSON = json.loads(get_secret_payload(secretID="google-recaptcha"))
+RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
+LOGIN_SITE_KEY = "6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a"
 
 # For Google Key Management Service API
 LOCATION_ID = "asia-southeast1"

@@ -19,16 +19,17 @@ from pathlib import Path
 # import local python libraries
 if (__package__ is None or __package__ == ""):
     from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
-                              LOGGING_CLIENT
+                              LOGGING_CLIENT, RECAPTCHA_CLIENT
     from Errors import *
 else:
     from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, GOOGLE_SERVICE, \
-                               LOGGING_CLIENT
+                               LOGGING_CLIENT, RECAPTCHA_CLIENT
     from .Errors import *
 
 # import third party libraries
 import PIL
 from PIL import Image as PillowImage
+from flask_limiter.util import get_remote_address
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
@@ -39,13 +40,17 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
 
-# For Google KMS (key management service) API (Third-party libraries)
+# For Google Cloud KMS (key management service) API (Third-party libraries)
 from google_crc32c import Checksum as g_crc32c
 from google.cloud import kms
 from google.cloud.kms_v1.types import resources
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+
+# For Google Cloud reCAPTCHA API (Third-party libraries)
+from google.cloud import recaptchaenterprise_v1
+from google.cloud.recaptchaenterprise_v1 import Assessment
 
 """------------------------------ Define Constants ------------------------------"""
 
@@ -78,6 +83,75 @@ SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotatio
 COMPILED_2FA_REGEX_DICT = {}
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
+    """
+    Creates an assessment in Google Cloud reCAPTCHA API.
+    
+    Args:
+    - siteKey (str): The site key of the reCAPTCHA site.
+    - recaptchaToken: The token that is sent to the Google Cloud reCAPTCHA API.
+    - recaptchaAction: The action name that is expected to be performed by the user.
+    
+    Returns:
+    - An Assessment object.
+    """
+    event = recaptchaenterprise_v1.Event()
+    event.site_key = siteKey
+    event.token = recaptchaToken
+    if (recaptchaAction is not None):
+        event.expected_action = recaptchaAction
+
+    assessment = recaptchaenterprise_v1.Assessment()
+    assessment.event = event
+
+    projectName = f"projects/{GOOGLE_PROJECT_ID}"
+
+    # construct the assessment request
+    request = recaptchaenterprise_v1.CreateAssessmentRequest()
+    request.parent = projectName
+    request.assessment = assessment
+
+    # send to Google reCAPTCHA API
+    response = RECAPTCHA_CLIENT.create_assessment(request)
+
+    # check if the response is valid
+    print("action", response)
+    print("action", response.token_properties.action)
+    print("valid", response.token_properties.valid)
+    if (not response.token_properties.valid):
+        print("invalid due to", response.token_properties.invalid_reason)
+        raise InvalidRecaptchaTokenError("The reCAPTCHA token is not valid.")
+
+    # check if the expected action was executed
+    if (recaptchaAction is not None):
+        if (response.token_properties.action != recaptchaAction):
+            raise InvalidRecaptchaActionError("The reCAPTCHA action is not valid.")
+
+    # get the risk score and the reason(s)
+    # For more information on interpreting the assessment,
+    # see: https://cloud.google.com/recaptcha-enterprise/docs/interpret-assessment
+    # might wanna log this btw 
+    for reason in response.risk_analysis.reasons:
+        print(reason)
+    print("Risk score:", response.risk_analysis.score)
+    return response
+
+def score_within_acceptable_threshold(riskScore:int, threshold:int=0.5) -> bool:
+    """
+    Checks if the risk score is within the acceptable threshold.
+    
+    Args:
+    - riskScore (int): The risk score of the reCAPTCHA token.
+    - threshold (int): The acceptable threshold.
+        - Defaults to 0.5 
+        - https://cloud.google.com/recaptcha-enterprise/docs/best-practices-oat
+    
+    Returns:
+    - True if the risk score is within the acceptable threshold.
+    - False if the risk score is not within the acceptable threshold.
+    """
+    return (threshold <= riskScore)
 
 def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """

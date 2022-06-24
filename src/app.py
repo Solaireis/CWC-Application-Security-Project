@@ -13,6 +13,7 @@ from google.auth.exceptions import GoogleAuthError
 
 # import flask libraries (Third-party libraries)
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Markup, abort
+from flask import wrappers
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -22,7 +23,8 @@ from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
 from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
-                                       FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH
+                                       FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH, \
+                                       LOGIN_SITE_KEY
 
 # import python standard libraries
 from datetime import datetime
@@ -125,6 +127,21 @@ def before_request() -> None:
         if (request.endpoint != "twoFactorAuthSetup" and request.endpoint != "static"):
             session.pop("2fa_token", None)
 
+@app.after_request # called after each request to the application
+def after_request(response:wrappers.Response) -> wrappers.Response:
+    """
+    Add headers to cache the rendered page for 10 minutes.
+    
+    Note that max-age is for the browser, s-maxage is for the CDN.
+    It will be useful when the flask web app is deployed to a server.
+    This helps to reduce loads on the flask webapp such that the server can handle more requests
+    as it doesn't have to render the page again for each request to the application.
+    """
+    # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
+    # will be uncommented when the web app is ready to be hosted on firebase.
+    # response.headers["Cache-Control"] = "public, max-age=600, s-maxage=600"
+    return response
+
 def validate_session() -> None:
     """
     Validates the session if user is logged in.
@@ -169,21 +186,6 @@ def validate_session() -> None:
         # clear the session as it should not be possible to have both session
         session.clear()
 
-@app.after_request # called after each request to the application
-def add_header(response):
-    """
-    Add headers to cache the rendered page for 10 minutes.
-    
-    Note that max-age is for the browser, s-maxage is for the CDN.
-    It will be useful when the flask web app is deployed to a server.
-    This helps to reduce loads on the flask webapp such that the server can handle more requests
-    as it doesn't have to render the page again for each request to the application.
-    """
-    # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
-    # will be uncommented when the web app is ready to be hosted on firebase.
-    # response.headers["Cache-Control"] = "public, max-age=600, s-maxage=600"
-    return response
-
 @app.route("/")
 def home():
     validate_session()
@@ -217,6 +219,25 @@ def login():
             requestIPAddress = get_remote_address()
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
+            recaptchaToken = request.form.get("g-recaptcha-response")
+            # if (recaptchaToken is not None and recaptchaToken != ""):
+            #     print("creating assessment")
+            #     try:
+            #         recaptchaResponse = create_assessment(siteKey=LOGIN_SITE_KEY, recaptchaToken=recaptchaToken)
+            #         print("response", recaptchaResponse)
+            #     except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            #         flash("Please check the reCAPTCHA box and try again.", "Danger")
+            #         return render_template("users/guest/login.html", form=loginForm)
+
+            #     if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.6)):
+            #         # if the score is not within the acceptable threshold
+            #         # then the user is likely a bot
+            #         # hence, we will flash an error message and return a 403 error
+            #         flash("Please check the reCAPTCHA box and try again.", "Danger")
+            #         return render_template("users/guest/login.html", form=loginForm)
+            # else:
+            #     flash("Please check the reCAPTCHA box and try again.", "Danger")
+            #     return render_template("users/guest/login.html", form=loginForm)
 
             userInfo = isAdmin = successfulLogin = userHasTwoFA = False
             try:

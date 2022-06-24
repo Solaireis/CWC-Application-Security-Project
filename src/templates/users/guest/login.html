@@ -1,5 +1,8 @@
 {% extends "guest_base.html" %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <script src="https://www.google.com/recaptcha/enterprise.js?render='6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a'&onload=onloadCallback&render=explicit"></script>
+{% endblock %}
 {% block title %}Login | CourseFinity{% endblock %}
 
 {% block content %}
@@ -38,7 +41,7 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <form action="" method="POST" class="row g-3">
+                <test action="" method="POST" class="row g-3" id="loginForm">
                     <h4 class="text-white">Login to your account!</h4>
                     <div class="col-12 text-white">
                         {{ render_field(form.email, class="form-control") }}
@@ -50,9 +53,12 @@
                         <h6><a href="#" class="forgetPWD">Forget password?</a></h6>
                     </div>
                     <div class="col-12">
-                        <button type="submit" class="btn btn-colour text-white float-end">Login</button>
+                        <button class="btn btn-colour text-white float-end" id="login">Login</button>
                     </div>
-                </form>
+                    <div class="col-12 d-flex justify-content-center">
+                        <div id="googleRecaptcha"></div>
+                    </div>
+                </test>
                 <hr class="mt-4 text-white">
                 <div class="col-12 d-flex justify-content-center">
                     <a class="btn btn-light text-dark" href="{{ url_for('loginViaGoogle') }}"><img src="{{ url_for('static', filename='/images/logos/google-logo.png') }}"> Login with Google!</a>
@@ -66,4 +72,19 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var onloadCallback = function() {
+        grecaptcha.enterprise.render("googleRecaptcha", {
+            "sitekey" : " 6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a",
+        });
+    };
+    grecaptcha.enterprise.ready(function() {
+        grecaptcha.enterprise.execute('6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a', {action: 'login'}).then(function(token) {
+            console.log(token);
+        });
+    });
+</script>
 {% endblock %}

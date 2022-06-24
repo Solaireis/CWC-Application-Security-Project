@@ -119,3 +119,13 @@ class LoginFromNewIpAddressError(Exception):
     """
     Raised if the user tries to login from a new IP address.
     """
+
+class InvalidRecaptchaTokenError(Exception):
+    """
+    Raised if the user tries to login but the recaptcha token is invalid.
+    """
+
+class InvalidRecaptchaActionError(Exception):
+    """
+    Raised if the user tries to login but the recaptcha action is invalid.
+    """
