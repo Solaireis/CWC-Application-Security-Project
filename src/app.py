@@ -16,6 +16,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask import wrappers
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
+from flask_seasurf import Seasurf
 
 # import local python libraries
 from python_files.AppFunctions import *
@@ -36,6 +38,35 @@ from os import environ
 """Web app configurations"""
 # general Flask configurations
 app = Flask(__name__)
+
+#flask extension that prevents cross site request forgery
+csrf = Seasurf(app)
+
+#flask extension that helps set policies for the web app
+# not done still finding out which src needs what
+csp = {
+    'default-src': [
+        '\'self\'',
+        'cdn.jsdelivr.net',
+    ],
+    'img-src': '*',
+    'script-src': [
+            '\'self\'',
+            'cdn.jsdelivr.net',
+        ],
+}
+
+feature_policy={
+    'geolocation': '\'none\'',
+},
+
+permission_policy = {
+    'geolocation': '()',
+    'microphone': '()'
+}
+
+#Don't use yet, unsure wether policies will mess up website
+# talisman = Talisman(app, content_security_policy=csp, feature_policy=feature_policy, permission_policy=permission_policy, content_security_policy_nonce_in=['script-src','img-src'], x_xss_protection=True)
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = DEBUG_MODE
