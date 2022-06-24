@@ -22,6 +22,7 @@ from flask_seasurf import SeaSurf
 # import local python libraries
 from python_files.AppFunctions import *
 from python_files.NormalFunctions import *
+from python_files.StripeFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
 from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
@@ -109,11 +110,11 @@ app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
 app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
 
 # duration for locked accounts before user can try to login again
-app.config["LOCKED_ACCOUNT_DURATION"] = 30 # 
+app.config["LOCKED_ACCOUNT_DURATION"] = 30 #
 
 # To allow Google OAuth2.0 to work as it will only work in https if this not set to 1/True
 if (app.config["DEBUG_FLAG"]):
-    environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
+    environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 """End of Web app configurations"""
 
@@ -121,7 +122,7 @@ if (app.config["DEBUG_FLAG"]):
 def before_first_request() -> None:
     """
     Called called at the very first request to the web app.
-    
+
     Returns:
     - None
     """
@@ -138,7 +139,7 @@ def before_first_request() -> None:
 def before_request() -> None:
     """
     Called before each request to the web app.
-    
+
     Returns:
     - None
     """
@@ -151,7 +152,7 @@ def before_request() -> None:
     # check if 2fa_token key is in session
     if ("2fa_token" in session):
         # remove if the endpoint is not the same as twoFactorAuthSetup
-        # note that since before_request checks for every request, 
+        # note that since before_request checks for every request,
         # meaning the css, js, and images are also checked when a user request the webpage
         # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
         # hence, adding allowing if the request endpoint is pointing to a static file
@@ -162,7 +163,7 @@ def before_request() -> None:
 def after_request(response:wrappers.Response) -> wrappers.Response:
     """
     Add headers to cache the rendered page for 10 minutes.
-    
+
     Note that max-age is for the browser, s-maxage is for the CDN.
     It will be useful when the flask web app is deployed to a server.
     This helps to reduce loads on the flask webapp such that the server can handle more requests
@@ -176,9 +177,9 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
 def validate_session() -> None:
     """
     Validates the session if user is logged in.
-    
+
     Used at every route functions.
-    
+
     Returns
     - None
     """
@@ -232,7 +233,7 @@ def home():
     elif ("admin" in session):
         accType = "Admin"
 
-    return render_template("users/general/home.html", imageSrcPath=imageSrcPath,   
+    return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
@@ -301,10 +302,10 @@ def login():
                 # sends an email with a generated TOTP code to authenticate the user
                 # 4120 bits/824 characters in length (5 bits per base32 character).
                 # Chose the length of the code to be 824 characters
-                # as it must be a multiple of 8 for a length that is 
+                # as it must be a multiple of 8 for a length that is
                 # a multiple of 8 to avoid unexpected behaviour when verifying the TOTP
                 # https://github.com/pyauth/pyotp/issues/115
-                generatedTOTPSecretToken = pyotp.random_base32(length=824) 
+                generatedTOTPSecretToken = pyotp.random_base32(length=824)
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
                 messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
@@ -383,9 +384,9 @@ def loginViaGoogle():
     if ("user" not in session or "admin" not in session):
         # https://developers.google.com/identity/protocols/oauth2/web-server#python
         authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
-            # Enable offline access so that you can refresh an 
+            # Enable offline access so that you can refresh an
             # access token without re-prompting the user for permission
-            access_type="offline", 
+            access_type="offline",
 
             # Enable incremental authorization
             # Recommended as a best practice according to Google documentation
@@ -418,7 +419,7 @@ def loginCallback():
 
     try:
         # clock_skew_in_seconds=5 seconds as it might take some time to retreive the token from Google API
-        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=5) 
+        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=5)
     except (ValueError, GoogleAuthError):
         flash("Failed to verify Google login! Please try again!", "Danger")
         return redirect(url_for("login"))
@@ -668,7 +669,7 @@ def twoFactorAuthSetup():
 
         # to save the image in the memory buffer
         # instead of saving the qrcode png as a file in the web server
-        stream = BytesIO() 
+        stream = BytesIO()
 
         # create a qrcode object
         qrCodeData = qrcode.make(totp, box_size=15)
@@ -699,8 +700,8 @@ def twoFactorAuthSetup():
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
-                logLocation="coursefinity-web-app", 
-                logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.", 
+                logLocation="coursefinity-web-app",
+                logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.",
                 severity="ALERT"
             )
             return redirect(url_for("twoFactorAuthSetup"))
@@ -1018,7 +1019,7 @@ def videoUpload():
             if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video")
                 return redirect(url_for("videoUpload"))
-            
+
             file = request.files.get("courseVideo")
             filename = secure_filename(file.filename)
 
@@ -1030,7 +1031,7 @@ def videoUpload():
 
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
             file.save(Path(filePath).joinpath(filename))
-            
+
             session["course-data"] = (courseID, filePathToStore)
             return redirect(url_for("createCourse"))
         else:
@@ -1080,7 +1081,7 @@ def createCourse():
 
                 # print(f"This is the filename for the inputted file : {filename}")
                 # filePath = Path(app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-                # print(f"This is the filePath for the inputted file: {filePath}")            
+                # print(f"This is the filePath for the inputted file: {filePath}")
                 # file.save(filePath)
 
                 sql_operation(table="course", mode="insert",courseID=courseData[0], teacherId=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
@@ -1111,8 +1112,8 @@ def teacherPage(teacherID):
         userPurchasedCourses = userInfo[-1]
         accType = userInfo[1]
 
-    return render_template("users/general/teacher_page.html",                              
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername, 
+    return render_template("users/general/teacher_page.html",
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername,
         teacherProfilePath=teacherProfilePath,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
@@ -1122,7 +1123,7 @@ def coursePage(courseID):
     validate_session()
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
-    # the course id is 
+    # the course id is
     #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     # courseName = courses[0][1]
@@ -1166,7 +1167,7 @@ def courseReview(courseID):
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     courses = sql_operation(table="course", mode="", courseID=courseID)
-    
+
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
@@ -1180,7 +1181,7 @@ def purchaseView(courseID):
     validate_session()
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
-    # the course id is 
+    # the course id is
     #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
@@ -1235,21 +1236,22 @@ def cart():
         if request.method == "POST":
             # Remove item from cart
             courseID = request.form.get("courseID")
-            sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
+            sql_operation(table="cart", mode="remove_from_cart", userID=userID, courseID=courseID)
 
             return redirect(url_for("cart"))
 
         else:
             imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
-            cartCourseIDs = userInfo[-2]
+            # print(userInfo)
+            cartCourseIDs = loads(userInfo[-2])
             # print(cartCourseIDs)
-            
+
             courseList = []
             subtotal = 0
 
             for courseID in cartCourseIDs:
-                
-                course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+
+                course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
 
                 courseList.append({"courseID" : course[0],
                                    "courseOwnerLink" : url_for("teacherPage", teacherID=course[1]), # course[1] is teacherID
@@ -1272,7 +1274,32 @@ def cart():
 def checkout():
     validate_session()
     if "user" in session:
+        """
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[
+                            {
+                             "price_data": {
+                                            "unit_amount": 1,
+                                            "currency": "usd",
+                                            # "product": f'{module_id}',
+                                            "recurring": {"interval": "month"},
+                                           },
+                             'price': f"{price}",
+                             'quantity': 1,
+                            }
+                           ],
+                mode = 'payment',
+                success_url = url_for('purchaseHistory'),
+                cancel_url = url_for('cart'),
+            )
+        except Exception as error:
+            print(str(error))
 
+        return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
+        """
+        return redirect(url_for('cart'))
+        """
         userID = session["user"]
 
         if request.method == "POST":
@@ -1359,7 +1386,7 @@ def checkout():
             print(cardErrors)
 
             return render_template("users/loggedin/checkout.html", cardErrors=cardErrors , cartCount=cartCount, subtotal=f"{subtotal:,.2f}", cardInfo=cardInfo, currentYear=currentYear, imageSrcPath=get_image_path(session["user"]), accType=userInfo[1])
-
+        """
     else:
         return redirect(url_for("login"))
 
@@ -1399,9 +1426,9 @@ def search():
 
     accType = imageSrcPath = None
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True) 
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, accType = userInfo[1])
-    
+
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), accType=accType)
 
 @app.route("/admin-profile", methods=["GET","POST"])

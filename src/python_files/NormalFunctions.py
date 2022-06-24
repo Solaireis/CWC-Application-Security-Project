@@ -68,7 +68,7 @@ PASSWORD_REGEX = re.compile(r"""
 (?=.*?[\d])                                                         # at least one digit
 (?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
 [A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
-{10,}                                                               # at least 10 characters long  
+{10,}                                                               # at least 10 characters long
 $                                                                   # end of password
 """, re.VERBOSE)
 
@@ -79,7 +79,7 @@ with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"),
 # For Google KMS asymmetric encryption and decryption
 SESSION_COOKIE_ENCRYPTION_VERSION = 1 # update the version if there is a rotation of the asymmetric keys
 
-# For 2FA setup key regex to validate if the setup is a valid base32 setup key 
+# For 2FA setup key regex to validate if the setup is a valid base32 setup key
 COMPILED_2FA_REGEX_DICT = {}
 
 """------------------------------ End of Defining Constants ------------------------------"""
@@ -87,12 +87,12 @@ COMPILED_2FA_REGEX_DICT = {}
 def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
     """
     Creates an assessment in Google Cloud reCAPTCHA API.
-    
+
     Args:
     - siteKey (str): The site key of the reCAPTCHA site.
     - recaptchaToken: The token that is sent to the Google Cloud reCAPTCHA API.
     - recaptchaAction: The action name that is expected to be performed by the user.
-    
+
     Returns:
     - An Assessment object.
     """
@@ -128,7 +128,7 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
     # get the risk score and the reason(s)
     # For more information on interpreting the assessment,
     # see: https://cloud.google.com/recaptcha-enterprise/docs/interpret-assessment
-    # might wanna log this btw 
+    # might wanna log this btw
     for reason in response.risk_analysis.reasons:
         print(reason)
     print("Risk score:", response.risk_analysis.score)
@@ -137,14 +137,14 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
 def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> bool:
     """
     Checks if the risk score is within the acceptable threshold.
-    
+
     Args:
     - riskScore (int): The risk score of the reCAPTCHA token.
     - threshold (float): The acceptable threshold.
         - Range: 0.0 to 1.0
         - Defaults to 0.5 
         - https://cloud.google.com/recaptcha-enterprise/docs/best-practices-oat
-    
+
     Returns:
     - True if the risk score is within the acceptable threshold.
     - False if the risk score is not within the acceptable threshold.
@@ -154,7 +154,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
 def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
-    
+
     Args:
     - logLocation (str): The location of the log to write to
         - Defaults to "test-logs"
@@ -201,11 +201,11 @@ def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=Non
 def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     """
     Get information about a key in Google Cloud KMS API.
-    
+
     Args:
     - keyRingID (str): The ID of the key ring.
     - keyName (str): the name of the key to get information about
-    
+
     Returns:
     - keyInfo (google.cloud.kms_v1.types.resources.CryptoKey): the key information
     """
@@ -219,11 +219,11 @@ def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
 def crc32c(data:Union[bytes, str]) -> int:
     """
     Calculates the CRC32C checksum of the provided data
-    
+
     Args:
     - data (str, bytes): the bytes of the data which the checksum should be calculated
         - If the data is in string format, it will be encoded to bytes
-    
+
     Returns:
     - An int representing the CRC32C checksum of the provided bytes
     """
@@ -232,13 +232,13 @@ def crc32c(data:Union[bytes, str]) -> int:
 def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
     """
     Using Google Symmetric Encryption Algorithm, encrypt the provided plaintext.
-    
+
     Args:
     - plaintext (str): the plaintext to encrypt
     - keyRingID (str): the key ring ID
         - Defaults to "coursefinity-users"
     - keyID (str): the key ID/name of the key
-    
+
     Returns:
     - ciphertext (bytes): the ciphertext
     """
@@ -267,16 +267,16 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
 def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", keyID:str="") -> str:
     """
     Using Google Symmetric Encryption Algorithm, decrypt the provided ciphertext.
-    
+
     Args:
     - ciphertext (bytes): the ciphertext to decrypt
     - keyRingID (str): the key ring ID
         - Defaults to "coursefinity-users"
     - keyID (str): the key ID/name of the key
-    
+
     Returns:
     - plaintext (str): the plaintext
-    
+
     Raises:
     - CiphertextIsNotBytesError: If the ciphertext is not bytes
     - DecryptionError: If the decryption failed
@@ -284,7 +284,7 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
     """
     if (isinstance(ciphertext, bytearray)):
         ciphertext = bytes(ciphertext)
-    
+
     if (not isinstance(ciphertext, bytes)):
         raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
 
@@ -313,12 +313,12 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
 def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", versionID:str=None) -> None:
     """
     Set a new key version as the primary key version for encryption and decryption.
-    
+
     Args:
     - keyRingID (str): the key ring ID
     - keyName (str): the name of the key to create (acts as the key ID)
     - versionID (str): the key version to set the primary key version for the specificed keyName (e.g. "1")
-    
+
     Returns:
     - None
     """
@@ -331,11 +331,11 @@ def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", v
 def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
     """
     In the event that the key ID already exists
-    
+
     because Google Cloud KMS API does not allow deletion of keys but only the key versions and materials,
-    
+
     hence, use this function to create a new key version for that existing key ID.
-    
+
     Args:
     - keyRingID (str): the key ring ID
     - keyName (str): the name of the key to create (acts as the key ID)
@@ -343,7 +343,7 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
         - If true, the new key version will be set as the primary key version for encryption and decryption
         - Must be careful as old data encrypted with the old key version may not be able to be decrypted after 30 to 3 hours.
         - More details: https://cloud.google.com/kms/docs/consistency#key_versions
-    
+
     Returns:
     - None
     """
@@ -370,7 +370,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
     Args:
     - keyRingID (str): the key ring ID
     - keyName (str): the name of the key to create (acts as the key ID)
-    
+
     Returns:
     - None
     """
@@ -390,7 +390,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         },
         "rotation_period": {
             "seconds": 60 * 60 * 24 * 30, # 30 days
-        },  
+        },
         "next_rotation_time": {
             "seconds": int(time()) + 60 * 60 * 24, # 24 hours from now
         }
@@ -405,7 +405,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
 def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
-    
+
     Args:
     - plaintext (str): The plaintext to encrypt
     - keyID (str): The ID of the key to use for decryption.
@@ -414,7 +414,7 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str
         - Defaults to "coursefinity"
     - versionID (int): The version ID of the key to use for decryption.
         - Defaults to the defined SESSION_COOKIE_ENCRYPTION_VERSION variable
-    
+
     Returns:
     - A dictionary containing the following keys:
         - ciphertext (bytes): The ciphertext
@@ -443,17 +443,17 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str
 def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity") -> str:
     """
     Decrypts the ciphertext using Google KMS (RSA/asymmetric encryption)
-    
+
     Args:
     - cipherData (dict): A dictionary containing the ciphertext and the version of the key used for encryption
     - keyID (str): The ID of the key to use for decryption.
         - Defaults to "encrypt-decrypt-key"
     - keyRingID (str): The ID of the key ring to use.
         - Defaults to "coursefinity"
-    
+
     Returns:
     - The decrypted ciphertext (str)
-    
+
     Raises:
     - CiphertextIsNotBytesError: If the ciphertext is not bytes
     - DecryptionError: If the decryption failed
@@ -491,9 +491,9 @@ def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID
 def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensions:tuple=None, quality:int=75, optimise:bool=True) -> str:
     """
     Resizes the image at the given path to the given dimensions and compresses it with the given quality.
-    
+
     Converts the image to webp format as well for smaller image file size and saves the image to the given path.
-    
+
     Args:
     - imageData (bytes): The image data to compress and resize
     - imagePath (pathlib.Path): The path to the image to resize
@@ -504,10 +504,10 @@ def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensi
         - Defaults to 75
     - optimise (bool): Whether to optimise the image or not
         - Defaults to True
-    
+
     Returns:
     - The path to the compressed image (pathlib.Path)
-    
+
     Raises:
     - UnidentifiedImageError: If the image at the given path is not a valid image
     """
@@ -540,9 +540,9 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
     """
     Get the IP address to blacklist from the server.
     Though this is not the most effective way of preventing malcious threat actors from
-    accessing the server as they can use VPNs or spoof their ip address, 
+    accessing the server as they can use VPNs or spoof their ip address,
     it acts as another layer of security.
-    
+
     Args:
     - checkForUpdates:  If True, the function will check for updates to the blacklist.
                         Otherwise, it will just load from the saved text file if found.
@@ -556,7 +556,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
             print("Something went wrong!")
             return get_IP_address_blacklist(checkForUpdates=False)
 
-        results = response.text.splitlines() 
+        results = response.text.splitlines()
 
         dateComment = results[3].split(",")[-1].split("+")[0].strip()
         lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S")
@@ -616,7 +616,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
 def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", message:str="", name:str=None) -> dict:
     """
     Create a message for an email.
-    
+
     Args:
     - sender: Email address of the sender.
     - to: Email address of the receiver.
@@ -654,14 +654,14 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
 def send_email(to:str="", subject:str="", body:str="", name:str=None) -> Union[dict, None]:
     """
     Create and send an email message.
-    
+
     Args:
     - to: Email address of the receiver.
     - subject: The subject of the email message.
     - body: The text of the email message. (Can be HTML)
     - name: The name of the recipient.
-    
-    Returns: 
+
+    Returns:
     Message object, including message id or None if there was an error.
     """
     sentMessage = None
@@ -681,13 +681,13 @@ def send_email(to:str="", subject:str="", body:str="", name:str=None) -> Union[d
 def pwd_is_strong(password:str) -> bool:
     """
     Checks if the password is strong against the password regex.
-    
+
     Args:
     - password: The password to check.
-    
+
     Returns:
     - True if the password is strong, False otherwise.
-    
+
     Password complexity requirements:
     - At least 10 characters long
     - At least one lowercase letter
@@ -695,7 +695,7 @@ def pwd_is_strong(password:str) -> bool:
     - At least one digit
     - At least one special character
     - Not more than two identical characters in a row
-    
+
     Resources:
     - https://owasp.org/www-community/password-special-characters
     - https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -707,17 +707,17 @@ def pwd_has_been_pwned(password:str) -> bool:
     Checks if the password is in the haveibeenpwned database.
     If it is found, it means that the password is weak and has been
     leaked in the dark web through breaches from other services/websites.
-    
+
     Args:
     - password: The password to check
-    
+
     Returns:
     - True if the password is in the database, False otherwise.
     """
     # hash the password (plaintext) using sha1 to check against the database
     passwordHash = sha1(password.encode("utf-8")).hexdigest().upper()
 
-    # retrieve the list of possible range from the api database 
+    # retrieve the list of possible range from the api database
     # using the first five characters (to get the hash prefix) of the sha1 hash.
     results = []
     while (1):
@@ -750,14 +750,14 @@ def two_fa_token_is_valid(token:str) -> bool:
     """
     Checks if the 2FA token is valid using the regex,
     ^[A-Z\d]{tokenLength}$
-    
+
     Args:
     - token: The token to check.
-    
+
     Returns:
     - True if the token is valid, False otherwise.
     """
-    # 
+    #
     length = len(token)
     if (length not in COMPILED_2FA_REGEX_DICT):
         # compile the regex if it has not been compiled yet
