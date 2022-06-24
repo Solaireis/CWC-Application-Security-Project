@@ -43,7 +43,7 @@
     <div class="col"> <!--col-8 if PayPal exists -->
 
         <form id = "checkout-form" method = "post">
-
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <label class = "form-label">Card Number</label>
             {% if 'cardNo' in cardErrors %}
             <span class = "fw-bold text-danger"><sup>*Please enter a value.</sup></span>

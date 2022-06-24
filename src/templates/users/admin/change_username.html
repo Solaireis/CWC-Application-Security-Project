@@ -27,6 +27,7 @@
                     {% endif %}
                 {% endwith %}
                 <form action="" method="POST" class="row g-3 ">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <h4 class="text-white">Change Username</h4>
                     <div class="col-12 text-white">
                         {{ render_field(form.updateUsername, class="form-control") }}

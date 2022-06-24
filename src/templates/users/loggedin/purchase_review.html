@@ -15,6 +15,7 @@
 	<div class="box">
 		<div>
 			<form action="" method="POST">
+				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 				<div class="row">
 					<div class="col-sm-6">
 						<h2>Create a review (Less than 200 words):</h2>

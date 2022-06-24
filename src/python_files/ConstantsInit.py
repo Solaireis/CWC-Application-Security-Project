@@ -140,6 +140,7 @@ GOOGLE_SERVICE = google_init()
 RECAPTCHA_JSON = json.loads(get_secret_payload(secretID="google-recaptcha"))
 RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
 LOGIN_SITE_KEY = "6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a"
+SIGNUP_SITE_KEY = "6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B"
 
 # For Google Key Management Service API
 LOCATION_ID = "asia-southeast1"

@@ -36,6 +36,7 @@
         <div class="LSUForm col">
             <div class="login-form bg-dark mt-4 p-4 rounded" id="userForm">
                 <form action="" method="POST" class="row g-3 m-2" enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="submittedForm" value="courseDetails">
                     <h4 class="text-white">Create Course</h4>
                     <div class="col-md-12 text-white col-5">

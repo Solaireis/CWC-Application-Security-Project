@@ -32,6 +32,7 @@
                 {% endwith %}
                 <form action="" method="POST" class="row g-3 ">
                     <h4 class="text-white">Setup 2FA</h4>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
                         <h6>Instructions:</h6>
                         <ol>

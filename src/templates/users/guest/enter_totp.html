@@ -39,6 +39,7 @@
                 {% endwith %}
                 <form action="" method="POST" class="row g-3 p-2">
                     <h4 class="text-white">{{ formHeader }}</h4>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     {% if formBody != "" %}
                         <div class="col-12 text-white">
                             <p>{{ formBody }}</p>

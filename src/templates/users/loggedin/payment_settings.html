@@ -58,6 +58,7 @@
                             <h4 class="card-title margin-top">Add Payment Method</h4>
                             <div class="card-body">
                                 <form action="" method="POST">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <div class="col flex-wrap">
                                         <div class="accepted_cards">
                                             <img src="{{ url_for('static', filename='images/payment/visa.svg') }}" alt="Visa logo" class="payment_logo">

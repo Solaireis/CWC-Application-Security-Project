@@ -31,6 +31,7 @@
 
 <div class="container-sm" id="form">
     <form action="" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <h2>Video Lesson Creation</h2>
         <div class="row">
             <!-- Zoom Thumbnail -->

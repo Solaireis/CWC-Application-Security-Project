@@ -1,5 +1,8 @@
 {% extends "guest_base.html" %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <script src="https://www.google.com/recaptcha/enterprise.js?onload=onloadCallback&render=explicit"></script>
+{% endblock %}
 {% block title %}Sign Up | CourseFinity{% endblock %}
 
 {% block content %}
@@ -28,6 +31,7 @@
                 {% endwith %}
                 <form action="" method="POST" class="row g-3">
                     <h4 class="text-white">Join us and start learning!</h4>
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
                         {{ render_field(form.username, class="form-control") }}
                     </div>
@@ -39,9 +43,12 @@
                     </div>       
                     <div class="col-12 text-white">
                         {{ render_field(form.cfm_password, class="form-control") }}
-                    </div>               
+                    </div>
+                    <div class="col-12 d-flex justify-content-center">
+                        <div id="googleRecaptcha"></div>
+                    </div>          
                     <div class="col-12">
-                        <button type="submit" value="Submit" class="btn btn-colour text-white float-end">Sign Up</button>
+                        <button type="submit" class="btn btn-colour text-white float-end">Sign Up</button>
                     </div>
                 </form>
                 <hr class="mt-4 text-white">
@@ -53,4 +60,15 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var onloadCallback = function() {
+        grecaptcha.enterprise.render("googleRecaptcha", {
+            "sitekey" : "6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B",
+            "action" : "signup"
+        });
+    };
+</script>
 {% endblock %}

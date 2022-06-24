@@ -26,7 +26,7 @@ from python_files.Forms import *
 from python_files.Errors import *
 from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
                                        FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH, \
-                                       LOGIN_SITE_KEY
+                                       LOGIN_SITE_KEY, SIGNUP_SITE_KEY
 
 # import python standard libraries
 from datetime import datetime
@@ -39,30 +39,30 @@ from os import environ
 # general Flask configurations
 app = Flask(__name__)
 
-#flask extension that prevents cross site request forgery
+# flask extension that prevents cross site request forgery
 csrf = SeaSurf(app)
 
-#flask extension that helps set policies for the web app
+# flask extension that helps set policies for the web app
 # not done still finding out which src needs what
 csp = {
-    'default-src': [
-        '\'self\'',
-        'cdn.jsdelivr.net',
+    "default-src": [
+        "\"self\"",
+        "cdn.jsdelivr.net",
     ],
-    'img-src': '*',
-    'script-src': [
-            '\'self\'',
-            'cdn.jsdelivr.net',
+    "img-src": "*",
+    "script-src": [
+            "\"self\"",
+            "cdn.jsdelivr.net",
         ],
 }
 
 feature_policy={
-    'geolocation': '\'none\'',
+    "geolocation": "\"none\"",
 },
 
 permission_policy = {
-    'geolocation': '()',
-    'microphone': '()'
+    "geolocation": "()",
+    "microphone": "()"
 }
 
 #Don't use yet, unsure wether policies will mess up website
@@ -251,26 +251,22 @@ def login():
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
             recaptchaToken = request.form.get("g-recaptcha-response")
-            print(recaptchaToken)
-            print(len(recaptchaToken))
-            # if (recaptchaToken is not None and recaptchaToken != ""):
-            #     print("creating assessment")
-            #     try:
-            #         recaptchaResponse = create_assessment(siteKey=LOGIN_SITE_KEY, recaptchaToken=recaptchaToken)
-            #         print("response", recaptchaResponse)
-            #     except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            #         flash("Please check the reCAPTCHA box and try again.", "Danger")
-            #         return render_template("users/guest/login.html", form=loginForm)
+            if (recaptchaToken is not None and recaptchaToken != ""):
+                try:
+                    recaptchaResponse = create_assessment(siteKey=LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
+                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                    flash("Please check the reCAPTCHA box and try again.", "Danger")
+                    return render_template("users/guest/login.html", form=loginForm)
 
-            #     if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.6)):
-            #         # if the score is not within the acceptable threshold
-            #         # then the user is likely a bot
-            #         # hence, we will flash an error message and return a 403 error
-            #         flash("Please check the reCAPTCHA box and try again.", "Danger")
-            #         return render_template("users/guest/login.html", form=loginForm)
-            # else:
-            #     flash("Please check the reCAPTCHA box and try again.", "Danger")
-            #     return render_template("users/guest/login.html", form=loginForm)
+                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                    # if the score is not within the acceptable threshold
+                    # then the user is likely a bot
+                    # hence, we will flash an error message
+                    flash("Please check the reCAPTCHA box and try again.", "Danger")
+                    return render_template("users/guest/login.html", form=loginForm)
+            else:
+                flash("Please check the reCAPTCHA box and try again.", "Danger")
+                return render_template("users/guest/login.html", form=loginForm)
 
             userInfo = isAdmin = successfulLogin = userHasTwoFA = False
             try:
@@ -474,6 +470,24 @@ def signup():
 
         if (request.method == "POST" and signupForm.validate()):
             # POST request code below
+            recaptchaToken = request.form.get("g-recaptcha-response")
+            if (recaptchaToken is not None and recaptchaToken != ""):
+                try:
+                    recaptchaResponse = create_assessment(siteKey=SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
+                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                    flash("Please check the reCAPTCHA box and try again.")
+                    return render_template("users/guest/signup.html", form=signupForm)
+
+                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.5)):
+                    # if the score is not within the acceptable threshold
+                    # then the user is likely a bot
+                    # hence, we will flash an error message
+                    flash("Please check the reCAPTCHA box and try again.")
+                    return render_template("users/guest/signup.html", form=signupForm)
+            else:
+                flash("Please check the reCAPTCHA box and try again.")
+                return render_template("users/guest/signup.html", form=signupForm)
+
             emailInput = signupForm.email.data
             usernameInput = signupForm.username.data
             passwordInput = signupForm.password.data
@@ -500,7 +514,6 @@ def signup():
 
             passwordInput = PH.hash(passwordInput)
             ipAddress = get_remote_address()
-            # print(f"username: {usernameInput}, email: {emailInput}, password: {passwordInput}, ip: {ipAddress}")
 
             returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 

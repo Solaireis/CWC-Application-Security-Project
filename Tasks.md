@@ -71,6 +71,9 @@
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
   - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
+- Added reCAPTCHA on the login page
+  - Prevent automated attacks such as
+    - Credential stuffing attacks
 
 ---
 

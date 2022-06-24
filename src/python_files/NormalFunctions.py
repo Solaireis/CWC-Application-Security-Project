@@ -116,9 +116,6 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
     response = RECAPTCHA_CLIENT.create_assessment(request)
 
     # check if the response is valid
-    print("action", response)
-    print("action", response.token_properties.action)
-    print("valid", response.token_properties.valid)
     if (not response.token_properties.valid):
         print("invalid due to", response.token_properties.invalid_reason)
         raise InvalidRecaptchaTokenError("The reCAPTCHA token is not valid.")
@@ -137,13 +134,14 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
     print("Risk score:", response.risk_analysis.score)
     return response
 
-def score_within_acceptable_threshold(riskScore:int, threshold:int=0.5) -> bool:
+def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> bool:
     """
     Checks if the risk score is within the acceptable threshold.
     
     Args:
     - riskScore (int): The risk score of the reCAPTCHA token.
-    - threshold (int): The acceptable threshold.
+    - threshold (float): The acceptable threshold.
+        - Range: 0.0 to 1.0
         - Defaults to 0.5 
         - https://cloud.google.com/recaptcha-enterprise/docs/best-practices-oat
     

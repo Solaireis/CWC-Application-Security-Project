@@ -75,7 +75,7 @@
 
         <!--Remove Course from Cart Form-->
         <form id="course-delete-form" method="post">
-
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <!-- Hidden Form Fields, because Jinja2 hates curly braces in curly braces -->
             <input id="course-delete-field" type = "hidden" name = "courseID" value = "">
         </form>

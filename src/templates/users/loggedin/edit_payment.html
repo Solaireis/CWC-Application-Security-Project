@@ -51,6 +51,7 @@
                                     </div>
                                 </div>
                                 <form action="" method="POST">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <div class="row">
                                         <div class="col-md-12 margin-top margin-top2">
                                             {{ render_field(form.cardExpiry, class="form-control", placeholder="04/22 or 4/2022") }}
