@@ -12,7 +12,7 @@
 - Secure Flask Secret Key using `secrets.token_bytes(512)` (4096 bits)
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
-  - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Secret Manager API](https://cloud.google.com/secret-manager)
+  - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
@@ -40,6 +40,7 @@
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
 - Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
+  - Using Google Cloud Platform KMS (Key Management Service) API
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
     - 156 bits of security
   - Each user has a unique symmetric key for encryption and decryption
@@ -77,6 +78,7 @@
     - Credential stuffing attacks
 - Made an asymmetric signing function capable of JWT feature for the reset password recovery process
   - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
+    - Using Google Cloud Platform KMS (Key Management Service) API
     - 192 bits of security
 
 ---
