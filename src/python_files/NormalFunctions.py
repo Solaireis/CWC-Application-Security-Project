@@ -488,13 +488,17 @@ def EC_sign(
     # Sign the digest by calling Google Cloud KMS API
     response = KMS_CLIENT.asymmetric_sign(request={"name": keyVersionName, "digest": digest, "digest_crc32c": digestCRC32C})
 
-    # Perform integrity check
+    # Perform some integrity checks on the response that Google Cloud KMS API returned
+    # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
     if (not response.verified_digest_crc32c):
-        raise Exception()
+        # request sent to Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Ciphertext CRC32C checksum does not match.")
     if (response.name != keyVersionName):
-        raise Exception()
+        # request sent to Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Ciphertext CRC32C checksum does not match.")
     if (response.signature_crc32c != crc32c(response.signature)):
-        raise Exception()
+        # response received from Google Cloud KMS API was corrupted in-transit
+        raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
 
     data = {"message": plaintext, "versionID": versionID, "dataType": dataType}
     # If expiry is defined, set the expiry date in the data
