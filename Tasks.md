@@ -75,7 +75,7 @@
 - Added reCAPTCHA on the login page
   - Prevent automated attacks such as
     - Credential stuffing attacks
-- Made a JWT function for the reset password recovery process
+- Made an asymmetric signing function capable of JWT feature for the reset password recovery process
   - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
     - 192 bits of security
 
