@@ -6,21 +6,26 @@
 .DS_Store
 **/.DS_Store
 
-# ignore other files
+# Ignore test codes and folders
 *test*.*
+*Test*.*
+*test*.*/**
+*Test*.*/**
+
+# Ignore other files
 blacklist.txt
 *.bin
 
-# ignore uploaded files for user profiles and thumbnails
+# Ignore uploaded files for user profiles and thumbnails
 src/static/images/user/*.webp
 src/static/images/courses/thumbnails/*.webp
 
-# ignore all .json files (just in case as there are google gmail api tokens in there)
+# Ignore all .json files (just in case as there are google gmail api tokens in there)
 *.json
 
-# ignore .pem files (For SQL server SSL Certificates)
+# Ignore .pem files (For SQL server SSL Certificates)
 *.pem
 
-# ignore all log, backup files
+# Ignore all log, backup files
 *.log
 *.bak

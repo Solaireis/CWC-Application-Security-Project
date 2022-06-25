@@ -1296,7 +1296,10 @@ def checkout():
 @app.route("/purchase/<userToken>")
 def purchase(userToken):
     validate_session()
+    # TODO: verify the boolean returned from the EC_verify function
+    # TODO: If you defined getData to True, do data["verified"] to get the boolean
     data = EC_verify(userToken)
+
     print(data)
 
     sql_operation(table="user", mode="purchase_courses", userID = session["user"])

@@ -481,17 +481,16 @@ def EC_sign(
         raise ValueError("plaintext message must be either a dict or a str")
     encodedPlaintext = plaintext.encode("utf-8")
 
-    # Compute the hash
+    # Compute the SHA384 hash of the encoded plaintext
     hash_ = sha384(encodedPlaintext).digest()
-
-    # build the digest
-    digest = {"sha384": hash_}
 
     # Compute the CRC32C checksum for data integrity checks
     digestCRC32C = crc32c(hash_)
 
     # Sign the digest by calling Google Cloud KMS API
-    response = KMS_CLIENT.asymmetric_sign(request={"name": keyVersionName, "digest": digest, "digest_crc32c": digestCRC32C})
+    response = KMS_CLIENT.asymmetric_sign(
+        request={"name": keyVersionName, "digest": {"sha384": hash_}, "digest_crc32c": digestCRC32C}
+    )
 
     # Perform some integrity checks on the response that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
@@ -542,17 +541,23 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     """
     # Get the plaintext message, the signature, and the version ID
     if (isinstance(data, dict)):
-        plaintext = data["message"]
-        signature = data["signature"]
-        versionID = data["versionID"]
+        try:
+            plaintext = data["message"]
+            signature = data["signature"]
+            versionID = data["versionID"]
+        except:
+            return {"verified": False, "message": data} if (getData) else False
     elif (isinstance(data, bytes)):
         # if data is base64 encoded
-        b64EncodedDataList = data.split(b".")
-        data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
-        plaintext = data["message"]
-        signature = urlsafe_b64decode(b64EncodedDataList[1])
-        data["signature"] = signature
-        versionID = data["versionID"]
+        try:
+            b64EncodedDataList = data.split(b".")
+            data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
+            plaintext = data["message"]
+            signature = urlsafe_b64decode(b64EncodedDataList[1])
+            data["signature"] = signature
+            versionID = data["versionID"]
+        except:
+            return {"verified": False, "message": data} if (getData) else False
     else:
         raise ValueError("data must be either a dict or bytes")
 
@@ -565,7 +570,11 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     # Extract and parse the public key as a PEM-encoded EC key
     publicKeyPEM = publicKey.pem.encode("utf-8")
     ecKey = serialization.load_pem_public_key(publicKeyPEM, default_backend())
-    hash_ = sha384(plaintext.encode("utf-8")).digest()
+
+    # Compute the SHA384 hash of the plaintext
+    if (not isinstance(plaintext, bytes)):
+        plaintext = plaintext.encode("utf-8")
+    hash_ = sha384(plaintext).digest()
 
     # Attempt to verify the signature
     try:
@@ -573,6 +582,9 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
         ecKey.verify(signature, hash_, ec.ECDSA(utils.Prehashed(sha384_)))
         verified = True
     except (InvalidSignature):
+        # If the signature is invalid or 
+        # the plaintext is tampered with, 
+        # return false
         verified = False
 
     # Check if the token has an expiry key defined in the json
