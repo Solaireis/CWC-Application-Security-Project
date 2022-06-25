@@ -22,7 +22,7 @@
         </form>
         <p id="copyright_year">&copy; CourseFinity, Inc. <noscript>2022</noscript></p>
     </div>
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
     </script>
 </body>

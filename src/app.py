@@ -48,8 +48,15 @@ csrf = SeaSurf(app)
 # flask extension that helps set policies for the web app
 # temporary, * wildcard allows all
 csp = {
-    "img-src": "*",
-    "script-src": "*",
+    'script-src': [
+        '\'self\'',
+        'https://code.jquery.com/jquery-3.6.0.min.js',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js',
+        'https://cdn.jsdelivr.net/npm/less@4',
+        # 'https://www.google.com/recaptcha/enterprise.js', Don't need
+        'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js',
+        
+    ]
 }
 
 permissions_policy = {
@@ -57,8 +64,9 @@ permissions_policy = {
     "microphone": "()"
 }
 
+# nonce="{{ csp_nonce() }}"
 # xss_protection is already defaulted True
-# talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'], permissions_policy=permissions_policy, x_xss_protection=True)
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'], permissions_policy=permissions_policy, x_xss_protection=True)
 
 
 # Debug flag (will be set to false when deployed)

@@ -176,6 +176,9 @@
   - In Jinja, everything is escaped by default except for values explicitly marked with the |safe filter.
     - If required use Markup()
   - Using url_for() in href tags instead of passing in variables 
+  - Implemented CSP, but only for scripts
+    - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
+    - script src in csp shows all the scripts allowed to be taken from external sources
 
 ---
 
@@ -189,5 +192,6 @@
 
 #### Implemented:
 - Implemented MySQL
+- Comparing Hashes of Packages, before pip installing them
 
 ---

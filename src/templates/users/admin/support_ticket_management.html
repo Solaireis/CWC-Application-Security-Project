@@ -475,7 +475,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{{ url_for('static', filename='scripts/checkbox_filter.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/checkbox_filter.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

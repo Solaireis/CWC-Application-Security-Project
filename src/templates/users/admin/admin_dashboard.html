@@ -65,10 +65,10 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha512-TW5s0IT/IppJtu76UbysrBH9Hy/5X41OTAbQuffZFU6lQ1rdcLHzpU5BzVvr/YFykoiMYZVWlr/PX1mDcfM9Qg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
-    <script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js" integrity="sha512-TW5s0IT/IppJtu76UbysrBH9Hy/5X41OTAbQuffZFU6lQ1rdcLHzpU5BzVvr/YFykoiMYZVWlr/PX1mDcfM9Qg==" crossorigin="anonymous " referrerpolicy="no-referrer"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}">
         // function from https://stackoverflow.com/questions/5796718/html-entity-decode
         var decodeEntities = (function() {
             // this prevents any overhead from creating the object each time

@@ -55,10 +55,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{url_for('static', filename='scripts/video_upload.js')}}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/video_upload.js')}}"></script>
 {% with messages = get_flashed_messages() %}
     {% if messages %}
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
             alertModal.show();
         </script>

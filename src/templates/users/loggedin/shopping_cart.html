@@ -183,7 +183,7 @@
 
 
 {% if courseList != [] %}
-<script src="{{ url_for('static', filename='scripts/shopping_card.js') }}"></script>
+<script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/shopping_card.js') }}"></script>
 {% endif %}
 
 {% endblock %}

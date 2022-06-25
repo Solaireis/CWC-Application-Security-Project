@@ -31,7 +31,7 @@
     </main>   
     <footer id="copyright_year">&copy; CourseFinity, Inc. <noscript>2022</noscript></footer>
     <script src="https://cdn.jsdelivr.net/npm/less@4" ></script>
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
     </script>
 </body>

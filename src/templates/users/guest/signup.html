@@ -1,7 +1,7 @@
 {% extends "guest_base.html" %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script src="https://www.google.com/recaptcha/enterprise.js"></script>
+    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js"></script>
 {% endblock %}
 {% block title %}Sign Up | CourseFinity{% endblock %}
 

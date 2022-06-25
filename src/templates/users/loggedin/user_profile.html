@@ -274,14 +274,14 @@
 {% block extra_js %}
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <script>
+        <script nonce="{{ csp_nonce() }}">
             var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
             alertModal.show();
         </script>
         {% endif %}
     {% endwith %}
     <!-- <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script> -->
-    <script src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}
