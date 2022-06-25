@@ -1,7 +1,7 @@
 {% extends "guest_base.html" %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script src="https://www.google.com/recaptcha/enterprise.js?onload=onloadCallback&render=explicit"></script>
+    <script src="https://www.google.com/recaptcha/enterprise.js"></script>
 {% endblock %}
 {% block title %}Sign Up | CourseFinity{% endblock %}
 
@@ -45,7 +45,7 @@
                         {{ render_field(form.cfm_password, class="form-control") }}
                     </div>
                     <div class="col-12 d-flex justify-content-center">
-                        <div id="googleRecaptcha"></div>
+                        <div class="g-recaptcha" data-sitekey="6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B" data-action="signup"></div>
                     </div>          
                     <div class="col-12">
                         <button type="submit" class="btn btn-colour text-white float-end">Sign Up</button>
@@ -60,15 +60,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    var onloadCallback = function() {
-        grecaptcha.enterprise.render("googleRecaptcha", {
-            "sitekey" : "6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B",
-            "action" : "signup"
-        });
-    };
-</script>
 {% endblock %}

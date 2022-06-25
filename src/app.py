@@ -27,15 +27,16 @@ from python_files.Forms import *
 from python_files.Errors import *
 from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
                                        FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH, \
-                                       LOGIN_SITE_KEY, SIGNUP_SITE_KEY
+                                       LOGIN_SITE_KEY, SIGNUP_SITE_KEY, IPINFO_HANDLER
 
 # import python standard libraries
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from base64 import b64encode
 from io import BytesIO
 from os import environ
 from json import loads
+import time
 
 """Web app configurations"""
 # general Flask configurations
@@ -229,11 +230,113 @@ def home():
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
+@app.route("/reset-password", methods=["GET", "POST"])
+def resetPasswordRequest():
+    validate_session()
+    if ("user" in session or "admin" in session):
+        return redirect(url_for("home"))
+
+    requestForm = RequestResetPasswordForm(request.form)
+    if (request.method == "POST" and requestForm.validate()):
+        # if the request is a post request and the form is valid
+        # get the userID from the email
+        emailInput = requestForm.email.data
+        userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
+        if (userInfo is None):
+            # if the user does not exist
+            time.sleep(1) # wait one second to throw off attackers
+            flash("Reset password instructions has been sent to your email!", "Success")
+            return redirect(url_for("login"))
+
+        if (userInfo[1] is None):
+            # if user has signed up using Google OAuth2
+            # but is requesting for a password reset
+            htmlBody = [
+                "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
+                f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{url_for('login', _external=True)}' target='_blank'>login to CourseFinity</a> using your Google account.",
+            ]
+            # send email to the user to remind them to login using Google account
+            send_email(to=emailInput, subject="Reset Password", htmlBody="<br><br>".join(htmlBody))
+            flash("Reset password instructions has been sent to your email!", "Success")
+            return redirect(url_for("login"))
+
+        # create a token that is digitally signed with an active duration of 30 mins 
+        # before it expires (something like JWT/JWS but not exactly)
+        jsonPayload = {"userID": userInfo[0]}
+        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=JWTExpiryProperties(activeDuration=60*30))
+
+        # send the token to the user's email
+        htmlBody = [
+            "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
+            f"You can change the password on your account by clicking the button below.<br><a href='{url_for('resetPassword', token=token, _external=True)}' style='background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;' target='_blank'>Click here to reset your password</a>"
+        ]
+        send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
+
+        flash("Reset password instructions has been sent to your email!", "Success")
+        return redirect(url_for("login"))
+    else:
+        return render_template("users/guest/request_password_reset.html", form=requestForm)
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def resetPassword(token:str):
+    validate_session()
+    if ("user" in session or "admin" in session):
+        return redirect(url_for("home"))
+
+    # verify the token
+    payload = EC_verify(data=token, getData=True)
+    if (payload["verified"] is False):
+        # if the token is invalid
+        flash("Reset password link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    # get the userID from the token
+    jsonPayload = payload["payload"]
+    userID = jsonPayload["userID"]
+
+    # check if the user exists in the database
+    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+        # if the user does not exist
+        flash("Reset password link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    resetPasswordForm = CreateResetPasswordForm(request.form)
+
+    # check if user has enabled 2FA
+    try:
+        twoFAToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
+    except (No2FATokenError):
+        twoFAToken = None
+    twoFAEnabled = True if (twoFAToken is not None) else False
+
+    if (request.method == "POST" and resetPasswordForm.validate()):
+        # check if password input and confirm password are the same
+        passwordInput = resetPasswordForm.resetPassword.data
+        confirmPasswordInput = resetPasswordForm.confirmPassword.data
+        if (passwordInput != confirmPasswordInput):
+            flash("Entered passwords do not match!")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+
+        if (twoFAEnabled):
+            # if 2FA is enabled, check if the 2FA token is valid
+            twoFAInput = request.form.get("totpInput") or ""
+            if (not re.fullmatch(TWO_FA_CODE_REGEX, twoFAInput) or not pyotp.TOTP(twoFAToken).verify(twoFAInput)):
+                # if the 2FA token is invalid
+                flash("Entered 2FA OTP is invalid or has expired!")
+                return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+
+        # update the password
+        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        flash("Password has been reset successfully!", "Success")
+        return redirect(url_for("login"))
+    else:
+        return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("2 per second")
 def login():
     validate_session()
-    if ("user" not in session):
+    if ("user" not in session or "admin" not in session):
         loginForm = CreateLoginForm(request.form)
         if (request.method == "GET"):
             return render_template("users/guest/login.html", form=loginForm)
@@ -290,7 +393,8 @@ def login():
             except (UserIsUsingOauth2Error):
                 flash("Please check your entries and try again!", "Danger")
             except (LoginFromNewIpAddressError):
-                # sends an email with a generated TOTP code to authenticate the user
+                # sends an email with a generated TOTP code 
+                # to authenticate the user if login was successful.
                 # 640 bits/128 characters in length (5 bits per base32 character).
                 # Chose the length of the code to be 824 characters
                 # as it must be a multiple of 8 for the length
@@ -298,16 +402,39 @@ def login():
                 # https://github.com/pyauth/pyotp/issues/115
                 generatedTOTPSecretToken = pyotp.random_base32(length=128)
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
-                print(generatedTOTPSecretToken)
-                print(generatedTOTP)
+
+                ipDetails = IPINFO_HANDLER.getDetails(requestIPAddress).all
+                # utc+8 time (SGT)
+                currentDatetime = datetime.now(timezone(timedelta(hours=8)))
+                currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
+
+                # format the string location from the ip address details
+                locationString = ""
+                if (ipDetails.get("city") is not None):
+                    locationString += ipDetails["city"]
+
+                if (ipDetails.get("region") is not None):
+                    if (locationString != ""):
+                        locationString += ", "
+                    locationString += ipDetails["region"]
+
+                if (ipDetails.get("country_name") is not None):
+                    if (locationString != ""):
+                        locationString += ", "
+                    locationString += ipDetails["country_name"]
 
                 messagePartList = [
-                    f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", 
+                    f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
+                    f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
+                    "* Location is approximate based on the login's IP address.",
                     f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
                     f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
                 ]
                 send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
 
+                session["user_email"] = emailInput
+                session["ip_details"] = ipDetails
+                session["password_compromised"] = pwd_has_been_pwned(passwordInput)
                 session["temp_uid"] = userInfo[0]
                 session["username"] = userInfo[2]
                 session["token"] = RSA_encrypt(generatedTOTPSecretToken)
@@ -315,14 +442,37 @@ def login():
                 flash("An email has been sent to you with your special access code!", "Success")
                 return redirect(url_for("enterGuardTOTP"))
 
+            passwordCompromised = None
+            if (successfulLogin):
+                # check if password has been compromised
+                # if so, we will send an email to the user and flash
+                # on the home page after the login process
+                passwordCompromised = pwd_has_been_pwned(passwordInput)
+
             if (successfulLogin and not userHasTwoFA):
                 session["sid"] = RSA_encrypt(add_session(userInfo[0]))
                 if (not isAdmin):
                     session["user"] = userInfo[0]
                 else:
                     session["admin"] = userInfo[0]
+
+                if (passwordCompromised):
+                    htmlBody = [
+                        f"Your CourseFinity account, {emailInput}, password has been found to be compromised in a data breach!",
+                        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+                    ]
+                    send_email(to=emailInput, subject="Security Alert", body="<br><br>".join(htmlBody))
+                    flash(
+                        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+                        "Security Alert!"
+                    )
+                    return redirect(url_for("home"))
                 return redirect(url_for("home"))
             elif (successfulLogin and userHasTwoFA):
+                # if user has 2fa enabled and is 
+                # logged in from a known ip address
+                session["user_email"] = emailInput
+                session["password_compromised"] = passwordCompromised
                 session["temp_uid"] = userInfo[0]
                 session["is_admin"] = isAdmin
                 return redirect(url_for("enter2faTOTP"))
@@ -339,10 +489,24 @@ def enterGuardTOTP():
     This page is only accessible to users who are logging but from a new IP address.
     """
     validate_session()
-    if ("user" in session):
+    if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
-    if ("temp_uid" not in session or "token" not in session or "is_admin" not in session):
+    if (
+        "user_email" not in session or
+        "ip_details" not in session or
+        "password_compromised" not in session or 
+        "temp_uid" not in session or
+        "username" not in session or
+        "token" not in session or
+        "is_admin" not in session
+    ):
+        session.clear()
+        return redirect(url_for("login"))
+
+    if (session["ip_details"]["ip"] != get_remote_address()):
+        flash("IP address does not match login request, please try again!", "Danger")
+        session.clear()
         return redirect(url_for("login"))
 
     guardAuthForm = twoFAForm(request.form)
@@ -363,8 +527,21 @@ def enterGuardTOTP():
         isAdmin = session["is_admin"]
         session.clear()
 
-        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address())
+        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=session["ip_details"])
         session["sid"] = RSA_encrypt(add_session(userID))
+
+        # check if password has been compromised
+        # if so, flash a message and send an email to the user
+        if (session["password_compromised"]):
+            htmlBody = [
+                f"Your CourseFinity account, {session['user_email']}, password has been found to be compromised in a data breach!",
+                f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+            ]
+            send_email(to=session["user_email"], subject="Security Alert", body="<br><br>".join(htmlBody))
+            flash(
+                Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+                "Security Alert!"
+            )
 
         if (isAdmin):
             session["admin"] = userID
@@ -461,7 +638,7 @@ def loginCallback():
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     validate_session()
-    if ("user" not in session):
+    if ("user" not in session and "admin" not in session):
         signupForm = CreateSignUpForm(request.form)
         if (request.method == "GET"):
             return render_template("users/guest/signup.html", form=signupForm)
@@ -556,7 +733,13 @@ def enter2faTOTP():
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
-    if ("temp_uid" not in session and "is_admin" not in session):
+    if (
+        "user_email" not in session or
+        "password_compromised" not in session or
+        "temp_uid" not in session or
+        "is_admin" not in session
+    ):
+        session.clear()
         return redirect(url_for("login"))
 
     htmlTitle = "Enter 2FA TOTP"
@@ -583,6 +766,19 @@ def enter2faTOTP():
                 session["user"] = userID
 
             session["sid"] = RSA_encrypt(add_session(userID))
+
+            # check if password has been compromised
+            # if so, flash a message and send an email to the user
+            if (session["password_compromised"]):
+                htmlBody = [
+                    f"Your CourseFinity account, {session['user_email']}, password has been found to be compromised in a data breach!",
+                    f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+                ]
+                send_email(to=session["user_email"], subject="Security Alert", body="<br><br>".join(htmlBody))
+                flash(
+                    Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+                    "Security Alert!"
+                )
 
             # clear the temp_uid and temp_role
             session.pop("temp_uid", None)
@@ -715,92 +911,6 @@ def twoFactorAuthSetup():
 
     # post request but form inputs are not valid
     return redirect(url_for("twoFactorAuthSetup"))
-
-@app.route("/payment-settings", methods=["GET", "POST"])
-def paymentSettings():
-    validate_session()
-    if ("user" not in session):
-        return redirect(url_for("login"))
-
-    userID = session["user"]
-    try:
-        cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
-        print(cardExists)
-    except (CardDoesNotExistError):
-        cardExists = False
-
-    paymentForm = CreateAddPaymentForm(request.form)
-
-    # GET method codes below
-    if (request.method == "GET"):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-
-        cardName = cardNumber = cardExpiry = None
-        if (cardExists):
-            cardInfo = cardExists[0]
-            cardName = cardInfo[0]
-            cardNumber = cardInfo[1]
-            cardExpiry = cardInfo[2]
-
-        return render_template("users/loggedin/payment_settings.html", form=paymentForm, imageSrcPath=imageSrcPath, cardExists=cardExists, cardName=cardName, cardNo=cardNumber, cardExpiry=cardExpiry, accType=userInfo[1])
-
-    # POST method codes below
-    if (paymentForm.validate() and not cardExists):
-        # POST request code below
-        cardNumberInput = paymentForm.cardNo.data
-        cardNameInput = paymentForm.cardName.data
-        cardExpiryInput = paymentForm.cardExpiry.data
-
-        sql_operation(table="user", mode="add_card", userID=userID, cardNo=cardNumberInput, cardName=cardNameInput, cardExpiry=cardExpiryInput)
-        return redirect(url_for("paymentSettings"))
-
-    # invalid form inputs or already has a card
-    return redirect(url_for("paymentSettings"))
-
-@app.post("/delete-payment")
-def deletePayment():
-    validate_session()
-    if ("user" not in session):
-        return redirect(url_for("login"))
-
-    userID = session["user"]
-    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID)
-    if (not cardExists):
-        return redirect(url_for("paymentSettings"))
-
-    sql_operation(table="user", mode="delete_card", userID=userID)
-    return redirect(url_for("paymentSettings"))
-
-@app.route("/edit-payment", methods=["GET", "POST"])
-def editPayment():
-    validate_session()
-    if ("user" not in session):
-        return redirect(url_for("login"))
-
-    userID = session["user"]
-    cardExists = sql_operation(table="user", mode="check_card_if_exist", userID=userID, getCardInfo=True)
-    if (not cardExists):
-        return redirect(url_for("paymentSettings"))
-
-    editPaymentForm = CreateEditPaymentForm(request.form)
-
-    if (request.method == "GET"):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        cardInfo = cardExists[0]
-        cardName = cardInfo[0]
-        cardExpiry = cardInfo[2]
-
-        return render_template("users/loggedin/edit_payment.html", form=editPaymentForm, imageSrcPath=imageSrcPath, cardName=cardName, cardExpiry=cardExpiry, accType=userInfo[1])
-
-    if (editPaymentForm.validate()):
-        # POST request code below
-        cardExpiryInput = editPaymentForm.cardExpiry.data
-
-        sql_operation(table="user", mode="update_card", userID=userID, cardExpiry=cardExpiryInput)
-        return redirect(url_for("paymentSettings"))
-
-    # invalid form inputs
-    return redirect(url_for("paymentSettings"))
 
 @app.route("/user-profile", methods=["GET","POST"])
 def userProfile():

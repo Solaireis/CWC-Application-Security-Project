@@ -14,7 +14,8 @@ from typing import Union
 # import third party libraries
 from dicebear import DAvatar, DStyle
 from argon2.exceptions import VerifyMismatchError
-import pymysql.cursors
+import pymysql.err as MySQLErrors
+from pymysql.connections import Connection as MySQLConnection
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow
@@ -24,7 +25,7 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .ConstantsInit import GOOGLE_CREDENTIALS, PH, MAX_PASSWORD_LENGTH
+from .ConstantsInit import GOOGLE_CREDENTIALS, PH, MAX_PASSWORD_LENGTH, IPINFO_HANDLER
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
 """------------------------------ Define Constants ------------------------------"""
@@ -130,7 +131,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     try:
         con = get_mysql_connection(debug=app.config["DEBUG_FLAG"])
-    except (pymysql.ProgrammingError):
+    except (MySQLErrors.OperationalError):
         print("Database Not Found...")
         print("Creating Database...")
         con = MySQLInitialise(debug=app.config["DEBUG_FLAG"])
@@ -151,7 +152,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
         else:
             raise ValueError("Invalid table name")
-    except (pymysql.IntegrityError, pymysql.OperationalError, pymysql.InternalError, pymysql.DataError) as e:
+    except (MySQLErrors.IntegrityError, MySQLErrors.OperationalError, MySQLErrors.InternalError, MySQLErrors.DataError) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
         print(e)
@@ -159,7 +160,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     con.close()
     return returnValue
 
-def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) ->  Union[list, None]:
+def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
@@ -171,8 +172,9 @@ def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=No
     if (mode == "add_ip_address"):
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
+        ipDetails = kwargs.get("ipDetails") or json.dumps(IPINFO_HANDLER.getDetails(ipAddress).all)
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
@@ -186,10 +188,11 @@ def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=No
     elif (mode == "add_ip_address_only_if_unique"):
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
+        ipDetails = kwargs.get("ipDetails") or json.dumps(IPINFO_HANDLER.getDetails(ipAddress).all)
 
         cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = %(userID)s AND INET6_NTOA(ip_address) = %(ipAddress)s", {"userID":userID, "ipAddress":ipAddress})
         if (cur.fetchone()[0] == 0):
-            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s))", {"userID":userID, "ipAddress":ipAddress})
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
             connection.commit()
 
     elif (mode == "remove_last_accessed_more_than_10_days"):
@@ -200,7 +203,7 @@ def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=No
         connection.close()
         raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
 
-def twofa_token_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
+def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -255,7 +258,7 @@ def twofa_token_sql_operation(connection:pymysql.connections.Connection=None, mo
         connection.close()
         raise ValueError("Invalid mode in the twofa_token_sql_operation function!")
 
-def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode:str=None, **kwargs) -> None:
+def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kwargs) -> None:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
@@ -307,7 +310,7 @@ def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode
         connection.close()
         raise ValueError("Invalid mode in the login_attempts_sql_operation function!")
 
-def session_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
+def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
         connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
@@ -380,7 +383,7 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
+def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
 
@@ -401,7 +404,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
 
     if (mode == "verify_userID_existence"):
         userID = kwargs.get("userID")
-        if (not userID):
+        if (userID is None):
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
@@ -427,7 +430,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
             keyName = f"key-{generate_id()}"
             create_symmetric_key(keyName=keyName)
 
-        # add to the sqlite3 database
+        # add to the MySQL database
         userID = generate_id()
         passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
 
@@ -438,8 +441,8 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         #     roleID = result.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
-            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
 
@@ -488,8 +491,8 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
                 create_symmetric_key(keyName=keyName)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
-                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
         else:
@@ -558,6 +561,12 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         except (VerifyMismatchError):
             connection.close()
             raise IncorrectPwdError("Incorrect password!")
+
+    elif (mode == "find_user_for_reset_password"):
+        email = kwargs.get("email")
+        cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
+        matched = cur.fetchone()
+        return matched
 
     elif (mode == "get_user_data"):
         userID = kwargs.get("userID")
@@ -656,46 +665,14 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
             connection.close()
             raise ChangePwdError("The old password is incorrect!")
 
-    elif (mode == "check_card_if_exist"):
+    elif (mode == "reset_password"):
         userID = kwargs.get("userID")
-        getCardInfo = kwargs.get("getCardInfo")
+        newPassword = kwargs.get("newPassword")
 
-        cur.execute("SELECT card_name, card_no, card_exp FROM user WHERE id=%(userID)s", {"userID":userID})
-        cardInfo = cur.fetchone()
-        if (cardInfo is None):
-            connection.close()
-            raise CardDoesNotExistError("Credit card does not exist!")
+        cur.execute("SELECT key_name FROM user WHERE id=%(userID)s", {"userID":userID})
+        keyName = cur.fetchone()[0]
 
-        for info in cardInfo:
-            if (info is None):
-                # if any information is missing which should not be possible,
-                # the card will then be considered to not exist and will reset the card info to Null
-                cur.execute("UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id=%(userID)s", {"userID":userID})
-                connection.commit()
-                raise CardDoesNotExistError("Credit card is missing some information!")
-
-        if (getCardInfo):
-            return cardInfo
-
-    elif (mode == "add_card"):
-        userID = kwargs.get("userID")
-        cardName = kwargs.get("cardName")
-        cardNo = kwargs.get("cardNo")
-        cardExp = kwargs.get("cardExpiry")
-
-        cur.execute("UPDATE user SET card_name=%(cardName)s, card_no=%(cardNo)s, card_exp=%(cardExp)s WHERE id=%(userID)s", {"cardName": cardName, "cardNo": cardNo, "cardExp": cardExp, "userID":userID})
-        connection.commit()
-
-    elif (mode == "delete_card"):
-        userID = kwargs.get("userID")
-        cur.execute("UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id=%(userID)s", {"userID":userID})
-        connection.commit()
-
-    elif (mode == "update_card"):
-        userID = kwargs.get("userID")
-        cardExp = kwargs.get("cardExpiry")
-        cardCvv = kwargs.get("cardCVV")
-        cur.execute("UPDATE user SET card_exp=%(cardExp)s WHERE id=%(userID)s", {"cardExp": cardExp, "userID": userID})
+        cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH.hash(newPassword), keyID=keyName), "userID": userID})
         connection.commit()
 
     elif (mode == "delete_user"):
@@ -791,7 +768,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-def course_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
+def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
 
@@ -959,7 +936,7 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-def review_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
+def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
 

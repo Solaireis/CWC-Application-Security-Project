@@ -1,5 +1,5 @@
 # import third party libraries
-import pymysql.cursors
+import pymysql
 from google_crc32c import Checksum as g_crc32c
 
 from pathlib import Path

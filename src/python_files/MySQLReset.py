@@ -1,5 +1,5 @@
 # import third party libraries
-import pymysql.cursors
+import pymysql
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):

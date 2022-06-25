@@ -7,6 +7,9 @@ from typing import Union
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
 
+# For ipinfo.io
+import ipinfo
+
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
 
@@ -103,6 +106,10 @@ GOOGLE_PROJECT_ID = "coursefinity-339412"
 
 # Password
 # PASSWORD = get_secret_payload(secretID="Password")
+
+# For ipinfo.io to get details of a IP address
+IPINFO_ACCESS_TOKEN = get_secret_payload(secretID="ipinfo-access-token")
+IPINFO_HANDLER = ipinfo.getHandler(access_token=IPINFO_ACCESS_TOKEN)
 
 # For Stripe API
 STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"

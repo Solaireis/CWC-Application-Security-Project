@@ -38,13 +38,14 @@
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 - Encrypting the sensitive cookie values such as session identifier
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
+    - 156 bits of security
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
 - Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
   - Using Google Cloud Platform KMS (Key Management Service) API
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
-    - 156 bits of security
   - Each user has a unique symmetric key for encryption and decryption
   - Encrypted the Argon2 hash of the password
+- Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway
 
 ---
 
@@ -130,7 +131,7 @@
 - Decide whether to use Flask login or the old style of session management
 
 #### Implemented:
--
+- reCAPTCHA on signup page
 
 ---
 

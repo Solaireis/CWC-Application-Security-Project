@@ -1,5 +1,5 @@
 # import third party libraries
-import pymysql.cursors
+import pymysql
 
 # import python standard libraries
 from typing import Optional
@@ -78,9 +78,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        card_name VARCHAR(255) DEFAULT NULL,
-        card_no INTEGER UNSIGNED DEFAULT NULL, -- May not be unique since one might have alt accounts.
-        card_exp VARCHAR(255) DEFAULT NULL,
         key_name CHAR(36) NOT NULL,
         cart_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
         purchased_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
@@ -106,6 +103,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) NOT NULL,
         ip_address VARBINARY(16) NOT NULL,
         last_accessed DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ip_address_details VARCHAR(1024) DEFAULT NULL,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")

@@ -8,7 +8,7 @@ This is to prevent circular imports.
 # import python standard libraries
 from six import ensure_binary
 import requests as req, uuid, re, json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
@@ -56,7 +56,7 @@ from google.cloud.recaptchaenterprise_v1 import Assessment
 """------------------------------ Define Constants ------------------------------"""
 
 # for comparing the date on the github repo
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 BLACKLIST_FILEPATH = ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
 
 # password regex follows OWASP's recommendations
@@ -84,6 +84,7 @@ SIGNATURE_VERSION_ID = 1
 
 # For 2FA setup key regex to validate if the setup is a valid base32 setup key
 COMPILED_2FA_REGEX_DICT = {}
+TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -416,9 +417,9 @@ class JWTExpiryProperties:
         - Either one of the two parameters should be provided but NOT both.
         """
         if (strDate is None and activeDuration != 0):
-            self.expiryDate = datetime.utcnow().replace(microsecond=0) + timedelta(hours=8, seconds=activeDuration)
+            self.expiryDate = datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0) + timedelta(seconds=activeDuration)
         elif (strDate is not None and activeDuration == 0):
-            self.expiryDate = datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
+            self.expiryDate = datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S %z")
         elif (strDate is not None and activeDuration != 0):
             raise ValueError("Cannot specify both expirySeconds and strDate")
         else:
@@ -428,13 +429,13 @@ class JWTExpiryProperties:
         """
         Returns the expiry date in string type in the format of "YYYY-MM-DD HH:MM:SS"
         """
-        return self.expiryDate.strftime("%Y-%m-%d %H:%M:%S")
+        return self.expiryDate.strftime("%Y-%m-%d %H:%M:%S %z")
 
     def is_expired(self) -> bool:
         """
         Returns True if the token has expired, False otherwise
         """
-        return (datetime.utcnow().replace(microsecond=0) + timedelta(hours=8) > self.expiryDate)
+        return (datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0) > self.expiryDate)
 
     def __str__(self) -> str:
         return self.get_expiry_str_date()
@@ -443,17 +444,18 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-    plaintext:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str=None, 
+    payload:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str="signing-key", 
     versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
     ) -> Union[dict, bytes]:
     """
     Sign a message using the public key part of an asymmetric EC key.
     
     Args:
-    - plaintext (str|dict): the plaintext to sign
+    - payload (str|dict): the payload to sign
     - keyRingID: The ID of the key ring.
         - Defaults to "coursefinity
     - keyID: The ID of the key.
+        - Defaults to "signing-key"
     - versionID: The version of the key.
         - Defaults to SIGNATURE_VERSION_ID defined in NormalFunctions.py
     - b64EncodeData: Whether to base64 encode the data or not.
@@ -461,33 +463,33 @@ def EC_sign(
     
     Returns:
     - A dictionary containing:
-        - "message": the plaintext message
+        - "payload": the payload
         - "signature": the signature of the message
-        - "versionID": the version of the key
-        - "dataType": the type of the data
+        - "version_id": the version of the key
+        - "data_type": the type of the data
         - "expiry": the expiry date of the signature/token if defined
     - If b64EncodeData is True, the data with the signature will be base64 encoded.
     """
     # Construct the key version name
     keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
 
-    # Convert the plaintext to bytes
-    if (isinstance(plaintext, dict)):
+    # Convert the payload to bytes
+    if (isinstance(payload, dict)):
         dataType = "dict"
-        plaintext = json.dumps(plaintext)
-    elif (isinstance(plaintext, str)):
+        payload = json.dumps(payload)
+    elif (isinstance(payload, str)):
         dataType = "str"
     else:
-        raise ValueError("plaintext message must be either a dict or a str")
-    encodedPlaintext = plaintext.encode("utf-8")
+        raise ValueError("payload message must be either a dict or a str")
+    encodedPayload = payload.encode("utf-8")
 
-    # Compute the SHA384 hash of the encoded plaintext
-    hash_ = sha384(encodedPlaintext).digest()
+    # Compute the SHA384 hash of the encoded payload
+    hash_ = sha384(encodedPayload).digest()
 
     # Compute the CRC32C checksum for data integrity checks
     digestCRC32C = crc32c(hash_)
 
-    # Sign the digest by calling Google Cloud KMS API
+    # Sign the digest by sending it to Google Cloud KMS API
     response = KMS_CLIENT.asymmetric_sign(
         request={"name": keyVersionName, "digest": {"sha384": hash_}, "digest_crc32c": digestCRC32C}
     )
@@ -504,7 +506,7 @@ def EC_sign(
         # response received from Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
 
-    data = {"message": plaintext, "versionID": versionID, "dataType": dataType}
+    data = {"payload": payload, "version_id": versionID, "data_type": dataType}
     # If expiry is defined, set the expiry date in the data
     if (expiry is not None):
         data["expiry"] = expiry.get_expiry_str_date()
@@ -520,15 +522,17 @@ def EC_sign(
         data["signature"] = response.signature
         return data
 
-def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:str=None, getData:bool=False) -> Union[dict, bool]:
+def EC_verify(data:Union[dict, bytes, str]="", keyRingID:str="coursefinity", keyID:str="signing-key", getData:bool=False) -> Union[dict, bool]:
     """
     Verify the signature of an message signed with an asymmetric EC key.
     
     Args:
-    - data (dict|bytes): the data to verify
+    - data (dict|bytes|str): the data to verify
+        - Note: If the data is instances of bytes or string, it will be treated as a base64 encoded data
     - keyRingID: The ID of the key ring.
         - Defaults to "coursefinity
     - keyID: The ID of the key.
+        - Defaults to "signing-key"
     - getData: Whether to return the data or not.
         - Set this to True if the data is in base64 encoded format.
         - Generally True for JWT.
@@ -536,28 +540,38 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     Returns:
     - bool (true if verified and false otherwise)
     - dict (if getData is True)
-        - the verified status of the data can be accessed by the key "verified"
-            - e.g. data["verified"]
+        - "verified": whether the signature is valid or not
+        - "payload": the payload
+        - "signature": the signature of the message
+        - "version_id": the version of the key
+        - "data_type": the type of the data
+        - "expiry": the expiry date of the signature/token if defined
     """
-    # Get the plaintext message, the signature, and the version ID
+    # Get the payload, the signature, and the version ID
     if (isinstance(data, dict)):
         try:
-            plaintext = data["message"]
+            payload = data["payload"]
             signature = data["signature"]
-            versionID = data["versionID"]
+            versionID = data["version_id"]
         except:
-            return {"verified": False, "message": data} if (getData) else False
-    elif (isinstance(data, bytes)):
-        # if data is base64 encoded
+            # if some keys in the dict are missing, just return False by default
+            return {"verified": False, "payload": data} if (getData) else False
+    elif (isinstance(data, str) or isinstance(data, bytes)):
+        # If data is base64 encoded, encode it to bytes
+        if (isinstance(data, str)):
+            data = data.encode("utf-8")
+
+        # Base64 decode the data to get the payload and the signature
         try:
             b64EncodedDataList = data.split(b".")
             data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
-            plaintext = data["message"]
+            payload = data["payload"]
             signature = urlsafe_b64decode(b64EncodedDataList[1])
             data["signature"] = signature
-            versionID = data["versionID"]
+            versionID = data["version_id"]
         except:
-            return {"verified": False, "message": data} if (getData) else False
+            # If base64 decoding fails or is missing some keys in the json payload, return False by default
+            return {"verified": False, "payload": data} if (getData) else False
     else:
         raise ValueError("data must be either a dict or bytes")
 
@@ -571,10 +585,10 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     publicKeyPEM = publicKey.pem.encode("utf-8")
     ecKey = serialization.load_pem_public_key(publicKeyPEM, default_backend())
 
-    # Compute the SHA384 hash of the plaintext
-    if (not isinstance(plaintext, bytes)):
-        plaintext = plaintext.encode("utf-8")
-    hash_ = sha384(plaintext).digest()
+    # Compute the SHA384 hash of the payload
+    if (not isinstance(payload, bytes)):
+        payload = payload.encode("utf-8")
+    hash_ = sha384(payload).digest()
 
     # Attempt to verify the signature
     try:
@@ -583,7 +597,7 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
         verified = True
     except (InvalidSignature):
         # If the signature is invalid or 
-        # the plaintext is tampered with, 
+        # the payload has been tampered with, 
         # return false
         verified = False
 
@@ -595,23 +609,23 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
 
     # Return the data if requested
     if (getData):
-        if (data["dataType"] == "dict"):
-            data["message"] = json.loads(data["message"])
+        if (data["data_type"] == "dict"):
+            data["payload"] = json.loads(data["payload"])
         data["verified"] = verified
         return data
     else:
         return verified
 
-def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
+def RSA_encrypt(plaintext:str="", keyRingID:str="coursefinity", keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
 
     Args:
     - plaintext (str): The plaintext to encrypt
-    - keyID (str): The ID of the key to use for decryption.
-        - Defaults to "encrypt-decrypt-key"
     - keyRingID (str): The ID of the key ring to use.
         - Defaults to "coursefinity"
+    - keyID (str): The ID of the key to use for decryption.
+        - Defaults to "encrypt-decrypt-key"
     - versionID (int): The version ID of the key to use for decryption.
         - Defaults to the defined SESSION_COOKIE_ENCRYPTION_VERSION variable
 
@@ -642,18 +656,18 @@ def RSA_encrypt(plaintext:str="", keyID:str="encrypt-decrypt-key", keyRingID:str
     except (ValueError) as e:
         print("Try reducing the length of the plaintext as RSA encryption can only encrypt small amounts of data.")
         raise EncryptionError(e)
-    return {"ciphertext": ciphertext, "version": versionID}
+    return {"ciphertext": ciphertext, "version_id": versionID}
 
-def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID:str="coursefinity") -> str:
+def RSA_decrypt(cipherData:dict=None, keyRingID:str="coursefinity", keyID:str="encrypt-decrypt-key") -> str:
     """
     Decrypts the ciphertext using Google KMS (RSA/asymmetric encryption)
 
     Args:
     - cipherData (dict): A dictionary containing the ciphertext and the version of the key used for encryption
-    - keyID (str): The ID of the key to use for decryption.
-        - Defaults to "encrypt-decrypt-key"
     - keyRingID (str): The ID of the key ring to use.
         - Defaults to "coursefinity"
+    - keyID (str): The ID of the key to use for decryption.
+        - Defaults to "encrypt-decrypt-key"
 
     Returns:
     - The decrypted ciphertext (str)
@@ -667,7 +681,7 @@ def RSA_decrypt(cipherData:dict=None, keyID:str="encrypt-decrypt-key", keyRingID
         raise CiphertextIsNotBytesError(f"The cipher data, {cipherData} is in \"{type(cipherData)}\" format. Please pass in a dictionary type variable.")
 
     # Build the key version name.
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version"])
+    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version_id"])
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     ciphertext = cipherData["ciphertext"]
@@ -762,12 +776,13 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
 
         results = response.text.splitlines()
 
-        dateComment = results[3].split(",")[-1].split("+")[0].strip()
-        lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S")
-        lastUpdated += timedelta(hours=6) # update the datetime to utc+8 from utc+2
+        dateComment = results[3].split(",")[-1].strip()
+        lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S %z")
+        # convert utc+2 to utc+8
+        lastUpdated = lastUpdated.astimezone(timezone(timedelta(hours=8)))
 
         action = 0 # 1 for update, 0 for creating a new file
-        if (BLACKLIST_FILEPATH.exists()):
+        if (BLACKLIST_FILEPATH.exists() and BLACKLIST_FILEPATH.is_file()):
             with open(BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
             blacklist = txtFile.split("\n")
@@ -955,11 +970,14 @@ def pwd_has_been_pwned(password:str) -> bool:
             break
         elif (response.status_code == 429):
             # haveibeenpwned API is rate limited, so wait for a while and try again
-            print(f"Failed to retrieve data from pwnedpasswords.com. Retrying in 2 seconds...")
+            print(f"Failed to retrieve data from api.pwnedpasswords.com. Retrying in 2 seconds...")
             sleep(2)
         else:
-            print(f"Failed to retrieve data from pwnedpasswords.com.\nError code: {response.status_code}")
-            return False # returns False (considered not leaked) but will rely on the checking of the password strength
+            print(f"Failed to retrieve data from api.pwnedpasswords.com.\nError code: {response.status_code}")
+            # returns False (considered not leaked) 
+            # but will rely on the checking of the password strength 
+            # if user is signing up or changing password
+            return False 
 
     # compare the possible ranges with the hash suffix (after the first five characters) of the sha1 hash
     for result in results:

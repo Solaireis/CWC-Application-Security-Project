@@ -1,7 +1,7 @@
 {% extends "guest_base.html" %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script src="https://www.google.com/recaptcha/enterprise.js?onload=onloadCallback&render=explicit"></script>
+    <script src="https://www.google.com/recaptcha/enterprise.js"></script>
 {% endblock %}
 {% block title %}Login | CourseFinity{% endblock %}
 
@@ -51,13 +51,13 @@
                         {{ render_field(form.password, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <h6><a href="#" class="forgetPWD">Forget password?</a></h6>
+                        <h6><a href="{{ url_for('resetPasswordRequest') }}" class="forgetPWD">Forget password?</a></h6>
                     </div>
                     <div class="col-12">
                         <button class="btn btn-colour text-white float-end" id="login">Login</button>
                     </div>
                     <div class="col-12 d-flex justify-content-center">
-                        <div id="googleRecaptcha"></div>
+                        <div class="g-recaptcha" data-action="login" data-sitekey="6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a"></div>
                     </div>
                 </form>
                 <hr class="mt-4 text-white">
@@ -73,15 +73,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    var onloadCallback = function() {
-        grecaptcha.enterprise.render("googleRecaptcha", {
-            "sitekey" : " 6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a",
-            "action" : "login"
-        });
-    };
-</script>
 {% endblock %}
