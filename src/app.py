@@ -309,7 +309,11 @@ def login():
                 print(generatedTOTPSecretToken)
                 print(generatedTOTP)
 
-                messagePartList = [f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"]
+                messagePartList = [
+                    f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address ({requestIPAddress}).", 
+                    f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
+                    f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+                ]
                 send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
 
                 session["temp_uid"] = userInfo[0]
