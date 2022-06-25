@@ -416,7 +416,7 @@ class JWTExpiryProperties:
         - Either one of the two parameters should be provided but NOT both.
         """
         if (strDate is None and activeDuration != 0):
-            self.expiryDate = datetime.now().replace(microsecond=0) + timedelta(seconds=activeDuration)
+            self.expiryDate = datetime.utcnow().replace(microsecond=0) + timedelta(hours=8, seconds=activeDuration)
         elif (strDate is not None and activeDuration == 0):
             self.expiryDate = datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S")
         elif (strDate is not None and activeDuration != 0):
@@ -434,7 +434,7 @@ class JWTExpiryProperties:
         """
         Returns True if the token has expired, False otherwise
         """
-        return (datetime.now().replace(microsecond=0) > self.expiryDate)
+        return (datetime.utcnow().replace(microsecond=0) + timedelta(hours=8) > self.expiryDate)
 
     def __str__(self) -> str:
         return self.get_expiry_str_date()

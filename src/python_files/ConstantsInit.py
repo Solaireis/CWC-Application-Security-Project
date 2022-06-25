@@ -137,7 +137,7 @@ REMOTE_SQL_SERVER_IP = get_secret_payload(secretID="sql-ip-address")
 LOCAL_SQL_SERVER_CONFIG = {
     "host": "localhost",
     "user": "root",
-    "password": environ["LOCAL_SQL_PASS"]
+    "password": environ.get("LOCAL_SQL_PASS")
 }
 
 """------------------------ END OF DEFINING CONSTANTS ------------------------"""
