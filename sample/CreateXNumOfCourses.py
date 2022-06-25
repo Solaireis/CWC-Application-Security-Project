@@ -101,13 +101,13 @@ except (pymysql.ProgrammingError):
 cur = con.cursor()
 TEACHER_ROLE_ID = STUDENT_ROLE_ID = None
 
-cur.execute("call get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
+cur.execute("CALL get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
 TEACHER_ROLE_ID = cur.fetchone()[0]
 # cur.callproc("get_role_id", ("Teacher",))
 # for result in cur.stored_results():
 #     TEACHER_ROLE_ID = result.fetchone()[0]
 
-cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
 STUDENT_ROLE_ID = cur.fetchone()[0]
 # cur.callproc("get_role_id", ("Student",))
 # for result in cur.stored_results():

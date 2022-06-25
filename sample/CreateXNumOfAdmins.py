@@ -138,7 +138,7 @@ cur = con.cursor()
 
 # convert role name to role id
 ADMIN_ROLE_ID = None
-cur.execute("call get_role_id(%(Admin)s)", {"Admin":"Admin"})
+cur.execute("CALL get_role_id(%(Admin)s)", {"Admin":"Admin"})
 ADMIN_ROLE_ID = cur.fetchone()[0]
 # cur.callproc("get_role_id", ("Admin",))
 # for result in cur.stored_results():

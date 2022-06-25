@@ -435,7 +435,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         userID = generate_id()
         passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
 
-        cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+        cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
         roleID = cur.fetchone()[0]
         # cur.callproc("get_role_id", ("Student",))
         # for result in cur.stored_results():
@@ -478,7 +478,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
             # user does not exist, create new user with the given information
 
             # get role id
-            cur.execute("call get_role_id(%(Student)s)", {"Student":"Student"})
+            cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
             roleID = cur.fetchone()[0]
             # cur.callproc("get_role_id", ("Student",))
             # for result in cur.stored_results():
@@ -502,7 +502,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
             if (matched[4] is not None):
                 # user has not signed up using Google OAuth2, 
                 # return the generated userID from the database and the role name associated with the user
-                cur.execute("call get_role_name(%(matched)s)", {"matched":matched[1]})
+                cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
                 roleName = cur.fetchone()[0]
                 # cur.callproc("get_role_name", (matched[1],))
                 # for result in cur.stored_results():
@@ -546,7 +546,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
                     newIpAddress = True
 
                 # convert the role id to a readable format
-                cur.execute("call get_role_name(%(matched)s)", {"matched":matched[4]})
+                cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[4]})
                 roleName = cur.fetchone()[0]
                 # cur.callproc("get_role_name", (matched[4],))
                 # for result in cur.stored_results():
@@ -569,7 +569,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         matched = cur.fetchone()
         if (not matched):
             return False
-        cur.execute("call get_role_name(%(matched)s)", {"matched":matched[1]})
+        cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
         roleMatched = cur.fetchone()
         # cur.callproc("get_role_name", (matched[1],))
         # for result in cur.stored_results():
@@ -712,7 +712,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
 
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         currentRoleID = cur.fetchone()[0]
-        cur.execute("call get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
+        cur.execute("CALL get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
         currentRole = cur.fetchone()[0]
         # cur.callproc("get_role_name", (currentRoleID,))
         # for result in cur.stored_results():
@@ -720,7 +720,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
 
         isTeacher = True if (currentRole == "Teacher") else False
         if (not isTeacher):
-            cur.execute("call get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
+            cur.execute("CALL get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
             teacherRoleID = cur.fetchone()[0]
             # cur.callproc("get_role_id", ("Teacher",))
             # for result in cur.stored_results():
@@ -940,7 +940,7 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
 
         # cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
         # foundResults = cur.fetchall()
-        cur.execute("call search_for(%(searchInput)s)", {"searchInput":searchInput})
+        cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
         foundResults = cur.fetchall()
         # cur.callproc("search_for", (searchInput,))
         # for result in cur.stored_results():
