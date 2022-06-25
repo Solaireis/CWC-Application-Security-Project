@@ -26,7 +26,7 @@
                         {% if (results.course_image_path == None) %}
                             <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% else %}
-                            <img src="{{ url_for('static', filename='images/courses/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                            <img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% endif %}
                     </div>
                     <div class="col-md-8">
