@@ -948,6 +948,9 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
             teacherProfile = res[1]
             teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
                                                                          else (teacherProfile, False)
+            if ("googleusercontent" in teacherProfile[0]):
+                teacherProfile = (res[1], True)
+
             resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i])))
 
         return resultsList
