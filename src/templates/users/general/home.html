@@ -91,6 +91,7 @@
 										</a>
 									{% else %}
 										<form action="{{ url_for('addToCart', courseID = course.course_id) }}" method="POST">
+											<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 											<input name="courseID" type="hidden" value="{{ course.course_id }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>
@@ -159,6 +160,7 @@
 										</a>
 									{% else %}
 										<form action="{{ url_for('addToCart', courseID = course.course_id) }}" method="POST">
+											<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 											<input name="courseID" type="hidden" value="{{ course.course_id }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>
@@ -180,6 +182,7 @@
 			<h2>Become A Teacher Today!</h2>
 			<p>We provide the platform for you to teach what you love.<br>Start now by teaching students and earn 25% comission!</p>
 			<form action="{{ url_for('signup') }}" method="GET">
+				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 				<button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
 			</form>
 		</div>

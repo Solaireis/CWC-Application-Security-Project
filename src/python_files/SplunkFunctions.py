@@ -52,7 +52,6 @@ def log_event(levelname: str, details: str, userID: str, IP: str, eventCollector
     # Get line number, module when this function was called, through stacking function frames
     lineNo = getframeinfo(stack()[1][0]).lineno
     module = Path(getframeinfo(stack()[1][0]).filename).stem
-
     # creates a folder for logs and dc if the folder alrd exists
     logPath.mkdir(parents=True, exist_ok=True)
 

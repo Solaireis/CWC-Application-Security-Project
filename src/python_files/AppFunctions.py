@@ -51,11 +51,11 @@ def get_google_flow() -> Flow:
     flow = Flow.from_client_config(
         GOOGLE_CREDENTIALS,
         [
-            "https://www.googleapis.com/auth/userinfo.profile", 
+            "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
             "openid",
             "https://www.googleapis.com/auth/gmail.send" # for Google to send security alerts to the user's email
-        ], 
+        ],
         redirect_uri=url_for("loginCallback", _external=True)
     )
     return flow
@@ -63,7 +63,7 @@ def get_google_flow() -> Flow:
 def add_session(userID:str) -> str:
     """
     Generate a 32 byte session ID and add it to the database.
-    
+
     Args:
         - userID (str): The user ID of the user
 
@@ -80,16 +80,16 @@ def add_session(userID:str) -> str:
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
-    
+
     If the user does not have a profile image uploaded, it will return a dicebear url.
     Else, it will return the relative path of the user's profile image.
-    
+
     If returnUserInfo is True, it will return a tuple of the user's record.
-    
+
     Args:
     - userID: The user's ID
     - returnUserInfo: If True, it will return a tuple of the user's record.
-    
+
     Returns:
     - The image path (str) only if returnUserInfo is False
     - The image path (str) and the user's record (tuple) if returnUserInfo is True
@@ -103,7 +103,7 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
 def get_dicebear_image(username:str) -> str:
     """
     Returns a random dicebear image from the database
-    
+
     Args:
         - username: The username of the user
     """
@@ -117,12 +117,12 @@ def get_dicebear_image(username:str) -> str:
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
     Connects to the database and returns the connection object
-    
+
     Args:
     - table: The table to connect to ("course", "user")
     - mode: The mode to use ("insert", "edit", "login", etc.)
     - kwargs: The keywords to pass into the respective sql operation functions
-    
+
     Returns the returned value from the SQL operation.
     """
     returnValue = con = None
@@ -142,10 +142,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "course"):
             returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-        elif table == "cart":
-            returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
-        elif table == "purchased":
-            returnValue = purchased_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "session"):
             returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "login_attempts"):
@@ -186,7 +182,7 @@ def user_ip_addresses_sql_operation(connection:pymysql.connections.Connection=No
         cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
         returnValue = cur.fetchall()
         ipAddressList = [ipAddress[0] for ipAddress in returnValue]
-        return ipAddressList        
+        return ipAddressList
 
     elif (mode == "add_ip_address_only_if_unique"):
         userID = kwargs.get("userID")
@@ -211,7 +207,7 @@ def twofa_token_sql_operation(connection:pymysql.connections.Connection=None, mo
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
 
     """
-    Set buffered = True 
+    Set buffered = True
 
     The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
     """
@@ -388,10 +384,11 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
 def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
     """
     Do CRUD operations on the user table
-    
+
     insert keywords: email, username, password
     login keywords: email, password
     get_user_data keywords: userID
+    get_user_cart keywords: userID
     add_to_cart keywords: userID, courseID
     remove_from_cart keywords: userID, courseID
     purchase_courses keywords: userID
@@ -442,7 +439,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         #     roleID = result.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)", 
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
             {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
@@ -492,7 +489,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
                 create_symmetric_key(keyName=keyName)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)", 
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
                 {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
@@ -500,7 +497,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
             # user exists, check if the user had used Google OAuth2 to sign up
             # by checking if the password is null
             if (matched[4] is not None):
-                # user has not signed up using Google OAuth2, 
+                # user has not signed up using Google OAuth2,
                 # return the generated userID from the database and the role name associated with the user
                 cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
                 roleName = cur.fetchone()[0]
@@ -672,7 +669,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
 
         for info in cardInfo:
             if (info is None):
-                # if any information is missing which should not be possible, 
+                # if any information is missing which should not be possible,
                 # the card will then be considered to not exist and will reset the card info to Null
                 cur.execute("UPDATE user SET card_name=NULL, card_no=NULL, card_exp=NULL WHERE id=%(userID)s", {"userID":userID})
                 connection.commit()
@@ -750,7 +747,7 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
 
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
-        
+
         if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs:
             cartCourseIDs.append(courseID)
             cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
@@ -779,13 +776,13 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
 
         for courseID in cartCourseIDs:
-        
+
             if courseID not in purchasedCourseIDs:
                 purchasedCourseIDs.append(courseID)
-        
+
         # Add to purchases
-        cur.execute("UPDATE user SET purchased_courses=%(purchased)s WHERE id=%(userID)s", {"purchased":json.dumps(purchasedCourseIDs), "userID":userID})        
-        
+        cur.execute("UPDATE user SET purchased_courses=%(purchased)s WHERE id=%(userID)s", {"purchased":json.dumps(purchasedCourseIDs), "userID":userID})
+
         # Empty cart
         cur.execute("UPDATE user SET cart_courses='[]' WHERE id=%(userID)s", {"userID":userID})
 
@@ -795,16 +792,15 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-# May not be used
 def course_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """
     Do CRUD operations on the course table
-    
+
     insert keywords: teacherID
-    
+
     get_course_data keywords: courseID
 
-    edit keywords: 
+    edit keywords:
     """
     if (not mode):
         connection.close()
@@ -824,9 +820,9 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
         course_total_rating = 0
         course_rating_count = 0
         date_created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         cur.execute(
-            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)", 
+            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)",
             {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "date_created":date_created, "video_path":video_path}
         )
         connection.commit()
@@ -928,7 +924,7 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
                                                                             else (teacherProfile, False)
                 for tupleInfo in matchedList:
                     courseInfoList.append(Course(((teacherUsername, teacherProfile), tupleInfo)))
-                
+
                 if (kwargs.get("getTeacherUsername")):
                     return (courseInfoList, res[0])
 
@@ -962,86 +958,13 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
         connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
-# May not be used
-# def cart_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
-#     """
-#     Do CRUD operations on the cart table
-    
-#     insert keywords: userID, courseID
-#     get_cart_data keywords: userID
-#     remove keywords: userID, courseID
-#     empty keywords: userID
-#     """
-
-#     if mode is None:
-#         connection.close()
-#         raise ValueError("You must specify a mode in the cart_sql_operation function!")
-
-#     cur = connection.cursor()
-
-#     userID = kwargs.get("userID")
-
-#     if mode == "insert":
-#         courseID = kwargs.get("courseID")
-#         cur.execute("INSERT INTO cart VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
-#         connection.commit()
-
-#     elif mode == "get_cart_courses":
-#         # List of course IDs in cart
-#         cur.execute("SELECT course_id FROM cart WHERE user_id = %(userID)s", {"userID":userID})
-#         courseID_list = cur.fetchall()
-#         return courseID_list
-
-#     elif mode == "remove":
-#         courseID = kwargs.get("courseID")
-#         cur.execute("DELETE FROM cart WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
-#         connection.commit()
-
-#     elif mode == "empty":
-#         cur.execute("DELETE FROM cart WHERE user_id = %(userID)s", {"userID":userID})
-#         connection.commit()
-
-# May not be used
-# def purchased_sql_operation(connection:MySQLCon.connection.MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
-#     """
-#     Do CRUD operations on the purchased table
-
-#     insert keywords: userID, courseID
-#     get_purchased_data keywords: userID
-#     delete keywords: userID, courseID
-#     """
-
-#     if mode is None:
-#         connection.close()
-#         raise ValueError("You must specify a mode in the purchased_sql_operation function!")
-
-#     cur = connection.cursor()
-
-#     userID = kwargs.get("userID")
-
-#     if mode == "insert":
-#         courseID = kwargs.get("courseID")
-#         cur.execute("INSERT INTO purchased VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
-#         connection.commit()
-
-#     elif mode == "get_purchased_courses":
-#         # List of course IDs in purchased
-#         cur.execute("SELECT course_id FROM purchased WHERE user_id = %(userID)s", {"userID":userID})
-#         courseID_list = cur.fetchall()
-#         return courseID_list
-
-#     elif mode == "delete":
-#         courseID = kwargs.get("courseID")
-#         cur.execute("DELETE FROM purchased WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
-#         connection.commit()
-
-def review_sql_operation(connection:pymysql.connections.Connection=None, mode: str=None, **kwargs) -> Union[list, None]:
+def review_sql_operation(connection:pymysql.connections.Connection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the purchased table
 
-    revieve keywords: userID, courseID, 
+    revieve keywords: userID, courseID,
     insert keywords: userID, courseID, courseRating, CourseReview
-    
+
     """
     if mode is None:
         connection.close()

@@ -35,6 +35,7 @@ from pathlib import Path
 from base64 import b64encode
 from io import BytesIO
 from os import environ
+from json import loads
 
 """Web app configurations"""
 # general Flask configurations
@@ -1090,6 +1091,8 @@ def createCourse():
                 # file.save(filePath)
 
                 sql_operation(table="course", mode="insert",courseID=courseData[0], teacherId=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
+                stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
+
 
                 session.pop("course-data")
                 flash("Course Created")
@@ -1241,7 +1244,7 @@ def cart():
         if request.method == "POST":
             # Remove item from cart
             courseID = request.form.get("courseID")
-            sql_operation(table="cart", mode="remove_from_cart", userID=userID, courseID=courseID)
+            sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
 
             return redirect(url_for("cart"))
 
@@ -1249,7 +1252,6 @@ def cart():
             imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
             # print(userInfo)
             cartCourseIDs = loads(userInfo[-2])
-            # print(cartCourseIDs)
 
             courseList = []
             subtotal = 0
@@ -1278,122 +1280,38 @@ def cart():
 @app.route("/checkout", methods = ["GET", "POST"])
 def checkout():
     validate_session()
-    if "user" in session:
-        """
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                line_items=[
-                            {
-                             "price_data": {
-                                            "unit_amount": 1,
-                                            "currency": "usd",
-                                            # "product": f'{module_id}',
-                                            "recurring": {"interval": "month"},
-                                           },
-                             'price': f"{price}",
-                             'quantity': 1,
-                            }
-                           ],
-                mode = 'payment',
-                success_url = url_for('purchaseHistory'),
-                cancel_url = url_for('cart'),
-            )
-        except Exception as error:
-            print(str(error))
 
-        return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
-        """
-        return redirect(url_for('cart'))
-        """
+    if 'user' in session:
         userID = session["user"]
 
-        if request.method == "POST":
-            cardNo = request.form.get("cardNo")
-            cardExpiryMonth  = request.form.get('cardExpMonth')
-            cardExpiryYear = request.form.get('cardExpYear')
-            cardCVV = request.form.get("cardCVV")
-            cardName = request.form.get("cardName")
-            cardSave = request.form.get("cardSave")
-            print(cardCVV)
+        cartCourseIDs = sql_operation(table='user', mode = 'get_user_cart', userID = userID)
+        email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID)[3]
+        print(cartCourseIDs)
+        print(email)
 
-            cardErrors = []
+        try:
+            checkout_session = stripe_checkout(userID = userID, cartCourseIDs = cartCourseIDs, email = email)
+        except Exception as error:
+            print(str(error))
+            return redirect(url_for('cart'))
 
-            if cardNo == "":
-                cardErrors.append('cardNo')
-            if cardExpiryMonth == "":
-                cardErrors.append('cardExpiryMonth')
-            if cardExpiryYear == "":
-                cardErrors.append('cardExpiryYear')
-            if cardCVV == "":
-                cardErrors.append('cardCVV')
-            if cardName == "":
-                cardErrors.append('cardName')
+        print(checkout_session)
+        print(type(checkout_session))
 
-            session['cardErrors'] = cardErrors
-
-            cardExpiry = f"{cardExpiryMonth}-{cardExpiryYear}"
-
-            print(cardExpiryMonth)
-            print(cardExpiryYear)
-
-            # Errors, try again.
-            if cardErrors != []:
-                return redirect(url_for("checkout"))
-
-            else:
-
-                if cardSave != None:
-                    sql_operation(table="user", mode="edit", userID=userID, cardNo=cardNo, cardExpiry=cardExpiry, cardCVV=cardCVV, cardName=cardName)
-
-                # Make Purchase
-                # sql_operation(table="user", mode="purchase_courses", userID=userID)
-
-                return redirect(url_for("purchaseHistory"))
-
-        else:
-            userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
-
-            cardInfo = {"cardName": "",
-                        "cardNo": "",
-                        "cardExpMonth": "",
-                        "cardExpYear": "",
-                        "cardCVV": ""
-                        }
-
-            if userInfo[7] is not None:
-
-                cardInfo["cardName"] = userInfo[7]
-                cardInfo["cardNo"] = userInfo[8]
-                cardInfo["cardExpMonth"] = int(userInfo[9].split("-")[0])
-                cardInfo["cardExpYear"] = int(userInfo[9].split("-")[1])
-                cardInfo["cardCVV"] = userInfo[10]
-
-            cartCourseIDs = sql_operation(table="user", mode="get_user_cart", userID=userID)
-            cartCount = len(cartCourseIDs)
-
-            subtotal = 0
-
-            for courseID in cartCourseIDs:
-                course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-                subtotal += course[5]
-
-            currentYear = datetime.today().year
-
-            if "cardErrors" not in session:
-                cardErrors = []
-            else:
-                try:
-                    cardErrors = session['cardErrors']
-                except (DecryptionError):
-                    session.pop("cardErrors", None)
-                    abort(500)
-
-            print(cardErrors)
-
-            return render_template("users/loggedin/checkout.html", cardErrors=cardErrors , cartCount=cartCount, subtotal=f"{subtotal:,.2f}", cardInfo=cardInfo, currentYear=currentYear, imageSrcPath=get_image_path(session["user"]), accType=userInfo[1])
-        """
+        return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
     else:
-        return redirect(url_for("login"))
+        return redirect(url_for('login'))
+
+@app.route("/purchase/<userToken>")
+def purchase(userToken):
+    validate_session()
+    data = EC_verify(userToken)
+    print(data)
+
+    sql_operation(table="user", mode="purchase_courses", userID = session["user"])
+
+    return redirect(url_for("purchaseHistory"))
+
 
 @app.route("/purchase_history")
 def purchaseHistory():

@@ -2,6 +2,12 @@
 import pymysql.cursors
 from google_crc32c import Checksum as g_crc32c
 
+from pathlib import Path
+from sys import path
+
+path.append(str(Path(__file__).parent.parent.joinpath('src/python_files')))
+from StripeFunctions import *   # Yes it works, ignore the error
+
 # import python standard libraries
 from random import randint
 from six import ensure_binary
@@ -79,12 +85,21 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
 """----------------------------------- END OF DEFINING FUNCTIONS -----------------------------------"""
 
 while (1):
-    debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
+    debugPrompt = input("Debug mode? (Y/N): ").lower().strip()
     if (debugPrompt not in ("y", "n", "")):
         print("Invalid input", end="\n\n")
         continue
     else:
         debugFlag = True if (debugPrompt != "n") else False
+        break
+
+while debugFlag == True:
+    stripePrompt = input("Use with Stripe? (Y/N): ").lower().strip()
+    if stripePrompt not in ('y', 'n', ''):
+        print('Invalid input', end = '\n\n')
+        continue
+    else:
+        stripeFlag = True if stripePrompt != 'n' else False
         break
 
 if (debugFlag):
@@ -128,10 +143,14 @@ if (not res):
     cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
     con.commit()
 
-demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
-while (demoCourse < 10):
-    print("Please enter at least 10.")
-    demoCourse = int(input("How many courses would you like to create? (Min: 10): "))
+if stripeFlag:
+    print("Creating 5 courses in line with Stripe data.")
+    demoCourse = 5
+else:
+    demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
+    while (demoCourse < 5):
+        print("Please enter at least 5.")
+        demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
 
 cur.execute(f"SELECT course_name FROM course WHERE teacher_id='{TEACHER_UID}' ORDER BY date_created DESC LIMIT 1")
 latestDemoCourse = cur.fetchall()
@@ -143,7 +162,10 @@ else:
 course_id_list = []
 
 for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
-    course_id = generate_id()
+    if stripeFlag:
+        course_id = f"Test_Course_ID_{i - latestDemoCourse + 1}_v2"
+    else:
+        course_id = generate_id()
     course_id_list.append(course_id)
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Demo Course {i}"
@@ -157,6 +179,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
 
     cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path))
+    #stripe_product_create(courseID=course_id, courseName=course_name, courseDescription=course_description, coursePrice=course_price, debug=True)
 
 # Add student
 STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
@@ -166,8 +189,8 @@ if (res is None):
     # add to the mysql database
     # use first 10 courseIDs as data
 
-    cartData = f'["{course_id_list[0]}", "{course_id_list[1]}", "{course_id_list[2]}", "{course_id_list[3]}", "{course_id_list[4]}"]'
-    purchasedData = f'["{course_id_list[5]}", "{course_id_list[6]}", "{course_id_list[7]}", "{course_id_list[8]}", "{course_id_list[9]}"]'
+    cartData = f'["{course_id_list[0]}", "{course_id_list[1]}", "{course_id_list[2]}"]'
+    purchasedData = f'["{course_id_list[3]}", "{course_id_list[4]}"]'
 
     userID = STUDENT_ID
     username = "Chloe"
