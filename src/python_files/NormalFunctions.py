@@ -8,7 +8,7 @@ This is to prevent circular imports.
 # import python standard libraries
 from six import ensure_binary
 import requests as req, uuid, re, json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
