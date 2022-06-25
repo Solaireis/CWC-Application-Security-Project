@@ -57,7 +57,7 @@ permissions_policy = {
 }
 
 # xss_protection is already defaulted True
-talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'], permissions_policy=permissions_policy, x_xss_protection=True)
+# talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'], permissions_policy=permissions_policy, x_xss_protection=True)
 
 
 # Debug flag (will be set to false when deployed)
