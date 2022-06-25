@@ -9,7 +9,6 @@ from flask import url_for
 
 # import python standard libraries
 import json
-from datetime import datetime, timedelta
 from typing import Union
 
 # import third party libraries
@@ -275,10 +274,12 @@ def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, %(reset_date)s)", {"userID":userID, "attempts":1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"])})
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"]})
         else:
+            cur.execute("SELECT NOW()")
+            now = cur.fetchone()[0]
             # comparing the reset datetime with the current datetime
-            if (attempts[1] > datetime.now().replace(microseconds=0)):
+            if (attempts[1] > now):
                 # if not past the reset datetime
                 currentAttempts = attempts[0]
             else:
@@ -290,7 +291,7 @@ def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = %(reset_date)s WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "reset_date":datetime.now() + timedelta(minutes=app.config["LOCKED_ACCOUNT_DURATION"]), "userID":userID})
+            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"], "userID":userID})
         connection.commit()
 
     elif (mode == "reset_user_attempts"):
@@ -299,7 +300,7 @@ def login_attempts_sql_operation(connection:pymysql.connections.Connection, mode
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date"):
-        cur.execute("DELETE FROM login_attempts WHERE reset_date < %(reset_date)s", {"reset_date":datetime.now().replace(microseconds=0)})
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < NOW()")
         connection.commit()
 
     else:
@@ -316,8 +317,7 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
-        expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, %(expiryDate)s)", {"sessionID":sessionID, "userID":userID, "expiryDate":expiryDate})
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, NOW() + INTERVAL %(intervalMins)s MINUTE)", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"]})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -339,8 +339,7 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
 
     elif (mode == "update_session"):
         sessionID = kwargs.get("sessionID")
-        expiryDate = datetime.now() + timedelta(minutes=app.config["SESSION_EXPIRY_INTERVALS"])
-        cur.execute("UPDATE session SET expiry_date = %(expiryDate)s WHERE session_id = %(sessionID)s", {"expiryDate": expiryDate, "sessionID": sessionID})
+        cur.execute("UPDATE session SET expiry_date = NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": app.config["SESSION_EXPIRY_INTERVALS"], "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
@@ -348,8 +347,9 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
         cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         expiryDate = result[1]
-        currentDatetime = datetime.now().replace(microsecond=0)
-        if (expiryDate >= currentDatetime):
+        cur.execute("SELECT NOW()")
+        now = cur.fetchone()[0]
+        if (expiryDate >= now):
             # not expired, check if the userID matches the sessionID
             return kwargs.get("userID") == result[0]
         else:
@@ -357,8 +357,7 @@ def session_sql_operation(connection:pymysql.connections.Connection=None, mode:s
             return False
 
     elif (mode == "delete_expired_sessions"):
-        currentDatetime = datetime.now().replace(microsecond=0)
-        cur.execute("DELETE FROM session WHERE expiry_date < %(currentDatetime)s", {"currentDatetime":currentDatetime})
+        cur.execute("DELETE FROM session WHERE expiry_date < NOW()")
         connection.commit()
 
     elif (mode == "if_session_exists"):
@@ -439,8 +438,8 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
         #     roleID = result.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
-            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
 
@@ -489,8 +488,8 @@ def user_sql_operation(connection:pymysql.connections.Connection=None, mode:str=
                 create_symmetric_key(keyName=keyName)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, %(date_joined)s, %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
-                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "date_joined":datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(card_name)s, %(card_no)s, %(card_exp)s, %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "card_name":None, "card_no":None, "card_exp":None, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
         else:
@@ -819,11 +818,10 @@ def course_sql_operation(connection:pymysql.connections.Connection=None, mode:st
         video_path = kwargs.get("videoPath")
         course_total_rating = 0
         course_rating_count = 0
-        date_created = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         cur.execute(
-            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, %(date_created)s, %(video_path)s)",
-            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "date_created":date_created, "video_path":video_path}
+            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, NOW(), %(video_path)s)",
+            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "video_path":video_path}
         )
         connection.commit()
 
