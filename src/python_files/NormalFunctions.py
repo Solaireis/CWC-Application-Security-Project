@@ -541,17 +541,23 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     """
     # Get the plaintext message, the signature, and the version ID
     if (isinstance(data, dict)):
-        plaintext = data["message"]
-        signature = data["signature"]
-        versionID = data["versionID"]
+        try:
+            plaintext = data["message"]
+            signature = data["signature"]
+            versionID = data["versionID"]
+        except:
+            return {"verified": False, "message": data} if (getData) else False
     elif (isinstance(data, bytes)):
         # if data is base64 encoded
-        b64EncodedDataList = data.split(b".")
-        data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
-        plaintext = data["message"]
-        signature = urlsafe_b64decode(b64EncodedDataList[1])
-        data["signature"] = signature
-        versionID = data["versionID"]
+        try:
+            b64EncodedDataList = data.split(b".")
+            data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
+            plaintext = data["message"]
+            signature = urlsafe_b64decode(b64EncodedDataList[1])
+            data["signature"] = signature
+            versionID = data["versionID"]
+        except:
+            return {"verified": False, "message": data} if (getData) else False
     else:
         raise ValueError("data must be either a dict or bytes")
 
@@ -566,7 +572,9 @@ def EC_verify(data:Union[dict, bytes]="", keyRingID:str="coursefinity", keyID:st
     ecKey = serialization.load_pem_public_key(publicKeyPEM, default_backend())
 
     # Compute the SHA384 hash of the plaintext
-    hash_ = sha384(plaintext.encode("utf-8")).digest()
+    if (not isinstance(plaintext, bytes)):
+        plaintext = plaintext.encode("utf-8")
+    hash_ = sha384(plaintext).digest()
 
     # Attempt to verify the signature
     try:

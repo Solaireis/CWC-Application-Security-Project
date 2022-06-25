@@ -1296,10 +1296,9 @@ def checkout():
 @app.route("/purchase/<userToken>")
 def purchase(userToken):
     validate_session()
-    try:
-        data = EC_verify(userToken)
-    except (Exception):
-        abort(403)
+    # TODO: verify the boolean returned from the EC_verify function
+    # TODO: If you defined getData to True, do data["verified"] to get the boolean
+    data = EC_verify(userToken)
 
     print(data)
 
