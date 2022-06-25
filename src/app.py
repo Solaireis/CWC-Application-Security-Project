@@ -1296,7 +1296,11 @@ def checkout():
 @app.route("/purchase/<userToken>")
 def purchase(userToken):
     validate_session()
-    data = EC_verify(userToken)
+    try:
+        data = EC_verify(userToken)
+    except (Exception):
+        abort(403)
+
     print(data)
 
     sql_operation(table="user", mode="purchase_courses", userID = session["user"])
