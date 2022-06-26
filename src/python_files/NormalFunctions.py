@@ -960,7 +960,7 @@ def pwd_has_been_pwned(password:str) -> bool:
     # hash the password (plaintext) using sha1 to check 
     # against haveibeenpwned's database
     # but will not be stored in the MySQL database
-    passwordHash = sha1(password.encode("utf-8")).hexdigest().upper()
+    passwordHash = sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()
     hashPrefix = passwordHash[:5]
     hashSuffix = passwordHash[5:]
     del passwordHash

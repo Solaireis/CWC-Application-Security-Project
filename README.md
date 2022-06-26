@@ -3,7 +3,7 @@
 <br>
 CourseFinity Web Application using Flask
 <br>
-(Requires Python 3.8 and above)
+(Requires Python 3.9 and above)
 </h1>
 
 ---
