@@ -59,7 +59,10 @@
   - At least 1 special character
   - At least 10 characters
   - Not more than 2 repeated characters
-- Blacklisting of known malicious IP addresses
+- Blacklisting of known malicious IP Addresses
+  - Mainly used for detecting bots with malicious intent
+  - An ineffective mitigation but acts as last resort mitigation against attackers trying to brute force login or doing other malicious activities such as credential stuffing on the web application
+  - Mainly uses this GitHub repository for the list of malicious IP Addresses: [ipsum](https://github.com/stamparm/ipsum)
 - Verification of passwords if the passwords has been leaked in the dark web using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
   - Verified whenever the user signs up or changes his/her password
 - Maximum of 10 failed login attempts per account (will reset after 30 mins)
