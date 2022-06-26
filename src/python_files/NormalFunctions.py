@@ -957,14 +957,19 @@ def pwd_has_been_pwned(password:str) -> bool:
     Returns:
     - True if the password is in the database, False otherwise.
     """
-    # hash the password (plaintext) using sha1 to check against the database
+    # hash the password (plaintext) using sha1 to check 
+    # against haveibeenpwned's database
+    # but will not be stored in the MySQL database
     passwordHash = sha1(password.encode("utf-8")).hexdigest().upper()
+    hashPrefix = passwordHash[:5]
+    hashSuffix = passwordHash[5:]
+    del passwordHash
 
     # retrieve the list of possible range from the api database
     # using the first five characters (to get the hash prefix) of the sha1 hash.
     results = []
     while (1):
-        response = req.get(f"https://api.pwnedpasswords.com/range/{passwordHash[:5]}")
+        response = req.get(f"https://api.pwnedpasswords.com/range/{hashPrefix}")
         if (response.status_code == 200):
             results = response.text.splitlines()
             break
@@ -981,7 +986,7 @@ def pwd_has_been_pwned(password:str) -> bool:
 
     # compare the possible ranges with the hash suffix (after the first five characters) of the sha1 hash
     for result in results:
-        if (result.split(":")[0] == passwordHash[5:]):
+        if (result.split(":")[0] == hashSuffix):
             # if the password has been found, return True
             return True
     return False

@@ -64,7 +64,11 @@
   - An ineffective mitigation but acts as last resort mitigation against attackers trying to brute force login or doing other malicious activities such as credential stuffing on the web application
   - Mainly uses this GitHub repository for the list of malicious IP Addresses: [ipsum](https://github.com/stamparm/ipsum)
 - Verification of passwords if the passwords has been leaked in the dark web using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
-  - Verified whenever the user signs up or changes his/her password
+  - Verified when:
+    - After a successful login
+    - Sign up
+    - Changing password
+    - Resetting password
 - Maximum of 10 failed login attempts per account (will reset after 30 mins)
 - Session timeout after 30 mins of inactivity
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
