@@ -59,6 +59,7 @@
   - At least 1 special character
   - At least 10 characters
   - Not more than 2 repeated characters
+  - All must be fulfiled when checking with haveibeenpwned api status was not 200 OK/is down.
 - Blacklisting of known malicious IP Addresses
   - Mainly used for detecting bots with malicious intent
   - An ineffective mitigation but acts as last resort mitigation against attackers trying to brute force login or doing other malicious activities such as credential stuffing on the web application
