@@ -38,6 +38,8 @@ from io import BytesIO
 from os import environ
 from json import loads
 import time
+from typing import Callable
+from functools import wraps
 
 """Web app configurations"""
 # general Flask configurations
@@ -175,53 +177,60 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
     # response.headers["Cache-Control"] = "public, max-age=600, s-maxage=600"
     return response
 
-def validate_session() -> None:
+# made validate session function a wrapper for each flask app routes
+def validate_session(func:Callable) -> Callable:
     """
     Validates the session if user is logged in.
 
     Used at every route functions.
 
     Returns
-    - None
+    - The callable app route function
     """
-    if (("user" in session) ^ ("admin" in session)):
-        # if either user or admin is in the session cookie value
-        userID = session.get("user") or session.get("admin")
-        try:
-            sessionID = RSA_decrypt(session["sid"])
-        except (DecryptionError):
-            session.clear()
-            abort(500)
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> Callable:
+        if (("user" in session) ^ ("admin" in session)):
+            # if either user or admin is in the session cookie value
+            userID = session.get("user") or session.get("admin")
+            try:
+                sessionID = RSA_decrypt(session["sid"])
+            except (DecryptionError):
+                session.clear()
+                abort(500)
 
-        if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-            # if user session is invalid as the user does not exist anymore
-            sql_operation(table="session", mode="delete_session", sessionID=sessionID)
-            session.clear()
-            return
-
-        if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
-            # if session exists
-            if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID)):
-                # if user session is expired or the userID does not match with the sessionID
+            if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+                # if user session is invalid as the user does not exist anymore
                 sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                 session.clear()
-                return
+                return func(*args, **kwargs)
 
-            # update session expiry time
-            sql_operation(table="session", mode="update_session", sessionID=sessionID)
-            return
-        else:
-            # if session does not exist in the db
+            if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
+                # if session exists
+                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID)):
+                    # if user session is expired or the userID does not match with the sessionID
+                    sql_operation(table="session", mode="delete_session", sessionID=sessionID)
+                    session.clear()
+                    return func(*args, **kwargs)
+
+                # update session expiry time
+                sql_operation(table="session", mode="update_session", sessionID=sessionID)
+                return func(*args, **kwargs)
+            else:
+                # if session does not exist in the db
+                session.clear()
+                return func(*args, **kwargs)
+
+        elif ("user" in session and "admin" in session):
+            # both user and admin are in session cookie value
+            # clear the session as it should not be possible to have both session
             session.clear()
-            return
-    elif ("user" in session and "admin" in session):
-        # both user and admin are in session cookie value
-        # clear the session as it should not be possible to have both session
-        session.clear()
+
+        return func(*args, **kwargs)
+    return wrapper
 
 @app.route("/")
+@validate_session
 def home():
-    validate_session()
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
     threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
 
@@ -240,8 +249,8 @@ def home():
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
 @app.route("/reset-password", methods=["GET", "POST"])
+@validate_session
 def resetPasswordRequest():
-    validate_session()
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
@@ -287,8 +296,8 @@ def resetPasswordRequest():
         return render_template("users/guest/request_password_reset.html", form=requestForm)
 
 @app.route("/reset-password/<token>", methods=["GET", "POST"])
+@validate_session
 def resetPassword(token:str):
-    validate_session()
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
@@ -342,9 +351,9 @@ def resetPassword(token:str):
         return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("2 per second")
+@validate_session
+@limiter.limit("10 per second")
 def login():
-    validate_session()
     if ("user" not in session or "admin" not in session):
         loginForm = CreateLoginForm(request.form)
         if (request.method == "GET"):
@@ -493,11 +502,11 @@ def login():
         return redirect(url_for("home"))
 
 @app.route("/verify-login", methods=["GET", "POST"])
+@validate_session
 def enterGuardTOTP():
     """
     This page is only accessible to users who are logging but from a new IP address.
     """
-    validate_session()
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
@@ -562,8 +571,8 @@ def enterGuardTOTP():
     return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
 @app.route("/login-google")
+@validate_session
 def loginViaGoogle():
-    validate_session()
     if ("user" not in session or "admin" not in session):
         # https://developers.google.com/identity/protocols/oauth2/web-server#python
         authorisationUrl, state = app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
@@ -584,7 +593,6 @@ def loginViaGoogle():
 
 @app.route("/login-callback")
 def loginCallback():
-    validate_session()
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
@@ -645,8 +653,8 @@ def loginCallback():
     return redirect(url_for("home"))
 
 @app.route("/signup", methods=["GET", "POST"])
+@validate_session
 def signup():
-    validate_session()
     if ("user" not in session and "admin" not in session):
         signupForm = CreateSignUpForm(request.form)
         if (request.method == "GET"):
@@ -723,8 +731,8 @@ def signup():
         return redirect(url_for("home"))
 
 @app.route("/logout")
+@validate_session
 def logout():
-    validate_session()
     if ("user" not in session and "admin" not in session):
         return redirect(url_for("login"))
 
@@ -734,11 +742,11 @@ def logout():
     return redirect(url_for("home"))
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
+@validate_session
 def enter2faTOTP():
     """
     This page is only accessible to users who have 2FA enabled and is trying to login.
     """
-    validate_session()
     if ("user" in session or "admin" in session):
         return redirect(url_for("home"))
 
@@ -801,8 +809,8 @@ def enter2faTOTP():
     return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader, formBody=formBody)
 
 @app.post("/disable-2fa")
+@validate_session
 def disableTwoFactorAuth():
-    validate_session()
     if ("user" not in session and "admin" not in session):
         return redirect(url_for("login"))
 
@@ -830,8 +838,8 @@ def disableTwoFactorAuth():
     return redirect(url_for("userProfile"))
 
 @app.route("/setup-2fa", methods=["GET", "POST"])
+@validate_session
 def twoFactorAuthSetup():
-    validate_session()
     if ("user" not in session and "admin" not in session):
         return redirect(url_for("login"))
 
@@ -922,8 +930,8 @@ def twoFactorAuthSetup():
     return redirect(url_for("twoFactorAuthSetup"))
 
 @app.route("/user-profile", methods=["GET","POST"])
+@validate_session
 def userProfile():
-    validate_session()
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
@@ -944,8 +952,8 @@ def userProfile():
         return redirect(url_for("login"))
 
 @app.route("/change_username", methods=["GET","POST"])
+@validate_session
 def updateUsername():
-    validate_session()
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
@@ -972,8 +980,8 @@ def updateUsername():
         return redirect(url_for("login"))
 
 @app.route("/change-email", methods=["GET","POST"])
+@validate_session
 def updateEmail():
-    validate_session()
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
@@ -1013,8 +1021,8 @@ def updateEmail():
         return redirect(url_for("login"))
 
 @app.route("/change-password", methods=["GET","POST"])
+@validate_session
 def updatePassword():
-    validate_session()
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         userID = userInfo[0]
@@ -1057,8 +1065,8 @@ def updatePassword():
         return redirect(url_for("login"))
 
 @app.post("/change-account-type")
+@validate_session
 def changeAccountType():
-    validate_session()
     if ("user" in session):
         userID = session["user"]
         if (request.form["changeAccountType"] == "changeToTeacher"):
@@ -1075,8 +1083,8 @@ def changeAccountType():
         return redirect(url_for("login"))
 
 @app.post("/delete-profile-picture")
+@validate_session
 def deletePic():
-    validate_session()
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         if ("https" not in imageSrcPath):
@@ -1089,8 +1097,8 @@ def deletePic():
         return redirect(url_for("login"))
 
 @app.post("/upload-profile-picture")
+@validate_session
 def uploadPic():
-    validate_session()
     if ("user" in session):
         userID = session["user"]
         if ("profilePic" not in request.files):
@@ -1123,8 +1131,8 @@ def uploadPic():
         return redirect(url_for("login"))
 
 @app.route("/video-upload", methods=["GET", "POST"])
+@validate_session
 def videoUpload():
-    validate_session()
     if ("user" in session):
         courseID = generate_id()
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -1162,8 +1170,8 @@ Why : Hackers can edit videos and prevent availability to wanted resources
 solution : Encrypt video data
 """
 @app.route("/create-course", methods=["GET","POST"])
+@validate_session
 def createCourse():
-    validate_session()
     if ("user" in session):
         if ("course-data" in session):
             courseData = session["course-data"]
@@ -1216,8 +1224,8 @@ def createCourse():
         return redirect(url_for("login"))
 
 @app.route("/teacher/<teacherID>")
+@validate_session
 def teacherPage(teacherID):
-    validate_session()
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
     threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
@@ -1237,8 +1245,8 @@ def teacherPage(teacherID):
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
 @app.route("/course/<courseID>")
+@validate_session
 def coursePage(courseID):
-    validate_session()
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
@@ -1280,8 +1288,8 @@ def coursePage(courseID):
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
 
 @app.route("/course-review/<courseID>")
+@validate_session
 def courseReview(courseID):
-    validate_session()
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     courses = sql_operation(table="course", mode="", courseID=courseID)
@@ -1295,8 +1303,8 @@ def courseReview(courseID):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID, accType=accType)
 
 @app.route("/purchase-view/<courseID>")
+@validate_session
 def purchaseView(courseID):
-    validate_session()
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
@@ -1338,8 +1346,8 @@ def purchaseView(courseID):
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
 
 @app.post("/add_to_cart/<courseID>")
+@validate_session
 def addToCart(courseID):
-    validate_session()
     if ("user" in session):
         sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
         return redirect(url_for("cart"))
@@ -1347,8 +1355,8 @@ def addToCart(courseID):
         return redirect(url_for("login"))
 
 @app.route("/shopping_cart", methods=["GET", "POST"])
+@validate_session
 def cart():
-    validate_session()
     if "user" in session:
         userID = session["user"]
         if request.method == "POST":
@@ -1388,9 +1396,8 @@ def cart():
         return redirect(url_for("login"))
 
 @app.route("/checkout", methods = ["GET", "POST"])
+@validate_session
 def checkout():
-    validate_session()
-
     if 'user' in session:
         userID = session["user"]
 
@@ -1413,8 +1420,8 @@ def checkout():
         return redirect(url_for('login'))
 
 @app.route("/purchase/<userToken>")
+@validate_session
 def purchase(userToken):
-    validate_session()
     # TODO: verify the boolean returned from the EC_verify function
     # TODO: If you defined getData to True, do data["verified"] to get the boolean
     data = EC_verify(userToken)
@@ -1427,8 +1434,8 @@ def purchase(userToken):
 
 
 @app.route("/purchase_history")
+@validate_session
 def purchaseHistory():
-    validate_session()
     imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
     purchasedCourseIDs = userInfo[-1]
     courseList = []
@@ -1450,13 +1457,13 @@ def purchaseHistory():
     return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
 
 @app.route("/purchase-view/<courseID>")
+@validate_session
 def purchaseDetails(courseID):
-    validate_session()
     return render_template("users/loggedin/purchase_view.html", courseID=courseID)
 
 @app.route("/search", methods=["GET","POST"])
+@validate_session
 def search():
-    validate_session()
     searchInput = str(request.args.get("q"))
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
 
@@ -1468,8 +1475,8 @@ def search():
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), accType=accType)
 
 @app.route("/admin-profile", methods=["GET","POST"])
+@validate_session
 def adminProfile():
-    validate_session()
     # for logged users that are not admins
     if ("user" in session):
         return redirect(url_for("userProfile"))
@@ -1486,87 +1493,87 @@ def adminProfile():
     return redirect(url_for("login"))
 
 @app.route("/admin-dashboard", methods=["GET","POST"])
+@validate_session
 def adminDashboard():
-    validate_session()
     return "test"
 
 @app.route("/teapot")
+@validate_session
 def teapot():
-    validate_session()
     abort(418)
 
 """Custom Error Pages"""
 
 # Bad Request
 @app.errorhandler(400)
+@validate_session
 def error400(e):
-    validate_session()
     return render_template("errors/401.html"), 400
 
 # Unauthorised
 @app.errorhandler(401)
+@validate_session
 def error401(e):
-    validate_session()
     return render_template("errors/401.html"), 401
 
 # Forbidden
 @app.errorhandler(403)
+@validate_session
 def error403(e):
-    validate_session()
     return render_template("errors/403.html"), 403
 
 # Not Found
 @app.errorhandler(404)
+@validate_session
 def error404(e):
-    validate_session()
     return render_template("errors/404.html"), 404
 
 # Method Not Allowed
 @app.errorhandler(405)
+@validate_session
 def error405(e):
-    validate_session()
     return render_template("errors/405.html"), 405
 
 # Payload Too Large
 @app.errorhandler(413)
+@validate_session
 def error413(e):
-    validate_session()
     return render_template("errors/413.html"), 413
 
 # I'm a Teapot
 @app.errorhandler(418)
+@validate_session
 def error418(e):
-    validate_session()
     return render_template("errors/418.html"), 418
 
 # Too Many Requests
 @app.errorhandler(429)
+@validate_session
 def error429(e):
-    validate_session()
     return render_template("errors/429.html"), 429
 
 # Internal Server Error
 @app.errorhandler(500)
+@validate_session
 def error500(e):
-    validate_session()
     return render_template("errors/500.html"), 500
 
 # Not Implemented
 @app.errorhandler(501)
+@validate_session
 def error501(e):
-    validate_session()
     return render_template("errors/501.html"), 501
 
 # Bad Gateway
 @app.errorhandler(502)
+@validate_session
 def error502(e):
-    validate_session()
     return render_template("errors/502.html"), 502
 
 # Service Temporarily Unavailable
 @app.errorhandler(503)
+@validate_session
 def error503(e):
-    validate_session()
     return render_template("errors/503.html"), 503
 
 """End of Custom Error Pages"""
