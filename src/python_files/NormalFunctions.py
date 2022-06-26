@@ -8,7 +8,8 @@ This is to prevent circular imports.
 # import python standard libraries
 from six import ensure_binary
 import requests as req, uuid, re, json
-from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
@@ -407,6 +408,27 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
 
 class JWTExpiryProperties:
+    """
+    Class to hold the JWT-like expiry properties feature.
+
+    Note: Although it is implemented for the purpose of digitally signing a payload 
+    and base64 encoding the payload with an active duration configured 
+    and base64 encoding the signature, it is not a JWT as it has a major difference.
+
+    Instead of being in the standard format:
+    - "header.payload.signature"
+
+    It is in the format of:
+    - "payload.signature" as it is known that the web application will be 
+    using a standardised EC algorithm to sign and verify the payload. 
+    Hence, omitting the header data.
+
+    In short:
+    - It is used when digitally signing a payload and to configure an active duration time in seconds.
+    """
+
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f %z"
+
     def __init__(self, activeDuration:Optional[int]=0, strDate:Optional[str]=None) -> None:
         """
         Initializes the JWTExpiryProperties object
@@ -417,9 +439,9 @@ class JWTExpiryProperties:
         - Either one of the two parameters should be provided but NOT both.
         """
         if (strDate is None and activeDuration != 0):
-            self.expiryDate = datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0) + timedelta(seconds=activeDuration)
+            self.expiryDate = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(seconds=activeDuration)
         elif (strDate is not None and activeDuration == 0):
-            self.expiryDate = datetime.strptime(strDate, "%Y-%m-%d %H:%M:%S %z")
+            self.expiryDate = datetime.strptime(strDate, DATE_FORMAT).astimezone(tz=ZoneInfo("Asia/Singapore"))
         elif (strDate is not None and activeDuration != 0):
             raise ValueError("Cannot specify both expirySeconds and strDate")
         else:
@@ -427,15 +449,17 @@ class JWTExpiryProperties:
 
     def get_expiry_str_date(self) -> str:
         """
-        Returns the expiry date in string type in the format of "YYYY-MM-DD HH:MM:SS"
+        Returns the expiry date in string type.
+        
+        E.g. "2022-06-26 17:21:20.123456 +0800"
         """
-        return self.expiryDate.strftime("%Y-%m-%d %H:%M:%S %z")
+        return self.expiryDate.strftime(DATE_FORMAT)
 
     def is_expired(self) -> bool:
         """
         Returns True if the token has expired, False otherwise
         """
-        return (datetime.now(timezone(timedelta(hours=8))).replace(microsecond=0) > self.expiryDate)
+        return (datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) > self.expiryDate)
 
     def __str__(self) -> str:
         return self.get_expiry_str_date()
@@ -779,7 +803,7 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
         dateComment = results[3].split(",")[-1].strip()
         lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S %z")
         # convert utc+2 to utc+8
-        lastUpdated = lastUpdated.astimezone(timezone(timedelta(hours=8)))
+        lastUpdated = lastUpdated.astimezone(tz=ZoneInfo("Asia/Singapore"))
 
         action = 0 # 1 for update, 0 for creating a new file
         if (BLACKLIST_FILEPATH.exists() and BLACKLIST_FILEPATH.is_file()):

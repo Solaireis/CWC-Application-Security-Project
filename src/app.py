@@ -30,7 +30,8 @@ from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
                                        LOGIN_SITE_KEY, SIGNUP_SITE_KEY, IPINFO_HANDLER
 
 # import python standard libraries
-from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+from datetime import datetime
 from pathlib import Path
 from base64 import b64encode
 from io import BytesIO
@@ -413,7 +414,7 @@ def login():
 
                 ipDetails = IPINFO_HANDLER.getDetails(requestIPAddress).all
                 # utc+8 time (SGT)
-                currentDatetime = datetime.now(timezone(timedelta(hours=8)))
+                currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
                 currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
 
                 # format the string location from the ip address details
