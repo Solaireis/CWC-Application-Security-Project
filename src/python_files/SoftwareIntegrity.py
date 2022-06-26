@@ -1,11 +1,12 @@
+# import third party libraries
 import requests
+
+# import python standard libraries
 import hashlib
 from pathlib import Path
 import shutil
 import platform
-
-#Old Pip Wrapper , for now it works
-from pip._internal import main as pipmain
+from pip._internal import main as pipmain # Old Pip Wrapper, for now it works
 
 
 """
@@ -71,7 +72,7 @@ for i in hashes:
         print(count)
         count += 1
 """
-dirname = Path(Path().absolute()).joinpath("src", "python_packages")
+dirname = Path(__file__).absolute().parent.parent.joinpath("python_packages")
 dirname.mkdir(parents=True, exist_ok=True)
 
 for i in hashes:
