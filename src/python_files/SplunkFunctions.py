@@ -16,11 +16,12 @@ def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
     - The Splunk token.
     """
 
-    response = get(url = 'https://localhost:8089/services/data/inputs/http',
-                       auth = ('coursefinity', environ.get("EMAIL_PASS")), 
-                       params = {'output_mode': 'json'}, 
-                       verify = False
-                      )
+    response = get(
+                    url = 'https://localhost:8089/services/data/inputs/http',
+                    auth = ('coursefinity', environ.get("EMAIL_PASS")), 
+                    params = {'output_mode': 'json'}, 
+                    verify = False
+                )
     
     # print(response.content)
     response = loads(response.content)['entry']

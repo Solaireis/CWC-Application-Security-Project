@@ -72,11 +72,10 @@ for i in hashes:
         count += 1
 """
 dirname = Path(Path().absolute()).joinpath("src", "python_packages")
-
-# BEFORE U RUN CREATE PYTHON_PACKAGES FOLDER IN SRC FOLDER
+dirname.mkdir(parents=True, exist_ok=True)
 
 for i in hashes:
-    if (type(i) == tuple):
+    if (isinstance(i, tuple)):
         i = i[platforms[platformType]]
     x = i.split("/")
     path = f"{dirname}/{x[-1]}"
@@ -87,7 +86,7 @@ for i in hashes:
 for i in hashes:
     sha256 = hashlib.sha256()
     hashed = hashes[i]
-    if (type(i) == tuple):
+    if (isinstance(i, tuple)):
         hashed = hashes[i][platforms[platformType]]
         i = i[platforms[platformType]]
     x = i.split("/")
@@ -100,8 +99,8 @@ for i in hashes:
         Path(path).unlink()
         print(f"File from {i} does not match the hash!")
     else:
-        #Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
-        #It works but its an old way of doing it so need find improved way
+        # Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
+        # It works but its an old way of doing it so need find improved way
         # pipmain(['install', path])
         print(f"File from {i} matches the hash! Successfully Installed & Deleted")
         Path(path).unlink()
