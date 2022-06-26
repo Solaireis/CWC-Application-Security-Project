@@ -919,7 +919,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
-            cur.execute(f"SELECT username, profile_image FROM user WHERE id='{teacherID}'")
+            cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
             res = cur.fetchone()
             teacherUsername = res[0]
             teacherProfile = res[1]
