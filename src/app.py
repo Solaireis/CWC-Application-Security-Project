@@ -1465,6 +1465,8 @@ def purchaseDetails(courseID):
 @validate_session
 def search():
     searchInput = str(request.args.get("q"))
+    if len(searchInput) > 100:
+        abort(413)
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
 
     accType = imageSrcPath = None
