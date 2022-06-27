@@ -300,14 +300,14 @@ def resetPassword(token:str):
         return redirect(url_for("home"))
 
     # verify the token
-    payload = EC_verify(data=token, getData=True)
-    if (payload["verified"] is False):
+    data = EC_verify(data=token, getData=True)
+    if (data["verified"] is False):
         # if the token is invalid
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("login"))
 
     # get the userID from the token
-    jsonPayload = payload["payload"]
+    jsonPayload = data["data"]["payload"]
     userID = jsonPayload["userID"]
 
     # check if the user exists in the database
