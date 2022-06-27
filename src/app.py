@@ -293,7 +293,7 @@ def resetPasswordRequest():
     else:
         return render_template("users/guest/request_password_reset.html", form=requestForm)
 
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
+@app.route("/reset-password/<string:token>", methods=["GET", "POST"])
 @validate_session
 def resetPassword(token:str):
     if ("user" in session or "admin" in session):
@@ -1221,9 +1221,9 @@ def createCourse():
     else:
         return redirect(url_for("login"))
 
-@app.route("/teacher/<teacherID>")
+@app.route("/teacher/<string:teacherID>")
 @validate_session
-def teacherPage(teacherID):
+def teacherPage(teacherID:str):
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
     threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
@@ -1242,9 +1242,9 @@ def teacherPage(teacherID):
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
-@app.route("/course/<courseID>")
+@app.route("/course/<string:courseID>")
 @validate_session
-def coursePage(courseID):
+def coursePage(courseID:str):
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
@@ -1295,9 +1295,9 @@ def coursePage(courseID):
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
              reviews=reviews)
 
-@app.route("/course-review/<courseID>") #writing of review
+@app.route("/course-review/<string:courseID>") #writing of review
 @validate_session
-def courseReview(courseID):
+def courseReview(courseID:str):
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     reviewDate = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -1311,9 +1311,9 @@ def courseReview(courseID):
     return render_template("users/general/course_page_review.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID, accType=accType)
 
-@app.route("/purchase-view/<courseID>")
+@app.route("/purchase-view/<string:courseID>")
 @validate_session
-def purchaseView(courseID):
+def purchaseView(courseID:str):
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
@@ -1354,9 +1354,9 @@ def purchaseView(courseID):
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
 
-@app.post("/add_to_cart/<courseID>")
+@app.post("/add_to_cart/<string:courseID>")
 @validate_session
-def addToCart(courseID):
+def addToCart(courseID:str):
     if ("user" in session):
         sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
         return redirect(url_for("cart"))
@@ -1428,9 +1428,9 @@ def checkout():
     else:
         return redirect(url_for('login'))
 
-@app.route("/purchase/<userToken>")
+@app.route("/purchase/<string:userToken>")
 @validate_session
-def purchase(userToken):
+def purchase(userToken:str):
     # TODO: verify the boolean returned from the EC_verify function
     # TODO: If you defined getData to True, do data["verified"] to get the boolean
     data = EC_verify(userToken)
@@ -1465,9 +1465,9 @@ def purchaseHistory():
 
     return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
 
-@app.route("/purchase-view/<courseID>")
+@app.route("/purchase-view/<string:courseID>")
 @validate_session
-def purchaseDetails(courseID):
+def purchaseDetails(courseID:str):
     return render_template("users/loggedin/purchase_view.html", courseID=courseID)
 
 @app.route("/search", methods=["GET","POST"])
