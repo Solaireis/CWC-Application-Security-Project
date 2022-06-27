@@ -53,8 +53,16 @@ def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
     # return the secret payload
     return response.payload.data.decode("utf-8")
 
-GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
+try:
+    GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
+except (FailedPrecondition):
+    print("Error: Google credentials not found.")
+    sysExit(1)
+
+try:
+    GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
+except (FailedPrecondition):
+    GOOGLE_TOKEN = None
 
 def shutdown() -> None:
     """
@@ -98,10 +106,13 @@ def create_token(quiet:bool=False) -> None:
     # and is stored in Google Secret Manager API.
     # It is created automatically when the authorization flow 
     # completes for the first time and will be saved to Google Secret Manager API.
-    try:
-        creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
-    except (RefreshError):
-        print("Token is no longer valid as there is an refresh error!\n")
+    if (GOOGLE_TOKEN is not None):
+        try:
+            creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
+        except (RefreshError):
+            print("Token is no longer valid as there is an refresh error!\n")
+    else:
+        print("No token found.\n")
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):
@@ -129,17 +140,17 @@ def create_token(quiet:bool=False) -> None:
         print(f"\rNew secret version, {GOOGLE_TOKEN_SECRET_NAME}, created:", response.name, "\n")
 
         while (1):
-            disableAllPastVer = input("Do you want to disable all past versions? (Y/n): ").lower().strip()
-            if (disableAllPastVer not in ("y", "n", "")):
+            destroyAllPastVer = input("Do you want to DESTROY all past versions? (Y/n): ").lower().strip()
+            if (destroyAllPastVer not in ("y", "n", "")):
                 print("Please enter a valid input!")
                 continue
             else:
-                disableAllPastVer = True if (disableAllPastVer != "n") else False
+                destroyAllPastVer = True if (destroyAllPastVer != "n") else False
                 break
 
         # disable all past versions if user wishes to do so
-        if (disableAllPastVer):
-            print("Disabling all past versions...", end="")
+        if (destroyAllPastVer):
+            print("Destroying all past versions...", end="")
 
             # get the latest secret version
             latestVer = int(response.name.split("/")[-1])
@@ -150,8 +161,10 @@ def create_token(quiet:bool=False) -> None:
                     SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                 except (FailedPrecondition):
                     # key is already destroyed
-                    pass
-            print("\rDisabled all past versions!", end="\n\n")
+                    break # assuming that all the previous has been destroyed
+                    # otherwise, uncomment the code below
+                    # pass
+            print("\rDestroyed all past versions!", end="\n\n")
 
     try:
         # Build the Gmail service from the credentials

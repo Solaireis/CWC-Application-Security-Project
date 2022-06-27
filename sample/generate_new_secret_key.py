@@ -99,17 +99,17 @@ def main() -> None:
             print(f"\rGenerated the new Flask secret key at \"{response.name}\"!", end="\n\n")
 
             while (1):
-                disableAllPastVer = input("Do you want to disable all past versions? (Y/n): ").lower().strip()
-                if (disableAllPastVer not in ("y", "n", "")):
+                destroyAllPastVer = input("Do you want to disable all past versions? (Y/n): ").lower().strip()
+                if (destroyAllPastVer not in ("y", "n", "")):
                     print("Please enter a valid input!")
                     continue
                 else:
-                    disableAllPastVer = True if (disableAllPastVer != "n") else False
+                    destroyAllPastVer = True if (destroyAllPastVer != "n") else False
                     break
 
             # disable all past versions if user wishes to do so
-            if (disableAllPastVer):
-                print("Disabling all past versions...", end="")
+            if (destroyAllPastVer):
+                print("Destroying all past versions...", end="")
 
                 # get the latest secret version
                 latestVer = int(response.name.split("/")[-1])
@@ -120,8 +120,10 @@ def main() -> None:
                         SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                     except (FailedPrecondition):
                         # key is already destroyed
-                        pass
-                print("\rDisabled all past versions!", end="\n\n")
+                        break # assuming that all the previous has been destroyed
+                        # otherwise, uncomment the code below
+                        # pass
+                print("\rDestroyed all past versions!", end="\n\n")
 
         elif (prompt == "2"):
             # construct the resource name of the secret version

@@ -47,14 +47,23 @@ def accepted_image_extension(filename:str) -> bool:
 def get_google_flow() -> Flow:
     """
     Returns the Google OAuth2 flow.
+
+    Scopes details:
+    - https://developers.google.com/identity/protocols/oauth2/scopes
     """
     flow = Flow.from_client_config(
         CONSTANTS.GOOGLE_CREDENTIALS,
         [
+            # for retrieving the user's public personal information
             "https://www.googleapis.com/auth/userinfo.profile",
+            # for getting the user's email
             "https://www.googleapis.com/auth/userinfo.email",
+            # for associating the user with their personal info on Google
             "openid",
-            "https://www.googleapis.com/auth/gmail.send" # for Google to send security alerts to the user's email
+            # for Google to send security alerts to the user's email
+            "https://www.googleapis.com/auth/gmail.send", 
+            # for Google to read the user's emails as required for some OAuth2 logins
+            "https://www.googleapis.com/auth/gmail.readonly", 
         ],
         redirect_uri=url_for("loginCallback", _external=True)
     )
