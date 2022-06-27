@@ -72,7 +72,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
         id VARCHAR(32) PRIMARY KEY, 
-        role INT UNSIGNED NOT NULL,
+        role INTEGER UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
         email VARCHAR(255) NOT NULL UNIQUE, 
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
@@ -92,8 +92,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_image_path VARCHAR(255) DEFAULT NULL,
         course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
         course_category VARCHAR(255) NOT NULL,
-        course_total_rating INTEGER NOT NULL DEFAULT 0,
-        course_rating_count INTEGER NOT NULL DEFAULT 0,
+        course_total_rating INTEGER UNSIGNED NOT NULL DEFAULT 0,
+        course_rating_count INTEGER UNSIGNED NOT NULL DEFAULT 0,
         date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
@@ -116,7 +116,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
         user_id VARCHAR(32) PRIMARY KEY,
-        attempts INTEGER NOT NULL,
+        attempts INTEGER UNSIGNED NOT NULL,
         reset_date DATETIME NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
@@ -131,7 +131,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("""CREATE TABLE IF NOT EXISTS review (
         user_id VARCHAR(32),
         course_id CHAR(32),
-        course_rating INTEGER,
+        course_rating INTEGER UNSIGNED,
         course_review VARCHAR(255),
         review_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, course_id),
