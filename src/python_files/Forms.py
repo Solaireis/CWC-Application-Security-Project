@@ -382,7 +382,7 @@ class CreateCourse(Form):
     tags = StringField("")
     zoomschedule'''
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
-    courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1)])
+    courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
     #thumbnail use HTML to validate size, type
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
     # courseType = RadioField('', choices=[('video','Video Lessons')])
