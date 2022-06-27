@@ -69,16 +69,36 @@ permissions_policy = {
 # xss_protection is already defaulted True
 talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'], permissions_policy=permissions_policy, x_xss_protection=True)
 
-
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = CONSTANTS.DEBUG_MODE
 
 # Maintenance mode flag
 app.config["MAINTENANCE_MODE"] = False
 
-# secret key mainly for digitally signing the session cookie
+# Session cookie configurations
+# More details: https://flask.palletsprojects.com/en/2.1.x/config/?highlight=session#SECRET_KEY
+# Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
 app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
+
+# Make it such that the session cookie will be deleted when the browser is closed
+app.config["SESSION_PERMANENT"] = False
+
+# Browsers will not allow JavaScript access to cookies marked as “HTTP only” for security.
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+
+# https://flask.palletsprojects.com/en/2.1.x/security/#security-cookie
+# Lax prevents sending cookies with CSRF-prone requests 
+# from external sites, such as submitting a form
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# The name of the session cookie
+app.config["SESSION_COOKIE_NAME"] = "session"
+
+# Only allow the session cookie to be sent over HTTPS
+# Will be enabled when hosted
+if (not CONSTANTS.DEBUG_MODE):
+    app.config["SESSION_COOKIE_SECURE"] = True
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
