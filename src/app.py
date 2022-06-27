@@ -1292,7 +1292,8 @@ def coursePage(courseID):
 def courseReview(courseID):
     accType = imageSrcPath = None
     userPurchasedCourses = {}
-    courses = sql_operation(table="course", mode="", courseID=courseID)
+    reviewDate = datetime.datetime.now().strftime("%Y-%m-%d")
+    courses = sql_operation(table="", mode="", courseID=courseID)
 
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)

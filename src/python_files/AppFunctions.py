@@ -150,6 +150,9 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "user_ip_addresses"):
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "review"):
+            returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
+    
         else:
             raise ValueError("Invalid table name")
     except (MySQLErrors.IntegrityError, MySQLErrors.OperationalError, MySQLErrors.InternalError, MySQLErrors.DataError) as e:
@@ -960,7 +963,9 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif mode == "insert":
         courseRating = kwargs.get("courseRating")
-        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating})
+        courseReview = kwargs.get("courseReview")
+        #reviewDates = kwargs.get("reviewDates")
+        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, %(reviewDate)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
 
     else:

@@ -132,6 +132,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32),
         course_id CHAR(32),
         course_rating INTEGER,
+        course_review VARCHAR(255),
         review_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id),
