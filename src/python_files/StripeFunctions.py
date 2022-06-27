@@ -10,13 +10,13 @@ from inspect import stack, getframeinfo
 
 # import local python libraries
 if Path(getframeinfo(stack()[-1][0]).filename).stem != 'app':
-    from ConstantsInit import STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY
+    from Constants import CONSTANTS
     from NormalFunctions import EC_sign, JWTExpiryProperties
 else:
-    from .ConstantsInit import STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY
+    from .Constants import CONSTANTS
     from .NormalFunctions import EC_sign, JWTExpiryProperties
 
-stripe.api_key = STRIPE_SECRET_KEY
+stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 
 def stripe_product_create(courseID, courseName, courseDescription, coursePrice, courseImagePath=None, debug=False) -> None:
     if debug:

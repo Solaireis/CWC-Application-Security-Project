@@ -6,36 +6,36 @@ from typing import Optional
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME, SQL_CLIENT,DEBUG_MODE, REMOTE_SQL_SERVER_IP, SQL_INSTANCE_LOCATION, get_secret_payload
+    from Constants import CONSTANTS
 else:
-    from .ConstantsInit import LOCAL_SQL_SERVER_CONFIG, DATABASE_NAME, SQL_CLIENT, DEBUG_MODE, REMOTE_SQL_SERVER_IP, SQL_INSTANCE_LOCATION, get_secret_payload
+    from .Constants import CONSTANTS
 
-def get_mysql_connection(debug:bool=DEBUG_MODE, database:Optional[str]=DATABASE_NAME) -> pymysql.connections.Connection:
+def get_mysql_connection(debug:bool=CONSTANTS.DEBUG_MODE, database:Optional[str]=CONSTANTS.DATABASE_NAME) -> pymysql.connections.Connection:
     """
     Get a MySQL connection to the coursefinity database.
     
     Args:
     - debug (bool): whether to connect to the MySQL database locally or to Google CLoud SQL Server
-        - Defaults to DEBUG_MODE defined in ConstantsInit.py
+        - Defaults to DEBUG_MODE defined in Constants.py
     - database (str, optional): the name of the database to connect to
-        - Defaults to DATABASE_NAME defined in ConstantsInit.py if not defined
+        - Defaults to DATABASE_NAME defined in Constants.py if not defined
         - Define database to None if you do not want to connect to a database
     
     Returns:
     A MySQL connection.
     """
     if (debug):
-        LOCAL_SQL_CONFIG_COPY = LOCAL_SQL_SERVER_CONFIG.copy()
+        LOCAL_SQL_CONFIG_COPY = CONSTANTS.LOCAL_SQL_SERVER_CONFIG.copy()
         if (database is not None):
             LOCAL_SQL_CONFIG_COPY["database"] = database
         connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
         return connection
     else:
-        connection: pymysql.connections.Connection = SQL_CLIENT.connect(
-            instance_connection_string=SQL_INSTANCE_LOCATION,
+        connection: pymysql.connections.Connection = CONSTANTS.SQL_CLIENT.connect(
+            instance_connection_string=CONSTANTS.SQL_INSTANCE_LOCATION,
             driver="pymysql",
             user="root",
-            password=get_secret_payload(secretID="sql-root-password"),
+            password=CONSTANTS.get_secret_payload(secretID="sql-root-password"),
             database=database
         )
         return connection
@@ -53,7 +53,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     if (debug):
         definer = "root`@`localhost"
     else:
-        definer = f"root`@`{REMOTE_SQL_SERVER_IP}"
+        definer = f"root`@`{CONSTANTS.REMOTE_SQL_SERVER_IP}"
 
     mydb = get_mysql_connection(debug=debug, database=None)
     cur = mydb.cursor()

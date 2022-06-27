@@ -5,7 +5,7 @@ from google_crc32c import Checksum as g_crc32c
 from pathlib import Path
 from sys import path
 
-path.append(str(Path(__file__).parent.parent.joinpath('src/python_files')))
+path.append(str(Path(__file__).parent.parent.joinpath("src", "python_files")))
 from StripeFunctions import *   # Yes it works, ignore the error
 
 # import python standard libraries
@@ -14,19 +14,49 @@ from six import ensure_binary
 import pathlib, uuid
 from sys import modules
 from importlib.util import spec_from_file_location, module_from_spec
-from typing import Union
+from typing import Union, Optional
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 
 # import Constants_Init.py local python module using absolute path
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "ConstantsInit.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
 spec.loader.exec_module(Constants_Init)
 
 """----------------------------------- START OF DEFINING FUNCTIONS -----------------------------------"""
+
+def get_mysql_connection(debug:bool=None, database:Optional[str]=Constants_Init.CONSTANTS.DATABASE_NAME) -> pymysql.connections.Connection:
+    """
+    Get a MySQL connection to the coursefinity database.
+    
+    Args:
+    - debug (bool): whether to connect to the MySQL database locally or to Google CLoud SQL Server
+        - Defaults to DEBUG_MODE defined in Constants.py
+    - database (str, optional): the name of the database to connect to
+        - Defaults to DATABASE_NAME defined in Constants.py if not defined
+        - Define database to None if you do not want to connect to a database
+    
+    Returns:
+    A MySQL connection.
+    """
+    if (debug):
+        LOCAL_SQL_CONFIG_COPY = Constants_Init.CONSTANTS.LOCAL_SQL_SERVER_CONFIG.copy()
+        if (database is not None):
+            LOCAL_SQL_CONFIG_COPY["database"] = database
+        connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
+        return connection
+    else:
+        connection: pymysql.connections.Connection = Constants_Init.CONSTANTS.SQL_CLIENT.connect(
+            instance_connection_string=Constants_Init.CONSTANTS.SQL_INSTANCE_LOCATION,
+            driver="pymysql",
+            user="root",
+            password=Constants_Init.CONSTANTS.get_secret_payload(secretID="sql-root-password"),
+            database=database
+        )
+        return connection
 
 def generate_id() -> str:
     """
@@ -66,10 +96,10 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = Constants_Init.KMS_CLIENT.crypto_key_path(Constants_Init.GOOGLE_PROJECT_ID, Constants_Init.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = Constants_Init.CONSTANTS.KMS_CLIENT.crypto_key_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
-    response = Constants_Init.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
+    response = Constants_Init.CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
 
     # Perform some integrity checks on the encrypted data that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
@@ -102,14 +132,8 @@ while debugFlag == True:
         stripeFlag = True if stripePrompt != 'n' else False
         break
 
-if (debugFlag):
-    config = Constants_Init.LOCAL_SQL_SERVER_CONFIG.copy()
-else:
-    config = Constants_Init.REMOTE_SQL_SERVER_CONFIG.copy()
-
-config["database"] = Constants_Init.DATABASE_NAME
 try:
-    con = pymysql.connect(**config)
+    con = get_mysql_connection(debug=debugFlag)
 except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
 
@@ -137,7 +161,7 @@ if (not res):
     username = "NoobCoderDaniel"
     email = "test@teacher.com"
     keyName = "test-key"
-    password = symmetric_encrypt(plaintext=Constants_Init.PH.hash("User123!"), keyID=keyName)
+    password = symmetric_encrypt(plaintext=Constants_Init.CONSTANTS.PH.hash("User123!"), keyID=keyName)
     cur.execute("INSERT INTO user (id, role, username, email, password, key_name) VALUES (%s, %s, %s, %s, %s, %s)", (userID, TEACHER_ROLE_ID, username, email, password, keyName))
     con.commit()
     cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
@@ -196,7 +220,7 @@ if (res is None):
     username = "Chloe"
     email = "test@student.com"
     keyName = "test-key"
-    password = symmetric_encrypt(plaintext=Constants_Init.PH.hash("User123!"), keyID=keyName)
+    password = symmetric_encrypt(plaintext=Constants_Init.CONSTANTS.PH.hash("User123!"), keyID=keyName)
 
     cur.execute("INSERT INTO user (id, role, username, email, password, key_name, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, keyName, cartData, purchasedData))
     con.commit()

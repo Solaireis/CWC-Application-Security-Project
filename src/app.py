@@ -25,9 +25,7 @@ from python_files.NormalFunctions import *
 from python_files.StripeFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
-from python_files.ConstantsInit import GOOGLE_CREDENTIALS, DEBUG_MODE, \
-                                       FLASK_SECRET_KEY_NAME, get_secret_payload, PH, MAX_PASSWORD_LENGTH, \
-                                       LOGIN_SITE_KEY, SIGNUP_SITE_KEY, IPINFO_HANDLER
+from python_files.Constants import CONSTANTS
 
 # import python standard libraries
 from zoneinfo import ZoneInfo
@@ -73,14 +71,14 @@ talisman = Talisman(app, content_security_policy=csp, content_security_policy_no
 
 
 # Debug flag (will be set to false when deployed)
-app.config["DEBUG_FLAG"] = DEBUG_MODE
+app.config["DEBUG_FLAG"] = CONSTANTS.DEBUG_MODE
 
 # Maintenance mode flag
 app.config["MAINTENANCE_MODE"] = False
 
 # secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
-app.config["SECRET_KEY"] = get_secret_payload(secretID=FLASK_SECRET_KEY_NAME, decodeSecret=False)
+app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
@@ -133,7 +131,7 @@ def before_first_request() -> None:
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
 
     # load google client id from credentials.json
-    app.config["GOOGLE_CLIENT_ID"] = GOOGLE_CREDENTIALS["web"]["client_id"]
+    app.config["GOOGLE_CLIENT_ID"] = CONSTANTS.GOOGLE_CREDENTIALS["web"]["client_id"]
 
     # get Google oauth flow object
     app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
@@ -366,7 +364,7 @@ def login():
             recaptchaToken = request.form.get("g-recaptcha-response")
             if (recaptchaToken is not None and recaptchaToken != ""):
                 try:
-                    recaptchaResponse = create_assessment(siteKey=LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
+                    recaptchaResponse = create_assessment(siteKey=CONSTANTS.LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
                 except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
                     flash("Please check the reCAPTCHA box and try again.", "Danger")
                     return render_template("users/guest/login.html", form=loginForm)
@@ -421,7 +419,7 @@ def login():
                 generatedTOTPSecretToken = pyotp.random_base32(length=128)
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
-                ipDetails = IPINFO_HANDLER.getDetails(requestIPAddress).all
+                ipDetails = CONSTANTS.IPINFO_HANDLER.getDetails(requestIPAddress).all
                 # utc+8 time (SGT)
                 currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
                 currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
@@ -665,7 +663,7 @@ def signup():
             recaptchaToken = request.form.get("g-recaptcha-response")
             if (recaptchaToken is not None and recaptchaToken != ""):
                 try:
-                    recaptchaResponse = create_assessment(siteKey=SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
+                    recaptchaResponse = create_assessment(siteKey=CONSTANTS.SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
                 except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
                     flash("Please check the reCAPTCHA box and try again.")
                     return render_template("users/guest/signup.html", form=signupForm)
@@ -697,14 +695,14 @@ def signup():
             if (len(passwordInput) < 10):
                 flash("Password must be at least 10 characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) > MAX_PASSWORD_LENGTH):
-                flash(f"Password cannot be more than {MAX_PASSWORD_LENGTH} characters long!")
+            if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
+                flash(f"Password cannot be more than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            passwordInput = PH.hash(passwordInput)
+            passwordInput = CONSTANTS.PH.hash(passwordInput)
             ipAddress = get_remote_address()
 
             returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
@@ -1050,7 +1048,7 @@ def updatePassword():
                 except (ChangePwdError):
                     flash("Please check your entries and try again.")
                 except (PwdTooShortError, PwdTooLongError):
-                    flash(f"Password must be between 10 and {MAX_PASSWORD_LENGTH} characters long.")
+                    flash(f"Password must be between 10 and {CONSTANTS.MAX_PASSWORD_LENGTH} characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
 
@@ -1596,5 +1594,5 @@ if (__name__ == "__main__"):
     )
     scheduler.start()
 
-    host = None if (DEBUG_MODE) else "0.0.0.0"
+    host = None if (CONSTANTS.DEBUG_MODE) else "0.0.0.0"
     app.run(debug=app.config["DEBUG_FLAG"], host=host, port=environ.get("PORT", 8080))

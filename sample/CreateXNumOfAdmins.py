@@ -8,13 +8,13 @@ import re, pathlib, uuid
 from six import ensure_binary
 from sys import modules
 from importlib.util import spec_from_file_location, module_from_spec
-from typing import Union
+from typing import Union, Optional
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 
 # import Constants_Init.py local python module using absolute path
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "ConstantsInit.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
@@ -60,10 +60,10 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = Constants_Init.KMS_CLIENT.crypto_key_path(Constants_Init.GOOGLE_PROJECT_ID, Constants_Init.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = Constants_Init.CONSTANTS.KMS_CLIENT.crypto_key_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
-    response = Constants_Init.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
+    response = Constants_Init.CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
 
     # Perform some integrity checks on the encrypted data that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
@@ -75,6 +75,36 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
         raise Exception("Ciphertext CRC32C checksum does not match.")
 
     return response.ciphertext
+
+def get_mysql_connection(debug:bool=None, database:Optional[str]=Constants_Init.CONSTANTS.DATABASE_NAME) -> pymysql.connections.Connection:
+    """
+    Get a MySQL connection to the coursefinity database.
+    
+    Args:
+    - debug (bool): whether to connect to the MySQL database locally or to Google CLoud SQL Server
+        - Defaults to DEBUG_MODE defined in Constants.py
+    - database (str, optional): the name of the database to connect to
+        - Defaults to DATABASE_NAME defined in Constants.py if not defined
+        - Define database to None if you do not want to connect to a database
+    
+    Returns:
+    A MySQL connection.
+    """
+    if (debug):
+        LOCAL_SQL_CONFIG_COPY = Constants_Init.CONSTANTS.LOCAL_SQL_SERVER_CONFIG.copy()
+        if (database is not None):
+            LOCAL_SQL_CONFIG_COPY["database"] = database
+        connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
+        return connection
+    else:
+        connection: pymysql.connections.Connection = Constants_Init.CONSTANTS.SQL_CLIENT.connect(
+            instance_connection_string=Constants_Init.CONSTANTS.SQL_INSTANCE_LOCATION,
+            driver="pymysql",
+            user="root",
+            password=Constants_Init.CONSTANTS.get_secret_payload(secretID="sql-root-password"),
+            database=database
+        )
+        return connection
 
 def shutdown() -> None:
     """
@@ -108,7 +138,7 @@ X. Close program
 
 AVAILABLE_OPTIONS = ("1", "2", "x")
 NUMBER_REGEX = re.compile(r"^\d+$")
-MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much, otherwise you pay for the Google Cloud :prayge:
+MAX_NUMBER_OF_ADMINS = 10 # try not to increase the limit too much
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
@@ -120,17 +150,8 @@ while (1):
         debugFlag = True if (debugPrompt != "n") else False
         break
 
-if (debugFlag):
-    config = Constants_Init.LOCAL_SQL_SERVER_CONFIG.copy()
-else:
-    print("Remote Mode is not done yet!")
-    print("Please wait for it to be completed!")
-    sysExit(1)
-    config = Constants_Init.REMOTE_SQL_SERVER_CONFIG.copy()
-
-config["database"] = "coursefinity"
 try:
-    con = pymysql.connect(**config)
+    con = get_mysql_connection(debug=debugFlag)
 except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
     sysExit(1)

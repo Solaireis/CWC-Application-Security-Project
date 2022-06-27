@@ -95,9 +95,24 @@ class CRC32ChecksumError(Exception):
     Raised if the CRC32C checksum does not match during decryption.
     """
 
+class RSACiphertextIsNotValidFormatError(Exception):
+    """
+    Raised if the ciphertext is not the correct format.
+    
+    Must be a dictionary containing the following keys:
+    - {\n
+        "header": {
+            "key_ring_id" : key ring name used,
+            "key_id" : key name used,
+            "version_id" : key version used
+        },
+        "ciphertext": the encrypted plaintext in bytes
+    }
+    """
+
 class CiphertextIsNotBytesError(Exception):
     """
-    Raised if the ciphertext is not bytes type.
+    Raised if the ciphertext is not bytes.
     """
 
 class DecryptionError(Exception):

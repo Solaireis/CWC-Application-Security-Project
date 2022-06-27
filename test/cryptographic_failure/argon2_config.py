@@ -9,14 +9,14 @@ from argon2 import PasswordHasher
 
 # import Constants_Init.py local python module using absolute path
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.parent.joinpath("src", "python_files", "ConstantsInit.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.parent.joinpath("src", "python_files", "Constants.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
 spec.loader.exec_module(Constants_Init)
 
 DEFAULT_PH = PasswordHasher()
-CONFIGURED_PH = Constants_Init.PH
+CONFIGURED_PH = Constants_Init.CONSTANTS.PH
 REPEAT_NUM = 5
 
 passwordInput = input("Enter password to hash: ")

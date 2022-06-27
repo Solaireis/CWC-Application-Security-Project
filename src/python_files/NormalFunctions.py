@@ -18,12 +18,10 @@ from pathlib import Path
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, \
-                              LOGGING_CLIENT, RECAPTCHA_CLIENT, get_secret_payload
+    from Constants import CONSTANTS
     from Errors import *
 else:
-    from .ConstantsInit import ROOT_FOLDER_PATH, KMS_CLIENT, GOOGLE_PROJECT_ID, LOCATION_ID, \
-                               LOGGING_CLIENT, RECAPTCHA_CLIENT, get_secret_payload
+    from .Constants import CONSTANTS
     from .Errors import *
 
 # import third party libraries
@@ -58,7 +56,7 @@ from google.cloud.recaptchaenterprise_v1 import Assessment
 
 # for comparing the date on the github repo
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-BLACKLIST_FILEPATH = ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+BLACKLIST_FILEPATH = CONSTANTS.ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
 
 # password regex follows OWASP's recommendations
 # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -75,7 +73,7 @@ $                                                                   # end of pas
 """, re.VERBOSE)
 
 # for email coursefinity logo image
-with open(ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
+with open(CONSTANTS.ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
     LOGO_BYTES = f.read()
 
 # For Google KMS asymmetric encryption and decryption
@@ -110,7 +108,7 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
     assessment = recaptchaenterprise_v1.Assessment()
     assessment.event = event
 
-    projectName = f"projects/{GOOGLE_PROJECT_ID}"
+    projectName = f"projects/{CONSTANTS.GOOGLE_PROJECT_ID}"
 
     # construct the assessment request
     request = recaptchaenterprise_v1.CreateAssessmentRequest()
@@ -118,7 +116,7 @@ def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Opt
     request.assessment = assessment
 
     # send to Google reCAPTCHA API
-    response = RECAPTCHA_CLIENT.create_assessment(request)
+    response = CONSTANTS.RECAPTCHA_CLIENT.create_assessment(request)
 
     # check if the response is valid
     if (not response.token_properties.valid):
@@ -194,7 +192,7 @@ def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=Non
     if (severity is None):
         severity = "DEFAULT"
 
-    logger = LOGGING_CLIENT.logger(logLocation)
+    logger = CONSTANTS.LOGGING_CLIENT.logger(logLocation)
 
     if (isinstance(logMessage, dict)):
         logger.log_struct(logMessage)
@@ -215,10 +213,10 @@ def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     - keyInfo (google.cloud.kms_v1.types.resources.CryptoKey): the key information
     """
     # Construct the key name
-    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # call Google Cloud KMS API to get the key's information
-    response = KMS_CLIENT.get_crypto_key(request={"name": keyName})
+    response = CONSTANTS.KMS_CLIENT.get_crypto_key(request={"name": keyName})
     return response
 
 def crc32c(data:Union[bytes, str]) -> int:
@@ -253,10 +251,10 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
-    response = KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
+    response = CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
 
     # Perform some integrity checks on the encrypted data that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
@@ -294,14 +292,14 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
         raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
 
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID)
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     cipherTextCRC32C = crc32c(ciphertext)
 
     # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
     try:
-        response = KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
+        response = CONSTANTS.KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
         print("Error caught while decrypting (symmetric):")
         print(e)
@@ -328,10 +326,10 @@ def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", v
     - None
     """
     # Construct the parent key name
-    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # call the Google Cloud KMS API
-    KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
+    CONSTANTS.KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
 
 def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
     """
@@ -353,13 +351,13 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
     - None
     """
     # Construct the parent key name
-    keyName = KMS_CLIENT.crypto_key_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyName)
+    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # build the key version
     version = {}
 
     # call the Google Cloud KMS API
-    response = KMS_CLIENT.create_crypto_key_version(request={"parent": keyName, "crypto_key_version": version})
+    response = CONSTANTS.KMS_CLIENT.create_crypto_key_version(request={"parent": keyName, "crypto_key_version": version})
 
     if (setNewKeyAsPrimary):
         # get the latest version from the response
@@ -380,7 +378,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
     - None
     """
     # Construct the parent key ring name
-    keyRingName = KMS_CLIENT.key_ring_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID)
+    keyRingName = CONSTANTS.KMS_CLIENT.key_ring_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID)
 
     # construct the key
     purpose = kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
@@ -403,7 +401,7 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
 
     # call Google Cloud KMS API to create the key
     try:
-        KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
+        CONSTANTS.KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
 
@@ -475,7 +473,11 @@ def EC_sign(
     Sign a message using the public key part of an asymmetric EC key.
     
     Args:
-    - payload (str|dict): the payload to sign
+    - payload (str|dict|list): the payload to sign
+        - Preferred type: str
+            - You could use json.dumps(dict|list) before hand to convert the payload to a string.
+        - Will convert the payload to a str by json.dumps() if payload is a dict or list.
+            - Will raise a ValueError if the payload couldn't be converted to a string using json.dumps()
     - keyRingID: The ID of the key ring.
         - Defaults to "coursefinity
     - keyID: The ID of the key.
@@ -484,23 +486,41 @@ def EC_sign(
         - Defaults to SIGNATURE_VERSION_ID defined in NormalFunctions.py
     - b64EncodeData: Whether to base64 encode the data or not.
         - Set this to True if you want to use the base64 encoded data for JWT.
-    
+
     Returns:
     - A dictionary containing:
-        - "payload": the payload
-        - "signature": the signature of the message
-        - "version_id": the version of the key
-        - "data_type": the type of the data
-        - "expiry": the expiry date of the signature/token if defined
-    - If b64EncodeData is True, the data with the signature will be base64 encoded.
+        - {\n
+            "header": {
+                "key_id" : key name used,
+                "key_ring_id" : key ring name used,
+                "version_id" : key version used
+            },
+            "data": {
+                "payload" : the payload,
+                "data_type" : the type of the data,
+                "expiry" : the expiry date of the signature/token if defined
+            },
+            "signature": The signature of the data (bytes)
+        }
+    - If b64EncodeData is True, the return a base64 encoded bytes type.
+        - header.payload.signature
     """
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # Convert the payload to bytes
     if (isinstance(payload, dict)):
         dataType = "dict"
-        payload = json.dumps(payload)
+        try:
+            payload = json.dumps(payload)
+        except (TypeError):
+            raise ValueError("Dict type payload is not JSON serializable")
+    elif (isinstance(payload, list)):
+        dataType = "list"
+        try:
+            payload = json.dumps(payload)
+        except (TypeError):
+            raise ValueError("Dict type payload is not JSON serializable")
     elif (isinstance(payload, str)):
         dataType = "str"
     else:
@@ -514,7 +534,7 @@ def EC_sign(
     digestCRC32C = crc32c(hash_)
 
     # Sign the digest by sending it to Google Cloud KMS API
-    response = KMS_CLIENT.asymmetric_sign(
+    response = CONSTANTS.KMS_CLIENT.asymmetric_sign(
         request={"name": keyVersionName, "digest": {"sha384": hash_}, "digest_crc32c": digestCRC32C}
     )
 
@@ -530,53 +550,70 @@ def EC_sign(
         # response received from Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
 
-    data = {"payload": payload, "version_id": versionID, "data_type": dataType}
+    header = {"version_id": versionID, "key_ring_id": keyRingID, "key_id": keyID}
+    data = {"payload": payload, "data_type": dataType}
+
     # If expiry is defined, set the expiry date in the data
-    if (expiry is not None):
+    if (expiry is not None and isinstance(expiry, JWTExpiryProperties)):
         data["expiry"] = expiry.get_expiry_str_date()
 
-    # Return the signature
+    # Return the signature or the entire base64 encoded payload with the signature
     if (b64EncodeData):
         encodedDataList = [
+            urlsafe_b64encode(json.dumps(header).encode("utf-8")),
             urlsafe_b64encode(json.dumps(data).encode("utf-8")),
             urlsafe_b64encode(response.signature)
         ]
-        return b".".join(encodedDataList)
+        return b".".join(encodedDataList).decode("utf-8")
     else:
-        data["signature"] = response.signature
-        return data
+        return {"header":header, "data": data, "signature": response.signature}
 
-def EC_verify(data:Union[dict, bytes, str]="", keyRingID:str="coursefinity", keyID:str="signing-key", getData:bool=False) -> Union[dict, bool]:
+def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict, bool]:
     """
     Verify the signature of an message signed with an asymmetric EC key.
     
     Args:
     - data (dict|bytes|str): the data to verify
         - Note: If the data is instances of bytes or string, it will be treated as a base64 encoded data
-    - keyRingID: The ID of the key ring.
-        - Defaults to "coursefinity
-    - keyID: The ID of the key.
-        - Defaults to "signing-key"
     - getData: Whether to return the data or not.
         - Set this to True if the data is in base64 encoded format.
         - Generally True for JWT.
-    
+
     Returns:
     - bool (true if verified and false otherwise)
     - dict (if getData is True)
-        - "verified": whether the signature is valid or not
-        - "payload": the payload
-        - "signature": the signature of the message
-        - "version_id": the version of the key
-        - "data_type": the type of the data
-        - "expiry": the expiry date of the signature/token if defined
+        - {\n
+            "header": {
+                "key_id" : key name used,
+                "key_ring_id" : key ring name used,
+                "version_id" : key version used
+            },
+            "data": {
+                "payload" : the payload,
+                "data_type" : the type of the data,
+                "expiry" : the expiry date of the signature/token if defined
+            },
+            "signature": The signature of the data (bytes)
+            "verified": Whether the signature is valid or not (bool)
+        }
     """
-    # Get the payload, the signature, and the version ID
+    # Get the data and the header, the signature, and the version ID
     if (isinstance(data, dict)):
         try:
-            payload = data["payload"]
+            # get the data payload and its data type
+            payloadData = data["data"]
+            payload = payloadData["payload"]
+            dataType = payloadData["data_type"]
+            expiryDate = payloadData["expiry"] if ("expiry" in payloadData) else None
+
+            # get the signature
             signature = data["signature"]
-            versionID = data["version_id"]
+
+            # get the key info
+            keyInfo = data["header"]
+            keyID = keyInfo["key_id"]
+            keyRingID = keyInfo["key_ring_id"]
+            versionID = keyInfo["version_id"]
         except:
             # if some keys in the dict are missing, just return False by default
             return {"verified": False, "payload": data} if (getData) else False
@@ -586,24 +623,41 @@ def EC_verify(data:Union[dict, bytes, str]="", keyRingID:str="coursefinity", key
             data = data.encode("utf-8")
 
         # Base64 decode the data to get the payload and the signature
+        newData = {}
         try:
+            # Encoded base64 data is of the form:
+            # header.data.signature
             b64EncodedDataList = data.split(b".")
-            data = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
-            payload = data["payload"]
-            signature = urlsafe_b64decode(b64EncodedDataList[1])
-            data["signature"] = signature
-            versionID = data["version_id"]
+
+            # get the data payload and its data type
+            payloadInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[1]).decode("utf-8"))
+            payload = payloadInfo["payload"]
+            dataType = payloadInfo["data_type"]
+            expiryDate = payloadInfo["expiry"] if ("expiry" in payloadInfo) else None
+            newData["data"] = payloadInfo
+
+            # get the signature
+            signature = urlsafe_b64decode(b64EncodedDataList[2])
+            newData["signature"] = signature
+
+            # get the key info
+            keyInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
+            keyID = keyInfo["key_id"]
+            keyRingID = keyInfo["key_ring_id"]
+            versionID = keyInfo["version_id"]
+            newData["header"] = keyInfo
         except:
             # If base64 decoding fails or is missing some keys in the json payload, return False by default
-            return {"verified": False, "payload": data} if (getData) else False
+            return {"verified": False, "data": data} if (getData) else False
+        data = newData
     else:
         raise ValueError("data must be either a dict or bytes")
 
     # Construct the key version name
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # Get the public key
-    publicKey = KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+    publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
 
     # Extract and parse the public key as a PEM-encoded EC key
     publicKeyPEM = publicKey.pem.encode("utf-8")
@@ -626,15 +680,18 @@ def EC_verify(data:Union[dict, bytes, str]="", keyRingID:str="coursefinity", key
         verified = False
 
     # Check if the token has an expiry key defined in the json
-    if (verified and "expiry" in data):
+    if (verified and expiryDate is not None):
         # If so, check if the token has expired
-        expiryObj = JWTExpiryProperties(strDate=data["expiry"])
+        expiryObj = JWTExpiryProperties(strDate=expiryDate)
         verified = False if (expiryObj.is_expired()) else True
 
     # Return the data if requested
     if (getData):
-        if (data["data_type"] == "dict"):
-            data["payload"] = json.loads(data["payload"])
+        if (dataType == "dict" or dataType == "list"):
+            try:
+                data["data"]["payload"] = json.loads(data["data"]["payload"])
+            except (TypeError):
+                print("Warning: Could not parse JSON...")
         data["verified"] = verified
         return data
     else:
@@ -655,14 +712,20 @@ def RSA_encrypt(plaintext:str="", keyRingID:str="coursefinity", keyID:str="encry
 
     Returns:
     - A dictionary containing the following keys:
-        - ciphertext (bytes): The ciphertext
-        - version (int): The version of the key used for encryption
+        - {\n
+            "header": {
+                "key_ring_id" : key ring name used,
+                "key_id" : key name used,
+                "version_id" : key version used
+            },
+            "ciphertext": the encrypted plaintext in bytes
+        }
     """
     # Build the key version name.
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # get the public key
-    publicKey = KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+    publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
 
     # Extract and parse the public key as a PEM-encoded RSA key
     pem = publicKey.pem.encode("utf-8")
@@ -680,40 +743,58 @@ def RSA_encrypt(plaintext:str="", keyRingID:str="coursefinity", keyID:str="encry
     except (ValueError) as e:
         print("Try reducing the length of the plaintext as RSA encryption can only encrypt small amounts of data.")
         raise EncryptionError(e)
-    return {"ciphertext": ciphertext, "version_id": versionID}
+    return {
+            "header": {
+                "key_ring_id": keyRingID,
+                "key_id": keyID,
+                "version_id": versionID
+            },
+            "ciphertext": ciphertext
+        }
 
-def RSA_decrypt(cipherData:dict=None, keyRingID:str="coursefinity", keyID:str="encrypt-decrypt-key") -> str:
+def RSA_decrypt(cipherData:dict=None) -> str:
     """
     Decrypts the ciphertext using Google KMS (RSA/asymmetric encryption)
 
     Args:
     - cipherData (dict): A dictionary containing the ciphertext and the version of the key used for encryption
-    - keyRingID (str): The ID of the key ring to use.
-        - Defaults to "coursefinity"
-    - keyID (str): The ID of the key to use for decryption.
-        - Defaults to "encrypt-decrypt-key"
 
     Returns:
     - The decrypted ciphertext (str)
 
     Raises:
-    - CiphertextIsNotBytesError: If the ciphertext is not bytes
+    - RSACiphertextIsNotValidFormatError: If the ciphertext is not 
     - DecryptionError: If the decryption failed
     - CRC32ChecksumError: If the CRC32C checksum does not match
     """
     if (not isinstance(cipherData, dict)):
-        raise CiphertextIsNotBytesError(f"The cipher data, {cipherData} is in \"{type(cipherData)}\" format. Please pass in a dictionary type variable.")
+        raise RSACiphertextIsNotValidFormatError(
+            f"The ciphertext, {cipherData} is in \"{type(cipherData)}\" format. Please pass in a dict type variable."
+        )
+
+    # retrieve the ciphertext and key information from the dict
+    try:
+        ciphertext = cipherData["ciphertext"]
+        keyInfo = cipherData["header"]
+        keyRingID = keyInfo["key_ring_id"]
+        keyID = keyInfo["key_id"]
+        versionID = keyInfo["version_id"]
+    except (KeyError):
+        raise RSACiphertextIsNotValidFormatError("The RSA ciphertext is missing some keys!")
 
     # Build the key version name.
-    keyVersionName = KMS_CLIENT.crypto_key_version_path(GOOGLE_PROJECT_ID, LOCATION_ID, keyRingID, keyID, cipherData["version_id"])
+    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
+
+    # encode it to bytes if the ciphertext is of string type
+    if (isinstance(ciphertext, str)):
+        ciphertext = ciphertext.encode("utf-8")
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
-    ciphertext = cipherData["ciphertext"]
     cipherTextCRC32C = crc32c(ciphertext)
 
     # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
     try:
-        response = KMS_CLIENT.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
+        response = CONSTANTS.KMS_CLIENT.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
         print("Error caught:")
         print(e)
@@ -938,7 +1019,7 @@ def get_gmail_client() -> Resource:
     SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
     # get the token.json file from Google Cloud Secret Manager API
-    GOOGLE_TOKEN = json.loads(get_secret_payload(secretID="google-token"))
+    GOOGLE_TOKEN = json.loads(CONSTANTS.get_secret_payload(secretID="google-token"))
 
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 

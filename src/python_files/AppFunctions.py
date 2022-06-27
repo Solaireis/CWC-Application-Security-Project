@@ -25,14 +25,14 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, create_symmetric_key
-from .ConstantsInit import GOOGLE_CREDENTIALS, PH, MAX_PASSWORD_LENGTH, IPINFO_HANDLER
+from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
 """------------------------------ Define Constants ------------------------------"""
 
 # for defining the maximum login attempts
 # before locking a user account
-MAX_LOGIN_ATTEMPTS = 10
+CONSTANTS.add_new_constant("MAX_LOGIN_ATTEMPTS", 10)
 
 """------------------------------ End of Defining Constants ------------------------------"""
 
@@ -49,7 +49,7 @@ def get_google_flow() -> Flow:
     Returns the Google OAuth2 flow.
     """
     flow = Flow.from_client_config(
-        GOOGLE_CREDENTIALS,
+        CONSTANTS.GOOGLE_CREDENTIALS,
         [
             "https://www.googleapis.com/auth/userinfo.profile",
             "https://www.googleapis.com/auth/userinfo.email",
@@ -172,7 +172,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     if (mode == "add_ip_address"):
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
-        ipDetails = kwargs.get("ipDetails") or json.dumps(IPINFO_HANDLER.getDetails(ipAddress).all)
+        ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
         cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
         connection.commit()
@@ -188,7 +188,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     elif (mode == "add_ip_address_only_if_unique"):
         userID = kwargs.get("userID")
         ipAddress = kwargs.get("ipAddress")
-        ipDetails = kwargs.get("ipDetails") or json.dumps(IPINFO_HANDLER.getDetails(ipAddress).all)
+        ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
         cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = %(userID)s AND INET6_NTOA(ip_address) = %(ipAddress)s", {"userID":userID, "ipAddress":ipAddress})
         if (cur.fetchone()[0] == 0):
@@ -289,7 +289,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 # if past the reset datetime, reset the attempts to 0
                 currentAttempts = 0
 
-            if (currentAttempts > MAX_LOGIN_ATTEMPTS):
+            if (currentAttempts > CONSTANTS.MAX_LOGIN_ATTEMPTS):
                 # if reached max attempts per account
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
@@ -528,7 +528,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=matched[0], ipAddress=requestIpAddress)
 
         if (lockedAccount):
-            if (lockedAccount[0] > MAX_LOGIN_ATTEMPTS):
+            if (lockedAccount[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
                 connection.close()
                 raise AccountLockedError("Account is locked!")
             else:
@@ -539,7 +539,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         newIpAddress = False
         decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
         try:
-            if (PH.verify(decryptedPasswordHash, passwordInput)):
+            if (CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)):
                 # check if the login request is from the same IP address as the one that made the request
                 if (requestIpAddress not in ipAddressList):
                     newIpAddress = True
@@ -627,7 +627,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         currentPassword = cur.fetchone()
 
         try:
-            if (PH.verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
+            if (CONSTANTS.PH.verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
                 cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
         except (VerifyMismatchError):
@@ -646,20 +646,20 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         try:
             # check if the supplied old password matches the current password
-            if (PH.verify(currentPasswordHash, oldPasswordInput)):
+            if (CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)):
                 if (len(passwordInput) < 10):
                     connection.close()
                     raise PwdTooShortError("The password must be at least 10 characters long!")
 
-                if (len(passwordInput) > MAX_PASSWORD_LENGTH):
+                if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
                     connection.close()
-                    raise PwdTooLongError(f"The password must be less than {MAX_PASSWORD_LENGTH} characters long!")
+                    raise PwdTooLongError(f"The password must be less than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
 
                 if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
-                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH.hash(passwordInput), keyID=keyName), "userID": userID})
+                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=keyName), "userID": userID})
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()
@@ -672,7 +672,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT key_name FROM user WHERE id=%(userID)s", {"userID":userID})
         keyName = cur.fetchone()[0]
 
-        cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=PH.hash(newPassword), keyID=keyName), "userID": userID})
+        cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=keyName), "userID": userID})
         connection.commit()
 
     elif (mode == "delete_user"):

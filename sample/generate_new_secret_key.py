@@ -36,14 +36,14 @@ FILE_PATH = pathlib.Path(__file__).parent.absolute()
 NUM_OF_BYTES = 512 # 512 bytes or 4096 bits
 
 # import Constants_Init.py local python module using absolute path
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "ConstantsInit.py")
+CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants.py")
 spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
 spec.loader.exec_module(Constants_Init)
 
 # Create an authorised Google Cloud Secret Manager API service instance.
-SM_CLIENT = Constants_Init.SM_CLIENT
+SM_CLIENT = Constants_Init.CONSTANTS.SM_CLIENT
 
 MENU = """
 -------------------- Flask Secret Key Menu --------------------
@@ -86,7 +86,7 @@ def main() -> None:
             secretKey = token_bytes(NUM_OF_BYTES) 
 
             # construct the secret path to the secret key ID
-            secretPath = SM_CLIENT.secret_path(Constants_Init.GOOGLE_PROJECT_ID, Constants_Init.FLASK_SECRET_KEY_NAME)
+            secretPath = SM_CLIENT.secret_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME)
 
             # calculate the payload crc32c checksum
             crc32cChecksum = crc32c(secretKey)
@@ -115,7 +115,7 @@ def main() -> None:
                 latestVer = int(response.name.split("/")[-1])
 
                 for version in range(latestVer - 1, 0, -1):
-                    secretVersionPath = SM_CLIENT.secret_version_path(Constants_Init.GOOGLE_PROJECT_ID, Constants_Init.FLASK_SECRET_KEY_NAME, version)
+                    secretVersionPath = SM_CLIENT.secret_version_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME, version)
                     try:
                         SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                     except (FailedPrecondition):
@@ -125,7 +125,7 @@ def main() -> None:
 
         elif (prompt == "2"):
             # construct the resource name of the secret version
-            secretName = SM_CLIENT.secret_version_path(Constants_Init.GOOGLE_PROJECT_ID, Constants_Init.FLASK_SECRET_KEY_NAME, "latest")
+            secretName = SM_CLIENT.secret_version_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME, "latest")
 
             # get the secret version
             response = SM_CLIENT.access_secret_version(request={"name": secretName})
