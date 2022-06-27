@@ -1272,6 +1272,15 @@ def coursePage(courseID):
     print(teacherRecords)
     teacherName = teacherRecords[2]
 
+    reviews = sql_operation(table="review", mode="retrieve" , courseID=courseID)
+    # for reviewer in reviews:
+    #     reviewRating = reviews[2]
+    #     reviewComment = reviews[3]
+    #     reviewDate = reviews[4]
+    #     reviewerUserID = reviews[0]
+    #     user = sql_operation(table="user", mode="get_user_data", userID=reviewerUserID)
+    #     reviewerUsername = user[2]
+
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
@@ -1283,14 +1292,16 @@ def coursePage(courseID):
     return render_template("users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
+             reviews=reviews)
 
-@app.route("/course-review/<courseID>")
+@app.route("/course-review/<courseID>") #writing of review
 @validate_session
 def courseReview(courseID):
     accType = imageSrcPath = None
     userPurchasedCourses = {}
-    courses = sql_operation(table="course", mode="", courseID=courseID)
+    reviewDate = datetime.datetime.now().strftime("%Y-%m-%d")
+    courses = sql_operation(table="", mode="", courseID=courseID)
 
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
