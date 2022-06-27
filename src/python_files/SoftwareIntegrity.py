@@ -95,7 +95,7 @@ for i in hashes:
     with open(path, 'rb') as f:
         data = f.read()
         sha256.update(data)
-    
+
     if (sha256.hexdigest() != hashed):
         Path(path).unlink()
         print(f"File from {i} does not match the hash!")
@@ -104,4 +104,6 @@ for i in hashes:
         # It works but its an old way of doing it so need find improved way
         pipmain(['install', path])
         print(f"File from {i} matches the hash! Successfully Installed & Deleted")
-        Path(path).unlink()
+        Path(path).unlink(missing_ok=True)
+
+dirname.unlink(missing_ok=True)

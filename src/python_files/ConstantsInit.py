@@ -60,6 +60,10 @@ def get_secret_payload(secretID:str="", versionID:str="latest", decodeSecret:boo
 
 """------------------------ START OF DEFINING CONSTANTS ------------------------"""
 
+# Going to make all the constants a class
+class Configs:
+    """"""
+
 # Debug flag
 DEBUG_MODE = True 
 
