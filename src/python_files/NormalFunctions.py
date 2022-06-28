@@ -525,7 +525,19 @@ def EC_sign(
         dataType = "str"
     else:
         raise ValueError("payload message must be either a dict or a str")
-    encodedPayload = payload.encode("utf-8")
+
+    # create the payload to sign
+    header = {"version_id": versionID, "key_ring_id": keyRingID, "key_id": keyID}
+    data = {"payload": payload, "data_type": dataType}
+
+    # If expiry is defined, set the expiry date in the data
+    if (expiry is not None and isinstance(expiry, JWTExpiryProperties)):
+        data["expiry"] = expiry.get_expiry_str_date()
+
+    # Create the data to be signed and encode it to bytes
+    dataToSign = {"header": header, "data": data}
+    encodedPayload = json.dumps(dataToSign).encode("utf-8")
+    del dataToSign
 
     # Compute the SHA384 hash of the encoded payload
     hash_ = sha384(encodedPayload).digest()
@@ -549,13 +561,6 @@ def EC_sign(
     if (response.signature_crc32c != crc32c(response.signature)):
         # response received from Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
-
-    header = {"version_id": versionID, "key_ring_id": keyRingID, "key_id": keyID}
-    data = {"payload": payload, "data_type": dataType}
-
-    # If expiry is defined, set the expiry date in the data
-    if (expiry is not None and isinstance(expiry, JWTExpiryProperties)):
-        data["expiry"] = expiry.get_expiry_str_date()
 
     # Return the signature or the entire base64 encoded payload with the signature
     if (b64EncodeData):
@@ -657,16 +662,19 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # Get the public key
-    publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+    try:
+        publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+    except (GoogleErrors.NotFound, GoogleErrors.PermissionDenied):
+        # If the key version does not exist or has invalid key path, return False by default
+        return {"verified": False, "data": data} if (getData) else False
 
     # Extract and parse the public key as a PEM-encoded EC key
     publicKeyPEM = publicKey.pem.encode("utf-8")
     ecKey = serialization.load_pem_public_key(publicKeyPEM, default_backend())
 
-    # Compute the SHA384 hash of the payload
-    if (not isinstance(payload, bytes)):
-        payload = payload.encode("utf-8")
-    hash_ = sha384(payload).digest()
+    # Compute the SHA384 hash of the data without the signature in the dict
+    dataToBeHashed = json.dumps({"header": data["header"], "data": data["data"]}).encode("utf-8")
+    hash_ = sha384(dataToBeHashed).digest()
 
     # Attempt to verify the signature
     try:
