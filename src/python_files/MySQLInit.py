@@ -79,8 +79,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
         key_name VARCHAR(36) NOT NULL,
-        cart_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
-        purchased_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
+        cart_courses JSON DEFAULT NULL, -- can be null for admin user
+        purchased_courses JSON DEFAULT NULL, -- can be null for admin user
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
 
