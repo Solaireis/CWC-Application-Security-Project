@@ -15,6 +15,11 @@ class EmailAlreadyInUseError(Exception):
     when changing their email to an email that is already in use.
     """
 
+class EmailNotVerifiedError(Exception):
+    """
+    Raised when a user tries to login with an email that has not been verified.
+    """
+
 class SameAsOldEmailError(Exception):
     """
     Raised when a user tries to change their email to the email they are already using.

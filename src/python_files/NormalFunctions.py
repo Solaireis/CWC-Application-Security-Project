@@ -15,6 +15,7 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
 from hashlib import sha1, sha384
 from pathlib import Path
+from urllib.parse import unquote
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
@@ -434,23 +435,43 @@ class JWTExpiryProperties:
 
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f %z"
 
-    def __init__(self, activeDuration:Optional[int]=0, strDate:Optional[str]=None) -> None:
+    def __init__(
+        self, activeDuration:Optional[int]=0, 
+        strDate:Optional[str]=None,
+        datetimeObj:Optional[datetime]=None
+    ) -> None:
         """
         Initializes the JWTExpiryProperties object
         
         Args:
         - activeDuration (int, optional): the number of seconds the token is active.
         - strDate (str, optional): the date in the format of "YYYY-MM-DD HH:MM:SS".
+        - datetimeObj (datetime, optional): the datetime object.
+            - This datetime object must be timezone aware.
+            - E.g. datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
         - Either one of the two parameters should be provided but NOT both.
         """
-        if (strDate is None and activeDuration != 0):
+        if (strDate is None and activeDuration != 0 and datetimeObj is None):
             self.expiryDate = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(seconds=activeDuration)
-        elif (strDate is not None and activeDuration == 0):
+
+        elif (strDate is not None and activeDuration == 0 and datetimeObj is None):
             self.expiryDate = datetime.strptime(strDate, DATE_FORMAT).astimezone(tz=ZoneInfo("Asia/Singapore"))
-        elif (strDate is not None and activeDuration != 0):
-            raise ValueError("Cannot specify both expirySeconds and strDate")
+
+        elif (strDate is None and activeDuration == 0 and datetimeObj is not None):
+            # check if datetimeObj is an instance of datetime class
+            assert isinstance(datetimeObj, datetime)
+
+            # check if datetimeObj is timezone aware
+            assert datetimeObj.tzinfo is not None
+
+            # Once all the checks are done, set the expiryDate
+            self.expiryDate = datetimeObj
+
+        elif (strDate is not None and activeDuration != 0 and datetimeObj is not None):
+            raise ValueError("Cannot specify both expirySeconds, strDate, and datetimeObj")
+
         else:
-            raise ValueError("Either expirySeconds or strDate must be provided")
+            raise ValueError("Either expirySeconds, strDate, or datetimeObj must be provided")
 
     def get_expiry_str_date(self) -> str:
         """
@@ -475,7 +496,7 @@ class JWTExpiryProperties:
 def EC_sign(
     payload:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str="signing-key", 
     versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
-    ) -> Union[dict, bytes]:
+    ) -> Union[dict, str]:
     """
     Sign a message using the public key part of an asymmetric EC key.
     
@@ -509,7 +530,7 @@ def EC_sign(
             },
             "signature": The signature of the data (bytes)
         }
-    - If b64EncodeData is True, the return a base64 encoded bytes type.
+    - If b64EncodeData is True, the return a base64 encoded string type.
         - header.payload.signature
     """
     # Construct the key version name
@@ -614,7 +635,8 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
         try:
             # get the data payload and its data type
             payloadData = data["data"]
-            payload = payloadData["payload"]
+            if ("payload" not in payloadData):
+                raise KeyError("payload not found in data")
             dataType = payloadData["data_type"]
             expiryDate = payloadData["expiry"] if ("expiry" in payloadData) else None
 
@@ -632,7 +654,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     elif (isinstance(data, str) or isinstance(data, bytes)):
         # If data is base64 encoded, encode it to bytes
         if (isinstance(data, str)):
-            data = data.encode("utf-8")
+            data = unquote(data).encode("utf-8")
 
         # Base64 decode the data to get the payload and the signature
         newData = {}
@@ -643,7 +665,8 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
 
             # get the data payload and its data type
             payloadInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[1]).decode("utf-8"))
-            payload = payloadInfo["payload"]
+            if ("payload" not in payloadInfo):
+                raise KeyError("payload not found in data")
             dataType = payloadInfo["data_type"]
             expiryDate = payloadInfo["expiry"] if ("expiry" in payloadInfo) else None
             newData["data"] = payloadInfo

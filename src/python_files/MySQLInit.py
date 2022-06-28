@@ -75,6 +75,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         role INTEGER UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
         email VARCHAR(255) NOT NULL UNIQUE, 
+        email_verified BOOLEAN NOT NULL DEFAULT FALSE,
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
@@ -106,6 +107,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         ip_address_details VARCHAR(1024) DEFAULT NULL,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS one_time_use_jwt (
+        id INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        jwt_token VARCHAR(1024) NOT NULL,
+        expiry_date DATETIME NOT NULL
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
@@ -229,10 +236,10 @@ if (__name__ == "__main__"):
 
         delete_mysql_database(debug=debugFlag)
         print("\nDeleted all tables as there was a syntax error in the schema.")
-    except (Exception) as e:
-        print("\nDatabase error caught!")
-        print("More details:")
-        print(e)
+    # except (Exception) as e:
+    #     print("\nDatabase error caught!")
+    #     print("More details:")
+    #     print(e)
 
-        delete_mysql_database(debug=debugFlag)
-        print("\nDeleted all tables as there was a database error in the schema.")
+    #     delete_mysql_database(debug=debugFlag)
+    #     print("\nDeleted all tables as there was a database error in the schema.")

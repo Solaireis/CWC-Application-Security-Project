@@ -272,7 +272,12 @@ def resetPasswordRequest():
         # create a token that is digitally signed with an active duration of 30 mins 
         # before it expires (something like JWT/JWS but not exactly)
         jsonPayload = {"userID": userInfo[0]}
-        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=JWTExpiryProperties(activeDuration=60*30))
+        expiryInfo = JWTExpiryProperties(activeDuration=60*30)
+        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo)
+        sql_operation(
+            table="one_time_use_jwt", mode="add_jwt", jwtToken=token, 
+            expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+        )
 
         # send the token to the user's email
         htmlBody = [
@@ -333,8 +338,13 @@ def resetPassword(token:str):
                 flash("Entered 2FA OTP is invalid or has expired!")
                 return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
+        if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
+            flash("Password is not strong enough!", "Danger")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+
         # update the password
         sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("login"))
     else:
@@ -382,7 +392,7 @@ def login():
                     raise LoginFromNewIpAddressError("Login from a new IP address!")
 
                 successfulLogin = True
-                sql_operation(table="login_attempts", mode="reset_user_attempts", userID=userInfo[0])
+                sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
 
                 userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
             except (IncorrectPwdError, EmailDoesNotExistError):
@@ -399,6 +409,8 @@ def login():
                 flash("Too many failed login attempts, please try again later.", "Danger")
             except (UserIsUsingOauth2Error):
                 flash("Please check your entries and try again!", "Danger")
+            except (EmailNotVerifiedError):
+                flash("Please verify your email first!", "Danger")
             except (LoginFromNewIpAddressError):
                 # sends an email with a generated TOTP code 
                 # to authenticate the user if login was successful.
@@ -464,15 +476,7 @@ def login():
                     session["admin"] = userInfo[0]
 
                 if (passwordCompromised):
-                    htmlBody = [
-                        f"Your CourseFinity account, {emailInput}, password has been found to be compromised in a data breach!",
-                        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
-                    ]
-                    send_email(to=emailInput, subject="Security Alert", body="<br><br>".join(htmlBody))
-                    flash(
-                        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
-                        "Security Alert!"
-                    )
+                    send_change_password_alert_email(email=emailInput)
                     return redirect(url_for("home"))
                 return redirect(url_for("home"))
             elif (successfulLogin and userHasTwoFA):
@@ -489,6 +493,39 @@ def login():
             return render_template("users/guest/login.html", form = loginForm)
     else:
         return redirect(url_for("home"))
+
+@app.route("/unlock-account/<string:token>")
+def unlockAccount(token:str):
+    if ("user" in session or "admin" in session):
+        return redirect(url_for("home"))
+
+    # check if jwt exists in database
+    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
+    if (not jwtExists):
+        flash("Unlock account url is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    # verify the token
+    data = EC_verify(data=token, getData=True)
+    if (data["verified"] is False):
+        # if the token is invalid
+        flash("Unlock account link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    # get the userID from the token
+    jsonPayload = data["data"]["payload"]
+    userID = jsonPayload["userID"]
+
+    # check if the user exists in the database
+    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+        # if the user does not exist
+        flash("Unlock account link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userID)
+    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
+    flash("Your account has been unlocked! Try logging in now!", "Success")
+    return redirect(url_for("login"))
 
 @app.route("/verify-login", methods=["GET", "POST"])
 def enterGuardTOTP():
@@ -539,15 +576,7 @@ def enterGuardTOTP():
         # check if password has been compromised
         # if so, flash a message and send an email to the user
         if (session["password_compromised"]):
-            htmlBody = [
-                f"Your CourseFinity account, {session['user_email']}, password has been found to be compromised in a data breach!",
-                f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
-            ]
-            send_email(to=session["user_email"], subject="Security Alert", body="<br><br>".join(htmlBody))
-            flash(
-                Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
-                "Security Alert!"
-            )
+            send_change_password_alert_email(email=session["user_email"])
 
         if (isAdmin):
             session["admin"] = userID
@@ -676,11 +705,6 @@ def signup():
             passwordInput = signupForm.password.data
             confirmPasswordInput = signupForm.cfm_password.data
 
-            """
-            Software Data Integrity, encrypt the email & username?
-            Includes encrypting when updating in later functions
-            """
-
             # some checks on the password input
             if (passwordInput != confirmPasswordInput):
                 flash("Passwords did not match!")
@@ -711,15 +735,55 @@ def signup():
                     flash("Username already exists!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            session["user"] = returnedVal # i.e. successful signup, returned the user ID
-            session["sid"] = RSA_encrypt(add_session(returnedVal))
-
-            return redirect(url_for("home"))
-
-        # post request but form inputs are not valid
-        return render_template("users/guest/signup.html", form=signupForm)
+            token = send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
+            flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
+            return redirect(url_for("login"))
+        else:
+            # post request but form inputs are not valid
+            return render_template("users/guest/signup.html", form=signupForm)
     else:
         return redirect(url_for("home"))
+
+@app.route("/verify-email/<string:token>")
+def verifyEmail(token:str):
+    # check if jwt exists in database
+    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
+    if (not jwtExists):
+        if ("user" in session):
+            flash("Verify email url is invalid or has expired!", "Warning!")
+            return redirect(url_for("userProfile"))
+        elif ("user" not in session):
+            flash("Verify email url is invalid or has expired!", "Danger")
+            return redirect(url_for("login"))
+
+    # verify the token
+    data = EC_verify(data=token, getData=True)
+    if (data["verified"] is False):
+        # if the token is invalid
+        flash("Verify email link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    # get the userID from the token
+    jsonPayload = data["data"]["payload"]
+    userID = jsonPayload["userID"]
+
+    # check if the user exists in the database
+    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+        # if the user does not exist
+        flash("Reset password link is invalid or has expired!", "Danger")
+        return redirect(url_for("login"))
+
+    # check if email has been verified
+    if (sql_operation(table="user", mode="email_verified", userID=userID)):
+        # if the email has been verified
+        flash("Your email has already been verified!", "Sorry!")
+        return redirect(url_for("home"))
+
+    # update the email verified column to true
+    sql_operation(table="user", mode="update_email_to_verified", userID=userID)
+    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
+    flash("Your email has been verified!", "Email Verified!")
+    return redirect(url_for("home"))
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
 def enter2faTOTP():
@@ -766,15 +830,7 @@ def enter2faTOTP():
             # check if password has been compromised
             # if so, flash a message and send an email to the user
             if (session["password_compromised"]):
-                htmlBody = [
-                    f"Your CourseFinity account, {session['user_email']}, password has been found to be compromised in a data breach!",
-                    f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
-                ]
-                send_email(to=session["user_email"], subject="Security Alert", body="<br><br>".join(htmlBody))
-                flash(
-                    Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
-                    "Security Alert!"
-                )
+                send_change_password_alert_email(email=session["user_email"])
 
             # clear the temp_uid and temp_role
             session.pop("temp_uid", None)
@@ -892,7 +948,6 @@ def twoFactorAuthSetup():
     # post request but form inputs are not valid
     return redirect(url_for("twoFactorAuthSetup"))
 
-
 @app.post("/disable-2fa")
 def disableTwoFactorAuth():
     if ("user" not in session and "admin" not in session):
@@ -1002,7 +1057,10 @@ def updateEmail():
                 return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
-                flash("Your email has been successfully changed.", "Account Details Updated!")
+                flash(
+                    "Your email has been successfully changed. However, a link has been sent to your new email to verify your new email!",
+                    "Account Details Updated!"
+                )
                 return redirect(url_for("userProfile"))
         else:
             return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
@@ -1584,6 +1642,10 @@ def error503(e):
 
 if (__name__ == "__main__"):
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
+    scheduler.add_job(
+        lambda: sql_operation(table="one_time_use_jwt", mode="delete_expired_jwt"),
+        trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
+    )
     scheduler.add_job(
         lambda: sql_operation(table="session", mode="delete_expired_sessions"), 
         trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions"
