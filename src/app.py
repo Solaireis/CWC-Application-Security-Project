@@ -617,7 +617,12 @@ def loginCallback():
     if ("state" not in session):
         return redirect(url_for("login"))
 
-    app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
+    try:
+        app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
+    except (Exception):
+        flash("An error occurred while trying to login via Google!", "Danger")
+        return redirect(url_for("login"))
+
     if (RSA_decrypt(session["state"]) != request.args.get("state")):
         abort(500) # when state does not match (protect against CSRF attacks)
 
