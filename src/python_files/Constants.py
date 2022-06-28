@@ -81,6 +81,9 @@ class ConstantsConfigs:
         # For hashing passwords
         self.MAX_PASSWORD_LENGTH = 128
 
+        # For lockout policy
+        self.MAX_LOGIN_ATTEMPTS = 6
+
         # Configured Argon2id default configurations so that it will take 
         # at least 500ms/0.5s to hash a plaintext password.
         self.PH = PasswordHasher(

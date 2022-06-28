@@ -5,11 +5,14 @@ flask web application's app variable from app.py.
 
 # import Flask web application configs
 from app import app
-from flask import url_for
+from flask import url_for, flash, Markup
 
 # import python standard libraries
 import json
-from typing import Union
+from typing import Union, Optional
+from urllib.parse import unquote
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 # import third party libraries
 from dicebear import DAvatar, DStyle
@@ -23,19 +26,10 @@ from google_auth_oauthlib.flow import Flow
 # import local python files
 from .Course import Course
 from .Errors import *
-from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
-                             symmetric_encrypt, symmetric_decrypt, create_symmetric_key
+from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
+                             symmetric_encrypt, symmetric_decrypt, create_symmetric_key, send_email, EC_sign
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
-
-
-"""------------------------------ Define Constants ------------------------------"""
-
-# for defining the maximum login attempts
-# before locking a user account
-CONSTANTS.add_new_constant("MAX_LOGIN_ATTEMPTS", 10)
-
-"""------------------------------ End of Defining Constants ------------------------------"""
 
 def accepted_image_extension(filename:str) -> bool:
     """
@@ -87,6 +81,96 @@ def add_session(userID:str) -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
     return sessionID
 
+def send_change_password_alert_email(email:str="") -> None:
+    """
+    Send an email to the user to alert them that 
+    their password has been compromised and should be changed.
+
+    Then flashes a message to change their password.
+
+    Args:
+    - email (str): The email of the user.
+    """
+    htmlBody = [
+        f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
+        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+    ]
+    send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
+    flash(
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+        "Security Alert!"
+    )
+
+def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JWTExpiryProperties=None) -> str:
+    """
+    Generate a one time use token and add it to the MySQL database.
+
+    Args:
+    - payload (Union[str, list, dict]): The payload of the token.
+    - expiryInfo (JWTExpiryProperties): The expiry information of the token.
+    """
+    if (expiryInfo is None):
+        raise ValueError("Expiry information is required.")
+
+    if (not isinstance(expiryInfo, JWTExpiryProperties)):
+        raise ValueError("Expiry information must be a JWTExpiryProperties object.")
+
+    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo)
+    sql_operation(
+        table="one_time_use_jwt", mode="add_jwt", jwtToken=token, 
+        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+    )
+    return token
+
+def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
+    """
+    Send an email to the user to verify their account.
+
+    Note: The JWT will expire in 3 days.
+
+    Args:
+    - email (str): The email of the user.
+    - username (str): The username of the user.
+    - userID (str): The user ID of the user.
+    """
+    # verify email token will be valid for a week
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        f"Welcome to CourseFinity!", 
+        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
+    ]
+    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
+
+def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
+    """
+    Send an email to the user to unlock their account.
+
+    Note: The JWT will expire in 30 minutes.
+
+    Args:
+    - email (str): The email of the user.
+    - userID (str): The user ID of the user.
+    """
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        "Your account has been locked due to too many failed login attempts.", 
+        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
+        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+    ]
+    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
+
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
@@ -105,7 +189,7 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     - The image path (str) and the user's record (tuple) if returnUserInfo is True
     """
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
-    imageSrcPath = userInfo[5]
+    imageSrcPath = userInfo[6]
     if (imageSrcPath is None):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
@@ -136,9 +220,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     Returns the returned value from the SQL operation.
     """
     returnValue = con = None
-
-    # uses Google Cloud SQL Public Address if debug mode is False else uses localhost
-
     try:
         con = get_mysql_connection(debug=app.config["DEBUG_FLAG"])
     except (MySQLErrors.OperationalError):
@@ -162,7 +243,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "review"):
             returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
-    
+        elif (table == "one_time_use_jwt"):
+            returnValue = one_time_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
         else:
             raise ValueError("Invalid table name")
     except (MySQLErrors.IntegrityError, MySQLErrors.OperationalError, MySQLErrors.InternalError, MySQLErrors.DataError) as e:
@@ -172,6 +254,54 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     con.close()
     return returnValue
+
+def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    """
+    Connects to the database and returns the connection object
+
+    Args:
+    - connection: The connection to the database
+    - mode: The mode to use ("insert", "edit", "login", etc.)
+    - kwargs: The keywords to pass into the respective sql operation functions
+
+    Returns the returned value from the SQL operation.
+    """
+    if (mode == "add_jwt"):
+        jwtToken = unquote(kwargs["jwtToken"])
+        expiryDate = kwargs["expiryDate"]
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO one_time_use_jwt (jwt_token, expiry_date) VALUES (%(jwtToken)s, %(expiryDate)s)",
+            {"jwtToken": jwtToken, "expiryDate": expiryDate}
+        )
+        connection.commit()
+        return True
+    elif (mode == "jwt_exists"):
+        jwtToken = unquote(kwargs["jwtToken"])
+        print("token", jwtToken)
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT * FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
+            {"jwtToken": jwtToken}
+        )
+        return (cursor.fetchone() is not None)
+    elif (mode == "delete_jwt"):
+        jwtToken = unquote(kwargs["jwtToken"])
+        cursor = connection.cursor()
+        cursor.execute(
+            "DELETE FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
+            {"jwtToken": jwtToken}
+        )
+        connection.commit()
+        return True
+    elif (mode == "delete_expired_jwt"):
+        # to free up the database if the user did not use the token at all
+        # to avoid pilling up the database table with redundant data
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW()")
+        connection.commit()
+    else:
+        raise ValueError("Invalid mode")
 
 def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):
@@ -187,7 +317,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
         ipAddress = kwargs.get("ipAddress")
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
@@ -205,7 +335,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
 
         cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = %(userID)s AND INET6_NTOA(ip_address) = %(ipAddress)s", {"userID":userID, "ipAddress":ipAddress})
         if (cur.fetchone()[0] == 0):
-            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
             connection.commit()
 
     elif (mode == "remove_last_accessed_more_than_10_days"):
@@ -310,7 +440,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
             cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"], "userID":userID})
         connection.commit()
 
-    elif (mode == "reset_user_attempts"):
+    elif (mode == "reset_user_attempts_for_user"):
         userID = kwargs.get("userID")
         cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
@@ -318,6 +448,14 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
     elif (mode == "reset_attempts_past_reset_date"):
         cur.execute("DELETE FROM login_attempts WHERE reset_date < SGT_NOW()")
         connection.commit()
+
+    elif (mode == "reset_attempts_past_reset_date_for_user"):
+        userID = kwargs.get("userID")
+        cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s AND reset_date < SGT_NOW()", {"userID":userID})
+        connection.commit()
+
+        cur.execute("SELECT attempts FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
+        return True if (cur.fetchone() is None) else False
 
     else:
         connection.close()
@@ -422,7 +560,25 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
+    elif (mode == "email_verified"):
+        userID = kwargs.get("userID")
+        getEmail = kwargs.get("email") or False
+        if (userID is None):
+            connection.close()
+            raise ValueError("You must specify a userID when verifying the userID!")
 
+        cur.execute("SELECT email_verified, email FROM user WHERE id=%(userID)s", {"userID":userID})
+        matched = cur.fetchone()
+        if (matched is None):
+            return None
+        return matched if (getEmail) else matched[0]
+    elif (mode == "update_email_to_verified"):
+        userID = kwargs.get("userID")
+        if (userID is None):
+            connection.close()
+            raise ValueError("You must specify a userID when verifying the userID!")
+        cur.execute("UPDATE user SET email_verified = TRUE WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
     elif (mode == "signup"):
         emailInput = kwargs.get("email")
         usernameInput = kwargs.get("username")
@@ -454,7 +610,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         #     roleID = result.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
             {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
@@ -504,7 +660,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 create_symmetric_key(keyName=keyName)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
                 {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
@@ -524,7 +680,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
-        cur.execute("SELECT id, password, key_name, username, role FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        cur.execute("SELECT id, password, key_name, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
         if (not matched):
             connection.close()
@@ -535,19 +691,27 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
 
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":matched[0]})
-        lockedAccount = cur.fetchone()
+        loginAttempts = cur.fetchone()
 
         requestIpAddress = kwargs["ipAddress"]
         ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=matched[0], ipAddress=requestIpAddress)
 
-        if (lockedAccount):
-            if (lockedAccount[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
+        # send an email to the authentic user if their account got locked
+        if (loginAttempts and loginAttempts[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
+            resetAttempts = login_attempts_sql_operation(connection=connection, mode="reset_attempts_past_reset_date_for_user", userID=matched[0])
+
+            # If the user has exceeded the maximum number of login attempts,
+            # but the timeout is not up yet...
+            if (not resetAttempts):
                 connection.close()
+                send_unlock_locked_acc_email(email=emailInput, userID=matched[0])
                 raise AccountLockedError("Account is locked!")
-            else:
-                # reset the attempts
-                cur.execute("DELETE FROM login_attempts WHERE user_id=%(userID)s", {"userID":matched[0]})
-                connection.commit()
+
+        # send verification email if the user has not verified their email
+        if (not matched[5]):
+            connection.close()
+            send_verification_email(email=emailInput, userID=matched[0], username=matched[3])
+            raise EmailNotVerifiedError("Email has not been verified, please verify your email!")
 
         newIpAddress = False
         decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
@@ -641,8 +805,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         try:
             if (CONSTANTS.PH.verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
-                cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
+                cur.execute("UPDATE user SET email=%(emailInput)s, email_verified=FALSE WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
+                send_verification_email(email=emailInput, userID=userID)
         except (VerifyMismatchError):
             connection.close()
             raise IncorrectPwdError("Incorrect password!")

@@ -75,6 +75,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         role INTEGER UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
         email VARCHAR(255) NOT NULL UNIQUE, 
+        email_verified BOOLEAN NOT NULL DEFAULT FALSE,
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
@@ -108,6 +109,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS one_time_use_jwt (
+        id INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+        jwt_token VARCHAR(1024) NOT NULL,
+        expiry_date DATETIME NOT NULL
+    )""")
+
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
         token VARBINARY(512) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
@@ -125,6 +132,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         session_id CHAR(32) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
+        -- ip_address VARBINARY(16) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
