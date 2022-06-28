@@ -26,6 +26,7 @@ from python_files.StripeFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
 from python_files.Constants import CONSTANTS
+from python_files.Reviews import Reviews
 
 # import python standard libraries
 from zoneinfo import ZoneInfo
@@ -38,6 +39,7 @@ from json import loads
 import time
 from typing import Callable
 from functools import wraps
+
 
 """Web app configurations"""
 # general Flask configurations
@@ -1297,15 +1299,17 @@ def coursePage(courseID:str):
     print(teacherRecords)
     teacherName = teacherRecords[2]
 
-    reviews = sql_operation(table="review", mode="retrieve" , courseID=courseID)
-    # for reviewer in reviews:
-    #     reviewRating = reviews[2]
-    #     reviewComment = reviews[3]
-    #     reviewDate = reviews[4]
-    #     reviewerUserID = reviews[0]
-    #     user = sql_operation(table="user", mode="get_user_data", userID=reviewerUserID)
-    #     reviewerUsername = user[2]
-
+    retrieveReviews = sql_operation(table="review", mode="retrieve_all" , courseID=courseID)
+    print("the reviews", retrieveReviews)
+    reviewList = []
+    for i in retrieveReviews:
+        reviewUserId = i[0]
+        reviewCourseId = courseID 
+        reviewRating = i[2]
+        reviewComment = i[3]
+        reviewDate = i[4]
+        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate)) 
+    print(reviewList[0].course_id)
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
@@ -1318,7 +1322,7 @@ def coursePage(courseID:str):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
-             reviews=reviews)
+             )
 
 @app.route("/course-review/<string:courseID>") #writing of review
 @validate_session

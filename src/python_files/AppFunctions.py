@@ -28,6 +28,7 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
+
 """------------------------------ Define Constants ------------------------------"""
 
 # for defining the maximum login attempts
@@ -952,8 +953,9 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     """
     Do CRUD operations on the purchased table
 
-    revieve keywords: userID, courseID,
+    revieve_user_review keywords: userID, courseID,
     insert keywords: userID, courseID, courseRating, CourseReview
+    retrieve_all keywords: courseID
 
     """
     if mode is None:
@@ -965,7 +967,7 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     userID = kwargs.get("userID")
     courseID = kwargs.get("courseID")
 
-    if mode == "retrieve":
+    if mode == "retrieve_user_review":
         cur.execute("SELECT course_rating FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         review_list = cur.fetchall()
         return review_list
@@ -976,6 +978,11 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         #reviewDates = kwargs.get("reviewDates")
         cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, %(reviewDate)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
+
+    elif mode == "retrieve_all":
+        cur.execute("SELECT * FROM review WHERE course_id = %(courseID)s", {"courseID":courseID})
+        review_list = cur.fetchall()
+        return review_list 
 
     else:
         connection.close()
