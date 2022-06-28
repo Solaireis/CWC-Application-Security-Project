@@ -77,7 +77,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         email VARCHAR(255) NOT NULL UNIQUE, 
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
-        date_joined DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        date_joined DATETIME NOT NULL,
         key_name VARCHAR(36) NOT NULL,
         cart_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
         purchased_courses VARCHAR(255) DEFAULT NULL, -- can be null for admin user
@@ -94,7 +94,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_category VARCHAR(255) NOT NULL,
         course_total_rating INTEGER UNSIGNED NOT NULL DEFAULT 0,
         course_rating_count INTEGER UNSIGNED NOT NULL DEFAULT 0,
-        date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
@@ -102,7 +102,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("""CREATE TABLE IF NOT EXISTS user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
         ip_address VARBINARY(16) NOT NULL,
-        last_accessed DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_accessed DATETIME NOT NULL,
         ip_address_details VARCHAR(1024) DEFAULT NULL,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
@@ -133,7 +133,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_id CHAR(32),
         course_rating INTEGER UNSIGNED,
         course_review VARCHAR(255),
-        review_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        review_date DATETIME NOT NULL,
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)

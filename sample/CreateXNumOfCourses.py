@@ -115,7 +115,7 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
 """----------------------------------- END OF DEFINING FUNCTIONS -----------------------------------"""
 
 while (1):
-    debugPrompt = input("Debug mode? (Y/N): ").lower().strip()
+    debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
     if (debugPrompt not in ("y", "n", "")):
         print("Invalid input", end="\n\n")
         continue
@@ -124,12 +124,12 @@ while (1):
         break
 
 while debugFlag == True:
-    stripePrompt = input("Use with Stripe? (Y/N): ").lower().strip()
-    if stripePrompt not in ('y', 'n', ''):
-        print('Invalid input', end = '\n\n')
+    stripePrompt = input("Use with Stripe? (Y/n): ").lower().strip()
+    if stripePrompt not in ("y", "n", ""):
+        print("Invalid input", end = '\n\n')
         continue
     else:
-        stripeFlag = True if stripePrompt != 'n' else False
+        stripeFlag = True if (stripePrompt != "n") else False
         break
 
 try:
@@ -162,9 +162,9 @@ if (not res):
     email = "test@teacher.com"
     keyName = "test-key"
     password = symmetric_encrypt(plaintext=Constants_Init.CONSTANTS.PH.hash("User123!"), keyID=keyName)
-    cur.execute("INSERT INTO user (id, role, username, email, password, key_name) VALUES (%s, %s, %s, %s, %s, %s)", (userID, TEACHER_ROLE_ID, username, email, password, keyName))
+    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, key_name) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s)", (userID, TEACHER_ROLE_ID, username, email, password, keyName))
     con.commit()
-    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
     con.commit()
 
 if stripeFlag:
@@ -202,7 +202,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
 
-    cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path))
+    cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s)", (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path))
     #stripe_product_create(courseID=course_id, courseName=course_name, courseDescription=course_description, coursePrice=course_price, debug=True)
 
 # Add student
@@ -222,9 +222,9 @@ if (res is None):
     keyName = "test-key"
     password = symmetric_encrypt(plaintext=Constants_Init.CONSTANTS.PH.hash("User123!"), keyID=keyName)
 
-    cur.execute("INSERT INTO user (id, role, username, email, password, key_name, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, keyName, cartData, purchasedData))
+    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, key_name, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s, %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, keyName, cartData, purchasedData))
     con.commit()
-    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(userID)s, %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
     con.commit()
 
 con.commit()

@@ -88,7 +88,10 @@ if (res is None):
         courseRating = randint(1,5)
         
         courseID = course[0]
-        cur.execute(f"INSERT INTO review ( course_id, user_id, course_rating, course_review) VALUES ( '{courseID}', '{userID}', '{courseRating}', '{courseReview}')")
+        cur.execute(
+            "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
+            {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
+        )
         con.commit()
         print(f"course details {course}")
         print(f"Added review to course {courseID}")

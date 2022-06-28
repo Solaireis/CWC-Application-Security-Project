@@ -213,12 +213,12 @@ def main() -> None:
                     password = symmetric_encrypt(plaintext=Constants_Init.PH.hash("Admin123!"), keyID=keyName)
 
                     cur.execute(
-                        "INSERT INTO user (id, role, username, email, password, profile_image, key_name) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, %(password)s, %(profilePic)s, %(keyName)s)", \
+                        "INSERT INTO user (id, role, username, email, password, profile_image, date_joined, key_name) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, %(password)s, %(profilePic)s, SGT_NOW(), %(keyName)s)", \
                         {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": profilePic, "keyName": keyName}
                     )
                     con.commit()
 
-                    cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address) VALUES (%(adminID)s, %(ipAddress)s)", {"adminID": adminID, "ipAddress": "127.0.0.1"})
+                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s)", {"adminID": adminID, "ipAddress": "127.0.0.1"})
                     con.commit()
 
                     count += 1
