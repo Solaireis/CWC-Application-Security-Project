@@ -9,7 +9,7 @@ import platform
 from pip._internal import main as pipmain # Old Pip Wrapper, for now it works
 
 #Index of jason file where will return respective file
-platforms = {"Darwin": 0, "Linux": 3, "Windows": 5}
+platforms = {"Darwin": 0, "Linux": 1, "Windows": 2}
 platformType = platform.system()
 
 headers = {
@@ -23,7 +23,6 @@ packagedir.mkdir(parents=True, exist_ok=True)
 with open(dirname) as f:
     dependencies = f.readlines()
 
-# Work in progress, now takes latest version (taking into account the maximum version), but still does not check for system type
 
 for i in dependencies:
     maximum = False
@@ -51,12 +50,26 @@ for i in dependencies:
                 version = versions[j]
                 break
     try:
-        file = datafile["releases"][version][platforms[platformType]]
+        file = datafile["releases"][version][2] #Those that does not deal with OS only have 2 items in list
+        for i in datafile["releases"][version]["url"]:
+            # Never specify to look for 64 bit or 32 bit files, but SHOULD WORK
+            if (platformType == "Darwin"):
+                if ("macosx" in i) and ("cp310" not in i):
+                    url = i
+                    break
+            elif (platformType == "Linux"):
+                if ("linux" in i) and ("cp310" not in i):
+                    url = i
+                    break
+            else:
+                if ("win" in i and ("cp310" not in i)):
+                    url = i
+                    break
     except:
         file = datafile["releases"][version][0]
+        url = file["url"]
 
     filename = file["filename"]
-    url = file["url"]
     hashed = file["digests"]["sha256"]
     path = f"{packagedir}/{filename}"
 
@@ -69,11 +82,11 @@ for i in dependencies:
         sha256.update(data)
 
     if (sha256.hexdigest() != hashed):
-        Path(path).unlink()
+        # Path(path).unlink()
         print(f"Dependency {i} does not match the hash!")
     else:
         # Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
         # It works but its an old way of doing it so need find improved way
         # pipmain(['install', path])
         print(f"Dependency {i} matches the hash! Successfully Installed & Deleted")
-        Path(path).unlink(missing_ok=True)
+        # Path(path).unlink(missing_ok=True)
