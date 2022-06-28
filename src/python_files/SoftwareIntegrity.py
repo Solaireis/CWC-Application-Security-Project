@@ -102,7 +102,7 @@ for i in hashes:
     else:
         # Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
         # It works but its an old way of doing it so need find improved way
-        pipmain(['install', path])
+        # pipmain(['install', path])
         print(f"File from {i} matches the hash! Successfully Installed & Deleted")
         Path(path).unlink(missing_ok=True)
 
