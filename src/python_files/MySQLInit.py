@@ -184,6 +184,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE CONCAT('%', search_term , '%');
         END
     """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
+        DETERMINISTIC 
+        COMMENT 'Returns SGT (UTC+8) datetime.'
+        BEGIN
+            RETURN CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+08:00');
+        END
+    """)
 
     # end of stored procedures
     mydb.commit()
@@ -221,7 +229,7 @@ if (__name__ == "__main__"):
 
         delete_mysql_database(debug=debugFlag)
         print("\nDeleted all tables as there was a syntax error in the schema.")
-    except (pymysql.err.DatabaseError) as e:
+    except (Exception) as e:
         print("\nDatabase error caught!")
         print("More details:")
         print(e)

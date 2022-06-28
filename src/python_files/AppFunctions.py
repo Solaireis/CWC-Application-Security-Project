@@ -208,7 +208,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
             connection.commit()
 
     elif (mode == "remove_last_accessed_more_than_10_days"):
-        cur.execute("DELETE FROM user_ip_addresses WHERE DATEDIFF(NOW(), last_accessed) > 10")
+        cur.execute("DELETE FROM user_ip_addresses WHERE DATEDIFF(SGT_NOW(), last_accessed) > 10")
         connection.commit()
 
     else:
@@ -289,9 +289,9 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"]})
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"]})
         else:
-            cur.execute("SELECT NOW()")
+            cur.execute("SELECT SGT_NOW()")
             now = cur.fetchone()[0]
             # comparing the reset datetime with the current datetime
             if (attempts[1] > now):
@@ -306,7 +306,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"], "userID":userID})
+            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"], "userID":userID})
         connection.commit()
 
     elif (mode == "reset_user_attempts"):
@@ -315,7 +315,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date"):
-        cur.execute("DELETE FROM login_attempts WHERE reset_date < NOW()")
+        cur.execute("DELETE FROM login_attempts WHERE reset_date < SGT_NOW()")
         connection.commit()
 
     else:
@@ -332,7 +332,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, NOW() + INTERVAL %(intervalMins)s MINUTE)", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"]})
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"]})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -354,7 +354,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "update_session"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("UPDATE session SET expiry_date = NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": app.config["SESSION_EXPIRY_INTERVALS"], "sessionID": sessionID})
+        cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": app.config["SESSION_EXPIRY_INTERVALS"], "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
@@ -362,7 +362,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         expiryDate = result[1]
-        cur.execute("SELECT NOW()")
+        cur.execute("SELECT SGT_NOW()")
         now = cur.fetchone()[0]
         if (expiryDate >= now):
             # not expired, check if the userID matches the sessionID
@@ -372,7 +372,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
             return False
 
     elif (mode == "delete_expired_sessions"):
-        cur.execute("DELETE FROM session WHERE expiry_date < NOW()")
+        cur.execute("DELETE FROM session WHERE expiry_date < SGT_NOW()")
         connection.commit()
 
     elif (mode == "if_session_exists"):
@@ -453,7 +453,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         #     roleID = result.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
             {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
@@ -503,7 +503,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 create_symmetric_key(keyName=keyName)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
                 {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
@@ -809,7 +809,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         course_rating_count = 0
 
         cur.execute(
-            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, NOW(), %(video_path)s)",
+            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, SGT_NOW(), %(video_path)s)",
             {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "video_path":video_path}
         )
         connection.commit()
