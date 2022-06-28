@@ -154,14 +154,21 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     """
     return (threshold <= riskScore)
 
-def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
+def write_log_entry(logName:str="coursefinity-web-app", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
 
+    View logs here (Must be logged in):
+    - _Default bucket
+        - https://cloudlogging.app.goo.gl/Rr3GmcFNENq7nvBC6
+    - coursefinity-web-app bucket
+        - https://cloudlogging.app.goo.gl/G24TZQ7HqJF5dyk29
+
     Args:
-    - logLocation (str): The location of the log to write to
-        - Defaults to "test-logs"
-        - Will log to that location in the default log bucket
+    - logName (str): The location of the log to write to
+        - Defaults to "coursefinity-web-app"
+        - Will log to that location in the coursefinity-web-app bucket
+            - I have already configured a sink to route logs with the name "coursefinity-web-app"
     - logMessage (str|dict): The message to write to the log
         - If str, the message is written to the log with the given severity
         - If dict, you can define your log message together with the severity in the dict.
@@ -192,7 +199,7 @@ def write_log_entry(logLocation:str="test-logs", logMessage:Union[dict, str]=Non
     if (severity is None):
         severity = "DEFAULT"
 
-    logger = CONSTANTS.LOGGING_CLIENT.logger(logLocation)
+    logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
 
     if (isinstance(logMessage, dict)):
         logger.log_struct(logMessage)
