@@ -13,11 +13,11 @@
 <div class="container">
     <h2 class="display-5" style="overflow:auto;">You Searched For "{{ searchInput }}"</h2>
     {% if (foundResultsLen < 1) %}
-    <div class="row">
-        <div class="col">
-            <h4 class="display-5">No Course Found</h4>
+        <div class="row">
+            <div class="col">
+                <h4 class="display-5">No Course Found</h4>
+            </div>
         </div>
-    </div>
     {% else %}
         {% for results in foundResults %}
             <div class="card mb-3">
@@ -64,6 +64,23 @@
                 </div>
             </div>
         {% endfor %}
+        <div class="center">
+            <div class="pagination">
+                {% if currentPage != 1 %}
+                    <a href="{{ url_for('search', page=currentPage - 1) }}">&laquo;</a>
+                {% endif %}
+                {% for i in lenOfDict %}
+                    {% if i == currentPage %}
+                        <a class="active" href="{{ url_for('search', page=i) }}">{{ i }}</a>
+                    {% else %}
+                        <a href="{{ url_for('search', page=i) }}">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if currentPage != maxPage %}
+                    <a href="{{ url_for('search', page=currentPage + 1, searchInput=searchInput) }}">&raquo;</a>
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

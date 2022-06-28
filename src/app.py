@@ -1473,19 +1473,37 @@ def coursePage(courseID:str):
         reviewList= reviewList
     )
 
-@app.route("/search", methods=["GET","POST"])
-def search():
+@app.route("/search/<int:page>/", methods=["GET","POST"])
+def search(page):
     searchInput = str(request.args.get("q"))
-    if len(searchInput) > 100:
+    searchURL = "?q=" + searchInput
+    if (len(searchInput) > 100):
         abort(413)
+    eachPageResults = []
+    dictOfResults = {}
+    pageNum = 1
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
+    for i in foundResults:
+        if (len(eachPageResults)!=10):
+            eachPageResults.append(i)
+            dictOfResults[pageNum] = eachPageResults
+        else:
+            dictOfResults[pageNum] = eachPageResults
+            eachPageResults = [i]
+            pageNum += 1
+    try:
+        maxPage = max(list(dictOfResults))
+    except:
+        searchURL = session["searchURL"]
+        return redirect(f"/search/{page}/{searchURL}")
 
+    session["searchURL"] = searchURL
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, accType = userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType = userInfo[1])
 
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=foundResults, foundResultsLen=len(foundResults), accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
 
 """------------------------------------- END OF GENERAL ROUTES -------------------------------------"""
 
