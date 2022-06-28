@@ -1453,7 +1453,9 @@ def coursePage(courseID:str):
         reviewRating = i[2]
         reviewComment = i[3]
         reviewDate = i[4]
-        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate)) 
+        reviewUserName = i[5]
+        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName))
+        
     print(reviewList[0].course_id)
 
     accType = imageSrcPath = None
@@ -1468,6 +1470,7 @@ def coursePage(courseID:str):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
+        reviewList= reviewList
     )
 
 @app.route("/search", methods=["GET","POST"])

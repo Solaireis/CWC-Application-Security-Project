@@ -70,11 +70,11 @@
         </div>
         <div class="col-lg-8">
             <p>Hello</p>
-            {% for review in reviews %}
+            {% for review in reviewList %}
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">The review {{review[loop.index0]}}</h5> <!-- Username -->
-                    <p class="card-text">{{review}}</p> <!-- Rating -->
+                    <h5 class="card-title">{{review.username}}</h5> <!-- Username -->
+                    <p class="card-text">{{review.rating}}</p> <!-- Rating -->
                     <p class="card-text"><small class="text-muted">{{review}}</small></p> <!-- Date -->
                 </div>
             {% endfor %}
