@@ -236,10 +236,10 @@ if (__name__ == "__main__"):
 
         delete_mysql_database(debug=debugFlag)
         print("\nDeleted all tables as there was a syntax error in the schema.")
-    # except (Exception) as e:
-    #     print("\nDatabase error caught!")
-    #     print("More details:")
-    #     print(e)
+    except (Exception) as e:
+        print("\nDatabase error caught!")
+        print("More details:")
+        print(e)
 
-    #     delete_mysql_database(debug=debugFlag)
-    #     print("\nDeleted all tables as there was a database error in the schema.")
+        delete_mysql_database(debug=debugFlag)
+        print("\nDeleted all tables as there was a database error in the schema.")
