@@ -980,9 +980,10 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         connection.commit()
 
     elif mode == "retrieve_all":
-        cur.execute("SELECT * FROM review WHERE course_id = %(courseID)s", {"courseID":courseID})
+        cur.execute("SELECT user_id,course_id,course_rating,course_review,review_date,username FROM review r INNER JOIN user u ON r.user_ID = u.id WHERE course_id = %(courseID)s", {"courseID":courseID})
         review_list = cur.fetchall()
         return review_list 
+
 
     else:
         connection.close()
