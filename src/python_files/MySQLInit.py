@@ -132,6 +132,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         session_id CHAR(32) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
+        -- ip_address VARBINARY(16) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
