@@ -15,6 +15,7 @@ import pathlib, uuid
 from sys import modules
 from importlib.util import spec_from_file_location, module_from_spec
 from typing import Union, Optional
+from flask_misaka import markdown
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -193,31 +194,31 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     course_id_list.append(course_id)
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Data Structure and Algorithms Demo Course {i}"
-    course_description = f"""
-    This is a demo course for Data Structure and Algorithms. 
-    It is a course for students who are interested in learning about Data Structure and Algorithms.
-    In this course you will learn about the following topics:
-    1. Arrays
-    2. Linked Lists
-    3. Stack and Queue
-    4. Trees
-    5. Graphs
-    6. Binary Search Tree
-    7. Red Black Binary Tree
-    8. Binary Heap
-    9. Hash Table
-    10. Advance sorting
-    11. Searching
-    12. Pattern Defeating QuickSort
+    course_description = (f""" This is a demo course for Data Structure and Algorithms.     
+    It is a course for students who are interested in learning about Data Structure and Algorithms.    
+    In this course you will learn about the following topics:    
+    1. Arrays    
+    2. Linked Lists    
+    3. Stack and Queue    
+    4. Trees    
+    5. Graphs    
+    6. Binary Search Tree    
+    7. Red Black Binary Tree    
+    8. Binary Heap    
+    9. Hash Table    
+    10. Advance sorting    
+    11. Searching    
+    12. Pattern Defeating QuickSort    
 
-    Please click on the following timestamps to skip ahead to the corresponding section:
-    1. [2020-01-01 00:00:00]
-    2. [2020-01-01 00:00:00]
-    3. [2020-01-01 00:00:00]
-    4. [2020-01-01 00:00:00]
+    Please click on the following timestamps to skip ahead to the corresponding section:    
+    1. [2020-01-01 00:00:00]   
+    2. [2020-01-01 00:00:00]   
+    3. [2020-01-01 00:00:00]   
+    4. [2020-01-01 00:00:00]   
 
-    Thanks for watching the demo course!
-    """
+    Thanks for watching the demo course!  
+        """)
+
     course_price = round(i * 50.50, 2)
     course_category = "Other Academics"
     course_total_rating = randint(0, 5)

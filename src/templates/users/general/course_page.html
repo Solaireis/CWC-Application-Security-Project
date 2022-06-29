@@ -78,6 +78,9 @@
                             <p>Course Price: ${{coursePrice}}</p>
                             <hr>
                             <p>Description</p>
+                            {% filter markdown %}
+                                {{ courseDescription }}
+                            {% endfilter %}
                             <p>{{ courseDescription }}</p>
                         </div>
                     </div>
