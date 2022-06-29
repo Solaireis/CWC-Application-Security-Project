@@ -3,10 +3,7 @@ from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
-import pyotp, qrcode
-import markdown
-
-
+import pyotp, qrcode, markdown
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -40,7 +37,6 @@ from io import BytesIO
 from os import environ
 from json import loads
 import time
-
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
