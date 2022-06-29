@@ -1534,16 +1534,34 @@ def coursePage(courseID:str):
         reviewList= reviewList
     )
 
-@app.route("/search/<int:page>/", methods=["GET","POST"])
-def search(page):
-    searchInput = str(request.args.get("q"))
-    searchURL = "?q=" + searchInput
+@app.route("/search")
+def search():
+    """
+    Search for courses
+
+    E.g. of a search query:
+    /search?q=DSA&p=2 # page 1 will not have any p argument but can have p=1 argument
+
+    One good example is GitHub's search, notice how the url works.
+    E.g. 
+    - https://github.com/search?q=test&type=Repositories
+    - https://github.com/search?p=2&q=test&type=Repositories
+    
+    TODO: Must handle all sorts of situation such as manually tampering with the url
+    """
+    searchInput = request.args.get("q", default="Courses", type=str)
     if (len(searchInput) > 100):
         abort(413)
+
+    page = request.args.get("p", default=1, type=int)
+
     eachPageResults = []
     dictOfResults = {}
     pageNum = 1
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
+
+    # TODO: Please add some comments as to why you are doing this
+    # TODO: Fix KeyError bug
     for i in foundResults:
         if (len(eachPageResults)!=10):
             eachPageResults.append(i)
@@ -1552,17 +1570,17 @@ def search(page):
             dictOfResults[pageNum] = eachPageResults
             eachPageResults = [i]
             pageNum += 1
+
+    # TODO: Please add some comments as to why you are doing this
     try:
         maxPage = max(list(dictOfResults))
     except:
-        searchURL = session["searchURL"]
-        return redirect(f"/search/{page}/{searchURL}")
+        return redirect(url_for("search") + "?q=" + searchInput)
 
-    session["searchURL"] = searchURL
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType = userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
 
     return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
 
