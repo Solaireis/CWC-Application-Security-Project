@@ -7,6 +7,7 @@
 {% endif %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
 <div class="container-lg">
     <div class="row">
         
@@ -57,8 +58,23 @@
                             <p>Course Type: <span>{{ courseCategory }}</span></p>
                             <p>Uploaded by: <span>{{ teacherName }}</span></p>
                             <p>Date Published: {{courseDate}}</p>
-                            <p>Course Rating: {{courseRating}} / 5 </p>
-                            <p>Rating Counts: {{courseRatingCount}} </p>
+                            <p>Course Rating: 
+                                {% if (courseRatingCount > 0) %}
+                                <span class="ratings">
+                                    {% with remainingStars = 5 - courseRating %}
+                                        {% for _ in range(courseRating) %}
+                                            <span class="fas fa-star"></span>
+                                        {% endfor %}
+                                        {% for _ in range(remainingStars) %}
+                                            <span class="far fa-star"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </span> 
+                                {% else %}
+								<p class="card-text text-danger">No ratings yet...</p>
+								{% endif %}
+                            </p>
+                            <p>Number of reviews: {{courseRatingCount}} </p>
                             <p>Course Price: ${{coursePrice}}</p>
                             <hr>
                             <p>Description</p>
@@ -74,8 +90,21 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{review.username}}</h5> <!-- Username -->
+                    
+
+                
                     <p class="card-text">{{review.rating}}</p> <!-- Rating -->
                     <p class="card-text"><small class="text-muted">{{review}}</small></p> <!-- Date -->
+                </div>
+                <div class="ratings">
+                    {% with remainingStars = 5 - review.rating %}
+                        {% for _ in range(review.rating) %}
+                            <span class="fas fa-star"></span>
+                        {% endfor %}
+                        {% for _ in range(remainingStars) %}
+                            <span class="far fa-star"></span>
+                        {% endfor %}
+                    {% endwith %}
                 </div>
             {% endfor %}
         </div>
