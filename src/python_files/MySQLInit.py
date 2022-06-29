@@ -129,10 +129,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS session (
-        session_id CHAR(32) PRIMARY KEY,
+        session_id CHAR(64) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
-        -- ip_address VARBINARY(16) NOT NULL,
+        ip_address VARBINARY(16) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
@@ -227,6 +227,15 @@ if (__name__ == "__main__"):
             break
 
     from MySQLReset import delete_mysql_database
+    # check if database coursefinity already exists
+    # and deletes it if it already exists.
+    try:
+        mydb = get_mysql_connection(debug=debugFlag).close()
+        delete_mysql_database(debug=debugFlag)
+    except (pymysql.err.OperationalError):
+        # database does not exist
+        pass
+
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised the tables in the database, \"coursefinity\"!")

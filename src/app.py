@@ -202,7 +202,7 @@ def before_request() -> None:
 
             if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
                 # if session exists
-                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID)):
+                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address())):
                     # if user session is expired or the userID does not match with the sessionID
                     sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                     session.clear()
@@ -470,7 +470,7 @@ def login():
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
 
             if (successfulLogin and not userHasTwoFA):
-                session["sid"] = RSA_encrypt(add_session(userInfo[0]))
+                session["sid"] = RSA_encrypt(add_session(userInfo[0], userIP=get_remote_address()))
                 if (not isAdmin):
                     session["user"] = userInfo[0]
                 else:
@@ -572,7 +572,7 @@ def enterGuardTOTP():
         session.clear()
 
         sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=session["ip_details"])
-        session["sid"] = RSA_encrypt(add_session(userID))
+        session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
 
         # check if password has been compromised
         # if so, flash a message and send an email to the user
@@ -671,7 +671,7 @@ def loginCallback():
     else:
         session["admin"] = userID
 
-    session["sid"] = RSA_encrypt(add_session(userID))
+    session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
     return redirect(url_for("home"))
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -826,7 +826,7 @@ def enter2faTOTP():
             else:
                 session["user"] = userID
 
-            session["sid"] = RSA_encrypt(add_session(userID))
+            session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
 
             # check if password has been compromised
             # if so, flash a message and send an email to the user

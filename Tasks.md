@@ -46,6 +46,10 @@
   - Each user has a unique symmetric key for encryption and decryption
   - Encrypted the Argon2 hash of the password
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway
+- Made an asymmetric signing function capable of JWT feature for authorising sensitive actions such as reset password
+  - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
+    - Using Google Cloud Platform KMS (Key Management Service) API
+    - 192 bits of security
 
 ---
 
@@ -71,8 +75,16 @@
     - Sign up
     - Changing password
     - Resetting password
-- Maximum of 10 failed login attempts per account (will reset after 30 mins)
-- Session timeout after 30 mins of inactivity
+- Maximum of 6 failed login attempts per account (will reset after 30 mins)
+  - In the event that the attacker tries to do a denial of service knowing that one could lock out authentic user:
+    - An email will be sent to the user's email with a one-time link to unlock the account
+    - Link uses a digitally signed token to prevent tampering
+- Session Management Implementation:
+  - Session identifier of 32 bytes (Unlikely to be guessed)
+  - Session timeout after 30 mins of inactivity (If there were no request to the web server for 30 mins)
+  - Check session identifier in the database and compare with the session identifier in the cookie
+  - Check if the session cookie comes from the same IP address as the session identifier in the database
+  - All mitigations above are aimed at mitigating the risk of session hijacking
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
@@ -86,10 +98,7 @@
 - Added reCAPTCHA on the login page
   - Prevent automated attacks such as
     - Credential stuffing attacks
-- Made an asymmetric signing function capable of JWT feature for the reset password recovery process
-  - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
-    - Using Google Cloud Platform KMS (Key Management Service) API
-    - 192 bits of security
+    - Brute force attacks
 
 ---
 
@@ -105,6 +114,9 @@
 - Validate access (deny by default) such as for admin pages, etc.
 - Deny request to a user's purchase course link
 - Block all read and write access to SQL database except for the web app
+- Work on integrating AWS Identity Provider with GCP Workforce Identification Pool
+  - Since [google-sm.json](src/config_files/google-sm.json) is stored locally in the web file system, it is a security risk as one might get a copy and have access to all the secrets stored in Google Secret Manager API.
+
 
 #### Implemented:
 -
@@ -114,7 +126,6 @@
 ### Security Misconfiguration
 
 #### Plan:
-- Secret key to be dynamic and secure everytime the server starts
 - Check if there's unnecessary features
 - Showing too detailed error messages (such as in login pages)
 - Check vulnerabilities in dependencies used

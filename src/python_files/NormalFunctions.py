@@ -1134,11 +1134,22 @@ def pwd_has_been_pwned(password:str) -> bool:
             return True
     return False
 
-def generate_id() -> str:
+def generate_id(sixteenBytesTimes:Optional[int]=1) -> str:
     """
-    Generates a unique ID (32 bytes)
+    Generates a unique ID (16 bytes)
+
+    Args:
+    - sixteenBytesTimes (int, Optional): The number of times to generate a 16 byte ID and combines them,
+        - Defaults to 1
+        - E.g. sixteenBytesTimes=2 will generate a uuid4 hex string of 16 bytes twice and combine them
     """
-    return uuid.uuid4().hex
+    if (sixteenBytesTimes == 1):
+        return uuid.uuid4().hex
+    elif (sixteenBytesTimes > 1):
+        return "".join([uuid.uuid4().hex for _ in range(sixteenBytesTimes)])
+    else:
+        # less than 1
+        raise ValueError("The number of times to generate a 16 byte ID must be greater than 0.")
 
 def two_fa_token_is_valid(token:str) -> bool:
     """

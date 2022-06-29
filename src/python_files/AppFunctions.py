@@ -64,21 +64,22 @@ def get_google_flow() -> Flow:
     )
     return flow
 
-def add_session(userID:str) -> str:
+def add_session(userID:str, userIP:str="") -> str:
     """
     Generate a 32 byte session ID and add it to the database.
 
     Args:
-        - userID (str): The user ID of the user
+    - userID (str): The user ID of the use
+    - userIP (str): The IP address of the user
 
     Returns:
-        - The generated session ID (str)
+    - The generated session ID (str)
     """
     # minimum requirement for a session ID:
     # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
-    sessionID = generate_id() # using a 32 byte session ID
+    sessionID = generate_id(sixteenBytesTimes=2) # using a 32 byte session ID
 
-    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID)
+    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP)
     return sessionID
 
 def send_change_password_alert_email(email:str="") -> None:
@@ -333,8 +334,8 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
         ipAddress = kwargs.get("ipAddress")
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
-        cur.execute("SELECT COUNT(*) FROM user_ip_addresses WHERE user_id = %(userID)s AND INET6_NTOA(ip_address) = %(ipAddress)s", {"userID":userID, "ipAddress":ipAddress})
-        if (cur.fetchone()[0] == 0):
+        cur.execute("SELECT * FROM user_ip_addresses WHERE user_id = %(userID)s AND ip_address = INET6_ATON(%(ipAddress)s)", {"userID":userID, "ipAddress":ipAddress})
+        if (cur.fetchone() is None):
             cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
             connection.commit()
 
@@ -468,10 +469,13 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     cur = connection.cursor()
 
+    # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
+    # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"]})
+        userIP = kwargs["userIP"]
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, INET6_ATON(%(userIP)s))", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"], "userIP":userIP})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -498,14 +502,14 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "check_if_valid"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT user_id, expiry_date FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
+        cur.execute("SELECT user_id, expiry_date, INET6_NTOA(ip_address) FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         expiryDate = result[1]
+        ipAddress = result[2]
         cur.execute("SELECT SGT_NOW()")
-        now = cur.fetchone()[0]
-        if (expiryDate >= now):
+        if (expiryDate >= cur.fetchone()[0]):
             # not expired, check if the userID matches the sessionID
-            return kwargs.get("userID") == result[0]
+            return ((kwargs.get("userID") == result[0]) and (ipAddress == kwargs.get("userIP")))
         else:
             # expired
             return False
@@ -599,15 +603,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             keyName = f"key-{generate_id()}"
             create_symmetric_key(keyName=keyName)
 
-        # add to the MySQL database
+        # add account info to the MySQL database
+        # check if the generated uuid exists in the db
         userID = generate_id()
+        while (user_sql_operation(connection=connection, mode="verify_userID_existence", userID=userID)):
+            userID = generate_id()
+
         passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
 
         cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
         roleID = cur.fetchone()[0]
-        # cur.callproc("get_role_id", ("Student",))
-        # for result in cur.stored_results():
-        #     roleID = result.fetchone()[0]
 
         cur.execute(
             "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
