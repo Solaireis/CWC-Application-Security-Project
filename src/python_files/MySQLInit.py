@@ -89,7 +89,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_id CHAR(32) PRIMARY KEY, 
         teacher_id VARCHAR(32) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
-        course_description VARCHAR(255) DEFAULT NULL,
+        course_description VARCHAR(2000) DEFAULT NULL,
         course_image_path VARCHAR(255) DEFAULT NULL,
         course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
         course_category VARCHAR(255) NOT NULL,
