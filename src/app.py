@@ -1561,7 +1561,6 @@ def search():
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
 
     # TODO: Please add some comments as to why you are doing this
-    # TODO: Fix KeyError bug
     for i in foundResults:
         if (len(eachPageResults)!=10):
             eachPageResults.append(i)
@@ -1577,6 +1576,7 @@ def search():
     except:
         return redirect(url_for("search") + "?q=" + searchInput)
 
+    # TODO: Fix KeyError bug, foundResults=dictOfResults[page] will cause KeyError
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
