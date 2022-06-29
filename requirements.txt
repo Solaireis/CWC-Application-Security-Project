@@ -27,3 +27,4 @@ flask-talisman>=1.0.0
 flask-seasurf>=1.1.1
 stripe>=2.73.0
 ipinfo>=4.2.1
+markdown>=3.3.7

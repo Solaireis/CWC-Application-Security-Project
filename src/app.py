@@ -4,6 +4,7 @@ import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
 import pyotp, qrcode
+import markdown
 
 
 
@@ -39,7 +40,7 @@ from io import BytesIO
 from os import environ
 from json import loads
 import time
-import markdown
+
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
