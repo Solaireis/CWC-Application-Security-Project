@@ -41,7 +41,7 @@
             <h1>{{ courseName }}</h1>
             <hr>
             <p>Description</p>
-            <p>{{ courseDescription }}</p>
+            <p>{{ courseDescription | safe }}</p>
             <h3>Course Structure</h3>
             <p>Insert Courses</p>
         </div>
@@ -78,10 +78,7 @@
                             <p>Course Price: ${{coursePrice}}</p>
                             <hr>
                             <p>Description</p>
-                            {% filter markdown %}
-                                {{ courseDescription }}
-                            {% endfilter %}
-                            <p>{{ courseDescription }}</p>
+                            <p>{{ courseDescription | safe }}</p>
                         </div>
                     </div>
                 </div>

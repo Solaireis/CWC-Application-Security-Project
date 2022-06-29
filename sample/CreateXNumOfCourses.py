@@ -15,7 +15,7 @@ import pathlib, uuid
 from sys import modules
 from importlib.util import spec_from_file_location, module_from_spec
 from typing import Union, Optional
-from flask_misaka import markdown
+
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
