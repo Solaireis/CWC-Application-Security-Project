@@ -4,6 +4,7 @@ import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
 from dicebear import DOptions
 import pyotp, qrcode
+from flask_misaka import Misaka, markdown
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -38,10 +39,12 @@ from os import environ
 from json import loads
 import time
 
+
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
 # general Flask configurations
 app = Flask(__name__)
+Misaka(app) #initiliase the appplication to allow markdown functions
 
 # flask extension that prevents cross site request forgery
 csrf = SeaSurf(app)
@@ -1490,7 +1493,7 @@ def coursePage(courseID:str):
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
-    courseDescription = courses[3]
+    courseDescription = markdown(courses[3])
     coursePrice = courses[5]
     courseCategory = courses[6]
     courseRating = courses[7]
