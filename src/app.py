@@ -1388,6 +1388,8 @@ def checkout():
         print(checkout_session)
         print(type(checkout_session))
 
+        session['stripe_session_id'] = checkout_session.id
+
         return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
     else:
         return redirect(url_for('login'))
@@ -1396,13 +1398,14 @@ def checkout():
 def purchase(userToken:str):
     # TODO: verify the boolean returned from the EC_verify function
     # TODO: If you defined getData to True, do data["verified"] to get the boolean
-    data = EC_verify(userToken)
-
-    print(data)
-
-    sql_operation(table="user", mode="purchase_courses", userID = session["user"])
-
-    return redirect(url_for("purchaseHistory"))
+    data = EC_verify(userToken, getData = True)
+    if data == True:
+        payload = json.dumps(data['verified'])
+        print(payload)
+        # sql_operation(table="user", mode="purchase_courses", userID = session["user"])
+        return redirect(url_for("purchaseHistory"))
+    else:
+        return redirect
 
 @app.route("/purchase-view/<string:courseID>")
 def purchaseDetails(courseID:str):

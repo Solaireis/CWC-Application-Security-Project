@@ -22,7 +22,7 @@ def stripe_product_create(courseID, courseName, courseDescription, coursePrice, 
     if debug:
         courseUrl = "https://example.com"
     else:
-        courseUrl = url_for("coursePage", courseID = courseID)
+        courseUrl = url_for("coursePage", _external = True, courseID = courseID)
 
     if courseImagePath is None:
         images = []
@@ -61,12 +61,14 @@ def stripe_product_check(courseID):
         return None
 
 def stripe_checkout(userID: str, cartCourseIDs: list, email: str, debug=False) -> str:
-    print(url_for("purchase", _external = True, userToken = EC_sign(plaintext = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600))))
+    print(url_for("purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600))))
     if debug:
         success_url = cancel_url = "http://127.0.0.1:8080"
     else:
-        success_url = url_for("purchase", _external = True, userToken = EC_sign(plaintext = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600)))
-        cancel_url = url_for("cart")
+        success_url = url_for("purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600)))
+        cancel_url = url_for("cart", _external = True)
+
+    print(type(success_url))
 
 #    try:
     checkoutSession = stripe.checkout.Session.create(
@@ -84,8 +86,8 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str, debug=False) -
 #        print("Checkout: " + str(error))
 #        return None
 
-def expire_checkout():  # In the event shopping cart is altered while checkout is still active; Insecure Design
-    pass
+def expire_checkout(checkoutSession):  # In the event shopping cart is altered while checkout is still active; Insecure Design
+    stripe.checkout.Session.expire(checkoutSession)
 
 if __name__ == "__main__":
     for num in range(1, 6):
