@@ -2,15 +2,18 @@
 import requests
 
 # import python standard libraries
-import hashlib
+import hashlib, shutil, platform, sys
 from pathlib import Path
-import shutil
-import platform
 from pip._internal import main as pipmain # Old Pip Wrapper, for now it works
 
 #Index of jason file where will return respective file
 platforms = {"Darwin": 0, "Linux": 1, "Windows": 2}
 platformType = platform.system()
+
+# Get system's python version
+pyMajorVer = sys.version_info[0]
+pyMinorVer = sys.version_info[1]
+pyVer = str(pyMajorVer) + str(pyMinorVer) # will get 39, 310, etc.
 
 headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -54,15 +57,15 @@ for i in dependencies:
         for i in datafile["releases"][version]["url"]:
             # Never specify to look for 64 bit or 32 bit files, but SHOULD WORK
             if (platformType == "Darwin"):
-                if ("macosx" in i) and ("cp310" not in i):
+                if ("macosx" in i) and (f"cp{pyVer}" not in i):
                     url = i
                     break
             elif (platformType == "Linux"):
-                if ("linux" in i) and ("cp310" not in i):
+                if ("linux" in i) and (f"cp{pyVer}" not in i):
                     url = i
                     break
             else:
-                if ("win" in i and ("cp310" not in i)):
+                if ("win" in i and (f"cp{pyVer}" not in i)):
                     url = i
                     break
     except:
