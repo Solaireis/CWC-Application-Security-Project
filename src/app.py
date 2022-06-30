@@ -1575,27 +1575,46 @@ def search():
     dictOfResults = {}
     pageNum = 1
     foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
+    
+    """
+    Validates if any results are found to not induce a key errror
+    """
+    if (len(foundResults) != 0):
+        """
+        To seperate the results into to lists of 10.
+        Stores the lists in a dictionary where the key is the Page of where the results should be displayed
+        """
+        for i in foundResults:
+            if (len(eachPageResults)!=10):
+                eachPageResults.append(i)
+                dictOfResults[pageNum] = eachPageResults
+            else:
+                dictOfResults[pageNum] = eachPageResults
+                eachPageResults = [i]
+                pageNum += 1
+        
+        """
+        To find the greatese page the pagination can extend to
+        To help in validation
+        """
+        maxPage = max(list(dictOfResults))
+        if (page > maxPage):
+            abort(404)
 
-    # TODO: Please add some comments as to why you are doing this
-    for i in foundResults:
-        if (len(eachPageResults)!=10):
-            eachPageResults.append(i)
-            dictOfResults[pageNum] = eachPageResults
-        else:
-            dictOfResults[pageNum] = eachPageResults
-            eachPageResults = [i]
-            pageNum += 1
+        accType = imageSrcPath = None
+        if ("user" in session):
+            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+            return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
 
-    # TODO: Please add some comments as to why you are doing this
-    maxPage = max(list(dictOfResults))
-
-    # TODO: Fix KeyError bug, foundResults=dictOfResults[page] will cause KeyError
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
+    
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, accType=userInfo[1])
 
-    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults, foundResultsLen=len(foundResults), lenOfDict=dictOfResults, accType=accType)
+    
 
 """------------------------------------- END OF GENERAL ROUTES -------------------------------------"""
 
