@@ -400,22 +400,26 @@ def purchaseDetails(courseID:str):
 
 @userBP.route("/purchase_history")
 def purchaseHistory():
-    imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-    purchasedCourseIDs = userInfo[-1]
-    courseList = []
+    if 'user' in session:
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        purchasedCourseIDs = userInfo[-1]
+        courseList = []
 
-    for courseID in purchasedCourseIDs:
+        for courseID in purchasedCourseIDs:
 
-        course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+            course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
-        courseList.append({"courseID" : course[0],
-                            "courseOwnerLink" : url_for("generalteacherPage", teacherID=course[1]), # course[1] is teacherID
-                            "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
-                            "courseOwnerImagePath" : get_image_path(course[1]),
-                            "courseName" : course[2],
-                            "courseDescription" : course[3],
-                            "courseThumbnailPath" : course[4],
-                            "coursePrice" : f"{course[5]:,.2f}",
-                            })
+            if course != False:
+                courseList.append({"courseID" : course[0],
+                                    "courseOwnerLink" : url_for("generalteacherPage", teacherID=course[1]), # course[1] is teacherID
+                                    "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
+                                    "courseOwnerImagePath" : get_image_path(course[1]),
+                                    "courseName" : course[2],
+                                    "courseDescription" : course[3],
+                                    "courseThumbnailPath" : course[4],
+                                    "coursePrice" : f"{course[5]:,.2f}",
+                                    })
 
-    return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
+        return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
+    else:
+        return redirect(url_for('guestBP.login'))

@@ -5,6 +5,7 @@ This python file contains all the functions that touches on the MySQL database.
 import json
 from typing import Union, Optional
 from urllib.parse import unquote
+from time import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,13 @@ from flask import url_for
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
+
+import stripe
+from stripe.error import InvalidRequestError
+
+
+# for google oauth login
+from google_auth_oauthlib.flow import Flow
 
 # import local python files
 from .Course import Course
@@ -59,7 +67,7 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
 
     token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo)
     sql_operation(
-        table="one_time_use_jwt", mode="add_jwt", jwtToken=token, 
+        table="one_time_use_jwt", mode="add_jwt", jwtToken=token,
         expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
     )
     return token
@@ -80,11 +88,11 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
     )
     token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
+        payload={"email": email, "userID": userID},
         expiryInfo=expiryInfo
     )
     htmlBody = [
-        f"Welcome to CourseFinity!", 
+        f"Welcome to CourseFinity!",
         f"Please click the link below to verify your email address:<br>{url_for('guest.verifyEmail', token=token, _external=True)}"
     ]
     send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
@@ -103,11 +111,11 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
     )
     token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
+        payload={"email": email, "userID": userID},
         expiryInfo=expiryInfo
     )
     htmlBody = [
-        "Your account has been locked due to too many failed login attempts.", 
+        "Your account has been locked due to too many failed login attempts.",
         f"Please click the link below to unlock your account:<br>{url_for('guest.unlockAccount', token=token, _external=True)}",
         "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     ]
@@ -750,7 +758,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     raise PwdTooWeakError("The password is too weak!")
 
                 cur.execute(
-                    "UPDATE user SET password=%(password)s WHERE id=%(userID)s", 
+                    "UPDATE user SET password=%(password)s WHERE id=%(userID)s",
                     {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
                 )
                 connection.commit()
@@ -763,7 +771,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         newPassword = kwargs.get("newPassword")
 
         cur.execute(
-            "UPDATE user SET password=%(password)s WHERE id=%(userID)s", 
+            "UPDATE user SET password=%(password)s WHERE id=%(userID)s",
             {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
         )
         connection.commit()
@@ -800,6 +808,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "get_user_purchases"):
         userID = kwargs.get("userID")
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT JSON_ARRAY('userID', %(userID)s) FROM user", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "get_user_cart":
@@ -837,9 +846,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif mode == "purchase_courses":
 
         userID = kwargs.get("userID")
-
-        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        cartCourseIDs = json.loads(cur.fetchone()[0])
+        cartCourseIDs = kwargs.get('cartCourseIDs')
 
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
@@ -1062,7 +1069,7 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif mode == "retrieve_all":
         cur.execute("SELECT user_id,course_id,course_rating,course_review,review_date,username FROM review r INNER JOIN user u ON r.user_ID = u.id WHERE course_id = %(courseID)s", {"courseID":courseID})
         review_list = cur.fetchall()
-        return review_list 
+        return review_list
 
 
     else:

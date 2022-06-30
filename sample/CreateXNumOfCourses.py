@@ -1,18 +1,15 @@
 # import third party libraries
 import pymysql
 from google_crc32c import Checksum as g_crc32c
-
-from pathlib import Path
-from sys import path
-
-path.append(str(Path(__file__).parent.parent.joinpath("src", "python_files")))
-from StripeFunctions import *   # Yes it works, ignore the error
+import stripe
+from stripe.error import InvalidRequestError
 
 # import python standard libraries
 from random import randint
 from six import ensure_binary
 import pathlib, uuid
 from sys import modules
+from time import time
 from importlib.util import spec_from_file_location, module_from_spec
 from typing import Union, Optional
 
@@ -26,6 +23,9 @@ spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
 Constants_Init = module_from_spec(spec)
 modules[spec.name] = Constants_Init
 spec.loader.exec_module(Constants_Init)
+
+# Get Stripe API Key
+stripe.api_key = Constants_Init.CONSTANTS.STRIPE_SECRET_KEY
 
 """----------------------------------- START OF DEFINING FUNCTIONS -----------------------------------"""
 

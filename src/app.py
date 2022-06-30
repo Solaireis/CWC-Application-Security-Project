@@ -129,7 +129,6 @@ app.register_blueprint(userBP)
 def before_first_request() -> None:
     """
     Called called at the very first request to the web app.
-
     Returns:
     - None
     """
@@ -140,7 +139,6 @@ def before_first_request() -> None:
 def before_request() -> None:
     """
     Called before each request to the web app.
-
     Returns:
     - None
     """
@@ -203,7 +201,6 @@ def before_request() -> None:
 def after_request(response:wrappers.Response) -> wrappers.Response:
     """
     Add headers to cache the rendered page for 10 minutes.
-
     Note that max-age is for the browser, s-maxage is for the CDN.
     It will be useful when the flask web app is deployed to a server.
     This helps to reduce loads on the flask webapp such that the server can handle more requests
