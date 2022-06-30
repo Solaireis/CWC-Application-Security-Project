@@ -1564,15 +1564,24 @@ def search():
             pageNum += 1
 
     # TODO: Please add some comments as to why you are doing this
-    maxPage = max(list(dictOfResults))
+    if (len(foundResults) != 0):
+        maxPage = max(list(dictOfResults))
 
-    # TODO: Fix KeyError bug, foundResults=dictOfResults[page] will cause KeyError
+        # TODO: Fix KeyError bug, foundResults=dictOfResults[page] will cause KeyError
+        accType = imageSrcPath = None
+        if ("user" in session):
+            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+            return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
+
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
+
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResults=dictOfResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, accType=userInfo[1])
 
-    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults, foundResultsLen=len(foundResults), lenOfDict=dictOfResults, accType=accType)
+    
 
 """------------------------------------- END OF GENERAL ROUTES -------------------------------------"""
 
