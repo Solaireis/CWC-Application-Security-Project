@@ -6,8 +6,8 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-from six import ensure_binary
 import requests as req, uuid, re, json
+from six import ensure_binary
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from typing import Union, Optional
@@ -16,21 +16,32 @@ from time import time, sleep
 from hashlib import sha1, sha384
 from pathlib import Path
 from urllib.parse import unquote
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
     from Constants import CONSTANTS
+    from SQLFunctions import generate_one_time_use_token
     from Errors import *
 else:
     from .Constants import CONSTANTS
+    from .SQLFunctions import generate_one_time_use_token
     from .Errors import *
 
 # import third party libraries
 import PIL
 from PIL import Image as PillowImage
+from dicebear import DAvatar, DStyle
+
+# import Flask web application configs
+from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
+
+# for google OAuth2 login
+from google_auth_oauthlib.flow import Flow
 
 # For Google Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
@@ -87,6 +98,122 @@ COMPILED_2FA_REGEX_DICT = {}
 TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def get_dicebear_image(username:str) -> str:
+    """
+    Returns a random dicebear image from the database
+
+    Args:
+        - username: The username of the user
+    """
+    av = DAvatar(
+        style=DStyle.initials,
+        seed=username,
+        options=CONSTANTS.DICEBEAR_OPTIONS
+    )
+    return av.url_svg
+
+def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
+    """
+    Send an email to the user to verify their account.
+
+    Note: The JWT will expire in 3 days.
+
+    Args:
+    - email (str): The email of the user.
+    - username (str): The username of the user.
+    - userID (str): The user ID of the user.
+    """
+    # verify email token will be valid for a week
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        f"Welcome to CourseFinity!", 
+        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
+    ]
+    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
+
+def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
+    """
+    Send an email to the user to unlock their account.
+
+    Note: The JWT will expire in 30 minutes.
+
+    Args:
+    - email (str): The email of the user.
+    - userID (str): The user ID of the user.
+    """
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        "Your account has been locked due to too many failed login attempts.", 
+        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
+        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+    ]
+    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
+
+def send_change_password_alert_email(email:str="") -> None:
+    """
+    Send an email to the user to alert them that 
+    their password has been compromised and should be changed.
+
+    Then flashes a message to change their password.
+
+    Args:
+    - email (str): The email of the user.
+    """
+    htmlBody = [
+        f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
+        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+    ]
+    send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
+    flash(
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+        "Security Alert!"
+    )
+
+def accepted_image_extension(filename:str) -> bool:
+    """
+    Returns True if the image extension is accepted.
+    """
+    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
+    # e.g. "profile.test.png" -> ["profile.test", "png"]
+    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
+
+def get_google_flow() -> Flow:
+    """
+    Returns the Google OAuth2 flow.
+
+    Scopes details:
+    - https://developers.google.com/identity/protocols/oauth2/scopes
+    """
+    flow = Flow.from_client_config(
+        CONSTANTS.GOOGLE_CREDENTIALS,
+        [
+            # for retrieving the user's public personal information
+            "https://www.googleapis.com/auth/userinfo.profile",
+            # for getting the user's email
+            "https://www.googleapis.com/auth/userinfo.email",
+            # for associating the user with their personal info on Google
+            "openid",
+            # for Google to send security alerts to the user's email
+            "https://www.googleapis.com/auth/gmail.send", 
+            # for Google to read the user's emails as required for some OAuth2 logins
+            "https://www.googleapis.com/auth/gmail.readonly", 
+        ],
+        redirect_uri=url_for("loginCallback", _external=True)
+    )
+    return flow
 
 def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
     """

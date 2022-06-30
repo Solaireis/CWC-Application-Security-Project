@@ -1,65 +1,24 @@
 """
 This python file contains all the functions that touches on the MySQL database.
 """
-# import Flask web application configs
-from flask import url_for, flash, Markup
-
 # import python standard libraries
 import json
-from typing import Union, Optional
+from typing import Union
 from urllib.parse import unquote
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 # import third party libraries
-from dicebear import DAvatar, DStyle
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
-
-# for google oauth login
-from google_auth_oauthlib.flow import Flow
 
 # import local python files
 from .Course import Course
 from .Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
-                             symmetric_encrypt, symmetric_decrypt, send_email, EC_sign
+                             symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
+                             send_unlock_locked_acc_email, send_verification_email
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
-
-def accepted_image_extension(filename:str) -> bool:
-    """
-    Returns True if the image extension is accepted.
-    """
-    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
-    # e.g. "profile.test.png" -> ["profile.test", "png"]
-    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
-
-def get_google_flow() -> Flow:
-    """
-    Returns the Google OAuth2 flow.
-
-    Scopes details:
-    - https://developers.google.com/identity/protocols/oauth2/scopes
-    """
-    flow = Flow.from_client_config(
-        CONSTANTS.GOOGLE_CREDENTIALS,
-        [
-            # for retrieving the user's public personal information
-            "https://www.googleapis.com/auth/userinfo.profile",
-            # for getting the user's email
-            "https://www.googleapis.com/auth/userinfo.email",
-            # for associating the user with their personal info on Google
-            "openid",
-            # for Google to send security alerts to the user's email
-            "https://www.googleapis.com/auth/gmail.send", 
-            # for Google to read the user's emails as required for some OAuth2 logins
-            "https://www.googleapis.com/auth/gmail.readonly", 
-        ],
-        redirect_uri=url_for("loginCallback", _external=True)
-    )
-    return flow
 
 def add_session(userID:str, userIP:str="") -> str:
     """
@@ -78,26 +37,6 @@ def add_session(userID:str, userIP:str="") -> str:
 
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP)
     return sessionID
-
-def send_change_password_alert_email(email:str="") -> None:
-    """
-    Send an email to the user to alert them that 
-    their password has been compromised and should be changed.
-
-    Then flashes a message to change their password.
-
-    Args:
-    - email (str): The email of the user.
-    """
-    htmlBody = [
-        f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
-        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
-    ]
-    send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
-    flash(
-        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
-        "Security Alert!"
-    )
 
 def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JWTExpiryProperties=None) -> str:
     """
@@ -120,55 +59,6 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
     )
     return token
 
-def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
-    """
-    Send an email to the user to verify their account.
-
-    Note: The JWT will expire in 3 days.
-
-    Args:
-    - email (str): The email of the user.
-    - username (str): The username of the user.
-    - userID (str): The user ID of the user.
-    """
-    # verify email token will be valid for a week
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        f"Welcome to CourseFinity!", 
-        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
-    ]
-    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
-
-def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
-    """
-    Send an email to the user to unlock their account.
-
-    Note: The JWT will expire in 30 minutes.
-
-    Args:
-    - email (str): The email of the user.
-    - userID (str): The user ID of the user.
-    """
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        "Your account has been locked due to too many failed login attempts.", 
-        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
-        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
-    ]
-    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
-
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
@@ -187,24 +77,16 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     - The image path (str) and the user's record (tuple) if returnUserInfo is True
     """
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+
+    # Since the admin user will not have an upload profile image feature,
+    # return an empty string for the image profile src link if the user is the admin user.
+    if (userInfo[1] == "Admin"):
+        return "" if (not returnUserInfo) else ("", userInfo)
+
     imageSrcPath = userInfo[6]
     if (imageSrcPath is None):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
-
-def get_dicebear_image(username:str) -> str:
-    """
-    Returns a random dicebear image from the database
-
-    Args:
-        - username: The username of the user
-    """
-    av = DAvatar(
-        style=DStyle.initials,
-        seed=username,
-        options=CONSTANTS.DICEBEAR_OPTIONS
-    )
-    return av.url_svg
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """

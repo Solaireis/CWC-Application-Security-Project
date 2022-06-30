@@ -11,13 +11,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
             {% for category, message in messages %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h6>{{ message }}</h6>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>{{ message }}</h6>
+                </div>
             {% endfor %}
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
@@ -36,23 +36,18 @@
                 <hr>
                 <ul class="nav nav-pills flex-column mb-auto">
                     <li class="nav-item">
-                        <a href="/admin_dashboard" class="nav-link text-white">
+                        <a href="{{ url_for('adminDashboard') }}" class="nav-link text-white">
                             Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/admin_profile" class="nav-link text-white active-custom">
+                        <a href="{{ url_for('adminProfile') }}" class="nav-link text-white active-custom">
                             Account Settings
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="/user_management/page/1" class="nav-link text-white">
+                        <a href="#" class="nav-link text-white">
                             User Management
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="/support_ticket_management/0" class="nav-link text-white">
-                            Support Ticket Management
                         </a>
                     </li>
                 </ul>
@@ -67,19 +62,18 @@
                                 <tr>
                                     <tr>
                                         <td class="p-3"><h6>Admin ID:</h6></td>
-                                        <td class="p-3"><h6 id="tooltipValueUID"><a href="javascript:copyToClipBoard('UID')" onmouseout="tooltipMouseOut('UID')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUID"  class="profile_copy_text">{{ admin_id }}</a></h6></td>
+                                        <td class="p-3"><h6 id="tooltipValueUID"><a href="javascript:copyToClipBoard('UID')" onmouseout="tooltipMouseOut('UID')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUID"  class="profile_copy_text">{{ adminID }}</a></h6></td>
                                     </tr>
                                     <td class="p-3"><h6>Username:</h6></td>
                                     <td class="p-3">
                                         <h6 id="tooltipValueUsername"><a href="javascript:copyToClipBoard('Username')" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUsername" class="profile_copy_text">{{ username }}</a></h6>
-                                        <a href="/admin_change_username">Change Username</a>
+                                        <a href="{{ url_for('updateUsername') }}">Change Username</a>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="p-3"><h6>Email:</h6></td>
                                     <td class="p-3">
                                         <h6 id="tooltipValueEmail"><a href="javascript:copyToClipBoard('Email')" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a></h6>
-                                        <a href="/admin_change_email">Change Email</a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -88,17 +82,22 @@
                                 </tr>
                                 <tr>
                                     <td class="p-3"><h6>Password:</h6></td>
-                                    <td class="p-3"><h6><a href="/admin_change_password">Change Password</a></h6></td>
+                                    <td class="p-3"><h6><a href="{{ url_for('updatePassword') }}">Change Password</a></h6></td>
                                 </tr>
                                 <tr>
-                                    <td class="p-3"><h6>Two Factor Authentication:</h6></td>
+                                    <td class="p-3">
+                                        <h6>Two Factor Authentication:</h6>
+                                    </td>
                                     <td class="p-3">
                                         {% if twoFAEnabled %}
                                         <h6 class="text-success">Enabled</h6>
-                                        <a href="/admin_disable_2FA">Disable 2FA</a></h6>
+                                        <form action="{{ url_for('disableTwoFactorAuth') }}" method="POST">
+                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
+                                        </form>
                                         {% else %}
-                                        <h6 class="text-danger">Disabled</h6>
-                                        <a href="/admin_setup_2FA">Enable 2FA</a></h6>
+                                        <h6 class="text-danger">Please Enable 2FA!</h6>
+                                        <a href="{{ url_for('twoFactorAuthSetup') }}">Enable 2FA</a>
                                         {% endif %}
                                     </td>
                                 </tr>
