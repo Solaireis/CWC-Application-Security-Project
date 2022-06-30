@@ -20,7 +20,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
     <!-- cookie alert javascript in the head so that the browser will run this first -->
-    <script src="{{ url_for('static', filename='scripts/cookie_alert.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}"src="{{ url_for('static', filename='scripts/cookie_alert.js') }}"></script>
 </head>
 <body>
     {% block navbar %}

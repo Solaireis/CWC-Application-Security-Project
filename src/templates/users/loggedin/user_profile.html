@@ -99,12 +99,10 @@
                                             <h6>Username:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueUsername"><a
-                                                    href="javascript:copyToClipBoard('Username')"
-                                                    onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Copy to clipboard"
-                                                    id="tooltipElementUsername" class="profile_copy_text">{{ username
-                                                    }}</a></h6>
+                                            <h6 class="margin-btm" id="tooltipValueUsername" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip"
+                                            data-bs-placement="top" title="Copy to clipboard" class="profile_copy_text">
+                                            {{ username}}
+                                            </h6>
                                             <a href="{{ url_for('loggedInBP.updateUsername') }}">Change Username</a>
                                         </td>
                                     </tr>
@@ -113,11 +111,10 @@
                                             <h6>Email:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueEmail"><a
-                                                    href="javascript:copyToClipBoard('Email')"
-                                                    onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip"
-                                                    data-bs-placement="top" title="Copy to clipboard"
-                                                    id="tooltipElementEmail" class="profile_copy_text">{{ email }}</a>
+                                            <h6 class="margin-btm" id="tooltipValueEmail" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip"
+                                            data-bs-placement="top" title="Copy to clipboard"
+                                            class="profile_copy_text">
+                                            {{ email }}
                                             </h6>
                                             {% if loginViaGoogle != True %}
                                                 <a href="{{ url_for('userBPupdateEmail') }}">Change Email</a>
@@ -232,6 +229,10 @@
         </script>
         {% endif %}
     {% endwith %}
+    <script nonce="{{ csp_nonce() }}">
+        document.getElementById("tooltipValueEmail").onclick = function() {copyToClipBoard('Email')};
+        document.getElementById("tooltipValueUsername").onclick = function() {copyToClipBoard('Username')};
+    </script>
     <!-- <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script> -->
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
