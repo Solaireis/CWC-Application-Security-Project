@@ -1,3 +1,6 @@
+"""
+Routes for admin users
+"""
 # import flask libraries (Third-party libraries)
 from flask import Blueprint, render_template, redirect, url_for, session
 

@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/maintenance.css') }}">
-    <!-- Font Awesome CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <!-- link tags for the favicon for all browsers including safari -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/common/favicon_180x180.png') }}">
 </head>
@@ -30,7 +28,6 @@
         <p>Routine maintenance usually takes not more than an hour. If the maintenance turns into an extended outage, we will post more details on our <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">twitter account</a>.</p>
     </main>   
     <footer id="copyright_year">&copy; CourseFinity, Inc. <noscript>2022</noscript></footer>
-    <script src="https://cdn.jsdelivr.net/npm/less@4" ></script>
     <script nonce="{{ csp_nonce() }}">
         let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
     </script>

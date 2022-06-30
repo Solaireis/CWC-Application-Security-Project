@@ -11,7 +11,7 @@ from flask_seasurf import SeaSurf
 # import local python libraries
 from python_files.SQLFunctions import *
 from python_files.NormalFunctions import *
-from routes.Limiter import limiter
+from routes.RoutesLimiter import limiter
 
 # import python standard libraries
 from pathlib import Path
@@ -213,6 +213,9 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
 
 if (__name__ == "__main__"):
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
+
+    # APScheduler docs:
+    # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
     scheduler.add_job(
         lambda: sql_operation(table="one_time_use_jwt", mode="delete_expired_jwt"),
         trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
@@ -228,6 +231,10 @@ if (__name__ == "__main__"):
     scheduler.add_job(
         lambda: sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days"),
         trigger="interval", hours=1, id="removeUnusedIPAddresses"
+    )
+    scheduler.add_job(
+        lambda: sql_operation(table="user", mode="re-encrypt_data_in_database"),
+        trigger="cron", day="last", id="reEncryptDataInDatabase"
     )
     scheduler.start()
 

@@ -1,3 +1,6 @@
+"""
+Routes for error pages
+"""
 # import flask libraries (Third-party libraries)
 from flask import Blueprint, render_template, abort
 

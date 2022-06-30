@@ -1,3 +1,6 @@
+"""
+Routes for users who are not logged in (Guests)
+"""
 # import third party libraries
 import requests as req
 import pyotp
@@ -18,14 +21,14 @@ from python_files.NormalFunctions import *
 from python_files.Forms import *
 from python_files.Errors import *
 from python_files.Constants import CONSTANTS
-from .Limiter import limiter
+from .RoutesLimiter import limiter
 
 # import python standard libraries
 from zoneinfo import ZoneInfo
 from datetime import datetime
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
-limiter.limit(CONSTANTS.REQUEST_LIMIT)(guestBP)
+limiter.limit(limit_value=CONSTANTS.REQUEST_LIMIT)(guestBP)
 
 @guestBP.before_app_first_request
 def before_first_request() -> None:
@@ -152,7 +155,7 @@ def resetPassword(token:str):
         return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
 @guestBP.route("/login", methods=["GET", "POST"])
-@limiter.limit("10 per second")
+@limiter.limit("60 per minute")
 def login():
     if ("user" not in session or "admin" not in session):
         loginForm = CreateLoginForm(request.form)

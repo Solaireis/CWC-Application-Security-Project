@@ -1,3 +1,6 @@
+"""
+Routes for logged in users (Students or Teachers or Admins)
+"""
 # import third party libraries
 import pyotp, qrcode
 

@@ -53,7 +53,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     Args:
     - debug (bool): If true, will initialise locally, else will initialise remotely
-    
+
     Returns:
     - The connection to the database (mysql connection object)
     """
@@ -64,6 +64,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     mydb = get_mysql_connection(debug=debug, database=None)
     cur = mydb.cursor()
+
+    cur.execute("DROP DATABASE IF EXISTS coursefinity")
+    mydb.commit()
 
     cur.execute("CREATE DATABASE coursefinity")
     mydb.commit()
@@ -122,8 +125,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
-        token VARBINARY(512) PRIMARY KEY,
-        user_id VARCHAR(32) NOT NULL,
+        user_id VARCHAR(32) PRIMARY KEY,
+        token VARBINARY(1024) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
@@ -152,22 +155,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
-
-    # cur.execute("""CREATE TABLE IF NOT EXISTS cart (
-    #     user_id VARCHAR(32),
-    #     course_id CHAR(32),
-    #     PRIMARY KEY (user_id, course_id),
-    #     FOREIGN KEY (user_id) REFERENCES user(id),
-    #     FOREIGN KEY (course_id) REFERENCES course(course_id)
-    # )""")
-
-    # cur.execute("""CREATE TABLE IF NOT EXISTS purchased (
-    #     user_id VARCHAR(32),
-    #     course_id CHAR(32),
-    #     PRIMARY KEY (user_id, course_id),
-    #     FOREIGN KEY (user_id) REFERENCES user(id),
-    #     FOREIGN KEY (course_id) REFERENCES course(course_id)
-    # )""")
 
     # end of table creation
     mydb.commit()
@@ -232,30 +219,14 @@ if (__name__ == "__main__"):
             debugFlag = True if (debugPrompt != "n") else False
             break
 
-    from MySQLReset import delete_mysql_database
-    # check if database coursefinity already exists
-    # and deletes it if it already exists.
-    try:
-        mydb = get_mysql_connection(debug=debugFlag).close()
-        delete_mysql_database(debug=debugFlag)
-    except (pymysql.err.OperationalError):
-        # database does not exist
-        pass
-
     try:
         mysql_init_tables(debug=debugFlag)
-        print("Successfully initialised the tables in the database, \"coursefinity\"!")
+        print("Successfully initialised database, \"coursefinity\"!")
     except (pymysql.err.ProgrammingError) as e:
-        print("\nSyntax error caught!")
+        print("\nProgramming error caught!")
         print("More details:")
         print(e)
-
-        delete_mysql_database(debug=debugFlag)
-        print("\nDeleted all tables as there was a syntax error in the schema.")
     except (Exception) as e:
-        print("\nDatabase error caught!")
+        print("\nError caught!")
         print("More details:")
         print(e)
-
-        delete_mysql_database(debug=debugFlag)
-        print("\nDeleted all tables as there was a database error in the schema.")

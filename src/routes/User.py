@@ -1,3 +1,6 @@
+"""
+Routes for logged in normal users (Students or Teachers)
+"""
 # import third party libraries
 from werkzeug.utils import secure_filename
 

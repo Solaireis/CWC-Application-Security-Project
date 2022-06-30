@@ -29,7 +29,7 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_email
+                             send_email, write_log_entry
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
@@ -498,6 +498,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
+
     elif (mode == "email_verified"):
         userID = kwargs.get("userID")
         getEmail = kwargs.get("email") or False
@@ -510,6 +511,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (matched is None):
             return None
         return matched if (getEmail) else matched[0]
+
     elif (mode == "update_email_to_verified"):
         userID = kwargs.get("userID")
         if (userID is None):
@@ -517,6 +519,34 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("UPDATE user SET email_verified = TRUE WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
+
+    elif (mode == "re-encrypt_data_in_database"):
+        # Used for re-encrypting all the encrypted data in the database at the last day of every month due to 30 days key rotations.
+        cur.execute("SELECT u.id, u.password, tfa.token FROM user AS u LEFT OUTER JOIN twofa_token AS tfa ON u.id=tfa.user_id;")
+        for row in cur.fetchall():
+            userID = row[0]
+
+            # Re-encrypt the password hash
+            encryptedPasswordHash = symmetric_encrypt(
+                plaintext=symmetric_decrypt(ciphertext=row[1], keyID=CONSTANTS.PEPPER_KEY_ID), 
+                keyID=CONSTANTS.PEPPER_KEY_ID
+            )
+            cur.execute("UPDATE user SET password = %(password)s WHERE id=%(userID)s", {"password":encryptedPasswordHash, "userID":userID})
+            connection.commit()
+
+            # Re-encrypt the 2FA token if the user has set one
+            if (row[2] is not None):
+                encryptedToken = symmetric_encrypt(
+                    plaintext=symmetric_decrypt(ciphertext=row[2], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID),
+                    keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+                )
+                cur.execute("UPDATE twofa_token SET token = %(token)s WHERE user_id=%(userID)s", {"token":encryptedToken, "userID":userID})
+                connection.commit()
+        write_log_entry(
+            logMessage=f"All sensitive user data have re-encrypted in the database at {datetime.now().astimezone(tz=ZoneInfo('Asia/Singapore'))}, please destroy the old symmetric keys used for the database as soon as possible!",
+            logLevel="ALERT"
+        )
+
     elif (mode == "signup"):
         emailInput = kwargs.get("email")
         usernameInput = kwargs.get("username")
@@ -650,12 +680,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 cur.execute("CALL get_role_name(%(roleID)s)", {"roleID":roleID})
                 roleName = cur.fetchone()[0]
 
-                # encrypt the password again as the encryption key will rotate every 30 days
-                # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
-                encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=CONSTANTS.PEPPER_KEY_ID)
-                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", \
-                            {"password":encryptedPasswordHash, "userID":userID})
-                connection.commit()
                 return (userID, newIpAddress, username, roleName)
         except (VerifyMismatchError):
             connection.close()

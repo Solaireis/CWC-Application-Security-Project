@@ -1,3 +1,6 @@
+"""
+Routes for the general public and CourseFinity users (Guests, Students, Teachers, and Admins)
+"""
 # import third party libraries
 import markdown
 
