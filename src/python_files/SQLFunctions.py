@@ -1,66 +1,24 @@
 """
 This python file contains all the functions that touches on the MySQL database.
 """
-
-# import Flask web application configs
-from flask import url_for, flash, Markup
-
 # import python standard libraries
 import json
-from typing import Union, Optional
+from typing import Union
 from urllib.parse import unquote
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 # import third party libraries
-from dicebear import DAvatar, DStyle
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
-
-# for google oauth login
-from google_auth_oauthlib.flow import Flow
 
 # import local python files
 from .Course import Course
 from .Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
-                             symmetric_encrypt, symmetric_decrypt, create_symmetric_key, send_email, EC_sign
+                             symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
+                             send_unlock_locked_acc_email, send_verification_email
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
-
-def accepted_image_extension(filename:str) -> bool:
-    """
-    Returns True if the image extension is accepted.
-    """
-    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
-    # e.g. "profile.test.png" -> ["profile.test", "png"]
-    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
-
-def get_google_flow() -> Flow:
-    """
-    Returns the Google OAuth2 flow.
-
-    Scopes details:
-    - https://developers.google.com/identity/protocols/oauth2/scopes
-    """
-    flow = Flow.from_client_config(
-        CONSTANTS.GOOGLE_CREDENTIALS,
-        [
-            # for retrieving the user's public personal information
-            "https://www.googleapis.com/auth/userinfo.profile",
-            # for getting the user's email
-            "https://www.googleapis.com/auth/userinfo.email",
-            # for associating the user with their personal info on Google
-            "openid",
-            # for Google to send security alerts to the user's email
-            "https://www.googleapis.com/auth/gmail.send", 
-            # for Google to read the user's emails as required for some OAuth2 logins
-            "https://www.googleapis.com/auth/gmail.readonly", 
-        ],
-        redirect_uri=url_for("loginCallback", _external=True)
-    )
-    return flow
 
 def add_session(userID:str, userIP:str="") -> str:
     """
@@ -79,26 +37,6 @@ def add_session(userID:str, userIP:str="") -> str:
 
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP)
     return sessionID
-
-def send_change_password_alert_email(email:str="") -> None:
-    """
-    Send an email to the user to alert them that 
-    their password has been compromised and should be changed.
-
-    Then flashes a message to change their password.
-
-    Args:
-    - email (str): The email of the user.
-    """
-    htmlBody = [
-        f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
-        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
-    ]
-    send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
-    flash(
-        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
-        "Security Alert!"
-    )
 
 def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JWTExpiryProperties=None) -> str:
     """
@@ -121,55 +59,6 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
     )
     return token
 
-def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
-    """
-    Send an email to the user to verify their account.
-
-    Note: The JWT will expire in 3 days.
-
-    Args:
-    - email (str): The email of the user.
-    - username (str): The username of the user.
-    - userID (str): The user ID of the user.
-    """
-    # verify email token will be valid for a week
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        f"Welcome to CourseFinity!", 
-        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
-    ]
-    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
-
-def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
-    """
-    Send an email to the user to unlock their account.
-
-    Note: The JWT will expire in 30 minutes.
-
-    Args:
-    - email (str): The email of the user.
-    - userID (str): The user ID of the user.
-    """
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        "Your account has been locked due to too many failed login attempts.", 
-        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
-        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
-    ]
-    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
-
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """
     Returns the image path for the user.
@@ -188,24 +77,16 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     - The image path (str) and the user's record (tuple) if returnUserInfo is True
     """
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+
+    # Since the admin user will not have an upload profile image feature,
+    # return an empty string for the image profile src link if the user is the admin user.
+    if (userInfo[1] == "Admin"):
+        return "" if (not returnUserInfo) else ("", userInfo)
+
     imageSrcPath = userInfo[6]
     if (imageSrcPath is None):
         imageSrcPath = get_dicebear_image(userInfo[2])
     return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
-
-def get_dicebear_image(username:str) -> str:
-    """
-    Returns a random dicebear image from the database
-
-    Args:
-        - username: The username of the user
-    """
-    av = DAvatar(
-        style=DStyle.initials,
-        seed=username,
-        options=CONSTANTS.DICEBEAR_OPTIONS
-    )
-    return av.url_svg
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
@@ -360,11 +241,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
     if (mode == "add_token"):
         token = kwargs.get("token")
         userID = kwargs.get("userID")
-
-        # get symmetric key name from user table
-        cur.execute("SELECT key_name FROM user WHERE id = %(userID)s", {"userID":userID})
-        keyName = cur.fetchone()[0]
-        token = symmetric_encrypt(plaintext=token, keyID=keyName)
+        token = symmetric_encrypt(plaintext=token, keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
 
         cur.execute("INSERT INTO twofa_token (token, user_id) VALUES (%(token)s, %(userID)s)", {"token":token, "userID":userID})
         connection.commit()
@@ -377,12 +254,8 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
             connection.close()
             raise No2FATokenError("No 2FA OTP found for this user!")
 
-        # get symmetric key name from user table
-        cur.execute("SELECT key_name FROM user WHERE id = %(userID)s", {"userID":userID})
-        keyName = cur.fetchone()[0]
-
         # decrypt the encrypted secret token for 2fa
-        token = symmetric_decrypt(ciphertext=matchedToken[0], keyID=keyName)
+        token = symmetric_decrypt(ciphertext=matchedToken[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
         return token
 
     elif (mode == "check_if_user_has_2fa"):
@@ -594,31 +467,21 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
 
-        # create symmetric key for the user and store it in Google Cloud KMS API
-        if (CONSTANTS.DEBUG_MODE):
-            keyName = "test-key"
-        else:
-            keyName = f"key-{generate_id()}"
-            create_symmetric_key(keyName=keyName)
-
-        # Soon to be implemented:
-        # encrypt the password hash, i.e. adding a pepper onto the hash
-        # passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=CONSTANTS.PEPPER_KEY_NAME)
-
         # add account info to the MySQL database
         # check if the generated uuid exists in the db
         userID = generate_id()
         while (user_sql_operation(connection=connection, mode="verify_userID_existence", userID=userID)):
             userID = generate_id()
 
-        passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=keyName) # encrypt the password hash
+        # encrypt the password hash, i.e. adding a pepper onto the hash
+        passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=CONSTANTS.PEPPER_KEY_ID)
 
         cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
         roleID = cur.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s,%(cart_courses)s, %(purchased_courses)s)",
-            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "key_name": keyName,"cart_courses":"[]", "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(),%(cart_courses)s, %(purchased_courses)s)",
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()
 
@@ -628,7 +491,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "check_if_using_google_oauth2"):
         userID = kwargs.get("userID")
-        cur.execute("SELECT password, id FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
         if (password is None):
             connection.close()
@@ -651,28 +514,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         matched = cur.fetchone()
         if (matched is None):
             # user does not exist, create new user with the given information
-
-            # get role id
             cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
             roleID = cur.fetchone()[0]
-            # cur.callproc("get_role_id", ("Student",))
-            # for result in cur.stored_results():
-            #     roleID = result.fetchone()[0]
-
-            # create symmetric key for the user and store it in Google Cloud KMS API
-            if (CONSTANTS.DEBUG_MODE):
-                keyName = "test-key"
-            else:
-                keyName = f"key-{generate_id()}"
-                create_symmetric_key(keyName=keyName)
-
-            # Soon to be implemented:
-            # encrypt the password hash, i.e. adding a pepper onto the hash
-            # passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=CONSTANTS.PEPPER_KEY_NAME)
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",
-                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "passwordInput":None, "profile_image":googleProfilePic, "key_name": keyName, "cart_courses":"[]", "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(cart_courses)s, %(purchased_courses)s)",
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
         else:
@@ -683,15 +530,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 # return the generated userID from the database and the role name associated with the user
                 cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
                 roleName = cur.fetchone()[0]
-                # cur.callproc("get_role_name", (matched[1],))
-                # for result in cur.stored_results():
-                #     roleName = result.fetchone()[0]
                 return (matched[0], roleName)
 
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
-        cur.execute("SELECT id, password, key_name, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
         if (not matched):
             connection.close()
@@ -719,13 +563,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 raise AccountLockedError("Account is locked!")
 
         # send verification email if the user has not verified their email
-        if (not matched[5]):
+        if (not matched[4]):
             connection.close()
             send_verification_email(email=emailInput, userID=matched[0], username=matched[3])
             raise EmailNotVerifiedError("Email has not been verified, please verify your email!")
 
         newIpAddress = False
-        decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=matched[2])
+        decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
             if (CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)):
                 # check if the login request is from the same IP address as the one that made the request
@@ -741,7 +585,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
                 # encrypt the password again as the encryption key will rotate every 30 days
                 # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
-                encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=matched[2])
+                encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=CONSTANTS.PEPPER_KEY_ID)
                 cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", \
                             {"password":encryptedPasswordHash, "userID":matched[0]})
                 connection.commit()
@@ -811,11 +655,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 connection.close()
                 raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
-        cur.execute("SELECT password, key_name FROM user WHERE id=%(userID)s", {"userID":userID})
-        currentPassword = cur.fetchone()
-
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        currentPassword = symmetric_decrypt(ciphertext=cur.fetchone()[0], keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
-            if (CONSTANTS.PH.verify(symmetric_decrypt(ciphertext=currentPassword[0], keyID=currentPassword[1]), currentPasswordInput)):
+            if (CONSTANTS.PH.verify(currentPassword, currentPasswordInput)):
                 cur.execute("UPDATE user SET email=%(emailInput)s, email_verified=FALSE WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
                 send_verification_email(email=emailInput, userID=userID)
@@ -828,10 +671,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         oldPasswordInput = kwargs.get("oldPassword") # to authenticate the changes
         passwordInput = kwargs.get("password")
 
-        cur.execute("SELECT password, key_name FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
-        keyName = matched[1]
-        currentPasswordHash = symmetric_decrypt(ciphertext=matched[0], keyID=keyName)
+        currentPasswordHash = symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.PEPPER_KEY_ID)
 
         try:
             # check if the supplied old password matches the current password
@@ -848,7 +690,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
-                cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=keyName), "userID": userID})
+                cur.execute(
+                    "UPDATE user SET password=%(password)s WHERE id=%(userID)s", 
+                    {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
+                )
                 connection.commit()
         except (VerifyMismatchError):
             connection.close()
@@ -858,10 +703,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs.get("userID")
         newPassword = kwargs.get("newPassword")
 
-        cur.execute("SELECT key_name FROM user WHERE id=%(userID)s", {"userID":userID})
-        keyName = cur.fetchone()[0]
-
-        cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=keyName), "userID": userID})
+        cur.execute(
+            "UPDATE user SET password=%(password)s WHERE id=%(userID)s", 
+            {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
+        )
         connection.commit()
 
     elif (mode == "delete_user"):

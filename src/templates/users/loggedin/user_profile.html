@@ -14,13 +14,13 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 {% for category, message in messages %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>{{ message }}</h6>
-                </div>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>{{ message }}</h6>
+                    </div>
                 {% endfor %}
                 <div class="modal-footer">
                     <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
@@ -163,54 +163,6 @@
                                         </td>
                                     </tr>
                                     {% endif %}
-                                    {# if accType == "Teacher" #}
-                                    <!-- <tr>
-                                        <td colspan="2">
-                                            {# if teacherBio == "" #}
-                                            <div class="mb-3" id="originalTextarea">
-                                                <label for="teacherBio" class="form-label">Bio:</label>
-                                                <input type="hidden" name="submittedForm" value="bio">
-                                                {# if teacherBio == "" #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>Enter a bio to tell students of CourseFinity about you and what you are teaching! (You can also resize the text box by dragging on the bottom right of this text box)</textarea>
-                                                {# else #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }}</textarea>
-                                                {# endif #}
-                                                <div class="d-flex float-end">
-                                                    <button type="button" class="btn btn-primary margin-top" onclick="editBioNow()">Edit Bio</button>
-                                                </div>
-                                            </div>
-                                            {# else #}
-                                            <div class="mb-3" id="originalTextarea">
-                                                <label for="teacherBio" class="form-label">Bio:</label>
-                                                <input type="hidden" name="submittedForm" value="bio">
-                                                {# if teacherBio == "" #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }})</textarea>
-                                                {# else #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" disabled>{{ teacherBio }}</textarea>
-                                                {# endif #}
-                                                <div class="d-flex float-end">
-                                                    <button type="button" class="btn btn-primary margin-top" onclick="editBioNow()">Edit Bio</button>
-                                                </div>
-                                            </div>
-                                            {# endif #}
-                                        <form action="" method="POST" id="editedTextarea" hidden>
-                                            <div class="mb-3">
-                                                <label for="teacherBio" class="form-label">Bio:</label>
-                                                <input type="hidden" name="submittedForm" value="bio">
-                                                {# if teacherBio == "" #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" spellcheck="true">Enter a bio to tell students of CourseFinity about you and what you are teaching! (You can also resize the text box by dragging on the bottom right of this text box)</textarea>
-                                                {# else #}
-                                                <textarea class="form-control" id="teacherBio" name="teacherBio" rows="15" spellcheck="true">{{ teacherBio }}</textarea>
-                                                {# endif #}
-                                                <div class="d-flex float-end">
-                                                    <button type="button" class="btn btn-danger margin-top cancleSaveBio" onclick="cancelBio()">Cancel</button>
-                                                    <button type="submit" class="btn btn-success margin-top">Save Bio</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                        </td>
-                                    </tr>
-                                    {# endif #} -->
                                 </table>
                             </div>
                             {% if accType == "Student" %}

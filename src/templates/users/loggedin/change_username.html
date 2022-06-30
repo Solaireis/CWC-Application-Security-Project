@@ -33,7 +33,15 @@
                         {{ render_field(form.updateUsername, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <a href="/user_profile" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
+                        {% with anchorClass="float-start form-buttons margin-top margin-top2 text-white" %}
+                            {% with iconClass="fas fa-arrow-left" %}
+                                {% if "user" in session %}
+                                    <a href="{{ url_for('userProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
+                                {% else %}
+                                    <a href="{{ url_for('adminProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
                         <button type="submit" class="btn btn-colour text-white float-end">Confirm</button>
                     </div>
                 </form>

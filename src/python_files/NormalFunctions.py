@@ -6,8 +6,8 @@ This is to prevent circular imports.
 """
 
 # import python standard libraries
-from six import ensure_binary
 import requests as req, uuid, re, json
+from six import ensure_binary
 from zoneinfo import ZoneInfo
 from datetime import datetime, timedelta
 from typing import Union, Optional
@@ -16,21 +16,32 @@ from time import time, sleep
 from hashlib import sha1, sha384
 from pathlib import Path
 from urllib.parse import unquote
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
     from Constants import CONSTANTS
+    from SQLFunctions import generate_one_time_use_token
     from Errors import *
 else:
     from .Constants import CONSTANTS
+    from .SQLFunctions import generate_one_time_use_token
     from .Errors import *
 
 # import third party libraries
 import PIL
 from PIL import Image as PillowImage
+from dicebear import DAvatar, DStyle
+
+# import Flask web application configs
+from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
+
+# for google OAuth2 login
+from google_auth_oauthlib.flow import Flow
 
 # For Google Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
@@ -87,6 +98,122 @@ COMPILED_2FA_REGEX_DICT = {}
 TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
 """------------------------------ End of Defining Constants ------------------------------"""
+
+def get_dicebear_image(username:str) -> str:
+    """
+    Returns a random dicebear image from the database
+
+    Args:
+        - username: The username of the user
+    """
+    av = DAvatar(
+        style=DStyle.initials,
+        seed=username,
+        options=CONSTANTS.DICEBEAR_OPTIONS
+    )
+    return av.url_svg
+
+def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
+    """
+    Send an email to the user to verify their account.
+
+    Note: The JWT will expire in 3 days.
+
+    Args:
+    - email (str): The email of the user.
+    - username (str): The username of the user.
+    - userID (str): The user ID of the user.
+    """
+    # verify email token will be valid for a week
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        f"Welcome to CourseFinity!", 
+        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
+    ]
+    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
+
+def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
+    """
+    Send an email to the user to unlock their account.
+
+    Note: The JWT will expire in 30 minutes.
+
+    Args:
+    - email (str): The email of the user.
+    - userID (str): The user ID of the user.
+    """
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        "Your account has been locked due to too many failed login attempts.", 
+        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
+        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+    ]
+    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
+
+def send_change_password_alert_email(email:str="") -> None:
+    """
+    Send an email to the user to alert them that 
+    their password has been compromised and should be changed.
+
+    Then flashes a message to change their password.
+
+    Args:
+    - email (str): The email of the user.
+    """
+    htmlBody = [
+        f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
+        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+    ]
+    send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
+    flash(
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+        "Security Alert!"
+    )
+
+def accepted_image_extension(filename:str) -> bool:
+    """
+    Returns True if the image extension is accepted.
+    """
+    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
+    # e.g. "profile.test.png" -> ["profile.test", "png"]
+    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
+
+def get_google_flow() -> Flow:
+    """
+    Returns the Google OAuth2 flow.
+
+    Scopes details:
+    - https://developers.google.com/identity/protocols/oauth2/scopes
+    """
+    flow = Flow.from_client_config(
+        CONSTANTS.GOOGLE_CREDENTIALS,
+        [
+            # for retrieving the user's public personal information
+            "https://www.googleapis.com/auth/userinfo.profile",
+            # for getting the user's email
+            "https://www.googleapis.com/auth/userinfo.email",
+            # for associating the user with their personal info on Google
+            "openid",
+            # for Google to send security alerts to the user's email
+            "https://www.googleapis.com/auth/gmail.send", 
+            # for Google to read the user's emails as required for some OAuth2 logins
+            "https://www.googleapis.com/auth/gmail.readonly", 
+        ],
+        redirect_uri=url_for("loginCallback", _external=True)
+    )
+    return flow
 
 def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
     """
@@ -155,7 +282,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     """
     return (threshold <= riskScore)
 
-def write_log_entry(logName:str="coursefinity-web-app", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
+def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
 
@@ -167,7 +294,7 @@ def write_log_entry(logName:str="coursefinity-web-app", logMessage:Union[dict, s
 
     Args:
     - logName (str): The location of the log to write to
-        - Defaults to "coursefinity-web-app"
+        - Defaults to LOGGING_NAME defined in Constants.py
         - Will log to that location in the coursefinity-web-app bucket
             - I have already configured a sink to route logs with the name "coursefinity-web-app"
     - logMessage (str|dict): The message to write to the log
@@ -240,14 +367,14 @@ def crc32c(data:Union[bytes, str]) -> int:
     """
     return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
-def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
+def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> bytes:
     """
     Using Google Symmetric Encryption Algorithm, encrypt the provided plaintext.
 
     Args:
     - plaintext (str): the plaintext to encrypt
     - keyRingID (str): the key ring ID
-        - Defaults to "coursefinity-users"
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
 
     Returns:
@@ -275,14 +402,14 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
 
     return response.ciphertext
 
-def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", keyID:str="") -> str:
+def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> str:
     """
     Using Google Symmetric Encryption Algorithm, decrypt the provided ciphertext.
 
     Args:
     - ciphertext (bytes): the ciphertext to decrypt
     - keyRingID (str): the key ring ID
-        - Defaults to "coursefinity-users"
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
 
     Returns:
@@ -321,12 +448,15 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
 
     return response.plaintext.decode("utf-8")
 
-def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", versionID:str=None) -> None:
+"""---------------------------- NOT USED AND MAY BE DELETED (BELOW) ----------------------------"""
+
+def update_key_set_primary(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="", versionID:str=None) -> None:
     """
     Set a new key version as the primary key version for encryption and decryption.
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
     - versionID (str): the key version to set the primary key version for the specificed keyName (e.g. "1")
 
@@ -339,7 +469,7 @@ def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", v
     # call the Google Cloud KMS API
     CONSTANTS.KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
 
-def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
+def create_new_key_version(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
     """
     In the event that the key ID already exists
 
@@ -349,6 +479,7 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
     - setNewKeyAsPrimary (bool): Whether to set the new key version as the primary key
         - If true, the new key version will be set as the primary key version for encryption and decryption
@@ -374,12 +505,13 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
         # set the latest version as the primary key version
         update_key_set_primary(keyRingID=keyRingID, keyName=keyName, versionID=latestVersion)
 
-def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> None:
+def create_symmetric_key(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="") -> None:
     """
     Create a new symmetric key.
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
 
     Returns:
@@ -412,6 +544,8 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         CONSTANTS.KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
+
+"""---------------------------- NOT USED AND MAY BE DELETED (ABOVE) ----------------------------"""
 
 class JWTExpiryProperties:
     """
@@ -494,7 +628,7 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-    payload:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str="signing-key", 
+    payload:Union[str, dict]="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, 
     versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
     ) -> Union[dict, str]:
     """
@@ -507,7 +641,7 @@ def EC_sign(
         - Will convert the payload to a str by json.dumps() if payload is a dict or list.
             - Will raise a ValueError if the payload couldn't be converted to a string using json.dumps()
     - keyRingID: The ID of the key ring.
-        - Defaults to "coursefinity
+        - Defaults to EC_SIGNING_KEY_ID defined in Constants.py
     - keyID: The ID of the key.
         - Defaults to "signing-key"
     - versionID: The version of the key.
@@ -735,7 +869,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     else:
         return verified
 
-def RSA_encrypt(plaintext:str="", keyRingID:str="coursefinity", keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
+def RSA_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
 

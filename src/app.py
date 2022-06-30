@@ -769,14 +769,22 @@ def verifyEmail(token:str):
     # check if email has been verified
     if (sql_operation(table="user", mode="email_verified", userID=userID)):
         # if the email has been verified
-        flash("Your email has already been verified!", "Sorry!")
-        return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
+        if ("user" in session):
+            flash("Your email has already been verified!", "Sorry!")
+            return redirect(url_for("home"))
+        else:
+            flash("Your email has already been verified!", "Danger")
+            return redirect(url_for("login"))
 
     # update the email verified column to true
     sql_operation(table="user", mode="update_email_to_verified", userID=userID)
     sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
-    flash("Your email has been verified!", "Email Verified!")
-    return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
+    if ("user" in session):
+        flash("Your email has been verified!", "Email Verified!")
+        return redirect(url_for("home"))
+    else:
+        flash("Your email has been verified!", "Success")
+        return redirect(url_for("login"))
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
 def enter2faTOTP():
@@ -971,12 +979,15 @@ def disableTwoFactorAuth():
 
 @app.route("/user-profile", methods=["GET","POST"])
 def userProfile():
+    if ("admin" in session):
+        return redirect(url_for("adminProfile"))
+
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
         username = userInfo[2]
         email = userInfo[3]
-        loginViaGoogle = True if (userInfo[4] is None) else False # check if the password is NoneType
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
 
         twoFAEnabled = False
         if (not loginViaGoogle):
@@ -992,9 +1003,9 @@ def userProfile():
 
 @app.route("/change_username", methods=["GET","POST"])
 def updateUsername():
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
+    if ("user" in session or "admin" in session):
+        userID = session.get("user") or session.get("admin")
+        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
 
         create_update_username_form = CreateChangeUsername(request.form)
         if (request.method == "POST") and (create_update_username_form.validate()):
@@ -1009,7 +1020,7 @@ def updateUsername():
                 flash("Sorry, Username has already been taken!")
 
             if (changed):
-                return redirect(url_for("userProfile"))
+                return redirect(url_for("userProfile")) if ("user" in session) else redirect(url_for("adminProfile"))
             else:
                 return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
         else:
@@ -1019,13 +1030,16 @@ def updateUsername():
 
 @app.route("/change-email", methods=["GET","POST"])
 def updateEmail():
+    if ("admin" in session):
+        return redirect(url_for("adminProfile"))
+
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
+        userID = session["user"]
+        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
         oldEmail = userInfo[2]
 
         # check if user logged in via Google OAuth2
-        loginViaGoogle = True if (userInfo[4] is None) else False
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
         if (loginViaGoogle):
             # if so, redirect to user profile as they cannot change their email
             return redirect(url_for("userProfile"))
@@ -1062,12 +1076,12 @@ def updateEmail():
 
 @app.route("/change-password", methods=["GET","POST"])
 def updatePassword():
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userID = userInfo[0]
+    if ("user" in session or "admin" in session):
+        userID = session.get("user") or session.get("admin")
+        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
 
-        # check if user logged in via Google OAuth2
-        loginViaGoogle = True if (userInfo[4] is None) else False
+        # check if user logged in via Google OAuth2 (Only for user and not admins)
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
         if (loginViaGoogle):
             # if so, redirect to user profile as they cannot change their password
             return redirect(url_for("userProfile"))
@@ -1095,7 +1109,7 @@ def updatePassword():
 
                 if (changed):
                     flash("Your password has been successfully changed.", "Account Details Updated!")
-                    return redirect(url_for("userProfile"))
+                    return redirect(url_for("userProfile")) if ("user" in session) else redirect(url_for("adminProfile"))
                 else:
                     return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
         else:
@@ -1105,6 +1119,9 @@ def updatePassword():
 
 @app.post("/change-account-type")
 def changeAccountType():
+    if ("admin" in session):
+        return redirect(url_for("adminProfile"))
+
     if ("user" in session):
         userID = session["user"]
         if (request.form["changeAccountType"] == "changeToTeacher"):
@@ -1122,6 +1139,9 @@ def changeAccountType():
 
 @app.post("/delete-profile-picture")
 def deletePic():
+    if ("admin" in session):
+        return redirect(url_for("adminProfile"))
+
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         if ("https" not in imageSrcPath):
@@ -1135,6 +1155,9 @@ def deletePic():
 
 @app.post("/upload-profile-picture")
 def uploadPic():
+    if ("admin" in session):
+        return redirect(url_for("adminProfile"))
+
     if ("user" in session):
         userID = session["user"]
         if ("profilePic" not in request.files):
@@ -1599,19 +1622,20 @@ def search():
 
 @app.route("/admin-profile", methods=["GET","POST"])
 def adminProfile():
-    # for logged users that are not admins
+    # For logged in users
     if ("user" in session):
         return redirect(url_for("userProfile"))
 
+    # For logged in admin users
     if ("admin" in session):
-        imageSrcPath, userInfo = get_image_path(session["admin"], returnUserInfo=True)
-        userID = userInfo[0]
-        userUsername = userInfo[1]
-        userEmail = userInfo[2]
+        userInfo = sql_operation(table="user", mode="get_user_data", userID=session["admin"])
+        adminID = userInfo[0]
+        adminUsername = userInfo[2]
+        adminEmail = userInfo[3]
 
-        return render_template("users/admin/admin_profile.html", imageSrcPath=imageSrcPath, userUsername=userUsername, userEmail=userEmail, userID=userID, accType=userInfo[1])
+        return render_template("users/admin/admin_profile.html", username=adminUsername, email=adminEmail, adminID=adminID, accType=userInfo[1])
 
-    # for guests
+    # For guests
     return redirect(url_for("login"))
 
 @app.route("/admin-dashboard", methods=["GET","POST"])
