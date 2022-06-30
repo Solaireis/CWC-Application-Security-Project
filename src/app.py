@@ -1572,10 +1572,7 @@ def search():
             pageNum += 1
 
     # TODO: Please add some comments as to why you are doing this
-    try:
-        maxPage = max(list(dictOfResults))
-    except:
-        return redirect(url_for("search") + "?q=" + searchInput)
+    maxPage = max(list(dictOfResults))
 
     # TODO: Fix KeyError bug, foundResults=dictOfResults[page] will cause KeyError
     accType = imageSrcPath = None
