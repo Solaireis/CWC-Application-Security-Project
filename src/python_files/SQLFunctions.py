@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 # import Flask web application configs
-from flask import url_for, flash, Markup
+from flask import url_for
 
 # import third party libraries
 from argon2.exceptions import VerifyMismatchError
@@ -135,7 +135,8 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
     if (userInfo[1] == "Admin"):
-        return "" if (not returnUserInfo) else ("", userInfo)
+        adminProfileImagePath = url_for("static", filename="images/user/default.png")
+        return adminProfileImagePath if (not returnUserInfo) else (adminProfileImagePath, userInfo)
 
     imageSrcPath = userInfo[6]
     if (imageSrcPath is None):
@@ -589,41 +590,48 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "login"):
         emailInput = kwargs.get("email")
         passwordInput = kwargs.get("password")
+
         cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
+        username = matched[2]
+        roleID = matched[3]
+        encryptedPasswordHash = matched[1]
+        userID = matched[0]
+        emailVerified = matched[4]
+
         if (not matched):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
-        if (matched[1] is None):
+        if (encryptedPasswordHash is None):
             connection.close()
             raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
 
-        cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":matched[0]})
+        cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":userID})
         loginAttempts = cur.fetchone()
 
         requestIpAddress = kwargs["ipAddress"]
-        ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=matched[0], ipAddress=requestIpAddress)
+        ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=userID, ipAddress=requestIpAddress)
 
         # send an email to the authentic user if their account got locked
         if (loginAttempts and loginAttempts[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
-            resetAttempts = login_attempts_sql_operation(connection=connection, mode="reset_attempts_past_reset_date_for_user", userID=matched[0])
+            resetAttempts = login_attempts_sql_operation(connection=connection, mode="reset_attempts_past_reset_date_for_user", userID=userID)
 
             # If the user has exceeded the maximum number of login attempts,
             # but the timeout is not up yet...
             if (not resetAttempts):
                 connection.close()
-                send_unlock_locked_acc_email(email=emailInput, userID=matched[0])
+                send_unlock_locked_acc_email(email=emailInput, userID=userID)
                 raise AccountLockedError("Account is locked!")
 
         # send verification email if the user has not verified their email
-        if (not matched[4]):
+        if (not emailVerified):
             connection.close()
-            send_verification_email(email=emailInput, userID=matched[0], username=matched[3])
+            send_verification_email(email=emailInput, userID=userID, username=username)
             raise EmailNotVerifiedError("Email has not been verified, please verify your email!")
 
         newIpAddress = False
-        decryptedPasswordHash = symmetric_decrypt(ciphertext=matched[1], keyID=CONSTANTS.PEPPER_KEY_ID)
+        decryptedPasswordHash = symmetric_decrypt(ciphertext=encryptedPasswordHash, keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
             if (CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)):
                 # check if the login request is from the same IP address as the one that made the request
@@ -631,19 +639,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     newIpAddress = True
 
                 # convert the role id to a readable format
-                cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[4]})
+                cur.execute("CALL get_role_name(%(roleID)s)", {"roleID":roleID})
                 roleName = cur.fetchone()[0]
-                # cur.callproc("get_role_name", (matched[4],))
-                # for result in cur.stored_results():
-                #     roleName = result.fetchone()[0]
 
                 # encrypt the password again as the encryption key will rotate every 30 days
                 # so as to use the new key, we need to encrypt the password again every time the user logins in successfully
                 encryptedPasswordHash = symmetric_encrypt(plaintext=decryptedPasswordHash, keyID=CONSTANTS.PEPPER_KEY_ID)
                 cur.execute("UPDATE user SET password=%(password)s WHERE id=%(userID)s", \
-                            {"password":encryptedPasswordHash, "userID":matched[0]})
+                            {"password":encryptedPasswordHash, "userID":userID})
                 connection.commit()
-                return (matched[0], newIpAddress, matched[3], roleName)
+                return (userID, newIpAddress, username, roleName)
         except (VerifyMismatchError):
             connection.close()
             raise IncorrectPwdError("Incorrect password!")

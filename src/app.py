@@ -892,7 +892,7 @@ def twoFactorAuthSetup():
         else:
             secretToken = RSA_decrypt(session["2fa_token"])
 
-        imageSrcPath = get_image_path(session["user"])
+        imageSrcPath = get_image_path(userID)
 
         # generate a QR code for the user to scan
         totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo[2], issuer_name="CourseFinity")
