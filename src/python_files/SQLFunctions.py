@@ -1,6 +1,5 @@
 """
 This python file contains all the functions that touches on the MySQL database.
-Will rename this py file to SQLFunctions.py soon.
 """
 
 # import Flask web application configs
