@@ -1037,9 +1037,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         # foundResults = cur.fetchall()
         cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
         foundResults = cur.fetchall()
-        # cur.callproc("search_for", (searchInput,))
-        # for result in cur.stored_results():
-        #     foundResults = result.fetchall()
 
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
@@ -1052,7 +1049,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             if ("googleusercontent" in teacherProfile[0]):
                 teacherProfile = (res[1], True)
 
-            resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i])))
+            resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i]), truncateData=True))
 
         return resultsList
 
