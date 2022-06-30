@@ -2,7 +2,6 @@
 from werkzeug.utils import secure_filename
 import requests as req
 from apscheduler.schedulers.background import BackgroundScheduler
-from dicebear import DOptions
 import pyotp, qrcode, markdown
 
 # for Google OAuth 2.0 login (Third-party libraries)
@@ -20,7 +19,7 @@ from flask_talisman import Talisman
 from flask_seasurf import SeaSurf
 
 # import local python libraries
-from python_files.AppFunctions import *
+from python_files.SQLFunctions import *
 from python_files.NormalFunctions import *
 from python_files.StripeFunctions import *
 from python_files.Forms import *
@@ -110,9 +109,6 @@ limiter = Limiter(app, key_func=get_remote_address, default_limits=["30 per seco
 # Maximum file size for uploading anything to the web app's server
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
-# Configurations for dicebear api for user profile image options
-app.config["DICEBEAR_OPTIONS"] = DOptions(size=250)
-
 # for image uploads file path
 app.config["PROFILE_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "user")
 app.config["THUMBNAIL_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "courses", "thumbnails")
@@ -121,18 +117,6 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
-
-# database folder path
-app.config["DATABASE_FOLDER"] = app.root_path + r"\databases"
-
-# SQL database file path
-app.config["SQL_DATABASE"] = app.config["DATABASE_FOLDER"] + r"\database.db"
-
-# Session config
-app.config["SESSION_EXPIRY_INTERVALS"] = 30 # 30 mins
-
-# duration for locked accounts before user can try to login again
-app.config["LOCKED_ACCOUNT_DURATION"] = 30 #
 
 # To allow Google OAuth2.0 to work as it will only work in https if this not set to 1/True
 if (app.config["DEBUG_FLAG"]):
@@ -768,23 +752,31 @@ def verifyEmail(token:str):
     jsonPayload = data["data"]["payload"]
     userID = jsonPayload["userID"]
 
+    # Check if user is logged in, check if the userID in the token
+    # matches the userID in the session.
+    if ("user" in session and session["user"] != userID):
+        flash("Verify email link is invalid or has expired!", "Danger")
+        return redirect(url_for("home"))
+
     # check if the user exists in the database
     if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
         # if the user does not exist
         flash("Reset password link is invalid or has expired!", "Danger")
+        if ("user" in session):
+            session.clear()
         return redirect(url_for("login"))
 
     # check if email has been verified
     if (sql_operation(table="user", mode="email_verified", userID=userID)):
         # if the email has been verified
         flash("Your email has already been verified!", "Sorry!")
-        return redirect(url_for("home"))
+        return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
 
     # update the email verified column to true
     sql_operation(table="user", mode="update_email_to_verified", userID=userID)
     sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
     flash("Your email has been verified!", "Email Verified!")
-    return redirect(url_for("home"))
+    return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
 def enter2faTOTP():

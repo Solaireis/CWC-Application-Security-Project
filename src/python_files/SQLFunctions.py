@@ -1,10 +1,9 @@
 """
-This python file contains all the functions that requires the import of the
-flask web application's app variable from app.py.
+This python file contains all the functions that touches on the MySQL database.
+Will rename this py file to SQLFunctions.py soon.
 """
 
 # import Flask web application configs
-from app import app
 from flask import url_for, flash, Markup
 
 # import python standard libraries
@@ -37,7 +36,7 @@ def accepted_image_extension(filename:str) -> bool:
     """
     # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
     # e.g. "profile.test.png" -> ["profile.test", "png"]
-    return ("." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_IMAGE_EXTENSIONS"])
+    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
 
 def get_google_flow() -> Flow:
     """
@@ -205,7 +204,7 @@ def get_dicebear_image(username:str) -> str:
     av = DAvatar(
         style=DStyle.initials,
         seed=username,
-        options=app.config["DICEBEAR_OPTIONS"]
+        options=CONSTANTS.DICEBEAR_OPTIONS
     )
     return av.url_svg
 
@@ -222,11 +221,11 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     """
     returnValue = con = None
     try:
-        con = get_mysql_connection(debug=app.config["DEBUG_FLAG"])
+        con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE)
     except (MySQLErrors.OperationalError):
         print("Database Not Found...")
         print("Creating Database...")
-        con = MySQLInitialise(debug=app.config["DEBUG_FLAG"])
+        con = MySQLInitialise(debug=CONSTANTS.DEBUG_MODE)
         print("Created the neccessary tables for the database!\n")
 
     try:
@@ -421,7 +420,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
         if (attempts is None):
-            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"]})
+            cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION})
         else:
             cur.execute("SELECT SGT_NOW()")
             now = cur.fetchone()[0]
@@ -438,7 +437,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":app.config["LOCKED_ACCOUNT_DURATION"], "userID":userID})
+            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION, "userID":userID})
         connection.commit()
 
     elif (mode == "reset_user_attempts_for_user"):
@@ -475,7 +474,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
         userIP = kwargs["userIP"]
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, INET6_ATON(%(userIP)s))", {"sessionID":sessionID, "userID":userID, "intervalMins":app.config["SESSION_EXPIRY_INTERVALS"], "userIP":userIP})
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, INET6_ATON(%(userIP)s))", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "userIP":userIP})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -497,7 +496,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "update_session"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": app.config["SESSION_EXPIRY_INTERVALS"], "sessionID": sessionID})
+        cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
@@ -597,11 +596,15 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             return (emailDupe, usernameDupes)
 
         # create symmetric key for the user and store it in Google Cloud KMS API
-        if (app.config["DEBUG_FLAG"]):
+        if (CONSTANTS.DEBUG_MODE):
             keyName = "test-key"
         else:
             keyName = f"key-{generate_id()}"
             create_symmetric_key(keyName=keyName)
+
+        # Soon to be implemented:
+        # encrypt the password hash, i.e. adding a pepper onto the hash
+        # passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=CONSTANTS.PEPPER_KEY_NAME)
 
         # add account info to the MySQL database
         # check if the generated uuid exists in the db
@@ -658,11 +661,15 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             #     roleID = result.fetchone()[0]
 
             # create symmetric key for the user and store it in Google Cloud KMS API
-            if (app.config["DEBUG_FLAG"]):
+            if (CONSTANTS.DEBUG_MODE):
                 keyName = "test-key"
             else:
                 keyName = f"key-{generate_id()}"
                 create_symmetric_key(keyName=keyName)
+
+            # Soon to be implemented:
+            # encrypt the password hash, i.e. adding a pepper onto the hash
+            # passwordInput = symmetric_encrypt(plaintext=kwargs["password"], keyID=CONSTANTS.PEPPER_KEY_NAME)
 
             cur.execute(
                 "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(key_name)s, %(cart_courses)s, %(purchased_courses)s)",

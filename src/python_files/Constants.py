@@ -6,6 +6,7 @@ from typing import Any, Union
 
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
+from dicebear import DOptions
 
 # For ipinfo.io to get details about a user's IP address
 import ipinfo
@@ -84,6 +85,20 @@ class ConstantsConfigs:
         # For lockout policy
         self.MAX_LOGIN_ATTEMPTS = 6
 
+        # For invalidating sessions after x mins of inactivity
+        # Inactivity in this case: No requests to the web server for x mins
+        self.SESSION_EXPIRY_INTERVALS = 30 # 30 mins
+
+        # Duration (in minutes) for locked accounts
+        # before user can try to login again
+        self.LOCKED_ACCOUNT_DURATION = 30 # 30 mins
+
+        # Configurations for dicebear api for user profile image options
+        self.DICEBEAR_OPTIONS = DOptions(size=250)
+
+        # Configurations on the allowed image extensions
+        self.ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
+
         # Configured Argon2id default configurations so that it will take 
         # at least 500ms/0.5s to hash a plaintext password.
         self.PH = PasswordHasher(
@@ -148,6 +163,7 @@ class ConstantsConfigs:
         GOOGLE_KMS_JSON = json.loads(self.get_secret_payload(secretID="google-kms"))
         self.KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
         del GOOGLE_KMS_JSON
+        self.PEPPER_KEY_NAME = "pepper-key"
 
         # For Google MySQL Cloud API
         self.SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
