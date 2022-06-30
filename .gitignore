@@ -13,7 +13,7 @@
 *Test*.*/**
 
 # Ignore other files
-blacklist.txt
+ip_blacklist.txt
 *.bin
 
 # Ignore uploaded files for user profiles and thumbnails
