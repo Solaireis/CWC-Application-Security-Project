@@ -1,5 +1,5 @@
 # import python standard libraries
-import pathlib, json
+import pathlib, json, re
 from os import environ
 from sys import exit as sysExit
 from typing import Any, Union
@@ -99,6 +99,41 @@ class ConstantsConfigs:
         # Configurations on the allowed image extensions
         self.ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
 
+        # path to the root directory of the project
+        self.ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
+
+        # for the config files folder
+        self.CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
+
+        # For comparing the date on the github repo
+        self.DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
+        self.BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+
+        # Password regex follows OWASP's recommendations
+        # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
+        self.PASSWORD_REGEX = re.compile(r"""
+        ^                                                                   # beginning of password
+        (?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
+        (?=.*?[a-z])                                                        # at least one lowercase letter
+        (?=.*?[A-Z])                                                        # at least one uppercase letter
+        (?=.*?[\d])                                                         # at least one digit
+        (?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
+        [A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
+        {10,}                                                               # at least 10 characters long
+        $                                                                   # end of password
+        """, re.VERBOSE)
+
+        # For email coursefinity logo image
+        LOGO_PATH = self.ROOT_FOLDER_PATH.joinpath("static", "images", "common", "filled_logo.png")
+        self.LOGO_BYTES = LOGO_PATH.read_bytes()
+        del LOGO_PATH
+
+        # For 2FA setup key regex to validate if the setup is a valid base32 setup key
+        self.COMPILED_2FA_REGEX_DICT = {
+            32: re.compile(r"^[A-Z2-7]{32}$")
+        }
+        self.TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
+
         # Configured Argon2id default configurations so that it will take 
         # at least 500ms/0.5s to hash a plaintext password.
         self.PH = PasswordHasher(
@@ -117,12 +152,6 @@ class ConstantsConfigs:
         # For the Flask secret key when retrieving the secret key
         # from Google Secret Manager API
         self.FLASK_SECRET_KEY_NAME = "flask-secret-key"
-
-        # path to the root directory of the project
-        self.ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
-
-        # for the config files folder
-        self.CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
 
         # For Google Secret Manager API
         self.GOOGLE_SM_JSON_PATH = self.CONFIG_FOLDER_PATH.joinpath("google-sm.json")
@@ -168,6 +197,11 @@ class ConstantsConfigs:
         self.SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
         self.EC_SIGNING_KEY_ID = "signing-key"
         self.APP_KEY_RING_ID = "coursefinity"
+
+        # For Google KMS asymmetric encryption and decryption
+        # TODO: Update the version if there is a rotation of the asymmetric keys
+        self.SESSION_COOKIE_ENCRYPTION_VERSION = 1
+        self.SIGNATURE_VERSION_ID = 1
 
         # For Google MySQL Cloud API
         self.SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"

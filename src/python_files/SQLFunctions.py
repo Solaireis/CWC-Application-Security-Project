@@ -3,8 +3,13 @@ This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
 import json
-from typing import Union
+from typing import Union, Optional
 from urllib.parse import unquote
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+# import Flask web application configs
+from flask import url_for, flash, Markup
 
 # import third party libraries
 from argon2.exceptions import VerifyMismatchError
@@ -16,7 +21,7 @@ from .Course import Course
 from .Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_unlock_locked_acc_email, send_verification_email
+                             send_email
 from .Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
@@ -58,6 +63,55 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
         expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
     )
     return token
+
+def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
+    """
+    Send an email to the user to verify their account.
+
+    Note: The JWT will expire in 3 days.
+
+    Args:
+    - email (str): The email of the user.
+    - username (str): The username of the user.
+    - userID (str): The user ID of the user.
+    """
+    # verify email token will be valid for a week
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        f"Welcome to CourseFinity!", 
+        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
+    ]
+    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
+
+def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
+    """
+    Send an email to the user to unlock their account.
+
+    Note: The JWT will expire in 30 minutes.
+
+    Args:
+    - email (str): The email of the user.
+    - userID (str): The user ID of the user.
+    """
+    expiryInfo = JWTExpiryProperties(
+        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
+    )
+    token = generate_one_time_use_token(
+        payload={"email": email, "userID": userID}, 
+        expiryInfo=expiryInfo
+    )
+    htmlBody = [
+        "Your account has been locked due to too many failed login attempts.", 
+        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
+        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+    ]
+    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
 
 def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
     """

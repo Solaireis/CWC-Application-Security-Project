@@ -22,11 +22,9 @@ from zoneinfo import ZoneInfo
 # import local python libraries
 if (__package__ is None or __package__ == ""):
     from Constants import CONSTANTS
-    from SQLFunctions import generate_one_time_use_token
     from Errors import *
 else:
     from .Constants import CONSTANTS
-    from .SQLFunctions import generate_one_time_use_token
     from .Errors import *
 
 # import third party libraries
@@ -64,41 +62,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
-"""------------------------------ Define Constants ------------------------------"""
-
-# for comparing the date on the github repo
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-BLACKLIST_FILEPATH = CONSTANTS.ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
-
-# password regex follows OWASP's recommendations
-# https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
-PASSWORD_REGEX = re.compile(r"""
-^                                                                   # beginning of password
-(?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
-(?=.*?[a-z])                                                        # at least one lowercase letter
-(?=.*?[A-Z])                                                        # at least one uppercase letter
-(?=.*?[\d])                                                         # at least one digit
-(?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
-[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
-{10,}                                                               # at least 10 characters long
-$                                                                   # end of password
-""", re.VERBOSE)
-
-# for email coursefinity logo image
-with open(CONSTANTS.ROOT_FOLDER_PATH.parent.absolute().joinpath("res", "filled_logo.png"), "rb") as f:
-    LOGO_BYTES = f.read()
-
-# For Google KMS asymmetric encryption and decryption
-# TODO: Update the version if there is a rotation of the asymmetric keys
-SESSION_COOKIE_ENCRYPTION_VERSION = 1
-SIGNATURE_VERSION_ID = 1
-
-# For 2FA setup key regex to validate if the setup is a valid base32 setup key
-COMPILED_2FA_REGEX_DICT = {}
-TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
-
-"""------------------------------ End of Defining Constants ------------------------------"""
-
 def get_dicebear_image(username:str) -> str:
     """
     Returns a random dicebear image from the database
@@ -112,55 +75,6 @@ def get_dicebear_image(username:str) -> str:
         options=CONSTANTS.DICEBEAR_OPTIONS
     )
     return av.url_svg
-
-def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
-    """
-    Send an email to the user to verify their account.
-
-    Note: The JWT will expire in 3 days.
-
-    Args:
-    - email (str): The email of the user.
-    - username (str): The username of the user.
-    - userID (str): The user ID of the user.
-    """
-    # verify email token will be valid for a week
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        f"Welcome to CourseFinity!", 
-        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
-    ]
-    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
-
-def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
-    """
-    Send an email to the user to unlock their account.
-
-    Note: The JWT will expire in 30 minutes.
-
-    Args:
-    - email (str): The email of the user.
-    - userID (str): The user ID of the user.
-    """
-    expiryInfo = JWTExpiryProperties(
-        datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
-    )
-    token = generate_one_time_use_token(
-        payload={"email": email, "userID": userID}, 
-        expiryInfo=expiryInfo
-    )
-    htmlBody = [
-        "Your account has been locked due to too many failed login attempts.", 
-        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
-        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
-    ]
-    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
 
 def send_change_password_alert_email(email:str="") -> None:
     """
@@ -589,7 +503,7 @@ class JWTExpiryProperties:
             self.expiryDate = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(seconds=activeDuration)
 
         elif (strDate is not None and activeDuration == 0 and datetimeObj is None):
-            self.expiryDate = datetime.strptime(strDate, DATE_FORMAT).astimezone(tz=ZoneInfo("Asia/Singapore"))
+            self.expiryDate = datetime.strptime(strDate, CONSTANTS.DATE_FORMAT).astimezone(tz=ZoneInfo("Asia/Singapore"))
 
         elif (strDate is None and activeDuration == 0 and datetimeObj is not None):
             # check if datetimeObj is an instance of datetime class
@@ -613,7 +527,7 @@ class JWTExpiryProperties:
         
         E.g. "2022-06-26 17:21:20.123456 +0800"
         """
-        return self.expiryDate.strftime(DATE_FORMAT)
+        return self.expiryDate.strftime(CONSTANTS.DATE_FORMAT)
 
     def is_expired(self) -> bool:
         """
@@ -629,7 +543,7 @@ class JWTExpiryProperties:
 
 def EC_sign(
     payload:Union[str, dict]="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, 
-    versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
+    versionID:int=CONSTANTS.SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
     ) -> Union[dict, str]:
     """
     Sign a message using the public key part of an asymmetric EC key.
@@ -869,7 +783,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     else:
         return verified
 
-def RSA_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
+def RSA_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="encrypt-decrypt-key", versionID:int=CONSTANTS.SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
 
@@ -1059,15 +973,15 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
         lastUpdated = lastUpdated.astimezone(tz=ZoneInfo("Asia/Singapore"))
 
         action = 0 # 1 for update, 0 for creating a new file
-        if (BLACKLIST_FILEPATH.exists() and BLACKLIST_FILEPATH.is_file()):
-            with open(BLACKLIST_FILEPATH, "r") as f:
+        if (CONSTANTS.BLACKLIST_FILEPATH.exists() and CONSTANTS.BLACKLIST_FILEPATH.is_file()):
+            with open(CONSTANTS.BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
             blacklist = txtFile.split("\n")
 
             try:
-                date = datetime.strptime(blacklist[0], DATE_FORMAT)
+                date = datetime.strptime(blacklist[0], CONSTANTS.DATE_FORMAT)
             except (ValueError):
-                BLACKLIST_FILEPATH.unlink()
+                CONSTANTS.BLACKLIST_FILEPATH.unlink()
                 return get_IP_address_blacklist()
 
             if (date >= lastUpdated):
@@ -1081,23 +995,23 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
         print("\nLoading IP Address Blacklist from the github repo...")
         blacklist = [ip.split("\t")[0] for ip in results if (not ip.startswith("#"))]
 
-        with open(BLACKLIST_FILEPATH, "w") as f:
-            f.write(lastUpdated.strftime(DATE_FORMAT) + "\n")
+        with open(CONSTANTS.BLACKLIST_FILEPATH, "w") as f:
+            f.write(lastUpdated.strftime(CONSTANTS.DATE_FORMAT) + "\n")
             f.write("\n".join(blacklist))
         print(f"IP Address Blacklist, blacklist.txt, {'created' if (action == 0) else 'updated'} and loaded!\n")
 
         return blacklist
     else:
-        if (BLACKLIST_FILEPATH.exists()):
-            with open(BLACKLIST_FILEPATH, "r") as f:
+        if (CONSTANTS.BLACKLIST_FILEPATH.exists()):
+            with open(CONSTANTS.BLACKLIST_FILEPATH, "r") as f:
                 txtFile = f.read()
             blacklist = txtFile.split("\n")
 
             # try to parse the date from the first line
             try:
-                datetime.strptime(blacklist[0], DATE_FORMAT)
+                datetime.strptime(blacklist[0], CONSTANTS.DATE_FORMAT)
             except (ValueError):
-                BLACKLIST_FILEPATH.unlink()
+                CONSTANTS.BLACKLIST_FILEPATH.unlink()
                 return get_IP_address_blacklist(checkForUpdates=True) # true as a last resort
 
             print("\nLoading potentially outdated IP Address Blacklist from the saved text file...")
@@ -1137,7 +1051,7 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     htmlMessage.attach(MIMEText(mainBody, _subtype="html"))
 
     # attach the logo image
-    logoImage = MIMEImage(LOGO_BYTES, "png")
+    logoImage = MIMEImage(CONSTANTS.LOGO_BYTES, "png")
     logoImage.add_header("Content-ID", "<logo>")
     logoImage.add_header("Content-Disposition", "inline", filename="coursefinity_logo.png")
     htmlMessage.attach(logoImage)
@@ -1220,7 +1134,7 @@ def pwd_is_strong(password:str) -> bool:
     - https://owasp.org/www-community/password-special-characters
     - https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
     """
-    return True if (re.fullmatch(PASSWORD_REGEX, password)) else False
+    return True if (re.fullmatch(CONSTANTS.PASSWORD_REGEX, password)) else False
 
 def pwd_has_been_pwned(password:str) -> bool:
     """
@@ -1252,8 +1166,8 @@ def pwd_has_been_pwned(password:str) -> bool:
             break
         elif (response.status_code == 429):
             # haveibeenpwned API is rate limited, so wait for a while and try again
-            print(f"Failed to retrieve data from api.pwnedpasswords.com. Retrying in 2 seconds...")
-            sleep(2)
+            print(f"Failed to retrieve data from api.pwnedpasswords.com. Retrying in 1 seconds...")
+            sleep(1)
         else:
             print(f"Failed to retrieve data from api.pwnedpasswords.com.\nError code: {response.status_code}")
             # returns False (considered not leaked) 
@@ -1296,10 +1210,9 @@ def two_fa_token_is_valid(token:str) -> bool:
     Returns:
     - True if the token is valid, False otherwise.
     """
-    #
     length = len(token)
-    if (length not in COMPILED_2FA_REGEX_DICT):
+    if (length not in CONSTANTS.COMPILED_2FA_REGEX_DICT):
         # compile the regex if it has not been compiled yet
-        COMPILED_2FA_REGEX_DICT[length] = re.compile(fr"^[A-Z2-7]{{{length}}}$")
+        CONSTANTS.COMPILED_2FA_REGEX_DICT[length] = re.compile(fr"^[A-Z2-7]{{{length}}}$")
 
-    return True if (re.fullmatch(COMPILED_2FA_REGEX_DICT[length], token)) else False
+    return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
