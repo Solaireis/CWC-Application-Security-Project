@@ -769,14 +769,22 @@ def verifyEmail(token:str):
     # check if email has been verified
     if (sql_operation(table="user", mode="email_verified", userID=userID)):
         # if the email has been verified
-        flash("Your email has already been verified!", "Sorry!")
-        return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
+        if ("user" in session):
+            flash("Your email has already been verified!", "Sorry!")
+            return redirect(url_for("home"))
+        else:
+            flash("Your email has already been verified!", "Danger")
+            return redirect(url_for("login"))
 
     # update the email verified column to true
     sql_operation(table="user", mode="update_email_to_verified", userID=userID)
     sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
-    flash("Your email has been verified!", "Email Verified!")
-    return redirect(url_for("login")) if ("user" not in session) else redirect(url_for("home"))
+    if ("user" in session):
+        flash("Your email has been verified!", "Email Verified!")
+        return redirect(url_for("home"))
+    else:
+        flash("Your email has been verified!", "Success")
+        return redirect(url_for("login"))
 
 @app.route("/enter-2fa", methods=["GET", "POST"])
 def enter2faTOTP():
@@ -976,7 +984,7 @@ def userProfile():
 
         username = userInfo[2]
         email = userInfo[3]
-        loginViaGoogle = True if (userInfo[4] is None) else False # check if the password is NoneType
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
 
         twoFAEnabled = False
         if (not loginViaGoogle):
@@ -1025,7 +1033,7 @@ def updateEmail():
         oldEmail = userInfo[2]
 
         # check if user logged in via Google OAuth2
-        loginViaGoogle = True if (userInfo[4] is None) else False
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
         if (loginViaGoogle):
             # if so, redirect to user profile as they cannot change their email
             return redirect(url_for("userProfile"))
@@ -1067,7 +1075,7 @@ def updatePassword():
         userID = userInfo[0]
 
         # check if user logged in via Google OAuth2
-        loginViaGoogle = True if (userInfo[4] is None) else False
+        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
         if (loginViaGoogle):
             # if so, redirect to user profile as they cannot change their password
             return redirect(url_for("userProfile"))

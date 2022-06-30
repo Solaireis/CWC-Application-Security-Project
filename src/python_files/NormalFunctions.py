@@ -155,7 +155,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     """
     return (threshold <= riskScore)
 
-def write_log_entry(logName:str="coursefinity-web-app", logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
+def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
 
@@ -167,7 +167,7 @@ def write_log_entry(logName:str="coursefinity-web-app", logMessage:Union[dict, s
 
     Args:
     - logName (str): The location of the log to write to
-        - Defaults to "coursefinity-web-app"
+        - Defaults to LOGGING_NAME defined in Constants.py
         - Will log to that location in the coursefinity-web-app bucket
             - I have already configured a sink to route logs with the name "coursefinity-web-app"
     - logMessage (str|dict): The message to write to the log
@@ -240,14 +240,14 @@ def crc32c(data:Union[bytes, str]) -> int:
     """
     return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
-def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyID:str="") -> bytes:
+def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> bytes:
     """
     Using Google Symmetric Encryption Algorithm, encrypt the provided plaintext.
 
     Args:
     - plaintext (str): the plaintext to encrypt
     - keyRingID (str): the key ring ID
-        - Defaults to "coursefinity-users"
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
 
     Returns:
@@ -275,14 +275,14 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str="coursefinity-users", keyI
 
     return response.ciphertext
 
-def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", keyID:str="") -> str:
+def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> str:
     """
     Using Google Symmetric Encryption Algorithm, decrypt the provided ciphertext.
 
     Args:
     - ciphertext (bytes): the ciphertext to decrypt
     - keyRingID (str): the key ring ID
-        - Defaults to "coursefinity-users"
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
 
     Returns:
@@ -321,12 +321,15 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str="coursefinity-users", 
 
     return response.plaintext.decode("utf-8")
 
-def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", versionID:str=None) -> None:
+"""---------------------------- NOT USED AND MAY BE DELETED (BELOW) ----------------------------"""
+
+def update_key_set_primary(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="", versionID:str=None) -> None:
     """
     Set a new key version as the primary key version for encryption and decryption.
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
     - versionID (str): the key version to set the primary key version for the specificed keyName (e.g. "1")
 
@@ -339,7 +342,7 @@ def update_key_set_primary(keyRingID:str="coursefinity-users", keyName:str="", v
     # call the Google Cloud KMS API
     CONSTANTS.KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
 
-def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
+def create_new_key_version(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
     """
     In the event that the key ID already exists
 
@@ -349,6 +352,7 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
     - setNewKeyAsPrimary (bool): Whether to set the new key version as the primary key
         - If true, the new key version will be set as the primary key version for encryption and decryption
@@ -374,12 +378,13 @@ def create_new_key_version(keyRingID:str="coursefinity-users", keyName:str="", s
         # set the latest version as the primary key version
         update_key_set_primary(keyRingID=keyRingID, keyName=keyName, versionID=latestVersion)
 
-def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> None:
+def create_symmetric_key(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="") -> None:
     """
     Create a new symmetric key.
 
     Args:
     - keyRingID (str): the key ring ID
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyName (str): the name of the key to create (acts as the key ID)
 
     Returns:
@@ -412,6 +417,8 @@ def create_symmetric_key(keyRingID:str="coursefinity-users", keyName:str="") -> 
         CONSTANTS.KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
+
+"""---------------------------- NOT USED AND MAY BE DELETED (ABOVE) ----------------------------"""
 
 class JWTExpiryProperties:
     """
@@ -494,7 +501,7 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-    payload:Union[str, dict]="", keyRingID:str="coursefinity", keyID:str="signing-key", 
+    payload:Union[str, dict]="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, 
     versionID:int=SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
     ) -> Union[dict, str]:
     """
@@ -507,7 +514,7 @@ def EC_sign(
         - Will convert the payload to a str by json.dumps() if payload is a dict or list.
             - Will raise a ValueError if the payload couldn't be converted to a string using json.dumps()
     - keyRingID: The ID of the key ring.
-        - Defaults to "coursefinity
+        - Defaults to EC_SIGNING_KEY_ID defined in Constants.py
     - keyID: The ID of the key.
         - Defaults to "signing-key"
     - versionID: The version of the key.
@@ -735,7 +742,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     else:
         return verified
 
-def RSA_encrypt(plaintext:str="", keyRingID:str="coursefinity", keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
+def RSA_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="encrypt-decrypt-key", versionID:int=SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
 

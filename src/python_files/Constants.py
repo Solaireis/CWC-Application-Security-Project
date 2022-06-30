@@ -147,6 +147,7 @@ class ConstantsConfigs:
 
         # For Google Cloud Logging API
         self.LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
+        self.LOGGING_NAME = "coursefinity-web-app"
 
         # For Google GMAIL API
         self.GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
@@ -163,7 +164,10 @@ class ConstantsConfigs:
         GOOGLE_KMS_JSON = json.loads(self.get_secret_payload(secretID="google-kms"))
         self.KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
         del GOOGLE_KMS_JSON
-        self.PEPPER_KEY_NAME = "pepper-key"
+        self.PEPPER_KEY_ID = "pepper-key"
+        self.SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
+        self.EC_SIGNING_KEY_ID = "signing-key"
+        self.APP_KEY_RING_ID = "coursefinity"
 
         # For Google MySQL Cloud API
         self.SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"

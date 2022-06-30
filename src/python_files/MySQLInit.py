@@ -79,7 +79,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
-        key_name VARCHAR(36) NOT NULL,
         cart_courses JSON DEFAULT NULL, -- can be null for admin user
         purchased_courses JSON DEFAULT NULL, -- can be null for admin user
         FOREIGN KEY (role) REFERENCES role(role_id)
