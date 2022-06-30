@@ -372,7 +372,7 @@ td p .fa-envelope-open-text {
     font-size: 1.5em;
 }
 
-#tooltipValueEmail:hover, #tooltipValueUsername:hover{
+#tooltipValueEmail:hover, #tooltipValueUsername:hover, #tooltipValueUID:hover{
   text-decoration: underline;
   color: blue;
 }
