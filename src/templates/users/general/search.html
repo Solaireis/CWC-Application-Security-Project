@@ -67,17 +67,17 @@
         <div class="center">
             <div class="pagination">
                 {% if currentPage != 1 %}
-                    <a href="{{ url_for('search')}}?q={{searchInput}}&p={{currentPage - 1}}">&laquo;</a>
+                    <a href="{{ url_for('generalBP.search')}}?q={{searchInput}}&p={{currentPage - 1}}">&laquo;</a>
                 {% endif %}
                 {% for i in lenOfDict %}
                     {% if i == currentPage %}
                         <a class="active" href="">{{ i }}</a>
                     {% else %}
-                        <a href="{{ url_for('search') }}?q={{searchInput}}&p={{i}}">{{ i }}</a>
+                        <a href="{{ url_for('generalBP.search') }}?q={{searchInput}}&p={{i}}">{{ i }}</a>
                     {% endif %}
                 {% endfor %}
                 {% if currentPage != maxPage %}
-                    <a href="{{ url_for('search')}}?q={{searchInput}}&p={{currentPage + 1}}">&raquo;</a>
+                    <a href="{{ url_for('generalBP.search')}}?q={{searchInput}}&p={{currentPage + 1}}">&raquo;</a>
                 {% endif %}
             </div>
         </div>

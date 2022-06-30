@@ -85,7 +85,7 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
     )
     htmlBody = [
         f"Welcome to CourseFinity!", 
-        f"Please click the link below to verify your email address:<br>{url_for('verifyEmail', token=token, _external=True)}"
+        f"Please click the link below to verify your email address:<br>{url_for('guest.verifyEmail', token=token, _external=True)}"
     ]
     send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
 
@@ -108,7 +108,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     )
     htmlBody = [
         "Your account has been locked due to too many failed login attempts.", 
-        f"Please click the link below to unlock your account:<br>{url_for('unlockAccount', token=token, _external=True)}",
+        f"Please click the link below to unlock your account:<br>{url_for('guest.unlockAccount', token=token, _external=True)}",
         "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     ]
     send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))

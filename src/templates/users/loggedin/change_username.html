@@ -36,9 +36,9 @@
                         {% with anchorClass="float-start form-buttons margin-top margin-top2 text-white" %}
                             {% with iconClass="fas fa-arrow-left" %}
                                 {% if "user" in session %}
-                                    <a href="{{ url_for('userProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
+                                    <a href="{{ url_for('userBP.userProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
                                 {% else %}
-                                    <a href="{{ url_for('adminProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
+                                    <a href="{{ url_for('adminBP.adminProfile') }}" class="{{ anchorClass }}"><i class="{{ iconClass }}"></i> Back</a>
                                 {% endif %}
                             {% endwith %}
                         {% endwith %}

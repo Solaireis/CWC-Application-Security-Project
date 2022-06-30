@@ -51,7 +51,7 @@
                         {{ render_field(form.password, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <h6><a href="{{ url_for('resetPasswordRequest') }}" class="forgetPWD">Forget password?</a></h6>
+                        <h6><a href="{{ url_for('guestBP.resetPasswordRequest') }}" class="forgetPWD">Forget password?</a></h6>
                     </div>
                     <div class="col-12">
                         <button class="btn btn-colour text-white float-end" id="login">Login</button>
@@ -62,12 +62,12 @@
                 </form>
                 <hr class="mt-4 text-white">
                 <div class="col-12 d-flex justify-content-center">
-                    <a class="btn btn-light text-dark" href="{{ url_for('loginViaGoogle') }}"><img src="{{ url_for('static', filename='/images/logos/google-logo.png') }}"> Login with Google!</a>
+                    <a class="btn btn-light text-dark" href="{{ url_for('guestBP.loginViaGoogle') }}"><img src="{{ url_for('static', filename='/images/logos/google-logo.png') }}"> Login with Google!</a>
                 </div>
                 <br>
                 <div class="col-12">
                     <p class="text-center mb-0 text-white">Not a registered user?</p>
-                    <p class="text-center mb-0"><a class="text-white fw-bold" href="{{ url_for('signup') }}">Sign up here!</a></p>
+                    <p class="text-center mb-0"><a class="text-white fw-bold" href="{{ url_for('guestBP.signup') }}">Sign up here!</a></p>
                 </div>
             </div>
         </div>

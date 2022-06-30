@@ -88,11 +88,11 @@ def send_change_password_alert_email(email:str="") -> None:
     """
     htmlBody = [
         f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
-        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('updatePassword', _external=True)}"
+        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('loggedInBP.updatePassword', _external=True)}"
     ]
     send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
     flash(
-        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('updatePassword')}'>change your password</a> immediately!"), 
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('loggedInBP.updatePassword')}'>change your password</a> immediately!"), 
         "Security Alert!"
     )
 
@@ -125,7 +125,7 @@ def get_google_flow() -> Flow:
             # for Google to read the user's emails as required for some OAuth2 logins
             "https://www.googleapis.com/auth/gmail.readonly", 
         ],
-        redirect_uri=url_for("loginCallback", _external=True)
+        redirect_uri=url_for("guestBP.loginCallback", _external=True)
     )
     return flow
 

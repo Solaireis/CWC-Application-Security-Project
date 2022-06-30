@@ -119,7 +119,7 @@
 					</ul>
 				</li>
             </ul>
-			<form action="{{ url_for('search', page=1) }}" method="GET" class="d-flex ms-auto me-auto search_form">
+			<form action="{{ url_for('generalBP.search', page=1) }}" method="GET" class="d-flex ms-auto me-auto search_form">
 				<div class="input-group">
 					<input class="form-control border-0 mr-2" type="search" maxlength="100" placeholder="Search" name="q" aria-label="Search" required>
 					<button class="btn btn-secondary border-0" type="submit"><i class="fas fa-search"></i></button>
@@ -131,17 +131,17 @@
 					<ul class="dropdown-menu shadow">
 						{% if accType == "Teacher" %}
 						<!-- <li><a href="{{ url_for('teacherPage', teacherID=session.get('user')) }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li> -->
-						<li><a href="{{ url_for('videoUpload') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
+						<li><a href="{{ url_for('userBP.videoUpload') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
-						<li><a href="{{ url_for('purchaseHistory') }}" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
-						<li><a class="dropdown-item" href="{{ url_for('userProfile') }}"><i class="fas fa-user-edit"></i> Settings</a></li>
-						<li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+						<li><a href="{{ url_for('userBP.purchaseHistory') }}" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
+						<li><a class="dropdown-item" href="{{ url_for('userBP.userProfile') }}"><i class="fas fa-user-edit"></i> Settings</a></li>
+						<li><a class="dropdown-item text-danger" href="{{ url_for('loggedInBP.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>
 
 				<li class="nav-item">
-					<a href="{{ url_for('cart') }}" class="nav-link text-white" id="shopping-cart-link">
+					<a href="{{ url_for('userBP.cart') }}" class="nav-link text-white" id="shopping-cart-link">
 						<i class="fas fa-shopping-cart fa-lg text-decoration-none"></i>
 					</a>
 				</li>

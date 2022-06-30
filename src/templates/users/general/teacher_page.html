@@ -52,7 +52,7 @@
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title">{{ course.course_name }}</h4>
-								<a href="{{ url_for('teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
+								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
 								<p class="card-text">{{ course.course_description }}</p>
 								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
 								{% if (course.rating_count > 0) %}
@@ -72,18 +72,18 @@
 							</div>
 							<div class="card-footer">
 								{% if (accType == None) %}
-									<a href="{{ url_for('login') }}" class="btn btn-success float-end">
+									<a href="{{ url_for('guestBP.login') }}" class="btn btn-success float-end">
 										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
 									</a>
 								{% elif (accType == "Admin") %}
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
 									{% if (course.course_id in userPurchasedCourses) %}
-										<a action="{{ url_for('purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}
-										<form action="{{ url_for('cart') }}" method="POST">
+										<form action="{{ url_for('userBP.cart') }}" method="POST">
 											<input name="courseID" type="hidden" value="{{ course.course_id }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>
@@ -119,8 +119,8 @@
 								<img src="{{ url_for('static', filename='images/courses/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
-								<h4 class="card-title"><a href="{{ url_for('coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
-								<a href="{{ url_for('teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
+								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
+								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
 								<p class="card-text">{{ course.course_description }}</p>
 								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
 								{% if (course.rating_count > 0) %}
@@ -140,18 +140,18 @@
 							</div>
 							<div class="card-footer">
 								{% if (accType == None) %}
-									<a href="{{ url_for('login') }}" class="btn btn-success float-end">
+									<a href="{{ url_for('guestBP.login') }}" class="btn btn-success float-end">
 										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
 									</a>
 								{% elif (accType == "Admin") %}
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
 									{% if (course.course_id in userPurchasedCourses) %}
-										<a action="{{ url_for('purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}
-										<form action="{{ url_for('cart') }}" method="POST">
+										<form action="{{ url_for('userBP.cart') }}" method="POST">
 											<input name="courseID" type="hidden" value="{{ course.course_id }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>

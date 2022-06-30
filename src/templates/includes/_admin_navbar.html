@@ -119,7 +119,7 @@
 					</ul>
 				</li>
             </ul>
-			<form action="{{ url_for('search', page=1) }}" method="GET" class="d-flex ms-auto me-auto search_form">
+			<form action="{{ url_for('generalBP.search', page=1) }}" method="GET" class="d-flex ms-auto me-auto search_form">
 				<div class="input-group">
 					<input class="form-control border-0 mr-2" type="search" maxlength="100" placeholder="Search" name="q" aria-label="Search" required>
 					<button class="btn btn-secondary border-0" type="submit"><i class="fas fa-search"></i></button>
@@ -130,10 +130,10 @@
 					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="{{ url_for('static', filename='images/user/default.png') }}" id="user_profile" alt="User profile icon"></a>
 					<ul class="dropdown-menu shadow dropdown-menu-end">
 						<li><a class="dropdown-item" href="/admin_dashboard"><i class="fas fa-database"></i> Dashboard</a></li>
-						<li><a class="dropdown-item" href="{{ url_for('adminProfile') }}"><i class="fas fa-user-edit"></i> Account Settings</a></li>
+						<li><a class="dropdown-item" href="{{ url_for('adminBP.adminProfile') }}"><i class="fas fa-user-edit"></i> Account Settings</a></li>
 						<li><a class="dropdown-item" href="/user_management/page/1"><i class="fas fa-chalkboard-teacher"></i> User Management</a></li>
 						<li><a class="dropdown-item" href="/support_ticket_management/1"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
-						<li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+						<li><a class="dropdown-item text-danger" href="{{ url_for('loggedInBP.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>
             </ul>

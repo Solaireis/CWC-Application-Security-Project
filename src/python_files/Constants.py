@@ -79,6 +79,9 @@ class ConstantsConfigs:
         # Debug flag
         self.DEBUG_MODE = True 
 
+        # Request limit
+        self.REQUEST_LIMIT = "30 per second"
+
         # For hashing passwords
         self.MAX_PASSWORD_LENGTH = 128
 
@@ -180,6 +183,9 @@ class ConstantsConfigs:
 
         # For Google GMAIL API
         self.GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
+
+        # For Google OAuth2 login
+        self.GOOGLE_CLIENT_ID = self.GOOGLE_CREDENTIALS["web"]["client_id"]
 
         # For Google reCAPTCHA API
         RECAPTCHA_JSON = json.loads(self.get_secret_payload(secretID="google-recaptcha"))

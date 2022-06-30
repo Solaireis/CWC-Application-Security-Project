@@ -22,7 +22,7 @@ def stripe_product_create(courseID, courseName, courseDescription, coursePrice, 
     if debug:
         courseUrl = "https://example.com"
     else:
-        courseUrl = url_for("coursePage", _external = True, courseID = courseID)
+        courseUrl = url_for("generalBP.coursePage", _external = True, courseID = courseID)
 
     if courseImagePath is None:
         images = []
@@ -61,12 +61,12 @@ def stripe_product_check(courseID):
         return None
 
 def stripe_checkout(userID: str, cartCourseIDs: list, email: str, debug=False) -> str:
-    print(url_for("purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600))))
+    print(url_for("userBP.purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600))))
     if debug:
         success_url = cancel_url = "http://127.0.0.1:8080"
     else:
-        success_url = url_for("purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600)))
-        cancel_url = url_for("cart", _external = True)
+        success_url = url_for("userBP.purchase", _external = True, userToken = EC_sign(payload = userID, keyID = 'signing-key', b64EncodeData = True, expiry = JWTExpiryProperties(activeDuration = 3600)))
+        cancel_url = url_for("userBP.cart", _external = True)
 
     print(type(success_url))
 

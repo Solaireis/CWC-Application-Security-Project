@@ -36,12 +36,12 @@
                 <hr>
                 <ul class="nav nav-pills flex-column mb-auto">
                     <li class="nav-item">
-                        <a href="{{ url_for('adminDashboard') }}" class="nav-link text-white">
+                        <a href="{{ url_for('adminBP.adminDashboard') }}" class="nav-link text-white">
                             Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ url_for('adminProfile') }}" class="nav-link text-white active-custom">
+                        <a href="{{ url_for('adminBP.adminProfile') }}" class="nav-link text-white active-custom">
                             Account Settings
                         </a>
                     </li>
@@ -67,7 +67,7 @@
                                     <td class="p-3"><h6>Username:</h6></td>
                                     <td class="p-3">
                                         <h6 id="tooltipValueUsername"><a href="javascript:copyToClipBoard('Username')" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementUsername" class="profile_copy_text">{{ username }}</a></h6>
-                                        <a href="{{ url_for('updateUsername') }}">Change Username</a>
+                                        <a href="{{ url_for('loggedInBP.updateUsername') }}">Change Username</a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -82,7 +82,7 @@
                                 </tr>
                                 <tr>
                                     <td class="p-3"><h6>Password:</h6></td>
-                                    <td class="p-3"><h6><a href="{{ url_for('updatePassword') }}">Change Password</a></h6></td>
+                                    <td class="p-3"><h6><a href="{{ url_for('loggedInBP.updatePassword') }}">Change Password</a></h6></td>
                                 </tr>
                                 <tr>
                                     <td class="p-3">
@@ -91,13 +91,13 @@
                                     <td class="p-3">
                                         {% if twoFAEnabled %}
                                         <h6 class="text-success">Enabled</h6>
-                                        <form action="{{ url_for('disableTwoFactorAuth') }}" method="POST">
+                                        <form action="{{ url_for('loggedInBP.disableTwoFactorAuth') }}" method="POST">
                                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
                                         </form>
                                         {% else %}
                                         <h6 class="text-danger">Please Enable 2FA!</h6>
-                                        <a href="{{ url_for('twoFactorAuthSetup') }}">Enable 2FA</a>
+                                        <a href="{{ url_for('loggedInBP.twoFactorAuthSetup') }}">Enable 2FA</a>
                                         {% endif %}
                                     </td>
                                 </tr>
