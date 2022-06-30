@@ -144,7 +144,7 @@ def disableTwoFactorAuth():
     else:
         flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
 
-    return redirect(url_for("user.userProfile")) if ("user" in session) else redirect(url_for("admin.adminProfile"))
+    return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
 
 @loggedInBP.route("/change_username", methods=["GET","POST"])
 def updateUsername():

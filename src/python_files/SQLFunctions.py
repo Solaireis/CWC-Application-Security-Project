@@ -17,9 +17,9 @@ from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 
+# For stripe API
 import stripe
 from stripe.error import InvalidRequestError
-
 
 # for google oauth login
 from google_auth_oauthlib.flow import Flow
@@ -988,7 +988,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     teacherProfile = res[1]
                     teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
                                                                                 else (teacherProfile, False)
-                    courseInfoList.append(Course(((teacherUsername, teacherProfile), matchedList[i])))
+                    courseInfoList.append(Course(((teacherUsername, teacherProfile), matchedList[i]), truncateData=True))
                 return courseInfoList
             else:
                 cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -998,7 +998,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
                                                                             else (teacherProfile, False)
                 for tupleInfo in matchedList:
-                    courseInfoList.append(Course(((teacherUsername, teacherProfile), tupleInfo)))
+                    courseInfoList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))
 
                 if (kwargs.get("getTeacherUsername")):
                     return (courseInfoList, res[0])

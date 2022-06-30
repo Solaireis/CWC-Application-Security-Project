@@ -2,7 +2,7 @@
 from werkzeug.utils import secure_filename
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 
 # import local python libraries
 from python_files.SQLFunctions import *
@@ -117,7 +117,7 @@ def deletePic():
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         if ("https" not in imageSrcPath):
             fileName = imageSrcPath.rsplit("/", 1)[-1]
-            Path(userBP.config["PROFILE_UPLOAD_PATH"]).joinpath(fileName).unlink(missing_ok=True)
+            Path(current_app.config["PROFILE_UPLOAD_PATH"]).joinpath(fileName).unlink(missing_ok=True)
             sql_operation(table="user", mode="delete_profile_picture", userID=userInfo[0])
             flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
         return redirect(url_for("userBP.userProfile"))
@@ -147,7 +147,7 @@ def uploadPic():
         filename = f"{userID}.webp"
         print(f"This is the filename for the inputted file : {filename}")
 
-        filePath = userBP.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
+        filePath = current_app.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
         print(f"This is the filepath for the inputted file: {filePath}")
 
         imageData = BytesIO(file.read())
@@ -178,7 +178,7 @@ def videoUpload():
 
             print(f"This is the filename for the inputted file : {filename}")
 
-            filePath = Path(userBP.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
 
@@ -222,7 +222,7 @@ def createCourse():
                 filename = f"{courseData[0]}.webp"
                 print(f"This is the filename for the inputted file : {filename}")
 
-                filePath = Path(userBP.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
+                filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
                 print(f"This is the Directory for the inputted file: {filePath}")
                 filePath.mkdir(parents=True, exist_ok=True)
 
@@ -232,7 +232,7 @@ def createCourse():
                 imageUrlToStore = (f"{courseData[0]}/{filename}")
 
                 # print(f"This is the filename for the inputted file : {filename}")
-                # filePath = Path(userBP.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
+                # filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
                 # print(f"This is the filePath for the inputted file: {filePath}")
                 # file.save(filePath)
 
@@ -411,7 +411,7 @@ def purchaseHistory():
 
             if course != False:
                 courseList.append({"courseID" : course[0],
-                                    "courseOwnerLink" : url_for("generalteacherPage", teacherID=course[1]), # course[1] is teacherID
+                                    "courseOwnerLink" : url_for("generalBP.teacherPage", teacherID=course[1]), # course[1] is teacherID
                                     "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
                                     "courseOwnerImagePath" : get_image_path(course[1]),
                                     "courseName" : course[2],

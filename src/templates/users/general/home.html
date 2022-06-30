@@ -58,7 +58,7 @@
 								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
-								<h4 class="card-title">{{ course.course_name }}</h4>
+								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
 								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
 								<p class="card-text">{{ course.course_description }}</p>
 								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>

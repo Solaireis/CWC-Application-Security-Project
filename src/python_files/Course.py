@@ -1,5 +1,5 @@
 class Course:
-    def __init__(self, tupleInfo:tuple) -> None:
+    def __init__(self, tupleInfo:tuple, truncateData:bool=False) -> None:
         """
         Creates a course object in this format, 
         [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
@@ -16,6 +16,9 @@ class Course:
         self.teacher_id = tupleInfo[1][1]
         self.course_name = tupleInfo[1][2]
         self.course_description = tupleInfo[1][3]
+        if (truncateData):
+            # Limit to 300 characters
+            self.course_description = self.course_description[:300].strip() + "..."
         self.course_image_path = tupleInfo[1][4]
         self.course_price = f"${round(float(tupleInfo[1][5]), 2):.2f}"
         self.course_category = tupleInfo[1][6]
