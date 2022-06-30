@@ -107,10 +107,11 @@ class ConstantsConfigs:
 
         # for the config files folder
         self.CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
+        self.CONFIG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
         # For comparing the date on the github repo
         self.DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-        self.BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("databases", "blacklist.txt")
+        self.BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("config_files", "ip_blacklist.txt")
 
         # Password regex follows OWASP's recommendations
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
@@ -231,7 +232,6 @@ class ConstantsConfigs:
 
         self.LOCAL_SQL_SERVER_CONFIG = {
             "host": "localhost",
-            "user": "root",
             "password": environ.get("LOCAL_SQL_PASS")
         }
 
