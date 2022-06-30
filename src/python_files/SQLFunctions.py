@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 # import Flask web application configs
-from flask import url_for, flash, Markup
+from flask import url_for
 
 # import third party libraries
 from argon2.exceptions import VerifyMismatchError
