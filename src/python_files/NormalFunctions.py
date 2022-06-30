@@ -787,16 +787,19 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
     else:
         return verified
 
-def RSA_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="encrypt-decrypt-key", versionID:int=CONSTANTS.SESSION_COOKIE_ENCRYPTION_VERSION) -> dict:
+def RSA_encrypt(
+    plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, 
+    keyID:str=CONSTANTS.RSA_ENCRYPTION_KEY_ID, versionID:int=CONSTANTS.SESSION_COOKIE_ENCRYPTION_VERSION
+) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
 
     Args:
     - plaintext (str): The plaintext to encrypt
     - keyRingID (str): The ID of the key ring to use.
-        - Defaults to "coursefinity"
+        - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): The ID of the key to use for decryption.
-        - Defaults to "encrypt-decrypt-key"
+        - Defaults to RSA_ENCRYPTION_KEY_ID defined in Constants.py
     - versionID (int): The version ID of the key to use for decryption.
         - Defaults to the defined SESSION_COOKIE_ENCRYPTION_VERSION variable
 

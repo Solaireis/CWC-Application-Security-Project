@@ -202,7 +202,17 @@ class ConstantsConfigs:
         self.PEPPER_KEY_ID = "pepper-key"
         self.SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
         self.EC_SIGNING_KEY_ID = "signing-key"
-        self.APP_KEY_RING_ID = "coursefinity"
+        self.RSA_ENCRYPTION_KEY_ID = "encrypt-decrypt-key"
+
+        # During development, we will use software protected keys
+        # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
+        # Lastly, cryptographic operations will be cheaper 
+        # ($0.03 per 10k operations vs $0.03-$0.15 per 10k operations)
+        # More details: https://cloud.google.com/kms/pricing
+        if (self.DEBUG_MODE):
+            self.APP_KEY_RING_ID = "dev-key-ring"
+        else:
+            self.APP_KEY_RING_ID = "coursefinity"
 
         # For Google KMS asymmetric encryption and decryption
         # TODO: Update the version if there is a rotation of the asymmetric keys
