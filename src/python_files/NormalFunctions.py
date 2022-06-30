@@ -240,6 +240,10 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, s
 
     if (severity is None):
         severity = "DEFAULT"
+    elif (isinstance(severity, str)):
+        severity = severity.upper()
+    else:
+        raise ValueError("severity must be a str!")
 
     logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
 
