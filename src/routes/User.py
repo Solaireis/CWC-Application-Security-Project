@@ -13,6 +13,7 @@ from python_files.SQLFunctions import *
 from python_files.NormalFunctions import *
 from python_files.StripeFunctions import *
 from python_files.Forms import *
+from python_files.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 # import python standard libraries
 from datetime import datetime
@@ -275,7 +276,7 @@ def purchaseView(courseID:str):
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
-    #   a78da127690d40d4bebaf5d9c45a09a8
+    #   a78da127690d40d4bebaf5d9c45a09a8 
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     if courses == False: #raise 404 error
@@ -284,7 +285,7 @@ def purchaseView(courseID:str):
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
-    courseDescription = markdown.markdown(courses[3])
+    courseDescription = markdown.markdown(courses[3], extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()])
     course_image_path = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]

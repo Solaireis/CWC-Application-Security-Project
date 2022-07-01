@@ -10,6 +10,7 @@ from flask import render_template, request, session, abort, Blueprint
 # import local python libraries
 from python_files.SQLFunctions import *
 from python_files.Reviews import Reviews
+from python_files.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
 
@@ -66,7 +67,7 @@ def coursePage(courseID:str):
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
-    courseDescription = markdown.markdown(courses[3])
+    courseDescription = markdown.markdown(courses[3], extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()])
     course_image_path = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
