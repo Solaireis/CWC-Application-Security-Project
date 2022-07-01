@@ -81,7 +81,7 @@ def main() -> None:
                 print("Generating a new Flask secret key...", end="")
 
             # generate a new key using the secrets module from Python standard library
-            # as recommended by OWASP: 
+            # as recommended by OWASP to ensure higher entropy: 
             # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
             secretKey = token_bytes(NUM_OF_BYTES) 
 
@@ -133,7 +133,19 @@ def main() -> None:
             response = SM_CLIENT.access_secret_version(request={"name": secretName})
 
             # print the secret payload (Not ideal but for demo)
-            print(f"Generated secret key that is stored at Google Secret Manager API:\n{response.payload.data}")
+            while (1):
+                displayInHex = input("Do you want to view the secret key in hexadecimal format? (Y/n): ").lower().strip()
+                if (displayInHex not in ("y", "n", "")):
+                    print("Please enter a valid input!")
+                    continue
+                else:
+                    displayInHex = True if (displayInHex != "n") else False
+                    break
+            secretPayload = response.payload.data
+            if (displayInHex):
+                secretPayload = secretPayload.hex()
+            print(f"Generated secret key that is stored at Google Secret Manager API:\n{secretPayload}")
+            del secretPayload
         elif (prompt == "x"):
             shutdown()
             return
