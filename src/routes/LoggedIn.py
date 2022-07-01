@@ -25,7 +25,7 @@ def logout():
     if ("user" not in session and "admin" not in session):
         return redirect(url_for("guestBP.login"))
 
-    sql_operation(table="session", mode="delete_session", sessionID=RSA_decrypt(session["sid"]))
+    sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("generalBP.home"))
@@ -60,9 +60,9 @@ def twoFactorAuthSetup():
         # for google authenticator setup key (20 byte)
         if ("2fa_token" not in session):
             secretToken = pyotp.random_base32() # MUST be kept secret
-            session["2fa_token"] = RSA_encrypt(secretToken)
+            session["2fa_token"] = RSA_encrypt(plaintext=secretToken)
         else:
-            secretToken = RSA_decrypt(session["2fa_token"])
+            secretToken = RSA_decrypt(plaintext=session["2fa_token"])
 
         imageSrcPath = get_image_path(userID)
 
@@ -91,7 +91,7 @@ def twoFactorAuthSetup():
 
         twoFATOTP = twoFactorAuthForm.twoFATOTP.data
         secretToken = request.form.get("secretToken")
-        if (secretToken is None or secretToken != RSA_decrypt(session["2fa_token"])):
+        if (secretToken is None or secretToken != RSA_decrypt(cipherData=session["2fa_token"])):
             flash("Please check your entry and try again!")
             return redirect(url_for("loggedInBP.twoFactorAuthSetup"))
 
@@ -139,7 +139,7 @@ def disableTwoFactorAuth():
 
     if (loginViaGoogle):
         # if so, redirect to user profile as the authentication security is handled by Google themselves
-        return redirect(url_for("user.userProfile"))
+        return redirect(url_for("userBP.userProfile"))
 
     if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
         sql_operation(table="2fa_token", mode="delete_token", userID=userID)

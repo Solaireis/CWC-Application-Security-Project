@@ -36,7 +36,7 @@
     - Argon2id (hybrid type of Argon2i and Argon2d)
     - On average, the time taken to hash a password is about 0.5+ seconds.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
-- Encrypting the sensitive cookie values such as session identifier
+- Encrypting the (temporarily stored) sensitive data in the session cookie such as secret token for TOTP (time-based one time password)
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
     - 156 bits of security
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
@@ -89,8 +89,9 @@
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with Google
-- Asymmetric encryption of session identifier in the cookie value (Using RSA)
-  - Preventing the session identifier from being sniffed
+- Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
+  - Preventing the cookie from being sniffed as it is only transmitted via HTTPS (Secure)
+  - Preventing client-side scripts from accessing the cookie data (HttpOnly)
 - IP address based authentication
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email

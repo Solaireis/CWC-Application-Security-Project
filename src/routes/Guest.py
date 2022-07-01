@@ -235,16 +235,22 @@ def login():
                 locationString = ""
                 if (ipDetails.get("city") is not None):
                     locationString += ipDetails["city"]
+                else:
+                    locationString += "Unknown city"
 
                 if (ipDetails.get("region") is not None):
                     if (locationString != ""):
                         locationString += ", "
                     locationString += ipDetails["region"]
+                else:
+                    locationString += ", Unknown region"
 
                 if (ipDetails.get("country_name") is not None):
                     if (locationString != ""):
                         locationString += ", "
                     locationString += ipDetails["country_name"]
+                else:
+                    locationString += ", Unknown country"
 
                 messagePartList = [
                     f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
@@ -273,7 +279,7 @@ def login():
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
 
             if (successfulLogin and not userHasTwoFA):
-                session["sid"] = RSA_encrypt(add_session(userInfo[0], userIP=get_remote_address()))
+                session["sid"] = add_session(userInfo[0], userIP=get_remote_address())
                 if (not isAdmin):
                     session["user"] = userInfo[0]
                 else:
@@ -375,7 +381,7 @@ def enterGuardTOTP():
         session.clear()
 
         sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=session["ip_details"])
-        session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
+        session["sid"] = add_session(userID, userIP=get_remote_address())
 
         # check if password has been compromised
         # if so, flash a message and send an email to the user
@@ -474,7 +480,7 @@ def loginCallback():
     else:
         session["admin"] = userID
 
-    session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
+    session["sid"] = add_session(userID, userIP=get_remote_address())
     return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/signup", methods=["GET", "POST"])
@@ -645,7 +651,7 @@ def enter2faTOTP():
             else:
                 session["user"] = userID
 
-            session["sid"] = RSA_encrypt(add_session(userID, userIP=get_remote_address()))
+            session["sid"] = add_session(userID, userIP=get_remote_address())
 
             # check if password has been compromised
             # if so, flash a message and send an email to the user

@@ -163,11 +163,7 @@ def before_request() -> None:
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value
             userID = session.get("user") or session.get("admin")
-            try:
-                sessionID = RSA_decrypt(session["sid"])
-            except (DecryptionError):
-                session.clear()
-                abort(500)
+            sessionID = session["sid"]
 
             if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
                 # if user session is invalid as the user does not exist anymore
@@ -234,7 +230,7 @@ if (__name__ == "__main__"):
     )
     scheduler.add_job(
         lambda: sql_operation(table="user", mode="re-encrypt_data_in_database"),
-        trigger="cron", day="last", id="reEncryptDataInDatabase"
+        trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
     )
     scheduler.start()
 

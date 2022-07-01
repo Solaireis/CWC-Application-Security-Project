@@ -5,12 +5,11 @@ This python file contains all the functions that touches on the MySQL database.
 import json
 from typing import Union, Optional
 from urllib.parse import unquote
-from time import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 # import Flask web application configs
-from flask import url_for
+from flask import url_for, current_app
 
 # import third party libraries
 from argon2.exceptions import VerifyMismatchError
@@ -20,9 +19,6 @@ from pymysql.connections import Connection as MySQLConnection
 # For stripe API
 import stripe
 from stripe.error import InvalidRequestError
-
-# for google oauth login
-from google_auth_oauthlib.flow import Flow
 
 # import local python files
 from .Course import Course
@@ -93,7 +89,7 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
     )
     htmlBody = [
         f"Welcome to CourseFinity!",
-        f"Please click the link below to verify your email address:<br>{url_for('guest.verifyEmail', token=token, _external=True)}"
+        f"Please click the link below to verify your email address:<br>{url_for('guestBP.verifyEmail', token=token, _external=True)}"
     ]
     send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
 
@@ -116,7 +112,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     )
     htmlBody = [
         "Your account has been locked due to too many failed login attempts.",
-        f"Please click the link below to unlock your account:<br>{url_for('guest.unlockAccount', token=token, _external=True)}",
+        f"Please click the link below to unlock your account:<br>{url_for('guestBP.unlockAccount', token=token, _external=True)}",
         "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     ]
     send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
@@ -522,30 +518,58 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "re-encrypt_data_in_database"):
         # Used for re-encrypting all the encrypted data in the database at the last day of every month due to 30 days key rotations.
+        current_app.config["MAINTENANCE_MODE"] = True
         cur.execute("SELECT u.id, u.password, tfa.token FROM user AS u LEFT OUTER JOIN twofa_token AS tfa ON u.id=tfa.user_id;")
         for row in cur.fetchall():
             userID = row[0]
 
-            # Re-encrypt the password hash
-            encryptedPasswordHash = symmetric_encrypt(
-                plaintext=symmetric_decrypt(ciphertext=row[1], keyID=CONSTANTS.PEPPER_KEY_ID), 
-                keyID=CONSTANTS.PEPPER_KEY_ID
-            )
-            cur.execute("UPDATE user SET password = %(password)s WHERE id=%(userID)s", {"password":encryptedPasswordHash, "userID":userID})
-            connection.commit()
+            # Re-encrypt the password hash if the user has signed up 
+            # via CourseFinity and not via Google OAuth2
+            currentEncryptedPasswordHash = row[1]
+            if (currentEncryptedPasswordHash is not None):
+                try:
+                    newEncryptedPasswordHash = symmetric_encrypt(
+                        plaintext=symmetric_decrypt(
+                            ciphertext=currentEncryptedPasswordHash, 
+                            keyID=CONSTANTS.PEPPER_KEY_ID
+                        ), 
+                        keyID=CONSTANTS.PEPPER_KEY_ID
+                    )
+                except (DecryptionError):
+                    connection.close()
+                    write_log_entry(
+                        logMessage="Re-encryption of password hash has failed...",
+                        severity="ALERT"
+                    )
+                    return
+                cur.execute("UPDATE user SET password = %(password)s WHERE id=%(userID)s", {"password":newEncryptedPasswordHash, "userID":userID})
+                connection.commit()
 
             # Re-encrypt the 2FA token if the user has set one
-            if (row[2] is not None):
-                encryptedToken = symmetric_encrypt(
-                    plaintext=symmetric_decrypt(ciphertext=row[2], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID),
-                    keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
-                )
-                cur.execute("UPDATE twofa_token SET token = %(token)s WHERE user_id=%(userID)s", {"token":encryptedToken, "userID":userID})
+            oldEncryptedTwoFAToken = row[2]
+            if (oldEncryptedTwoFAToken is not None):
+                try:
+                    newEncryptedToken = symmetric_encrypt(
+                        plaintext=symmetric_decrypt(
+                            ciphertext=oldEncryptedTwoFAToken,
+                            keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+                        ),
+                        keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+                    )
+                except (DecryptionError):
+                    connection.close()
+                    write_log_entry(
+                        logMessage="Re-encryption of 2FA token has failed...",
+                        severity="ALERT"
+                    )
+                    return
+                cur.execute("UPDATE twofa_token SET token = %(token)s WHERE user_id=%(userID)s", {"token":newEncryptedToken, "userID":userID})
                 connection.commit()
         write_log_entry(
             logMessage=f"All sensitive user data have re-encrypted in the database at {datetime.now().astimezone(tz=ZoneInfo('Asia/Singapore'))}, please destroy the old symmetric keys used for the database as soon as possible!",
-            logLevel="ALERT"
+            severity="ALERT"
         )
+        current_app.config["MAINTENANCE_MODE"] = False
 
     elif (mode == "signup"):
         emailInput = kwargs.get("email")
