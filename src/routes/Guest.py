@@ -100,6 +100,12 @@ def resetPassword(token:str):
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
 
+    # check if jwt exists in database
+    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
+    if (not jwtExists):
+        flash("Reset password link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
