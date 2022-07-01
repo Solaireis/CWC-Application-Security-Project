@@ -102,7 +102,7 @@ def resetPassword(token:str):
 
     # verify the token
     data = EC_verify(data=token, getData=True)
-    if (data["verified"] is False):
+    if (not data.get("verified")):
         # if the token is invalid
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
@@ -317,7 +317,7 @@ def unlockAccount(token:str):
 
     # verify the token
     data = EC_verify(data=token, getData=True)
-    if (data["verified"] is False):
+    if (not data.get("verified")):
         # if the token is invalid
         flash("Unlock account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
@@ -568,7 +568,7 @@ def verifyEmail(token:str):
 
     # verify the token
     data = EC_verify(data=token, getData=True)
-    if (data["verified"] is False):
+    if (not data.get("verified")):
         # if the token is invalid
         flash("Verify email link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))

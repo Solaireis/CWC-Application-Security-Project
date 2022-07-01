@@ -386,16 +386,14 @@ def checkout():
 
 @userBP.route("/purchase/<string:userToken>")
 def purchase(userToken:str):
-    # TODO: verify the boolean returned from the EC_verify function
-    # TODO: If you defined getData to True, do data["verified"] to get the boolean
     data = EC_verify(userToken, getData = True)
-    if data == True:
+    if (data.get("verified")):
         payload = json.dumps(data['verified'])
-        print(payload)
+        print(payload) # TODO: Remove this after finishing the application logic
         # sql_operation(table="user", mode="purchase_courses", userID = session["user"])
         return redirect(url_for("userBP.purchaseHistory"))
     else:
-        return redirect
+        return redirect("no")
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseDetails(courseID:str):
