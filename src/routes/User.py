@@ -3,6 +3,7 @@ Routes for logged in normal users (Students or Teachers)
 """
 # import third party libraries
 from werkzeug.utils import secure_filename
+import markdown
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
@@ -283,7 +284,8 @@ def purchaseView(courseID:str):
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
-    courseDescription = courses[3]
+    courseDescription = markdown.markdown(courses[3])
+    course_image_path = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
     courseRating = courses[7]
