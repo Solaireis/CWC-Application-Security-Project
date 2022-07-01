@@ -6,8 +6,6 @@ from random import randint
 import pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
 
-#import local library functions
-from CreateXNumOfCourses import *
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -74,7 +72,6 @@ if courses:
             print(f"Added review to course {courseID}")
 else:
     print("No courses are made yet, please run the demo create number of courses")
-    main()
 
 con.close()      
 
