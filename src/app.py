@@ -86,6 +86,10 @@ scheduler = BackgroundScheduler()
 # rate limiter configuration using flask limiter
 limiter.init_app(app)
 
+# Remove jinja whitespace, because I have OCD
+app.jinja_env.trim_blocks = True
+app.jinja_env.lstrip_blocks = True
+
 # Maximum file size for uploading anything to the web app's server
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 

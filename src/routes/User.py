@@ -386,16 +386,24 @@ def checkout():
     else:
         return redirect(url_for('guestBP.login'))
 
-@userBP.route("/purchase/<string:userToken>")
-def purchase(userToken:str):
-    data = EC_verify(userToken, getData = True)
-    if (data.get("verified")):
-        payload = json.dumps(data['verified'])
-        print(payload) # TODO: Remove this after finishing the application logic
-        # sql_operation(table="user", mode="purchase_courses", userID = session["user"])
-        return redirect(url_for("userBP.purchaseHistory"))
-    else:
-        return redirect("no")
+@userBP.route("/purchase/<string:jwtToken>")
+def purchase(jwtToken:str):
+    data = EC_verify(jwtToken, getData = True)
+
+    if not data.get("verified"):
+        abort(400)
+
+    if not sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=jwtToken):
+        abort(400)
+
+    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=jwtToken)
+
+    payload = data['data']['payload']
+    tokenCartCourseIDs = payload.get('cartCourseIDs') # The courses paid for,
+    tokenUserID = payload.get('userID')               # To the person who generated the payment.
+
+    sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
+    return redirect(url_for("userBP.purchaseHistory"))
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseDetails(courseID:str):
@@ -405,7 +413,8 @@ def purchaseDetails(courseID:str):
 def purchaseHistory():
     if 'user' in session:
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        purchasedCourseIDs = userInfo[-1]
+        print(userInfo)
+        purchasedCourseIDs = loads(userInfo[-1])
         courseList = []
 
         for courseID in purchasedCourseIDs:

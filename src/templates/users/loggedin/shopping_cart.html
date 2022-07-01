@@ -112,7 +112,7 @@
 
 
             <div class="card-body text">
-                <h5 class="card-title"><a href="/course/{{ course['courseID'] }}">{{ course['courseName'] }}</a><i class="fas fa-times" onclick="removeCourse('{{ course['courseID'] }}')"></i></h5>
+                <h5 class="card-title"><a href="/course/{{ course['courseID'] }}">{{ course['courseName'] }}</a><i class="fas fa-times" id = "{{ course['courseID'] }}"></i></h5>
                 <p class="card-text">{{ course['courseDescription'] }}</p>
             </div>
 
@@ -183,7 +183,21 @@
 
 
 {% if courseList != [] %}
+<!--
 <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/shopping_card.js') }}"></script>
+-->
+<script nonce="{{ csp_nonce() }}">
+
+    function removeCourse(courseID) {
+        document.getElementById("course-delete-field").value = courseID;
+        document.getElementById("course-delete-form").submit()
+    }
+
+    {% for course in courseList %}
+        document.getElementById("{{ course['courseID'] }}").onclick = function(){removeCourse("{{ course['courseID'] }}")}
+    {% endfor %}
+
+</script>
 {% endif %}
 
 {% endblock %}
