@@ -5,7 +5,7 @@ Routes for the general public and CourseFinity users (Guests, Students, Teachers
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, Blueprint
+from flask import render_template, request, session, abort, Blueprint, Markup
 
 # import local python libraries
 from python_files.SQLFunctions import *
@@ -67,7 +67,12 @@ def coursePage(courseID:str):
     #create variable to store these values
     teacherID = courses[1]
     courseName = courses[2]
-    courseDescription = markdown.markdown(courses[3], extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()])
+    courseDescription = Markup(
+        markdown.markdown(
+            courses[3],
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+        )
+    )
     course_image_path = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
@@ -96,8 +101,8 @@ def coursePage(courseID:str):
         reviewUserName = i[5]
         userImage = get_image_path(reviewUserId)
         reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
-        
-    print(reviewList[0].course_id)
+
+    # print(reviewList[0].course_id) # Commented this out cus of IndexError
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
