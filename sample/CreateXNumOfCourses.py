@@ -131,7 +131,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
 
     Thanks for watching the demo course!  
         """)
-
+    course_image_path = "https://images.unsplash.com/photo-1591639881238-db6d7f9ffe0e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80"
     course_price = round(i * 50.50, 2)
     course_category = "Other Academics"
     course_total_rating = randint(0, 5)
@@ -140,7 +140,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
 
-    cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s)", (course_id, teacher_id, course_name, course_description, course_price, course_category, course_total_rating, course_rating_count, video_path))
+    cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, date_created, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s)", (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, course_total_rating, course_rating_count, video_path))
     #stripe_product_create(courseID=course_id, courseName=course_name, courseDescription=course_description, coursePrice=course_price, debug=True)
 
 # Add student
@@ -180,7 +180,13 @@ while (1):
         res = cur.fetchone()
         if (res is None):
             
-            courseReview = "This is a test review"
+            courseReview = """
+            
+            Daniel is actually a very helpful person.
+            he has shared many tips and tricks to teaching me
+            how to do better at data structure and algorithms
+            
+            """
             userID = STUDENT_ID
             cur.execute(f"SELECT * FROM course")
             res = cur.fetchall()

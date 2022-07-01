@@ -67,12 +67,14 @@ def coursePage(courseID:str):
     teacherID = courses[1]
     courseName = courses[2]
     courseDescription = markdown.markdown(courses[3])
+    course_image_path = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
     courseRating = courses[7]
     courseRatingCount = courses[8]
     courseDate = courses[9]
     courseVideoPath = courses[10]
+
 
     print("course",courses[1])
 
@@ -108,7 +110,7 @@ def coursePage(courseID:str):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
-        reviewList= reviewList
+        reviewList= reviewList, course_image_path = course_image_path
     )
 
 @generalBP.route("/search")

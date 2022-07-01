@@ -40,71 +40,62 @@
         <div class="col-lg-8">
             <h1>{{ courseName }}</h1>
             <hr>
-            <p>Description</p>
-            <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
             <p>{{ courseDescription | safe }}</p>
-            <h3>Course Structure</h3>
-            <p>Insert Courses</p>
+            <p>Course Structure</p>
         </div>
         <div class="col-lg-4">
-            <div class="accordion accordion-flush" id="accordionFlushExample">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="flush-headingOne">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-                        <h4>Description</h4>
-                        </button>
-                        </h2>
-                    <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-                        <div class="accordion-body"> 
-                            <p>Course Type: <span>{{ courseCategory }}</span></p>
-                            <p>Uploaded by: <span>{{ teacherName }}</span></p>
-                            <p>Date Published: {{courseDate}}</p>
-                            <p>Course Rating: 
-                                {% if (courseRatingCount > 0) %}
-                                <span class="ratings">
-                                    {% with remainingStars = 5 - courseRating %}
-                                        {% for _ in range(courseRating) %}
-                                            <span class="fas fa-star"></span>
-                                        {% endfor %}
-                                        {% for _ in range(remainingStars) %}
-                                            <span class="far fa-star"></span>
-                                        {% endfor %}
-                                    {% endwith %}
-                                </span> 
-                                {% else %}
-								<p class="card-text text-danger">No ratings yet...</p>
-								{% endif %}
-                            </p>
-                            <p>Number of reviews: {{courseRatingCount}} </p>
-                            <p>Course Price: ${{coursePrice}}</p>
-                            <hr>
-                            <p>Description</p>
-                            <p>{{ courseDescription | safe }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-8">
-            <p>Hello</p>
-            {% for review in reviewList %}
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{review.username}}</h5> <!-- Username -->
-                    <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
-                
-                    <p class="card-text">{{review.rating}}</p> <!-- Rating -->
-                    <p class="card-text"><small class="text-muted">{{review}}</small></p> <!-- Date -->
-                </div>
-                <div class="ratings">
-                    {% with remainingStars = 5 - review.rating %}
-                        {% for _ in range(review.rating) %}
+            </button>
+            <img src="{{ course_image_path }}" alt="Video Thumbnail" class="img-thumbnail" >
+            <p>Uploaded by: 
+                <div>            
+                    <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                    {{ teacherName }}
+                </div></p>
+            <p>Date Published: {{courseDate}}</p>
+            <p>Course Rating: 
+                {% if (courseRatingCount > 0) %}
+                <span class="ratings">
+                    {% with remainingStars = 5 - courseRating %}
+                        {% for _ in range(courseRating) %}
                             <span class="fas fa-star"></span>
                         {% endfor %}
                         {% for _ in range(remainingStars) %}
                             <span class="far fa-star"></span>
                         {% endfor %}
                     {% endwith %}
+                </span> 
+                {% else %}
+                <p class="card-text text-danger">No ratings yet...</p>
+                {% endif %}
+            </p>
+            <p>Number of reviews: {{courseRatingCount}} </p>
+            <p>Course Price: ${{coursePrice}}</p>
+            <p>Course Type: <span>{{ courseCategory }}</span></p>
+            <button type="button" class="btn btn-success">Add to Cart</button>
+
+            <hr>
+        </div>
+        <div class="col-lg-8">
+            <h1>Reviews</h1>
+            {% for review in reviewList %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        
+                        <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                        {{review.username}}
+                        <div class="ratings">
+                            {% with remainingStars = 5 - review.rating %}
+                                {% for _ in range(review.rating) %}
+                                    <span class="fas fa-star"></span>
+                                {% endfor %}
+                                {% for _ in range(remainingStars) %}
+                                    <span class="far fa-star"></span>
+                                {% endfor %}
+                            {% endwith %}
+                        </div> <!-- Username -->
+                    </h5>
+                    <p class="card-text">{{review.review}}</p>
                 </div>
             {% endfor %}
         </div>
