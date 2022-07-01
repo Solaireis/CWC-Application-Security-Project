@@ -133,6 +133,7 @@ app.register_blueprint(userBP)
 def before_first_request() -> None:
     """
     Called called at the very first request to the web app.
+
     Returns:
     - None
     """

@@ -719,15 +719,14 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs.get("userID")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
-        if (not matched):
+        if (matched is None):
             return False
+
         cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
         roleMatched = cur.fetchone()
-        # cur.callproc("get_role_name", (matched[1],))
-        # for result in cur.stored_results():
-        #     roleMatched = result.fetchone()
         matched = list(matched)
         matched[1] = roleMatched[0]
+
         return tuple(matched)
 
     elif (mode == "change_profile_picture"):
@@ -914,7 +913,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     else:
         connection.close()
-        raise ValueError("Invalid mode in the session_sql_operation function!")
+        raise ValueError("Invalid mode in the user_sql_operation function!")
 
 def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
     """

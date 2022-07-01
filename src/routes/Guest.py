@@ -551,14 +551,47 @@ def signup():
                     flash("Username already exists!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            token = send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
-            flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
+            try:
+                send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
+                flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
+            except:
+                flash(
+                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail') + '?user=' + returnedVal}'>me</a>!"),
+                    "Danger"
+                )
+                return redirect(url_for("guestBP.login"))
             return redirect(url_for("guestBP.login"))
         else:
             # post request but form inputs are not valid
             return render_template("users/guest/signup.html", form=signupForm)
     else:
         return redirect(url_for("generalBP.home"))
+
+@guestBP.route("/send-verify-email")
+def sendVerifyEmail():
+    if ("user" in session or "admin" in session):
+        return redirect(url_for("generalBP.home"))
+
+    userID = request.args.get("user", default=None, type=str)
+    if (userID is None):
+        abort(404)
+
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+    if (userInfo and not userInfo[4]):
+        email = userInfo[3]
+        username = userInfo[2]
+        try:
+            send_verification_email(email=email, username=username, userID=userID)
+            flash(f"An email has bent sent to you to verify your email!", "Success")
+        except:
+            flash(
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail') + '?user=' + userID}'>me</a> later!"),
+                "Danger"
+            )
+        return redirect(url_for("guestBP.login"))
+    else:
+        # If user does not exist or already has its email verified
+        abort(404)
 
 @guestBP.route("/verify-email/<string:token>")
 def verifyEmail(token:str):
