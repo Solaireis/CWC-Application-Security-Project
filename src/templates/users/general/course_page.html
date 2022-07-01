@@ -41,6 +41,7 @@
             <h1>{{ courseName }}</h1>
             <hr>
             <p>Description</p>
+            <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
             <p>{{ courseDescription | safe }}</p>
             <h3>Course Structure</h3>
             <p>Insert Courses</p>
@@ -90,8 +91,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{review.username}}</h5> <!-- Username -->
-                    
-
+                    <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
                 
                     <p class="card-text">{{review.rating}}</p> <!-- Rating -->
                     <p class="card-text"><small class="text-muted">{{review}}</small></p> <!-- Date -->
