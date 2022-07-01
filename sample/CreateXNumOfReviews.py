@@ -6,6 +6,9 @@ from random import randint
 import pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
 
+#import local library functions
+from CreateXNumOfCourses import *
+
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files")
@@ -44,27 +47,35 @@ except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
 cur = con.cursor()
 
-#adding reviews to courses
-STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
-cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
-res = cur.fetchone()
-if (res is None):
-    
-    courseReview = "This is a test review"
-    userID = STUDENT_ID
-    cur.execute(f"SELECT * FROM course")
-    res = cur.fetchall()
-    for course in res:
-        courseRating = randint(1,5)
+cur.execute(f"SELECT * FROM course")
+courses = cur.fetchall()
+
+if courses:
+    #adding reviews to courses
+    STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
+    cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
+    res = cur.fetchone()
+    if (res is None):
         
-        courseID = course[0]
-        cur.execute(
-            "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
-            {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
-        )
-        con.commit()
-        print(f"course details {course}")
-        print(f"Added review to course {courseID}")
-        
+        courseReview = "This is a test review"
+        userID = STUDENT_ID
+        cur.execute(f"SELECT * FROM course")
+        res = cur.fetchall()
+        for course in res:
+            courseRating = randint(1,5)
+            
+            courseID = course[0]
+            cur.execute(
+                "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
+                {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
+            )
+            con.commit()
+            print(f"course details {course}")
+            print(f"Added review to course {courseID}")
+else:
+    print("No courses are made yet, please run the demo create number of courses")
+    main()
+
+con.close()      
 
 

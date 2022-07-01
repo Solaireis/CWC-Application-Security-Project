@@ -91,7 +91,8 @@ def coursePage(courseID:str):
         reviewComment = i[3]
         reviewDate = i[4]
         reviewUserName = i[5]
-        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName))
+        userImage = get_image_path(reviewUserId)
+        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
         
     print(reviewList[0].course_id)
 
