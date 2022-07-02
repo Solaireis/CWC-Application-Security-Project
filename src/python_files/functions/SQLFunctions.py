@@ -21,12 +21,12 @@ import stripe
 from stripe.error import InvalidRequestError
 
 # import local python files
-from .Course import Course
-from .Errors import *
+from python_files.classes.Course import Course
+from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry
-from .Constants import CONSTANTS
+from python_files.classes.Constants import CONSTANTS
 from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
 def add_session(userID:str, userIP:str="") -> str:

@@ -8,9 +8,9 @@ import markdown
 from flask import render_template, request, session, abort, Blueprint, Markup
 
 # import local python libraries
-from python_files.SQLFunctions import *
-from python_files.Reviews import Reviews
-from python_files.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from python_files.functions.SQLFunctions import *
+from python_files.classes.Reviews import Reviews
+from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
 

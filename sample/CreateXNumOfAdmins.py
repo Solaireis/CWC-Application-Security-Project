@@ -9,10 +9,10 @@ from importlib.util import spec_from_file_location, module_from_spec
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
-PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files")
+PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files", "functions")
 
 # add to sys path so that Constants.py can be imported by NormalFunctions.py
-sys.path.append(str(PYTHON_FILES_PATH))
+sys.path.append(str(PYTHON_FILES_PATH.parent))
 
 # import NormalFunctions.py local python module using absolute path
 NORMAL_PY_FILE = PYTHON_FILES_PATH.joinpath("NormalFunctions.py")

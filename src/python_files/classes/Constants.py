@@ -103,7 +103,7 @@ class ConstantsConfigs:
         self.ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
 
         # path to the root directory of the project
-        self.ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.absolute()
+        self.ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.parent.absolute()
 
         # for the config files folder
         self.CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")

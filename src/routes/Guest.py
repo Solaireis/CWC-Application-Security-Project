@@ -16,11 +16,11 @@ from flask import render_template, request, redirect, url_for, session, flash, a
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
-from python_files.SQLFunctions import *
-from python_files.NormalFunctions import *
-from python_files.Forms import *
-from python_files.Errors import *
-from python_files.Constants import CONSTANTS
+from python_files.functions.SQLFunctions import *
+from python_files.functions.NormalFunctions import *
+from python_files.classes.Forms import *
+from python_files.classes.Errors import *
+from python_files.classes.Constants import CONSTANTS
 from .RoutesLimiter import limiter
 
 # import python standard libraries

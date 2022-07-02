@@ -21,11 +21,11 @@ from zoneinfo import ZoneInfo
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants import CONSTANTS
-    from Errors import *
+    from classes.Constants import CONSTANTS
+    from classes.Errors import *
 else:
-    from .Constants import CONSTANTS
-    from .Errors import *
+    from python_files.classes.Constants import CONSTANTS
+    from python_files.classes.Errors import *
 
 # import third party libraries
 import PIL

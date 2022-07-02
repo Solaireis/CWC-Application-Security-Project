@@ -6,9 +6,9 @@ from typing import Optional
 
 # import local python libraries
 if (__package__ is None or __package__ == ""):
-    from Constants import CONSTANTS
+    from classes.Constants import CONSTANTS
 else:
-    from .Constants import CONSTANTS
+    from python_files.classes.Constants import CONSTANTS
 
 def get_mysql_connection(
     debug:bool=CONSTANTS.DEBUG_MODE, 

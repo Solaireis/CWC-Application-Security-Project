@@ -5,8 +5,8 @@ Routes for admin users
 from flask import Blueprint, render_template, redirect, url_for, session
 
 # import local python libraries
-from python_files.SQLFunctions import *
-from python_files.NormalFunctions import *
+from python_files.functions.SQLFunctions import *
+from python_files.functions.NormalFunctions import *
 
 adminBP = Blueprint("adminBP", __name__, static_folder="static", template_folder="template")
 

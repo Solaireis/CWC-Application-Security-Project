@@ -9,11 +9,11 @@ import markdown
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 
 # import local python libraries
-from python_files.SQLFunctions import *
-from python_files.NormalFunctions import *
-from python_files.StripeFunctions import *
-from python_files.Forms import *
-from python_files.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from python_files.functions.SQLFunctions import *
+from python_files.functions.NormalFunctions import *
+from python_files.functions.StripeFunctions import *
+from python_files.classes.Forms import *
+from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 # import python standard libraries
 from datetime import datetime

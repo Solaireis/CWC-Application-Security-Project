@@ -9,8 +9,8 @@ from flask_talisman import Talisman
 from flask_seasurf import SeaSurf
 
 # import local python libraries
-from python_files.SQLFunctions import *
-from python_files.NormalFunctions import *
+from python_files.functions.SQLFunctions import *
+from python_files.functions.NormalFunctions import *
 from routes.RoutesLimiter import limiter
 
 # import python standard libraries
@@ -21,7 +21,6 @@ from os import environ
 
 # general Flask configurations
 app = Flask(__name__)
-
 
 # flask extension that prevents cross site request forgery
 csrf = SeaSurf(app)
@@ -86,7 +85,7 @@ scheduler = BackgroundScheduler()
 # rate limiter configuration using flask limiter
 limiter.init_app(app)
 
-# Remove jinja whitespace, because I have OCD
+# Remove jinja whitespace
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 

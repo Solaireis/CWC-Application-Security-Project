@@ -7,7 +7,7 @@ import stripe
 from stripe.error import InvalidRequestError
 
 # import local python libraries
-from .Constants import CONSTANTS
+from python_files.classes.Constants import CONSTANTS
 from .NormalFunctions import EC_sign, JWTExpiryProperties
 from .SQLFunctions import sql_operation
 
