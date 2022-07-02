@@ -525,8 +525,8 @@ def signup():
             if (passwordInput != confirmPasswordInput):
                 flash("Passwords did not match!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) < 10):
-                flash("Password must be at least 10 characters long!")
+            if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
+                flash(f"Password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
                 flash(f"Password cannot be more than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")

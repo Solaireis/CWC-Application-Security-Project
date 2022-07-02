@@ -20,7 +20,7 @@
                 {% with messages = get_flashed_messages() %}
                     {% if messages %}
                         {% for message in messages %}
-                            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <div id="flashMsg" class="alert alert-danger d-flex align-items-center" role="alert">
                                 <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
                                 <div>
                                     <h6 class="warning_text">{{ message }}</h6>
@@ -29,7 +29,23 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <form action="" method="POST" class="row g-3">
+                <div id="passwordError1" hidden>
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                        <div>
+                            <h6 class="warning_text">Entered password do not match!</h6>
+                        </div>
+                    </div>
+                </div>
+                <div id="passwordError2" hidden>
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                        <div>
+                            <h6 class="warning_text">Entered password must at least match one requirement!</h6>
+                        </div>
+                    </div>
+                </div>
+                <form action="" method="POST" class="row g-3" id="signupForm">
                     <h4 class="text-white">Join us and start learning!</h4>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
@@ -44,11 +60,53 @@
                     <div class="col-12 text-white">
                         {{ render_field(form.cfm_password, class="form-control") }}
                     </div>
+                    <div>
+                        <label class="switch">
+                            <input type="checkbox" data-bs-toggle="collapse" href="#collapsePassReq" role="switch" aria-expanded="false" aria-controls="collapsePassReq">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="text-white">Show password requirements.</span>
+                    </div>
+                    <div class="col-12 progress thin-progress-bar">
+                        <div id="strengthIndicator" class="progress-bar bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="collapse" id="collapsePassReq">
+                        <div class="col-12 text-white d-flex justify-content-center">
+                            <ul class="list-unstyled">
+                                <div class="ps-4">
+                                    <li>
+                                        <i id="uppercase" class="far fa-times-circle text-danger"></i>
+                                        Uppercase letter
+                                    </li>
+                                    <li>
+                                        <i id="lowercase" class="far fa-times-circle text-danger"></i>
+                                        Lowercase letter
+                                    </li>
+                                    <li>
+                                        <i id="number" class="far fa-times-circle text-danger"></i>
+                                        Number (0-9)
+                                    </li>
+                                    <li>
+                                        <i id="specialChar" class="far fa-times-circle text-danger"></i>
+                                        Special character
+                                    </li>
+                                    <li>
+                                        <i id="eightChar" class="far fa-times-circle text-danger"></i>
+                                        At least 8 characters
+                                    </li>
+                                    <li>
+                                        <i id="twoRepeatChar" class="far fa-times-circle text-danger"></i>
+                                        Not more than 2 repeating characters
+                                    </li>
+                                </div>
+                            </ul>
+                        </div>
+                    </div>
                     <div class="col-12 d-flex justify-content-center">
                         <div class="g-recaptcha" data-sitekey="6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B" data-action="signup"></div>
                     </div>          
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-colour text-white float-end">Sign Up</button>
+                    <div class="col-12 d-flex justify-content-center">
+                        <button type="submit" class="btn btn-colour text-white justify-content-center btn-lg">Sign Up</button>
                     </div>
                 </form>
                 <hr class="mt-4 text-white">
@@ -60,4 +118,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
 {% endblock %}

@@ -800,9 +800,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         try:
             # check if the supplied old password matches the current password
             if (CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)):
-                if (len(passwordInput) < 10):
+                if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
                     connection.close()
-                    raise PwdTooShortError("The password must be at least 10 characters long!")
+                    raise PwdTooShortError(f"The password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")
 
                 if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
                     connection.close()

@@ -205,7 +205,7 @@ def updatePassword():
                 except (ChangePwdError):
                     flash("Please check your entries and try again.")
                 except (PwdTooShortError, PwdTooLongError):
-                    flash(f"Password must be between 10 and {CONSTANTS.MAX_PASSWORD_LENGTH} characters long.")
+                    flash(f"Password must be between {CONSTANTS.MIN_PASSWORD_LENGTH} and {CONSTANTS.MAX_PASSWORD_LENGTH} characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
 
