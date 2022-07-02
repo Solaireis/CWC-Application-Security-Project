@@ -1,5 +1,4 @@
 import pathlib, sys
-import re
 from importlib.util import spec_from_file_location, module_from_spec
 from typing import Union
 

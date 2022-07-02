@@ -82,9 +82,6 @@ class ConstantsConfigs:
         # Request limit
         self.REQUEST_LIMIT = "30 per second"
 
-        # For hashing passwords
-        self.MAX_PASSWORD_LENGTH = 128
-
         # For lockout policy
         self.MAX_LOGIN_ATTEMPTS = 6
 
@@ -115,6 +112,8 @@ class ConstantsConfigs:
 
         # Password regex follows OWASP's recommendations
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
+        self.MIN_PASSWORD_LENGTH = 8
+        self.MAX_PASSWORD_LENGTH = 128
         self.PASSWORD_REGEX = re.compile(r"""
         ^                                                                   # beginning of password
         (?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
@@ -123,7 +122,7 @@ class ConstantsConfigs:
         (?=.*?[\d])                                                         # at least one digit
         (?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
         [A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
-        {10,}                                                               # at least 10 characters long
+        {8,}                                                            # at least 8 characters long
         $                                                                   # end of password
         """, re.VERBOSE)
 
