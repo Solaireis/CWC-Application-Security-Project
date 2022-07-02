@@ -58,7 +58,16 @@ app.config["MAINTENANCE_MODE"] = False
 # More details: https://flask.palletsprojects.com/en/2.1.x/config/?highlight=session#SECRET_KEY
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
-app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
+def update_secret_key() -> None:
+    """
+    Update Flask's secret key for the web app session cookie by retrieving the 
+    secret key from Google Cloud Platform Secret Manager API.
+
+    Used for setting or rotating the secret key for the session cookie.
+    """
+    app.config["SECRET_KEY"] = \
+        CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
+update_secret_key()
 
 # Make it such that the session cookie will be deleted when the browser is closed
 app.config["SESSION_PERMANENT"] = False
@@ -235,6 +244,10 @@ if (__name__ == "__main__"):
     scheduler.add_job(
         lambda: sql_operation(table="user", mode="re-encrypt_data_in_database"),
         trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
+    )
+    scheduler.add_job(
+        lambda: update_secret_key(),
+        trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
     )
     scheduler.start()
 
