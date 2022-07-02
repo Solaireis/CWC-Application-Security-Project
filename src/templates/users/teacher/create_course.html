@@ -33,6 +33,11 @@
 
 <div class="container">
     <div class="row">
+        <div class="embed-responsive embed-responsive-16by9">
+            <iframe class="embed-responsive-item" src="{{ videoPath }}"></iframe>
+        </div>
+    </div>
+    <div class="row">
         <div class="LSUForm col">
             <div class="login-form bg-dark mt-4 p-4 rounded" id="userForm">
                 <form action="" method="POST" class="row g-3 m-2" enctype="multipart/form-data">
@@ -103,9 +108,6 @@
                         </select>
                     </div>
                     
-
-
-
                     <!-- coursePrice -->
                     <div class="col-md-12 text-white">
                         {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}

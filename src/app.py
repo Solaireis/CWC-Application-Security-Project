@@ -26,14 +26,13 @@ app = Flask(__name__)
 csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
-# temporary, * wildcard allows all
 csp = {
     'script-src':[
         '\'self\'',
         'https://code.jquery.com/jquery-3.6.0.min.js',
         'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js',
         'https://cdn.jsdelivr.net/npm/less@4',
-        # 'https://www.google.com/recaptcha/enterprise.js', Don't need
+        'https://www.google.com/recaptcha/enterprise.js',
         'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js',
         
     ]

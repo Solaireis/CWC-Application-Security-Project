@@ -1,0 +1,113 @@
+{% extends "user_base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/video_management.css') }}">
+{% endblock %}
+
+{% block title %}Video Management | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endwith %}
+
+<div class="container">
+{% if courseListLen < 1 %}
+    <div class="row">
+        <div class="col">
+            <h4 class="display-5">No Videos Uploaded</h4>
+            <!--> Add button to redirect  <-->
+        </div>
+    </div>
+{% else %}
+    {% for course in courseList %}
+        <div class="card mb-3">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    {% if (course.course_image_path == None) %}
+                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ course.course_name }}</h5>
+                        <p class="card-text">{{ course.course_description }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                {% if (course.rating_count > 0) %}
+                                <div class="ratings">
+                                    {% with remainingStars = 5 - course.average_rating %}
+                                        {% for _ in range(course.average_rating) %}
+                                            <span class="fas fa-star"></span>
+                                        {% endfor %}
+                                        {% for _ in range(remainingStars) %}
+                                            <span class="far fa-star"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                {% else %}
+                                <p class="card-text text-danger">No ratings yet...</p>
+                                {% endif %}
+                            </small>
+                        </p>
+                        <!-- Add Edit & Delete Button -->
+                        <!-- Delete button to have a modal that verifies if the user is sure they want to delete the video.
+                        Edit button redirects to a form, where the user can change the details -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <div class="center">
+        <div class="pagination">
+            {% if currentPage != 1 %}
+                <a href="{{ url_for('userBP.courseList')}}p={{currentPage - 1}}">&laquo;</a>
+            {% endif %}
+            {% for i in lenOfDict %}
+                {% if i == currentPage %}
+                    <a class="active" href="">{{ i }}</a>
+                {% else %}
+                    <a href="{{ url_for('userBP.courseList') }}p={{i}}">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if currentPage != maxPage %}
+                <a href="{{ url_for('userBP.courseList')}}p={{currentPage + 1}}">&raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <script nonce="{{ csp_nonce() }}">
+            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+            alertModal.show();
+        </script>
+    {% endif %}
+{% endwith %}
+{% endblock %}

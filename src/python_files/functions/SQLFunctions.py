@@ -1010,6 +1010,27 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         connection.commit()
 
+    elif (mode == "get_all_courses"):
+        teacher_id = kwargs.get("teacherID")
+        courseList = []
+        cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacher_id)s", {"teacher_id":teacher_id})
+        resultsList = cur.fetchall()
+
+        #Password will be null if using Google Auth
+        cur.execute("SELECT username, profile_image WHERE id=%(teacher_id)s AND password IS NULL", {"teacher_id":teacher_id})
+        if (cur.fetchone()):
+            teacherUsername, teacherProfile = cur.fetchone()[0], cur.fetchone()[1]
+            teacherProfile = (teacherProfile, True)
+            for tupleInfo in resultsList:
+                courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))
+        else:
+            teacherUsername, teacherProfile = cur.fetchone()[0], cur.fetchone()[1]
+            teacherProfile = (teacherProfile, False)
+            for tupleInfo in resultsList:
+                courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))            
+
+        return courseList
+
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
         # statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
@@ -1064,8 +1085,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         searchInput = kwargs.get("searchInput")
         resultsList = []
 
-        # cur.execute(f"SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE '%{searchInput}%'")
-        # foundResults = cur.fetchall()
         cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
         foundResults = cur.fetchall()
 

@@ -198,12 +198,8 @@ def videoUpload():
     else:
         return redirect(url_for("guestBP.login"))
 
-"""
-Software data integrity
 
-Why : Hackers can edit videos and prevent availability to wanted resources
-solution : Encrypt video data
-"""
+#TODO: Hash Video data, implement dropzone to encrpyt video data
 @userBP.route("/create-course", methods=["GET","POST"])
 def createCourse():
     if ("user" in session):
@@ -250,10 +246,57 @@ def createCourse():
                 flash("Course Created")
                 return redirect(url_for("userBP.userProfile"))
             else:
-                return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1])
+                return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
         else:
             flash("No Video Uploaded")
             return redirect(url_for("userBP.videoUpload"))
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@userBP.route("/course-video-list")
+def courseList():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        courseList = sql_operation(table="course", mode="get_all_courses", teacher_id=userInfo[0])
+
+        #TODO: Test if works, currently not sure cause idk which vimeo module to use
+        page = request.args.get("p", default=1, type=int)
+        eachPageResults = []
+        dictOfResults = {}
+        pageNum = 1
+        
+        if (len(courseList) != 0):
+            for eachResult in courseList:
+                if (len(eachPageResults)!=10):
+                    eachPageResults.append(eachResult)
+                    dictOfResults[pageNum] = eachPageResults
+                else:
+                    dictOfResults[pageNum] = eachPageResults
+                    eachPageResults = [eachResult]
+                    pageNum += 1
+            
+            maxPage = max(list(dictOfResults))
+            if (page > maxPage):
+                abort(404)
+        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,)
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@userBP.route("/course-video-delete")
+def courseDelete():
+    if ("user" in session):
+        courseID = request.args.get("cid", default="test", type=str)
+        sql_operation(table="course", mode="delete", courseID=courseID)
+        print("Course Deleted")
+        return redirect(url_for("userBP.courseList"))
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@userBP.route("/course-video-edit", methods=["GET", "POST"])
+def courseUpdate():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        #TODO: Make the update video details form
     else:
         return redirect(url_for("guestBP.login"))
 
