@@ -3,7 +3,7 @@ import pymysql
 import stripe
 
 # import python standard libraries
-from random import randint
+from random import randint, choice as rand_choice
 import pathlib
 from importlib.util import spec_from_file_location, module_from_spec
 import sys
@@ -29,8 +29,8 @@ MySQLInit = module_from_spec(spec)
 sys.modules[spec.name] = MySQLInit
 spec.loader.exec_module(MySQLInit)
 
-
 CONSTANTS = NormalFunctions.CONSTANTS
+THUMBNAILS_PRESET = ["demo_thumbnail_1.webp", "demo_thumbnail_2.webp", "demo_thumbnail_3.webp", "demo_thumbnail_4.webp", "demo_thumbnail_5.webp"]
 
 # Get Stripe API Key
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
@@ -123,15 +123,9 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     11. Searching    
     12. Pattern Defeating QuickSort    
 
-    Please click on the following timestamps to skip ahead to the corresponding section:    
-    1. [2020-01-01 00:00:00]   
-    2. [2020-01-01 00:00:00]   
-    3. [2020-01-01 00:00:00]   
-    4. [2020-01-01 00:00:00]   
-
     Thanks for watching the demo course!  
         """)
-    course_image_path = "https://images.unsplash.com/photo-1591639881238-db6d7f9ffe0e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2340&q=80"
+    course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
     course_category = "Other Academics"
     course_total_rating = randint(0, 5)

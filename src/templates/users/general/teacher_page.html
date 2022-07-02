@@ -19,7 +19,7 @@
         <div class="col card w-90 mb-3 border bg-light flex-row">
             <div class="row">
                 <div id="pfp" class="col-md-3">
-                    {% if "dicebear" in teacherProfilePath %}
+                    {% if "https" in teacherProfilePath %}
                         <img src="{{ teacherProfilePath }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
                     {% else %}
                         <img src="{{ url_for('static', filename='images/user/' ~ teacherProfilePath) }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
@@ -48,7 +48,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/courses/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title">{{ course.course_name }}</h4>
@@ -116,7 +116,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/courses/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>

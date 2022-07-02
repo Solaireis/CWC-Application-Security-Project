@@ -55,7 +55,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
@@ -124,7 +124,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/courses/thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>

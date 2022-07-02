@@ -20,7 +20,13 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 # import local python libraries
-if (__package__ is None or __package__ == ""):
+if (__name__ == "__main__"):
+    from sys import path as sys_path
+    import pathlib
+    sys_path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
+    from python_files.classes.Constants import CONSTANTS
+    from python_files.classes.Errors import *
+elif (__package__ is None or __package__ == ""):
     from classes.Constants import CONSTANTS
     from classes.Errors import *
 else:
