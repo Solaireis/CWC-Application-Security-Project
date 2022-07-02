@@ -246,7 +246,7 @@ if (__name__ == "__main__"):
         trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
     )
     scheduler.add_job(
-        lambda: update_secret_key(),
+        update_secret_key,
         trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
     )
     scheduler.start()
