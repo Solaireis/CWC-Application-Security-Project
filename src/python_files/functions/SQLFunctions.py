@@ -16,10 +16,6 @@ from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 
-# For stripe API
-import stripe
-from stripe.error import InvalidRequestError
-
 # import local python files
 from python_files.classes.Course import Course
 from python_files.classes.Errors import *
@@ -167,6 +163,15 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
         con = MySQLInitialise(debug=CONSTANTS.DEBUG_MODE)
         print("Created the neccessary tables for the database!\n")
 
+        # Uncomment the code below as to prevent attackers from causing an operational error
+        # Which will drop all the tables in the database and re-initialise them.
+        # write_log_entry(
+        #     logMessage="MySQL server has no database, \"coursefinity\"! The web application will go to maintanence mode until the database is created.",
+        #     severity="EMERGENCY"
+        # )
+        # current_app.config["MAINTENANCE_MODE"] = True
+        # return None
+
     try:
         if (table == "user"):
             returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
@@ -186,7 +191,10 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = one_time_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
         else:
             raise ValueError("Invalid table name")
-    except (MySQLErrors.IntegrityError, MySQLErrors.OperationalError, MySQLErrors.InternalError, MySQLErrors.DataError) as e:
+    except (
+        MySQLErrors.IntegrityError, MySQLErrors.OperationalError, 
+        MySQLErrors.InternalError, MySQLErrors.DataError
+    ) as e:
         # to ensure that the connection is closed even if an error with mysql occurs
         print("Error caught:")
         print(e)
