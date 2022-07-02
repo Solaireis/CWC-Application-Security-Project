@@ -73,14 +73,13 @@ def coursePage(courseID:str):
             extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
         )
     )
-    course_image_path = courses[4]
+    courseImagePath = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
     courseRating = courses[7]
     courseRatingCount = courses[8]
     courseDate = courses[9]
     courseVideoPath = courses[10]
-
 
     print("course",courses[1])
 
@@ -113,10 +112,10 @@ def coursePage(courseID:str):
 
     return render_template(
         "users/general/course_page.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
-        , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
+        courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
         courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
-        reviewList= reviewList, course_image_path = course_image_path
+        reviewList= reviewList, courseImagePath = courseImagePath
     )
 
 @generalBP.route("/search")
