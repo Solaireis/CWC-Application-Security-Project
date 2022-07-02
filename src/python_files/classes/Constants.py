@@ -178,6 +178,10 @@ class ConstantsConfigs:
         self.STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
         self.STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
 
+        # For Vimeo API
+        self.VIMEO_CLIENT_ID = "9ece1a6fad946abaf1264307713aa7ede45f33a7"
+        self.VIMEO_CLIENT_SECRET = self.get_secret_payload(secretID="vimeo-secret")
+
         # For Google Cloud Logging API
         self.LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
         self.LOGGING_NAME = "coursefinity-web-app"

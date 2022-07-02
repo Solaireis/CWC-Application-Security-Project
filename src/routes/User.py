@@ -12,6 +12,7 @@ from flask import render_template, request, redirect, url_for, session, flash, a
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
+from python_files.functions.VimeoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
@@ -276,7 +277,7 @@ def purchaseView(courseID:str):
     print(courseID)
     #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
     # the course id is
-    #   a78da127690d40d4bebaf5d9c45a09a8 
+    #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     if courses == False: #raise 404 error
@@ -287,7 +288,7 @@ def purchaseView(courseID:str):
     courseName = courses[2]
     courseDescription = Markup(
         markdown.markdown(
-            courses[3], 
+            courses[3],
             extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
         )
     )
@@ -410,6 +411,19 @@ def purchase(jwtToken:str):
 
     sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
     return redirect(url_for("userBP.purchaseHistory"))
+
+@userBP.route("/vimeoTesting")
+def vimeoTesting():
+
+    code = request.args.get('code')
+    state = request.args.get('state')
+
+    if code is not None and state is not None:
+        token, user, scope = get_vimeo_data(code)
+        return redirect(url_for("userBP.purchaseHistory"))
+    else:
+        vimeo_authorization_url = authorise_vimeo(url_for('userBP.vimeoTesting', _external = True))
+        return redirect(vimeo_authorization_url, code = 303)
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseDetails(courseID:str):
