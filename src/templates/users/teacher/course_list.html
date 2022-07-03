@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/video_management.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_list.css') }}">
 {% endblock %}
 
 {% block title %}Video Management | CourseFinity{% endblock %}
@@ -35,8 +35,8 @@
 {% if courseListLen < 1 %}
     <div class="row">
         <div class="col">
-            <h4 class="display-5">No Videos Uploaded</h4>
-            <!--> Add button to redirect  <-->
+            <h4 class="display-5">No Courses Uploaded</h4>
+            <!-- Add button to redirect  -->
         </div>
     </div>
 {% else %}

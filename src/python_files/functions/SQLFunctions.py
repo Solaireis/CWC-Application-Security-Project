@@ -1015,16 +1015,19 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseList = []
         cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacher_id)s", {"teacher_id":teacher_id})
         resultsList = cur.fetchall()
-
+        
+        if (len(resultsList) == 0):
+            return courseList
         #Password will be null if using Google Auth
-        cur.execute("SELECT username, profile_image WHERE id=%(teacher_id)s AND password IS NULL", {"teacher_id":teacher_id})
-        if (cur.fetchone()):
-            teacherUsername, teacherProfile = cur.fetchone()[0], cur.fetchone()[1]
+        cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacher_id)s AND password IS NULL", {"teacher_id":teacher_id})
+        teacherData = cur.fetchone()
+        if (teacherData):
+            teacherUsername, teacherProfile = teacherData[0], teacherData[1]
             teacherProfile = (teacherProfile, True)
             for tupleInfo in resultsList:
                 courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))
         else:
-            teacherUsername, teacherProfile = cur.fetchone()[0], cur.fetchone()[1]
+            teacherUsername, teacherProfile = teacherData[0], teacherData[1]
             teacherProfile = (teacherProfile, False)
             for tupleInfo in resultsList:
                 courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))            
