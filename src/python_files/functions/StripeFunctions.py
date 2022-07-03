@@ -26,7 +26,7 @@ def stripe_product_create(
                 "currency" : "USD",
                 "unit_amount_decimal" : coursePrice
             },
-            images = [] if courseImagePath == None else [courseImagePath],
+            images = [] if courseImagePath is None else [courseImagePath],
             url = url_for("generalBP.coursePage", _external = True, courseID = courseID)
         )
 
