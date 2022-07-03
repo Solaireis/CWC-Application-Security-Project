@@ -14,6 +14,7 @@
 # Ignore other files
 ip_blacklist.txt
 *.bin
+.dccache
 
 # Ignore uploaded files for user profiles and thumbnails
 src/static/images/user/*.webp
