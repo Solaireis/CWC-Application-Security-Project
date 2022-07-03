@@ -37,7 +37,7 @@ for i in dependencies:
         version = (version.split(",")[1]).strip()
         maximum = True
     except:
-        version = version
+        pass
 
     datafile = (requests.get(f"https://pypi.org/pypi/{name}/json", stream=True, headers=headers, timeout=10)).json()
     file = datafile["releases"]

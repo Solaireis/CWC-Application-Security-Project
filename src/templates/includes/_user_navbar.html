@@ -132,6 +132,7 @@
 						{% if accType == "Teacher" %}
 						<!-- <li><a href="{{ url_for('generalBP.teacherPage', teacherID=session.get('user')) }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li> -->
 						<li><a href="{{ url_for('userBP.videoUpload') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
+						<li><a href="{{ url_for('userBP.courseList') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Uploaded Course(s)</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
 						<li><a href="{{ url_for('userBP.purchaseHistory') }}" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>

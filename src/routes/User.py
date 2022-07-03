@@ -257,7 +257,7 @@ def createCourse():
 def courseList():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        courseList = sql_operation(table="course", mode="get_all_courses", teacher_id=userInfo[0])
+        courseList = sql_operation(table="course", mode="get_all_courses", teacherID=userInfo[0])
 
         #TODO: Test if works, currently not sure cause idk which vimeo module to use
         page = request.args.get("p", default=1, type=int)
@@ -278,11 +278,15 @@ def courseList():
             maxPage = max(list(dictOfResults))
             if (page > maxPage):
                 abort(404)
-        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,)
+            
+            return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,accType=userInfo[1])
+        
+        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1])
+
     else:
         return redirect(url_for("guestBP.login"))
 
-@userBP.route("/course-video-delete")
+@userBP.route("/delete-course-video")
 def courseDelete():
     if ("user" in session):
         courseID = request.args.get("cid", default="test", type=str)
