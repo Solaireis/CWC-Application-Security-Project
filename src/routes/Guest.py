@@ -134,8 +134,8 @@ def resetPassword(token:str):
 
     if (request.method == "POST" and resetPasswordForm.validate()):
         # check if password input and confirm password are the same
-        passwordInput = resetPasswordForm.resetPassword.data
-        confirmPasswordInput = resetPasswordForm.confirmPassword.data
+        passwordInput = resetPasswordForm.password.data
+        confirmPasswordInput = resetPasswordForm.cfmPassword.data
         if (passwordInput != confirmPasswordInput):
             flash("Entered passwords do not match!")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
@@ -519,11 +519,11 @@ def signup():
             emailInput = signupForm.email.data
             usernameInput = signupForm.username.data
             passwordInput = signupForm.password.data
-            confirmPasswordInput = signupForm.cfm_password.data
+            confirmPasswordInput = signupForm.cfmPassword.data
 
             # some checks on the password input
             if (passwordInput != confirmPasswordInput):
-                flash("Passwords did not match!")
+                flash("Entered passwords do not match!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
                 flash(f"Password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")

@@ -191,8 +191,8 @@ def updatePassword():
         create_update_password_form = CreateChangePasswordForm(request.form)
         if (request.method == "POST") and (create_update_password_form.validate()):
             currentPassword = create_update_password_form.currentPassword.data
-            updatedPassword = create_update_password_form.updatePassword.data
-            confirmPassword = create_update_password_form.confirmPassword.data
+            updatedPassword = create_update_password_form.password.data
+            confirmPassword = create_update_password_form.cfmPassword.data
 
             if (updatedPassword != confirmPassword):
                 flash("Passwords Do Not Match!")

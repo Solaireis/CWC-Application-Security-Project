@@ -114,7 +114,8 @@ class ConstantsConfigs:
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
         self.MIN_PASSWORD_LENGTH = 8
         self.MAX_PASSWORD_LENGTH = 128
-        self.PASSWORD_REGEX = re.compile(r"""
+        # Strict password regex to be used when haveibeenpwned's API is down (acts as a fallback)
+        self.STRICT_PASSWORD_REGEX = re.compile(r"""
         ^                                                                   # beginning of password
         (?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
         (?=.*?[a-z])                                                        # at least one lowercase letter
@@ -122,9 +123,19 @@ class ConstantsConfigs:
         (?=.*?[\d])                                                         # at least one digit
         (?=.*?[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])                  # at least one special character
         [A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]                 # allowed characters
-        {8,}                                                            # at least 8 characters long
+        {8,}                                                                # at least 8 characters long
         $                                                                   # end of password
         """, re.VERBOSE)
+        # For individually test the password regex for each of the following:
+        self.TWO_REPEAT_CHAR_REGEX = re.compile(
+            r"^(?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2}).+$"
+        )
+        self.LOWERCASE_REGEX = re.compile(r"[a-z]+")
+        self.UPPERCASE_REGEX = re.compile(r"[A-Z]+")
+        self.DIGIT_REGEX = re.compile(r"[\d]+")
+        self.SPECIAL_CHAR_REGEX = re.compile(r"[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]+")
+        self.LENGTH_REGEX = re.compile(r"^.{8,}$")
+        self.ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
         # For email coursefinity logo image
         LOGO_PATH = self.ROOT_FOLDER_PATH.joinpath("static", "images", "common", "filled_logo.png")

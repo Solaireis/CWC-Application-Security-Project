@@ -1125,17 +1125,19 @@ def get_gmail_client() -> Resource:
     # Build the Gmail service from the credentials and return it
     return build("gmail", "v1", credentials=creds)
 
-def pwd_is_strong(password:str) -> bool:
+def pwd_is_strong(password:str, strict:bool=False) -> bool:
     """
     Checks if the password is strong against the password regex.
 
     Args:
     - password: The password to check.
+    - strict: Whether to match all minimum requirements.
+        - Used when haveibeenpwned's API is unavailable.
 
     Returns:
     - True if the password is strong, False otherwise.
 
-    Password complexity requirements:
+    Password complexity minimum requirements (must match at least 3):
     - At least 10 characters long
     - At least one lowercase letter
     - At least one uppercase letter
@@ -1147,7 +1149,32 @@ def pwd_is_strong(password:str) -> bool:
     - https://owasp.org/www-community/password-special-characters
     - https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
     """
-    return True if (re.fullmatch(CONSTANTS.PASSWORD_REGEX, password)) else False
+    if (strict):
+        return (re.fullmatch(CONSTANTS.STRICT_PASSWORD_REGEX, password) is not None)
+
+    strength = 0
+    if (re.fullmatch(CONSTANTS.LENGTH_REGEX, password)):
+        strength += 1
+
+    if (re.match(CONSTANTS.LOWERCASE_REGEX, password)):
+        strength += 1
+
+    if (re.match(CONSTANTS.UPPERCASE_REGEX, password)):
+        strength += 1
+
+    if (re.match(CONSTANTS.DIGIT_REGEX, password)):
+        strength += 1
+
+    if (re.match(CONSTANTS.SPECIAL_CHAR_REGEX, password)):
+        strength += 1
+
+    if (re.fullmatch(CONSTANTS.TWO_REPEAT_CHAR_REGEX, password)):
+        strength += 1
+
+    if (re.fullmatch(CONSTANTS.ALLOWED_CHAR_REGEX, password) is None):
+        return False # return false if the password contains any characters that are not allowed
+
+    return (strength >= 3)
 
 def pwd_has_been_pwned(password:str) -> bool:
     """
@@ -1180,13 +1207,17 @@ def pwd_has_been_pwned(password:str) -> bool:
         elif (response.status_code == 429):
             # haveibeenpwned API is rate limited, so wait for a while and try again
             print(f"Failed to retrieve data from api.pwnedpasswords.com. Retrying in 1 seconds...")
-            sleep(1)
+            sleep(0.5)
         else:
-            print(f"Failed to retrieve data from api.pwnedpasswords.com.\nError code: {response.status_code}")
-            # returns False (considered not leaked) 
-            # but will rely on the checking of the password strength 
+            write_log_entry(
+                logMessage=f"Failed to retrieve data from api.pwnedpasswords.com. Error code: {response.status_code}",
+                severity="NOTICE"
+            )
+            # if the api is unavailable, will rely on the 
+            # checking of the password strength very strictly
+            # i.e. must meet all the minimum requirements
             # if user is signing up or changing password
-            return False 
+            return pwd_is_strong(password, strict=True)
 
     # compare the possible ranges with the hash suffix (after the first five characters) of the sha1 hash
     for result in results:

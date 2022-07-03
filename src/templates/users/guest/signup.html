@@ -29,23 +29,15 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <div id="passwordError1" hidden>
+                <div id="passwordError" hidden>
                     <div class="alert alert-danger d-flex align-items-center" role="alert">
                         <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
                         <div>
-                            <h6 class="warning_text">Entered password do not match!</h6>
+                            <h6 class="warning_text" id="passwordErrorMsg"></h6>
                         </div>
                     </div>
                 </div>
-                <div id="passwordError2" hidden>
-                    <div class="alert alert-danger d-flex align-items-center" role="alert">
-                        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-                        <div>
-                            <h6 class="warning_text">Entered password must at least match one requirement!</h6>
-                        </div>
-                    </div>
-                </div>
-                <form action="" method="POST" class="row g-3" id="signupForm">
+                <form action="" method="POST" class="row g-3" id="passForm">
                     <h4 class="text-white">Join us and start learning!</h4>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
@@ -58,14 +50,14 @@
                         {{ render_field(form.password, class="form-control") }}
                     </div>       
                     <div class="col-12 text-white">
-                        {{ render_field(form.cfm_password, class="form-control") }}
+                        {{ render_field(form.cfmPassword, class="form-control") }}
                     </div>
                     <div>
                         <label class="switch">
                             <input type="checkbox" data-bs-toggle="collapse" href="#collapsePassReq" role="switch" aria-expanded="false" aria-controls="collapsePassReq">
                             <span class="slider round"></span>
                         </label>
-                        <span class="text-white">Show password requirements.</span>
+                        <span class="text-white">Show password advice</span>
                     </div>
                     <div class="col-12 progress thin-progress-bar">
                         <div id="strengthIndicator" class="progress-bar bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
@@ -121,5 +113,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
 {% endblock %}

@@ -17,7 +17,7 @@ class CreateSignUpForm(Form):
             validators.DataRequired()
         ]
     )
-    cfm_password = PasswordField(
+    cfmPassword = PasswordField(
         "Confirm Password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
             validators.DataRequired()
@@ -38,24 +38,24 @@ class CreateChangePasswordForm(Form):
             validators.DataRequired()
         ]
     )
-    updatePassword =  PasswordField(
+    password =  PasswordField(
         "Enter a new password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
             validators.DataRequired()
         ]
     )
-    confirmPassword = PasswordField("Confirm password:", [validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), validators.DataRequired()])
+    cfmPassword = PasswordField("Confirm password:", [validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), validators.DataRequired()])
 
 class RequestResetPasswordForm(Form):
     email = EmailField("Enter your email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
 
 class CreateResetPasswordForm(Form):
-    resetPassword =  PasswordField("Reset password:", [
+    password =  PasswordField("Reset password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH),
             validators.DataRequired()
         ]
     )
-    confirmPassword = PasswordField("Confirm password:", [
+    cfmPassword = PasswordField("Confirm password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
             validators.DataRequired()
         ]

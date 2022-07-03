@@ -1,8 +1,11 @@
+# import third-party libraries
 from flask import url_for
-from python_files.classes.Constants import CONSTANTS
 import vimeo
 from vimeo.auth import GrantFailed
 from vimeo.exceptions import VideoUploadFailure
+
+# import local python libraries
+from python_files.classes.Constants import CONSTANTS
 
 vimeoClient = vimeo.VimeoClient(
     key = CONSTANTS.VIMEO_CLIENT_ID,
@@ -10,7 +13,7 @@ vimeoClient = vimeo.VimeoClient(
     token = None
 )
 
-def authorise_vimeo(redirectUrl):
+def authorise_vimeo(redirectUrl:str) -> str:
     vimeo_authorization_url = vimeoClient.auth_url(
         ['private'],           #SCOPES
         redirectUrl,           #REDIRECT_URL
@@ -19,7 +22,7 @@ def authorise_vimeo(redirectUrl):
     
     return vimeo_authorization_url
 
-def get_vimeo_data(code):
+def get_vimeo_data(code:str) -> tuple:
     try:
         token, user, scope = vimeoClient.exchange_code(code, url_for('userBP.vimeoTesting', _external = True))
         print(token)
@@ -30,7 +33,7 @@ def get_vimeo_data(code):
         print(error)
         return None, None, None
 
-def vimeo_upload(videoFilePath):
+def vimeo_upload(videoFilePath:str) -> None:
     try:
         videoURI = vimeoClient.upload(videoFilePath)
 

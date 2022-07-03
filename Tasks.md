@@ -15,6 +15,9 @@
   - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
+  - Type used: Argon2id (A hybrid of Argon2i and Argon2d)
+    - Argon2i is more resistant against [cache side-channel attacks](https://en.wikipedia.org/wiki/Side-channel_attack#cache_side-channel_attack)
+    - Argon2d is more resistant against [GPU cracking attacks](https://security.stackexchange.com/questions/32816/why-are-gpus-so-good-at-cracking-passwords)
   - Minimum requirement as of [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 
     - 15MiB of memory
     - 2 count of iterations 
@@ -25,7 +28,7 @@
     - 4 degree of parallelism
     - 16 bytes salt, `os.urandom(16)`
     - 32 bytes hash
-    - Argon2id (hybrid type of Argon2i and Argon2d)
+    - Argon2id
     - On average, the time taken to hash a password is about 0.05+ seconds.
   - Manually tweaked Argon2 configurations (Meets the minimum requirements):
     - 256MiB of memory
@@ -33,7 +36,7 @@
     - 12 degrees of parallelism
     - 64 bytes salt, `os.urandom(64)`
     - 64 bytes hash
-    - Argon2id (hybrid type of Argon2i and Argon2d)
+    - Argon2id
     - On average, the time taken to hash a password is about 0.5+ seconds.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 - Encrypting the (temporarily stored) sensitive data in the session cookie such as secret token for TOTP (time-based one time password)
@@ -63,8 +66,7 @@
   - At least 1 special character
   - At least 10 characters
   - Not more than 2 repeated characters
-  - All must be fulfiled when checking with haveibeenpwned api status was not 200 OK/is down.
-    - Acts as a fallback if the haveibeenpwned api is down.
+  - Requires user to match at least 3 of the above criteria
 - Blacklisting of known malicious IP Addresses
   - Mainly used for detecting bots with malicious intent
   - An ineffective mitigation but acts as last resort mitigation against attackers trying to brute force login or doing other malicious activities such as credential stuffing on the web application
@@ -75,6 +77,7 @@
     - Sign up
     - Changing password
     - Resetting password
+  - If haveibeenpwned's API is unavailable, the password must match ALL the minimum password complexity policy criteria as a fallback
 - Maximum of 6 failed login attempts per account (will reset after 30 mins)
   - In the event that the attacker tries to do a denial of service knowing that one could lock out authentic user:
     - An email will be sent to the user's email with a one-time link to unlock the account

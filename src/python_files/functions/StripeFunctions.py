@@ -1,8 +1,8 @@
 # import python standard libraries
-from flask import url_for
 from time import time
 
 # import third-party libraries
+from flask import url_for
 import stripe
 from stripe.error import InvalidRequestError
 
@@ -13,8 +13,9 @@ from .SQLFunctions import sql_operation
 
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 
-def stripe_product_create(courseID, courseName, courseDescription, coursePrice, courseImagePath=None) -> None:
-
+def stripe_product_create(
+    courseID:str, courseName:str, courseDescription:str, coursePrice: float, courseImagePath:str=None
+) -> None:
     try:
         courseData = stripe.Product.create(
             id = courseID,
@@ -35,7 +36,7 @@ def stripe_product_create(courseID, courseName, courseDescription, coursePrice, 
         print(error)
         print(f"Course: {courseID} already exists in Stripe database.")
 
-def stripe_product_check(courseID):
+def stripe_product_check(courseID:str):
     try:
         courseData = stripe.Product.retrieve(courseID)
         # print(courseData)
@@ -72,7 +73,7 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str) -> str:
          print("Checkout: " + str(error))
          return None
 
-def expire_checkout(checkoutSession):  # In the event shopping cart is altered while checkout is still active; Insecure Design
+def expire_checkout(checkoutSession:str) -> None:  # In the event shopping cart is altered while checkout is still active; Insecure Design
     try:
         stripe.checkout.Session.expire(checkoutSession)
     except InvalidRequestError:
