@@ -675,15 +675,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
+
+        if (matched is None):
+            connection.close()
+            raise EmailDoesNotExistError("Email does not exist!")
+
         username = matched[2]
         roleID = matched[3]
         encryptedPasswordHash = matched[1]
         userID = matched[0]
         emailVerified = matched[4]
-
-        if (not matched):
-            connection.close()
-            raise EmailDoesNotExistError("Email does not exist!")
 
         if (encryptedPasswordHash is None):
             connection.close()

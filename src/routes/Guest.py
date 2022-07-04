@@ -54,6 +54,24 @@ def resetPasswordRequest():
     if (request.method == "POST" and requestForm.validate()):
         # if the request is a post request and the form is valid
         # get the userID from the email
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
+        try:
+            recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].RESET_PASS_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="resetPassword")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
         emailInput = requestForm.email.data
         userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
         if (userInfo is None):
@@ -175,27 +193,27 @@ def login():
             return render_template("users/guest/login.html", form=loginForm)
 
         if (request.method == "POST" and loginForm.validate()):
-            requestIPAddress = get_remote_address()
-            emailInput = loginForm.email.data
-            passwordInput = loginForm.password.data
             recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is not None and recaptchaToken != ""):
-                try:
-                    recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
-                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                    flash("Please check the reCAPTCHA box and try again.", "Danger")
-                    return render_template("users/guest/login.html", form=loginForm)
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/guest/login.html", form=loginForm)
 
-                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                    # if the score is not within the acceptable threshold
-                    # then the user is likely a bot
-                    # hence, we will flash an error message
-                    flash("Please check the reCAPTCHA box and try again.", "Danger")
-                    return render_template("users/guest/login.html", form=loginForm)
-            else:
+            try:
+                recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/guest/login.html", form=loginForm)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
                 flash("Please check the reCAPTCHA box and try again.", "Danger")
                 return render_template("users/guest/login.html", form=loginForm)
 
+            requestIPAddress = get_remote_address()
+            emailInput = loginForm.email.data
+            passwordInput = loginForm.password.data
             userInfo = isAdmin = successfulLogin = userHasTwoFA = False
             try:
                 # returns the userID, boolean if user logged in from a new IP address, username, role
@@ -507,20 +525,20 @@ def signup():
         if (request.method == "POST" and signupForm.validate()):
             # POST request code below
             recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is not None and recaptchaToken != ""):
-                try:
-                    recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
-                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                    flash("Please check the reCAPTCHA box and try again.")
-                    return render_template("users/guest/signup.html", form=signupForm)
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot.")
+                return render_template("users/guest/signup.html", form=signupForm)
 
-                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.5)):
-                    # if the score is not within the acceptable threshold
-                    # then the user is likely a bot
-                    # hence, we will flash an error message
-                    flash("Please check the reCAPTCHA box and try again.")
-                    return render_template("users/guest/signup.html", form=signupForm)
-            else:
+            try:
+                recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!")
+                return render_template("users/guest/signup.html", form=signupForm)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
                 flash("Please check the reCAPTCHA box and try again.")
                 return render_template("users/guest/signup.html", form=signupForm)
 

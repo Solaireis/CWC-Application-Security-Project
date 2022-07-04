@@ -210,8 +210,9 @@ class ConstantsConfigs:
         # For Google reCAPTCHA API
         RECAPTCHA_JSON = json.loads(self.get_secret_payload(secretID="google-recaptcha"))
         self.RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
-        self.LOGIN_SITE_KEY = "6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a"
-        self.SIGNUP_SITE_KEY = "6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B"
+        self.LOGIN_SITE_KEY = "6Lcn7MAgAAAAAHpvqVNCldgdD7QJPsbx_NOqSIJI"
+        self.SIGNUP_SITE_KEY = "6LeFlsAgAAAAAMTdd4JhaGRJpdsSbp-fzH_4oP5L"
+        self.RESET_PASS_SITE_KEY = "6LchY8AgAAAAADiF_miKiMIJjquynmboTagK9ROH"
         del RECAPTCHA_JSON
 
         # For Google Key Management Service API

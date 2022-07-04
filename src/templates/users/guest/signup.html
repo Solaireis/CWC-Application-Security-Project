@@ -1,7 +1,7 @@
 {% extends "guest_base.html" %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js"></script>
+    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6LeFlsAgAAAAAMTdd4JhaGRJpdsSbp-fzH_4oP5L"></script>
 {% endblock %}
 {% block title %}Sign Up | CourseFinity{% endblock %}
 
@@ -97,8 +97,8 @@
                     <div class="col-12 d-flex justify-content-center">
                         <div class="g-recaptcha" data-sitekey="6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B" data-action="signup"></div>
                     </div>          
-                    <div class="col-12 d-flex justify-content-center">
-                        <button type="submit" class="btn btn-colour text-white justify-content-center btn-lg">Sign Up</button>
+                    <div class="col-12">
+                        <button data-sitekey="6LeFlsAgAAAAAMTdd4JhaGRJpdsSbp-fzH_4oP5L" data-action="signup" data-callback="onSubmit" class="g-recaptcha btn btn-colour text-white float-end">Sign Up</button>
                     </div>
                 </form>
                 <hr class="mt-4 text-white">
@@ -114,4 +114,9 @@
 
 {% block extra_js %}
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}">
+        function onSubmit(token) {
+            document.getElementById("passForm").submit();
+        }
+    </script>
 {% endblock %}
