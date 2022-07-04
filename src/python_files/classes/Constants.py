@@ -80,6 +80,7 @@ class ConstantsConfigs:
         self.DEBUG_MODE = True 
 
         # Blueprints endpoint routes
+        self.GUEST_BLUEPRINTS = ("guestBP", "generalBP")
         self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
 
         # Request limit

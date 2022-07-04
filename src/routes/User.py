@@ -26,9 +26,6 @@ userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="
 
 @userBP.route("/user-profile", methods=["GET","POST"])
 def userProfile():
-    if ("admin" in session):
-        return redirect(url_for("adminBP.adminProfile"))
-
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
 
@@ -50,9 +47,6 @@ def userProfile():
 
 @userBP.route("/change-email", methods=["GET","POST"])
 def updateEmail():
-    if ("admin" in session):
-        return redirect(url_for("adminBP.adminProfile"))
-
     if ("user" in session):
         userID = session["user"]
         imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
