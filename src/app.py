@@ -154,6 +154,14 @@ def before_request() -> None:
     Returns:
     - None
     """
+    # Check if the user is allowed to access the pages that they are allowed to access
+    if (
+        "user" in session and 
+        request.endpoint != "static" and
+        request.endpoint.split(".")[0] not in CONSTANTS.USER_BLUEPRINTS
+    ):
+        abort(404)
+
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
 

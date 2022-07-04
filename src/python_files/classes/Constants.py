@@ -79,6 +79,9 @@ class ConstantsConfigs:
         # Debug flag
         self.DEBUG_MODE = True 
 
+        # Blueprints endpoint routes
+        self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
+
         # Request limit
         self.REQUEST_LIMIT = "30 per second"
 
