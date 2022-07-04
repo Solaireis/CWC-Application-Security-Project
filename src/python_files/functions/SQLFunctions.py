@@ -159,18 +159,15 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
         con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE)
     except (MySQLErrors.OperationalError):
         print("Database Not Found...")
-        print("Creating Database...")
-        con = MySQLInitialise(debug=CONSTANTS.DEBUG_MODE)
-        print("Created the neccessary tables for the database!\n")
-
-        # Uncomment the code below as to prevent attackers from causing an operational error
-        # Which will drop all the tables in the database and re-initialise them.
-        # write_log_entry(
-        #     logMessage="MySQL server has no database, \"coursefinity\"! The web application will go to maintanence mode until the database is created.",
-        #     severity="EMERGENCY"
-        # )
-        # current_app.config["MAINTENANCE_MODE"] = True
-        # return None
+        if (CONSTANTS.DEBUG_MODE):
+            raise Exception("Database Not Found... Please initialise the database.")
+        else:
+            write_log_entry(
+                logMessage="MySQL server has no database, \"coursefinity\"! The web application will go to maintanence mode until the database is created.",
+                severity="EMERGENCY"
+            )
+            current_app.config["MAINTENANCE_MODE"] = True
+            return None
 
     try:
         if (table == "user"):
@@ -214,38 +211,52 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
     Returns the returned value from the SQL operation.
     """
     if (mode == "add_jwt"):
-        jwtToken = unquote(kwargs["jwtToken"])
+        tokenID = kwargs["tokenID"]
         expiryDate = kwargs["expiryDate"]
+        limit = kwargs.get("limit")
         cursor = connection.cursor()
         cursor.execute(
-            "INSERT INTO one_time_use_jwt (jwt_token, expiry_date) VALUES (%(jwtToken)s, %(expiryDate)s)",
-            {"jwtToken": jwtToken, "expiryDate": expiryDate}
+            "INSERT INTO one_time_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
+            {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
         )
         connection.commit()
-        return True
-    elif (mode == "jwt_exists"):
+    elif (mode == "decrement_limit_after_use"):
+        tokenID = kwargs["tokenID"]
+        cursor = connection.cursor()
+        cursor.execute(
+            "UPDATE one_time_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit > 0",
+            {"tokenID": tokenID}
+        )
+        connection.commit()
+        cursor.execute(
+            "DELETE FROM one_time_use_jwt WHERE id = %(tokenID)s AND token_limit <= 0",
+            {"tokenID": tokenID}
+        )
+        connection.commit()
+    elif (mode == "jwt_is_valid"):
         jwtToken = unquote(kwargs["jwtToken"])
         print("token", jwtToken)
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT * FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
+            "SELECT token_limit FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
             {"jwtToken": jwtToken}
         )
-        return (cursor.fetchone() is not None)
-    elif (mode == "delete_jwt"):
-        jwtToken = unquote(kwargs["jwtToken"])
-        cursor = connection.cursor()
-        cursor.execute(
-            "DELETE FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
-            {"jwtToken": jwtToken}
-        )
-        connection.commit()
-        return True
+        matched = cursor.fetchone()
+        if (matched is None):
+            return False
+
+        limit = matched[0]
+        # if the limit is defined and is more than 0, then the jwt token is valid
+        # if the limit is not defined, then the jwt token is valid 
+        # as long as it exists (unlimited usage)
+        if (limit is None or limit > 0):
+            return True
+        return False
     elif (mode == "delete_expired_jwt"):
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW()")
+        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit = 0")
         connection.commit()
     else:
         raise ValueError("Invalid mode")

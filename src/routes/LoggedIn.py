@@ -5,14 +5,13 @@ Routes for logged in users (Students or Teachers or Admins)
 import pyotp, qrcode
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, Markup, abort, Blueprint
+from flask import render_template, request, redirect, url_for, session, flash, Markup, abort, Blueprint, current_app
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.classes.Forms import *
-from python_files.classes.Constants import CONSTANTS
 
 # import python standard libraries
 from base64 import b64encode
@@ -205,7 +204,7 @@ def updatePassword():
                 except (ChangePwdError):
                     flash("Please check your entries and try again.")
                 except (PwdTooShortError, PwdTooLongError):
-                    flash(f"Password must be between {CONSTANTS.MIN_PASSWORD_LENGTH} and {CONSTANTS.MAX_PASSWORD_LENGTH} characters long.")
+                    flash(f"Password must be between {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} and {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
 

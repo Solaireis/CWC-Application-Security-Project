@@ -16,5 +16,6 @@ def routeFn():
 # import flask libraries (Third-party libraries)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask import current_app
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["30 per second"])
+limiter = Limiter(key_func=get_remote_address, default_limits=[current_app.config["CONSTANTS"].REQUEST_LIMIT])

@@ -441,10 +441,14 @@ def purchase(jwtToken:str):
     if not data.get("verified"):
         abort(400)
 
-    if not sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=jwtToken):
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+
+    if not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
         abort(400)
 
-    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=jwtToken)
+    sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
 
     payload = data['data']['payload']
     tokenCartCourseIDs = payload.get('cartCourseIDs') # The courses paid for,

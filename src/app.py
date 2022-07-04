@@ -12,7 +12,6 @@ from flask_seasurf import SeaSurf
 from python_files.functions.SQLFunctions import sql_operation
 from python_files.functions.NormalFunctions import get_IP_address_blacklist
 from python_files.classes.Constants import CONSTANTS
-from routes.RoutesLimiter import limiter
 
 # import python standard libraries
 from pathlib import Path
@@ -89,9 +88,6 @@ app.config["SESSION_COOKIE_SECURE"] = True
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
 
-# rate limiter configuration using flask limiter
-limiter.init_app(app)
-
 # Remove jinja whitespace
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
@@ -108,6 +104,14 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
 
+# add the constant object to the flask app
+app.config["CONSTANTS"] = CONSTANTS
+
+# rate limiter configuration using flask limiter
+with app.app_context():
+    from routes.RoutesLimiter import limiter
+limiter.init_app(app)
+
 # Register all app routes
 from routes.Admin import adminBP
 app.register_blueprint(adminBP)
@@ -118,8 +122,9 @@ app.register_blueprint(errorBP)
 from routes.General import generalBP
 app.register_blueprint(generalBP)
 
-from routes.Guest import guestBP
-app.register_blueprint(guestBP)
+with app.app_context():
+    from routes.Guest import guestBP
+    app.register_blueprint(guestBP)
 
 from routes.LoggedIn import loggedInBP
 app.register_blueprint(loggedInBP)
@@ -151,7 +156,7 @@ def before_request() -> None:
     """
     # Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint != "static"):
-        requestBlueprint = request.endpoint.split(".")[0]
+        requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
         print("Request Endpoint:", request.endpoint)
         if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
             pass # allow the user to access the page
