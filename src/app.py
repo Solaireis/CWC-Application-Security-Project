@@ -9,13 +9,15 @@ from flask_talisman import Talisman
 from flask_seasurf import SeaSurf
 
 # import local python libraries
-from python_files.functions.SQLFunctions import *
-from python_files.functions.NormalFunctions import *
+from python_files.functions.SQLFunctions import sql_operation
+from python_files.functions.NormalFunctions import get_IP_address_blacklist
+from python_files.classes.Constants import CONSTANTS
 from routes.RoutesLimiter import limiter
 
 # import python standard libraries
 from pathlib import Path
 from os import environ
+from datetime import timedelta
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
@@ -23,6 +25,9 @@ from os import environ
 app = Flask(__name__)
 
 # flask extension that prevents cross site request forgery
+app.config["CSRF_COOKIE_SECURE"] = True
+app.config["CSRF_COOKIE_HTTPONLY"] = True
+app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=1)
 csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
@@ -70,22 +75,16 @@ update_secret_key()
 
 # Make it such that the session cookie will be deleted when the browser is closed
 app.config["SESSION_PERMANENT"] = False
-
 # Browsers will not allow JavaScript access to cookies marked as “HTTP only” for security.
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-
 # https://flask.palletsprojects.com/en/2.1.x/security/#security-cookie
 # Lax prevents sending cookies with CSRF-prone requests 
 # from external sites, such as submitting a form
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-
 # The name of the session cookie
 app.config["SESSION_COOKIE_NAME"] = "session"
-
 # Only allow the session cookie to be sent over HTTPS
-# Will be enabled when hosted
-if (not CONSTANTS.DEBUG_MODE):
-    app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_SECURE"] = True
 
 # for other scheduled tasks such as deleting expired session id from the database
 scheduler = BackgroundScheduler()
@@ -108,10 +107,6 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
-
-# To allow Google OAuth2.0 to work as it will only work in https if this not set to 1/True
-if (app.config["DEBUG_FLAG"]):
-    environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Register all app routes
 from routes.Admin import adminBP
