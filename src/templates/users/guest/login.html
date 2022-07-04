@@ -1,7 +1,7 @@
 {% extends "guest_base.html" %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lcn7MAgAAAAAHpvqVNCldgdD7QJPsbx_NOqSIJI"></script>
+    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Login | CourseFinity{% endblock %}
 
@@ -54,7 +54,7 @@
                         <h6><a href="{{ url_for('guestBP.resetPasswordRequest') }}" class="forgetPWD">Forget password?</a></h6>
                     </div>
                     <div class="col-12">
-                        <button data-action="login" data-callback="onSubmit" data-sitekey="6Lcn7MAgAAAAAHpvqVNCldgdD7QJPsbx_NOqSIJI" class="g-recaptcha btn btn-colour text-white float-end" id="login">Login</button>
+                        <button data-action="login" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-colour text-white float-end" id="login">Login</button>
                     </div>
                 </form>
                 <hr class="mt-4 text-white">

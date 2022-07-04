@@ -460,8 +460,8 @@ def purchase(jwtToken:str):
 @userBP.route("/vimeoTesting")
 def vimeoTesting():
 
-    code = request.args.get('code')
-    state = request.args.get('state')
+    code = request.args.get('code', default=None, type=str)
+    state = request.args.get('state', default=None, type=str)
 
     if code is not None and state is not None:
         token, user, scope = get_vimeo_data(code)

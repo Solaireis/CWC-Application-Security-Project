@@ -132,12 +132,13 @@ def get_google_flow() -> Flow:
     )
     return flow
 
-def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
+def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
     """
     Creates an assessment in Google Cloud reCAPTCHA API.
 
     Args:
     - siteKey (str): The site key of the reCAPTCHA site.
+        - Defaults to COURSEFINITY_SITE_KEY defined in Constants.py
     - recaptchaToken: The token that is sent to the Google Cloud reCAPTCHA API.
     - recaptchaAction: The action name that is expected to be performed by the user.
 

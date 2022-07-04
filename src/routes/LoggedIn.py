@@ -148,7 +148,7 @@ def disableTwoFactorAuth():
 
     return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
 
-@loggedInBP.route("/change_username", methods=["GET","POST"])
+@loggedInBP.route("/change-username", methods=["GET","POST"])
 def updateUsername():
     if ("user" in session or "admin" in session):
         userID = session.get("user") or session.get("admin")

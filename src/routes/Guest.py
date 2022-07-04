@@ -60,7 +60,7 @@ def resetPasswordRequest():
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
         try:
-            recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].RESET_PASS_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="resetPassword")
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
             flash("Please verify that you are not a bot.")
             return render_template("users/guest/request_password_reset.html", form=requestForm)
@@ -166,7 +166,7 @@ def resetPassword(token:str):
 
         if (twoFAEnabled):
             # if 2FA is enabled, check if the 2FA token is valid
-            twoFAInput = request.form.get("totpInput") or ""
+            twoFAInput = request.form.get("totpInput", default="", type=str)
             if (not re.fullmatch(current_app.config["CONSTANTS"].TWO_FA_CODE_REGEX, twoFAInput) or not pyotp.TOTP(twoFAToken).verify(twoFAInput)):
                 # if the 2FA token is invalid
                 flash("Entered 2FA OTP is invalid or has expired!")
@@ -199,7 +199,7 @@ def login():
                 return render_template("users/guest/login.html", form=loginForm)
 
             try:
-                recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="login")
             except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
                 flash("Please verify that you are not a bot!", "Danger")
                 return render_template("users/guest/login.html", form=loginForm)
@@ -402,6 +402,24 @@ def enterGuardTOTP():
         return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
     if (request.method == "POST" and guardAuthForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_two_fA")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
         totpInput = guardAuthForm.twoFATOTP.data
         totpSecretToken = RSA_decrypt(session["token"])
         if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
@@ -463,7 +481,7 @@ def loginCallback():
         flash("An error occurred while trying to login via Google!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    if (RSA_decrypt(session["state"]) != request.args.get("state")):
+    if (RSA_decrypt(session["state"]) != request.args.get("state", default="", type=str)):
         abort(500) # when state does not match (protect against CSRF attacks)
 
     credentials = current_app.config["GOOGLE_OAUTH_FLOW"].credentials
@@ -530,7 +548,7 @@ def signup():
                 return render_template("users/guest/signup.html", form=signupForm)
 
             try:
-                recaptchaResponse = create_assessment(siteKey=current_app.config["CONSTANTS"].SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="signup")
             except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
                 flash("Please verify that you are not a bot!")
                 return render_template("users/guest/signup.html", form=signupForm)
@@ -539,7 +557,7 @@ def signup():
                 # if the score is not within the acceptable threshold
                 # then the user is likely a bot
                 # hence, we will flash an error message
-                flash("Please check the reCAPTCHA box and try again.")
+                flash("Please verify that you are not a bot!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
             emailInput = signupForm.email.data
