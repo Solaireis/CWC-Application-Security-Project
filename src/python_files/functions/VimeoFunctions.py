@@ -41,6 +41,3 @@ def vimeo_upload(videoFilePath:str) -> None:
         videoData = vimeoClient.get(videoURI + '?fields=link').json()
     except VideoUploadFailure as error:
         print(error)
-
-
-

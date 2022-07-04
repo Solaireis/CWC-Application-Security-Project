@@ -154,10 +154,11 @@ def before_request() -> None:
         requestBlueprint = request.endpoint.split(".")[0]
         print("Request Endpoint:", request.endpoint)
         if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
-            pass
+            pass # allow the user to access the page
         elif ("user" not in session and "admin" not in session and requestBlueprint in CONSTANTS.GUEST_BLUEPRINTS):
-            pass
+            pass # allow the user to access the page
         else:
+            # If the user is not allowed to access the page, abort 404
             abort(404)
 
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):

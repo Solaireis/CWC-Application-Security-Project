@@ -45,6 +45,7 @@ def before_first_request() -> None:
     current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
 
 @guestBP.route("/reset-password", methods=["GET", "POST"])
+@limiter.limit("60 per minute")
 def resetPasswordRequest():
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))

@@ -84,7 +84,7 @@ class ConstantsConfigs:
         self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
 
         # Request limit
-        self.REQUEST_LIMIT = "30 per second"
+        self.REQUEST_LIMIT = "120 per minute"
 
         # For lockout policy
         self.MAX_LOGIN_ATTEMPTS = 6
