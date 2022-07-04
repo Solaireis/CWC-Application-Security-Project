@@ -158,12 +158,11 @@ def before_request() -> None:
     if (request.endpoint != "static"):
         requestBlueprint = request.endpoint.split(".")[0]
         print("Request Endpoint:", request.endpoint)
-        if ("user" in session and requestBlueprint not in CONSTANTS.USER_BLUEPRINTS):
-            abort(404)
-        elif ("user" not in session and "admin" not in session and requestBlueprint not in CONSTANTS.GUEST_BLUEPRINTS):
-            abort(404)
+        if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
+            pass
+        elif ("user" not in session and "admin" not in session and requestBlueprint in CONSTANTS.GUEST_BLUEPRINTS):
+            pass
         else:
-            write_log_entry(logMessage=f"User accessed the endpoint: {request.endpoint}", severity="INFO")
             abort(404)
 
     if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
