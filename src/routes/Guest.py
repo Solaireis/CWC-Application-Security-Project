@@ -562,10 +562,15 @@ def signup():
             try:
                 send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
                 flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
-            except:
+            except (Exception) as e:
                 #TODO: Fix it anyways but can't be XSSed i believed
+                print("Error sending email:", e)
+                write_log_entry(
+                    logMessage=f"Error sending verification email: {e}",
+                    severity="ERROR",
+                )
                 flash(
-                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}'?user={returnedVal}'>me</a>!"),
+                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
                     "Danger"
                 )
                 return redirect(url_for("guestBP.login"))
@@ -592,7 +597,12 @@ def sendVerifyEmail():
         try:
             send_verification_email(email=email, username=username, userID=userID)
             flash(f"An email has bent sent to you to verify your email!", "Success")
-        except:
+        except (Exception) as e:
+            print("Error sending email:", e)
+            write_log_entry(
+                logMessage=f"Error sending verification email: {e}",
+                severity="ERROR",
+            )
             flash(
                 Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={userID}'>me</a> later!"),
                 "Danger"

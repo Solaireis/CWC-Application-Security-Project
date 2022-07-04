@@ -128,7 +128,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE IF NOT EXISTS one_time_use_jwt (
         id CHAR(64) PRIMARY KEY,
-        token_limit INTEGER UNSIGNED,
+        token_limit TINYINT, -- Min: -128, Max: 127
         expiry_date DATETIME NOT NULL
     )""")
 

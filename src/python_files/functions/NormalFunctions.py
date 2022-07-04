@@ -628,7 +628,7 @@ def EC_sign(
         data["expiry"] = expiry.get_expiry_str_date()
 
     # If limit is defined and is more than 0, set the limit in the data
-    if (limit > 0):
+    if (limit is not None and limit > 0):
         data["limit"] = limit
 
     # If tokenID is defined, set the tokenID in the data

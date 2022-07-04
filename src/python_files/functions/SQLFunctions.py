@@ -57,10 +57,11 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
     if (not isinstance(expiryInfo, JWTExpiryProperties)):
         raise ValueError("Expiry information must be a JWTExpiryProperties object.")
 
-    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo)
+    tokenID = generate_id(sixteenBytesTimes=2)
+    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
-        table="one_time_use_jwt", mode="add_jwt", jwtToken=token,
-        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+        table="one_time_use_jwt", mode="add_jwt", tokenID=tokenID,
+        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None), limit=1
     )
     return token
 
@@ -234,12 +235,12 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
         )
         connection.commit()
     elif (mode == "jwt_is_valid"):
-        jwtToken = unquote(kwargs["jwtToken"])
-        print("token", jwtToken)
+        tokenID = kwargs["tokenID"]
+        print("token", tokenID)
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT token_limit FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
-            {"jwtToken": jwtToken}
+            "SELECT token_limit FROM one_time_use_jwt WHERE id = %(tokenID)s",
+            {"tokenID": tokenID}
         )
         matched = cursor.fetchone()
         if (matched is None):
@@ -256,7 +257,7 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit = 0")
+        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
         connection.commit()
     else:
         raise ValueError("Invalid mode")
