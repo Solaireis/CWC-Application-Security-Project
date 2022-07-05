@@ -103,9 +103,10 @@
   - Session identifier of 32 bytes (Unlikely to be guessed)
   - Session timeout after 30 mins of inactivity (If there were no request to the web server for 30 mins)
   - Checks the session identifier in the database and compare with the session identifier in the cookie
-  - Computes the SHA512 hash of the user's IP Address and user agent of the request against the SHA512 hash of the same components in the database
-    - Helps to prevent session hijacking
-    - Idea inspired from [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
+  - Checks the user's digital fingerprint against the digital fingerprint in the database
+    - Computes the SHA512 hash of the user's IP Address and user agent of the request for the user's digital fingerprint
+    - Helps to prevent session hijacking via cookie theft
+    - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
       - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)

@@ -90,7 +90,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) NOT NULL,
         ip_address VARBINARY(16) NOT NULL,
         last_accessed DATETIME NOT NULL,
-        ip_address_details JSON NOT NUL,
+        ip_address_details JSON NOT NULL,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
@@ -119,7 +119,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         session_id CHAR(64) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
-        user_token CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
+        fingerprint_hash CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 

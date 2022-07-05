@@ -453,9 +453,9 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     if (mode == "create_session"):
         sessionID = ["sessionID"]
         userID = kwargs["userID"]
-        userToken = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
+        fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
 
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, %(userToken)s)", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "userToken":userToken})
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, %(fingerprintHash)s)", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "fingerprintHash":fingerprintHash})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -482,18 +482,18 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "check_if_valid"):
         sessionID = ["sessionID"]
-        cur.execute("SELECT user_id, expiry_date, user_token FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
+        cur.execute("SELECT user_id, expiry_date, fingerprint_hash FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         storedUserID = result[0]
         expiryDate = result[1]
-        storedUserToken = result[2]
+        storedFingerprintHash = result[2]
         cur.execute("SELECT SGT_NOW()")
         if (expiryDate >= cur.fetchone()[0]):
             # not expired, check if the userID matches the sessionID
-            # and if the userToken matches the storedUserToken
+            # and if the fingerprint hash matches the storedFingerprintHash
             userID = kwargs.get("userID")
-            userToken = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
-            return ((userID == storedUserID) and (userToken == storedUserToken))
+            fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
+            return ((userID == storedUserID) and (fingerprintHash == storedFingerprintHash))
         else:
             # expired
             return False
