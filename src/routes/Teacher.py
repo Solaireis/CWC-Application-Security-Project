@@ -17,10 +17,8 @@ from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 # import python standard libraries
-from datetime import datetime
 from pathlib import Path
 from io import BytesIO
-from json import loads
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -78,7 +76,7 @@ def createCourse():
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/delete-course-video")
+@teacherBP.route("/delete-course")
 def courseDelete():
     if ("user" in session):
         courseID = request.args.get("cid", default="test", type=str)
@@ -88,7 +86,7 @@ def courseDelete():
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/course-video-edit", methods=["GET", "POST"])
+@teacherBP.route("/edit-course", methods=["GET", "POST"])
 def courseUpdate():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -96,7 +94,7 @@ def courseUpdate():
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/video-upload", methods=["GET", "POST"])
+@teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     if ("user" in session):
         courseID = generate_id()
@@ -127,4 +125,3 @@ def videoUpload():
             return render_template("users/teacher/video_upload.html",imageSrcPath=imageSrcPath, accType=userInfo[1])
     else:
         return redirect(url_for("guestBP.login"))
-

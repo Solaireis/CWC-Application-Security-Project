@@ -110,7 +110,7 @@ app.config["CONSTANTS"] = CONSTANTS
 # rate limiter configuration using flask limiter
 with app.app_context():
     from routes.RoutesLimiter import limiter
-limiter.init_app(app)
+    limiter.init_app(app)
 
 # Register all app routes
 from routes.Admin import adminBP
