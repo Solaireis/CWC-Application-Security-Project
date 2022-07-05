@@ -1,12 +1,10 @@
 # import third party libraries
-import pymysql
-import stripe
+import pymysql, stripe
 
 # import python standard libraries
 from random import randint, choice as rand_choice
-import pathlib
+import pathlib, sys, json
 from importlib.util import spec_from_file_location, module_from_spec
-import sys
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -71,7 +69,9 @@ if (not res):
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
     cur.execute("INSERT INTO user (id, role, username, email, password, date_joined) VALUES (%s, %s, %s, %s, %s, SGT_NOW())", (userID, TEACHER_ROLE_ID, username, email, password))
     con.commit()
-    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
+    ipAddress = "127.0.0.1"
+    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
     con.commit()
 
 if stripeFlag:
@@ -148,10 +148,10 @@ if (res is None):
 
     cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
     con.commit()
-    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s)", {"userID": userID, "ipAddress": "127.0.0.1"})
+    ipAddress = "127.0.0.1"
+    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
     con.commit()
-
-
 
 print("Added", demoCourse, "demo courses to the database")
 
@@ -188,7 +188,6 @@ while (1):
                 con.commit()
                 # print(f"course details {course}")
                 # print(f"Added review to course: {courseID}")
-
             break
 
 con.commit()

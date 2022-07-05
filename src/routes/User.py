@@ -232,7 +232,7 @@ def createCourse():
                 # print(f"This is the filePath for the inputted file: {filePath}")
                 # file.save(filePath)
 
-                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherId=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
+                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
                 stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
 
 

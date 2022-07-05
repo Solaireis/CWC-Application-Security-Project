@@ -3,8 +3,7 @@ import pymysql
 
 # import python standard libraries
 from sys import exit as sysExit
-import re, pathlib
-import sys
+import re, pathlib, sys, json
 from importlib.util import spec_from_file_location, module_from_spec
 
 # import local python libraries
@@ -133,7 +132,9 @@ def main() -> None:
                     )
                     con.commit()
 
-                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s)", {"adminID": adminID, "ipAddress": "127.0.0.1"})
+                    ipAddress = "127.0.0.1"
+                    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
+                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"adminID": adminID, "ipAddress": ipAddress, "ipDetails": ipDetails})
                     con.commit()
 
                     count += 1

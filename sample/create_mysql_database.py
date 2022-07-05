@@ -90,7 +90,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) NOT NULL,
         ip_address VARBINARY(16) NOT NULL,
         last_accessed DATETIME NOT NULL,
-        ip_address_details VARCHAR(1024) DEFAULT NULL,
+        ip_address_details JSON NOT NUL,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")

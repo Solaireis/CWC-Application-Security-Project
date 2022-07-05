@@ -182,34 +182,34 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             current_app.config["MAINTENANCE_MODE"] = True
             return None
 
-    try:
-        if (table == "user"):
-            returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "course"):
-            returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "session"):
-            returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "login_attempts"):
-            returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "2fa_token"):
-            returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "user_ip_addresses"):
-            returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "review"):
-            returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "limited_use_jwt"):
-            returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
-        else:
-            raise ValueError("Invalid table name")
-    except (
-        MySQLErrors.IntegrityError, MySQLErrors.OperationalError, 
-        MySQLErrors.InternalError, MySQLErrors.DataError
-    ) as e:
-        # to ensure that the connection is closed even if an error with mysql occurs
-        print("Error caught:")
-        print(e)
+    with con:
+        try:
+            if (table == "user"):
+                returnValue = user_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "course"):
+                returnValue = course_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "session"):
+                returnValue = session_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "login_attempts"):
+                returnValue = login_attempts_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "2fa_token"):
+                returnValue = twofa_token_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "user_ip_addresses"):
+                returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "review"):
+                returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "limited_use_jwt"):
+                returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
+            else:
+                raise ValueError("Invalid table name")
+        except (
+            MySQLErrors.IntegrityError, MySQLErrors.OperationalError, 
+            MySQLErrors.InternalError, MySQLErrors.DataError
+        ) as e:
+            # to ensure that the connection is closed even if an error with mysql occurs
+            print("Error caught:")
+            print(e)
 
-    con.close()
     return returnValue
 
 def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
@@ -287,15 +287,15 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
     # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
     if (mode == "add_ip_address"):
-        userID = kwargs.get("userID")
-        ipAddress = kwargs.get("ipAddress")
+        userID = kwargs["userID"]
+        ipAddress = kwargs["ipAddress"]
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
         cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
 
         cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
         returnValue = cur.fetchall()
@@ -303,7 +303,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
         return ipAddressList
 
     elif (mode == "add_ip_address_only_if_unique"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         ipAddress = kwargs.get("ipAddress")
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
@@ -333,15 +333,15 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
     cur = connection.cursor()
 
     if (mode == "add_token"):
-        token = kwargs.get("token")
-        userID = kwargs.get("userID")
+        token = kwargs["token"]
+        userID = kwargs["userID"]
         token = symmetric_encrypt(plaintext=token, keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
 
         cur.execute("INSERT INTO twofa_token (token, user_id) VALUES (%(token)s, %(userID)s)", {"token":token, "userID":userID})
         connection.commit()
 
     elif (mode == "get_token"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
         if (matchedToken is None):
@@ -353,13 +353,13 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         return token
 
     elif (mode == "check_if_user_has_2fa"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
         return True if (matchedToken is not None) else False
 
     elif (mode == "delete_token"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
@@ -375,7 +375,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
     cur = connection.cursor()
 
     if (mode == "add_attempt"):
-        emailInput = kwargs.get("email")
+        emailInput = kwargs["email"]
         cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput})
         userID = cur.fetchone()
         if (userID is None):
@@ -407,7 +407,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         connection.commit()
 
     elif (mode == "reset_user_attempts_for_user"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
@@ -416,7 +416,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         connection.commit()
 
     elif (mode == "reset_attempts_past_reset_date_for_user"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s AND reset_date < SGT_NOW()", {"userID":userID})
         connection.commit()
 
@@ -437,37 +437,37 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
     # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
     if (mode == "create_session"):
-        sessionID = kwargs.get("sessionID")
-        userID = kwargs.get("userID")
+        sessionID = ["sessionID"]
+        userID = kwargs["userID"]
         userToken = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
 
         cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, %(userToken)s)", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "userToken":userToken})
         connection.commit()
 
     elif (mode == "get_user_id"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("SELECT user_id FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         userID = cur.fetchone()[0]
         return userID
 
     elif (mode == "get_session"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         return returnValue
 
     elif (mode == "delete_session"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("DELETE FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         connection.commit()
 
     elif (mode == "update_session"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("SELECT user_id, expiry_date, user_token FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         storedUserID = result[0]
@@ -489,7 +489,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         connection.commit()
 
     elif (mode == "if_session_exists"):
-        sessionID = kwargs.get("sessionID")
+        sessionID = ["sessionID"]
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         if (returnValue):
@@ -499,8 +499,8 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "delete_users_other_session"):
         # delete all session of a user except the current session id
-        userID = kwargs.get("userID")
-        sessionID = kwargs.get("sessionID")
+        userID = kwargs["userID"]
+        sessionID = ["sessionID"]
         cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
 
@@ -528,7 +528,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     cur = connection.cursor()
 
     if (mode == "verify_userID_existence"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         if (userID is None):
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
@@ -536,7 +536,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         return bool(cur.fetchone())
 
     elif (mode == "email_verified"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         getEmail = kwargs.get("email") or False
         if (userID is None):
             connection.close()
@@ -553,7 +553,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         connection.commit()
 
     elif (mode == "update_email_to_verified"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         if (userID is None):
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
@@ -616,8 +616,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         current_app.config["MAINTENANCE_MODE"] = False
 
     elif (mode == "signup"):
-        emailInput = kwargs.get("email")
-        usernameInput = kwargs.get("username")
+        emailInput = kwargs["email"]
+        usernameInput = kwargs["username"]
 
         cur.execute("SELECT * FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         emailDupe = bool(cur.fetchone())
@@ -651,7 +651,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         return userID
 
     elif (mode == "check_if_using_google_oauth2"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
         if (password is None):
@@ -665,9 +665,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             return False
 
     elif (mode == "login_google_oauth2"):
-        userID = kwargs.get("userID")
-        username = kwargs.get("username")
-        email = kwargs.get("email")
+        userID = kwargs["userID"]
+        username = kwargs["username"]
+        email = kwargs["email"]
         googleProfilePic = kwargs.get("googleProfilePic")
 
         # check if the email exists
@@ -694,8 +694,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 return (matched[0], roleName)
 
     elif (mode == "login"):
-        emailInput = kwargs.get("email")
-        passwordInput = kwargs.get("password")
+        emailInput = kwargs["email"]
+        passwordInput = kwargs["password"]
 
         cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
@@ -755,13 +755,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "find_user_for_reset_password"):
-        email = kwargs.get("email")
+        email = kwargs["email"]
         cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
         matched = cur.fetchone()
         return matched
 
     elif (mode == "get_user_data"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is None):
@@ -775,18 +775,18 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         return tuple(matched)
 
     elif (mode == "change_profile_picture"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         profileImagePath = kwargs.get("profileImagePath")
         cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":profileImagePath, "userID":userID})
         connection.commit()
 
     elif (mode == "delete_profile_picture"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":None, "userID":userID})
         connection.commit()
 
     elif (mode == "change_username"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         usernameInput = kwargs.get("username")
         cur.execute("SELECT * FROM user WHERE username=%(username)s", {"username":usernameInput})
         reusedUsername = bool(cur.fetchone())
@@ -799,9 +799,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         connection.commit()
 
     elif (mode == "change_email"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         currentPasswordInput = kwargs.get("currentPassword")
-        emailInput = kwargs.get("email")
+        emailInput = kwargs["email"]
 
         # check if the email is already in use
         cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
@@ -826,9 +826,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "change_password"):
-        userID = kwargs.get("userID")
-        oldPasswordInput = kwargs.get("oldPassword") # to authenticate the changes
-        passwordInput = kwargs.get("password")
+        userID = kwargs["userID"]
+        oldPasswordInput = kwargs["oldPassword"] # to authenticate the changes
+        passwordInput = kwargs["password"]
 
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
@@ -859,8 +859,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise ChangePwdError("The old password is incorrect!")
 
     elif (mode == "reset_password"):
-        userID = kwargs.get("userID")
-        newPassword = kwargs.get("newPassword")
+        userID = kwargs["userID"]
+        newPassword = kwargs["newPassword"]
 
         cur.execute(
             "UPDATE user SET password=%(password)s WHERE id=%(userID)s",
@@ -869,28 +869,22 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         connection.commit()
 
     elif (mode == "delete_user"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("DELETE FROM user WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "update_to_teacher"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
 
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         currentRoleID = cur.fetchone()[0]
         cur.execute("CALL get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
         currentRole = cur.fetchone()[0]
-        # cur.callproc("get_role_name", (currentRoleID,))
-        # for result in cur.stored_results():
-        #     currentRole = result.fetchone()[0]
 
-        isTeacher = True if (currentRole == "Teacher") else False
+        isTeacher = False if (currentRole != "Teacher") else True
         if (not isTeacher):
             cur.execute("CALL get_role_id(%(Teacher)s)", {"Teacher":"Teacher"})
             teacherRoleID = cur.fetchone()[0]
-            # cur.callproc("get_role_id", ("Teacher",))
-            # for result in cur.stored_results():
-            #     teacherRoleID = result.fetchone()[0]
             cur.execute("UPDATE user SET role=%(teacherRoleID)s WHERE id=%(userID)s", {"teacherRoleID": teacherRoleID, "userID":userID})
             connection.commit()
         else:
@@ -898,19 +892,19 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise IsAlreadyTeacherError("The user is already a teacher!")
 
     elif (mode == "get_user_purchases"):
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cur.execute("SELECT JSON_ARRAY('userID', %(userID)s) FROM user", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "get_user_cart":
-        userID = kwargs.get("userID")
+        userID = kwargs["userID"]
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "add_to_cart":
-        userID = kwargs.get("userID")
-        courseID = kwargs.get("courseID")
+        userID = kwargs["userID"]
+        courseID = kwargs["courseID"]
 
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
@@ -924,8 +918,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             connection.commit()
 
     elif mode == "remove_from_cart":
-        userID = kwargs.get("userID")
-        courseID = kwargs.get("courseID")
+        userID = kwargs["userID"]
+        courseID = kwargs["courseID"]
 
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
@@ -937,8 +931,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif mode == "purchase_courses":
 
-        userID = kwargs.get("userID")
-        cartCourseIDs = kwargs.get('cartCourseIDs')
+        userID = kwargs["userID"]
+        cartCourseIDs = kwargs["cartCourseIDs"]
 
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
@@ -977,14 +971,14 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     cur = connection.cursor()
 
     if (mode == "insert"):
-        course_id = kwargs.get("courseID")
-        teacher_id = kwargs.get("teacherId")
-        course_name = kwargs.get("courseName")
+        course_id = kwargs["courseID"]
+        teacher_id = kwargs["teacherID"]
+        course_name = kwargs["courseName"]
         course_description = kwargs.get("courseDescription")
         course_image_path = kwargs.get("courseImagePath")
-        course_price = kwargs.get("coursePrice")
-        course_category = kwargs.get("courseCategory")
-        video_path = kwargs.get("videoPath")
+        course_price = kwargs["coursePrice"]
+        course_category = kwargs["courseCategory"]
+        video_path = kwargs["videoPath"]
         course_total_rating = 0
         course_rating_count = 0
 
@@ -995,7 +989,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         connection.commit()
 
     elif (mode == "get_course_data"):
-        course_id = kwargs.get("courseID")
+        course_id = kwargs["courseID"]
         print('Course_ID:', course_id)
         cur.execute("SELECT * FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         matched = cur.fetchone()
@@ -1007,48 +1001,48 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     # Added just in case want to do updating
 
     elif (mode == "update_course_title"):
-        course_id = kwargs.get("courseID")
-        course_title = kwargs.get("courseTitle")
+        course_id = kwargs["courseID"]
+        course_title = kwargs["courseTitle"]
         cur.execute("UPDATE course SET course_name=%(course_name)s WHERE course_id=%(courseID)s", {"course_name":course_title, "courseID":course_id})
         connection.commit()
 
     elif (mode == "update_course_description"):
-        course_id = kwargs.get("courseID")
-        course_description = kwargs.get("courseDescription")
+        course_id = kwargs["courseID"]
+        course_description = kwargs["courseDescription"]
         cur.execute("UPDATE course SET course_description=%(course_description)s WHERE course_id=%(courseID)s", {"course_description":course_description, "courseID":course_id})
         connection.commit()
 
     elif (mode == "update_course_category"):
-        course_id = kwargs.get("courseID")
-        course_category = kwargs.get("course_category")
+        course_id = kwargs["courseID"]
+        course_category = kwargs["course_category"]
         cur.execute("UPDATE course SET course_category=%(course_category)s WHERE course_id=%(courseID)s", {"course_category":course_category, "courseID":course_id})
         connection.commit()
 
     elif (mode == "update_course_price"):
-        course_id = kwargs.get("courseID")
+        course_id = kwargs["courseID"]
         course_price = kwargs.get("coursePrice")
         cur.execute("UPDATE course SET course_price=%(course_price)s WHERE course_id=%(courseID)s", {"course_price":course_price, "courseID":course_id})
         connection.commit()
 
     elif (mode == "update_course_thumbnail"):
-        course_id = kwargs.get("courseID")
-        course_image_path = kwargs.get("courseImagePath")
+        course_id = kwargs["courseID"]
+        course_image_path = kwargs["courseImagePath"]
         cur.execute("UPDATE course SET course_image_path=%(course_image_path)s WHERE course_id=%(courseID)s", {"course_image_path":course_image_path, "courseID":course_id})
         connection.commit()
 
     elif (mode == "update_course_video"):
-        course_id = kwargs.get("courseID")
-        video_path = kwargs.get("videoPath")
+        course_id = kwargs["courseID"]
+        video_path = kwargs["videoPath"]
         cur.execute("UPDATE course SET video_path=%(video_path)s WHERE course_id=%(courseID)s", {"video_path":video_path, "courseID":course_id})
         connection.commit()
 
     elif (mode == "delete"):
-        course_id = kwargs.get("courseID")
+        course_id = kwargs["courseID"]
         cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         connection.commit()
 
     elif (mode == "get_all_courses"):
-        teacher_id = kwargs.get("teacherID")
+        teacher_id = kwargs["teacherID"]
         courseList = []
         cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacher_id)s", {"teacher_id":teacher_id})
         resultsList = cur.fetchall()
@@ -1073,17 +1067,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
-        # statement = "SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course "
 
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
-            if (not teacherID):
+            if (teacherID is None):
                 cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY date_created DESC LIMIT 3")
             else:
                 cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY date_created DESC LIMIT 3", {"teacherID":teacherID})
         else:
             # get top 3 highly rated courses
-            if (not teacherID):
+            if (teacherID is None):
                 cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
             else:
                 cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3", {"teacherID":teacherID})
@@ -1122,7 +1115,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 return courseInfoList
 
     elif (mode == "search"):
-        searchInput = kwargs.get("searchInput")
+        searchInput = kwargs.get("searchInput", "")
         resultsList = []
 
         cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
@@ -1162,8 +1155,8 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     cur = connection.cursor()
 
-    userID = kwargs.get("userID")
-    courseID = kwargs.get("courseID")
+    userID = kwargs["userID"]
+    courseID = kwargs["courseID"]
 
     if mode == "retrieve_user_review":
         cur.execute("SELECT course_rating FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
@@ -1171,8 +1164,8 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         return review_list
 
     elif mode == "insert":
-        courseRating = kwargs.get("courseRating")
-        courseReview = kwargs.get("courseReview")
+        courseRating = kwargs["courseRating"]
+        courseReview = kwargs["courseReview"]
         #reviewDates = kwargs.get("reviewDates")
         cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, %(reviewDate)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
@@ -1181,7 +1174,6 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("SELECT user_id,course_id,course_rating,course_review,review_date,username FROM review r INNER JOIN user u ON r.user_ID = u.id WHERE course_id = %(courseID)s", {"courseID":courseID})
         review_list = cur.fetchall()
         return review_list
-
 
     else:
         connection.close()

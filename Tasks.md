@@ -106,7 +106,7 @@
   - Computes the SHA512 hash of the user's IP Address and user agent of the request against the SHA512 hash of the same components in the database
     - Helps to prevent session hijacking
     - Idea inspired from [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
-      - I did not use this library because it is not consistently maintained
+      - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
