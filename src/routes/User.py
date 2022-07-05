@@ -359,7 +359,8 @@ def purchaseView(courseID:str):
     return render_template("users/general/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
         , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType)
+        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
+            course_image_path=course_image_path)
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):
