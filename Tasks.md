@@ -116,14 +116,15 @@
 #### Plan
 - Make a admin only file 
   - Make a admin only files (such as a csv file of admin account info, user base info, etc.)
-- Validate access (deny by default) such as for admin pages, etc.
+- Validate access (deny by default) such as for admin pages, etc. through the use of RBAC
 - Deny request to a user's purchase course link
 - Block all read and write access to SQL database except for the web app
 - Work on integrating AWS Identity Provider with GCP Workforce Identification Pool
   - Since [google-sm.json](src/config_files/google-sm.json) is stored locally in the web file system, it is a security risk as one might get a copy and have access to all the secrets stored in Google Secret Manager API.
+- Work on Admin console, a Super Administrator account must be created to access the admin console
 
 #### Implemented:
--
+- Role based Access Control which groups the approutes via Blueprints, access control is granted only to the specific blueprints group
 
 ---
 
@@ -135,6 +136,8 @@
 - Check vulnerabilities in dependencies used
 - Block users from access files outside of the web app
 - Disallow default admin password such as "admin123"
+- Check vulnerabilities in the Codings using Static Code Analysis and Dynamic Code analysis
+- Destructive Bugs Testing is needed
 
 #### Implemented:
 -
