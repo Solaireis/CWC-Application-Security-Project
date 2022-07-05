@@ -154,14 +154,22 @@ def before_request() -> None:
     Returns:
     - None
     """
-    # Check if the user is allowed to access the pages that they are allowed to access
+    # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint != "static"):
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
         print("Request Endpoint:", request.endpoint)
         if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
             pass # allow the user to access the page
-        elif ("user" not in session and "admin" not in session and requestBlueprint in CONSTANTS.GUEST_BLUEPRINTS):
-            pass # allow the user to access the page
+        
+        elif("teacher" in session and requestBlueprint in CONSTANTS.TEACHER_BLUEPRINTS):
+            pass #allow the teacher to access the page
+
+        elif("admin" in session and requestBlueprint in CONSTANTS.ADMIN_BLUEPRINTS):
+            pass #allow the admin to access the page
+
+        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in CONSTANTS.GUEST_BLUEPRINTS):
+            pass # allow the guest user to access the page
+
         else:
             # If the user is not allowed to access the page, abort 404
             abort(404)
