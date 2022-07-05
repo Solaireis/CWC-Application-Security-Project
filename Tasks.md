@@ -42,7 +42,8 @@
     - Argon2id
     - On average, the time taken to hash a password is about 0.5+ seconds.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
-- Encrypting the (temporarily stored) sensitive data in the session cookie such as secret token for TOTP (time-based one time password)
+- Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
+  - For layered security on top of HTTPS.
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
     - 156 bits of security
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
@@ -115,8 +116,12 @@
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with Google
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
-  - Preventing the cookie from being sniffed as it is only transmitted via HTTPS (Secure)
-  - Preventing client-side scripts from accessing the cookie data (HttpOnly)
+  - Secure:
+    - Only allow the cookie to be transmitted via HTTPS
+      - Prevent cookie from being sniffed and exposed
+  - HttpOnly:
+    - Prevent client-side scripts from accessing the cookie
+      - Prevent cookie theft
 
 ---
 
