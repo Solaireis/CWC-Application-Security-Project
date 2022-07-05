@@ -203,12 +203,26 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             else:
                 raise ValueError("Invalid table name")
         except (
-            MySQLErrors.IntegrityError, MySQLErrors.OperationalError, 
-            MySQLErrors.InternalError, MySQLErrors.DataError
+            MySQLErrors.MySQLError,
+            MySQLErrors.Warning,
+            MySQLErrors.Error,
+            MySQLErrors.InterfaceError,
+            MySQLErrors.DatabaseError,
+            MySQLErrors.DataError,
+            MySQLErrors.OperationalError, 
+            MySQLErrors.IntegrityError,
+            MySQLErrors.InternalError, 
+            MySQLErrors.ProgrammingError,
+            MySQLErrors.NotSupportedError,
+            KeyError, ValueError
         ) as e:
             # to ensure that the connection is closed even if an error with mysql occurs
             print("Error caught:")
             print(e)
+            write_log_entry(
+                logMessage=f"Error caught: {e}",
+                severity="ERROR"
+            )
 
     return returnValue
 
