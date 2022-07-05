@@ -104,7 +104,8 @@
   - Session timeout after 30 mins of inactivity (If there were no request to the web server for 30 mins)
   - Checks the session identifier in the database and compare with the session identifier in the cookie
   - Checks the user's digital fingerprint against the digital fingerprint in the database
-    - Computes the SHA512 hash of the user's IP Address and user agent of the request for the user's digital fingerprint
+    - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
+      - If the user's digital fingerprint hash does not match the one in the database of the same session identifier, the user's session cookie will be cleared from their browser
     - Helps to prevent session hijacking via cookie theft
     - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
       - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
