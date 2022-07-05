@@ -21,9 +21,8 @@ from python_files.classes.Course import Course
 from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_email, write_log_entry
+                             send_email, write_log_entry, get_mysql_connection
 from python_files.classes.Constants import CONSTANTS
-from .MySQLInit import mysql_init_tables as MySQLInitialise, get_mysql_connection
 
 def add_session(userID:str, userIP:str="") -> str:
     """
@@ -159,7 +158,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     try:
         con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE)
     except (MySQLErrors.OperationalError):
-        print("Database Not Found...")
+        print("Fatal Error: Database Not Found...")
         if (CONSTANTS.DEBUG_MODE):
             raise Exception("Database Not Found... Please initialise the database.")
         else:

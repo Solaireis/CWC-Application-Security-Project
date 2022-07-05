@@ -31,7 +31,7 @@ else:
     from python_files.classes.Errors import *
 
 # import third party libraries
-import PIL
+import PIL, pymysql
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 
@@ -64,6 +64,43 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
+
+def get_mysql_connection(
+    debug:bool=CONSTANTS.DEBUG_MODE, 
+    database:Optional[str]=CONSTANTS.DATABASE_NAME,
+    user:str="root"
+) -> pymysql.connections.Connection:
+    """
+    Get a MySQL connection to the coursefinity database.
+
+    Args:
+    - debug (bool): whether to connect to the MySQL database locally or to Google CLoud SQL Server
+        - Defaults to DEBUG_MODE defined in Constants.py
+    - database (str, optional): the name of the database to connect to
+        - Defaults to DATABASE_NAME defined in Constants.py if not defined
+        - Define database to None if you do not want to connect to a database
+    - user (str, optional): the name of the user to connect as
+        - Defaults to "root"
+
+    Returns:
+    A MySQL connection.
+    """
+    if (debug):
+        LOCAL_SQL_CONFIG_COPY = CONSTANTS.LOCAL_SQL_SERVER_CONFIG.copy()
+        if (database is not None):
+            LOCAL_SQL_CONFIG_COPY["database"] = database
+        LOCAL_SQL_CONFIG_COPY["user"] = user
+        connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
+        return connection
+    else:
+        connection: pymysql.connections.Connection = CONSTANTS.SQL_CLIENT.connect(
+            instance_connection_string=CONSTANTS.SQL_INSTANCE_LOCATION,
+            driver="pymysql",
+            user=user,
+            password=CONSTANTS.get_secret_payload(secretID="sql-root-password"),
+            database=database
+        )
+        return connection
 
 def get_dicebear_image(username:str) -> str:
     """

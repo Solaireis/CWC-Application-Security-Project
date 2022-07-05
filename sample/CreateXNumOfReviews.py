@@ -6,7 +6,6 @@ from random import randint
 import pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
 
-
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
 PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files", "functions")
@@ -21,13 +20,6 @@ NormalFunctions = module_from_spec(spec)
 sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
-# Import MySQLInit.py for get_msql_connection() function
-NORMAL_PY_FILE = PYTHON_FILES_PATH.joinpath("MySQLInit.py")
-spec = spec_from_file_location("MySQLInit", str(NORMAL_PY_FILE))
-MySQLInit = module_from_spec(spec)
-sys.modules[spec.name] = MySQLInit
-spec.loader.exec_module(MySQLInit)
-
 # CONSTANTS = NormalFunctions.CONSTANTS
 
 while (1):
@@ -40,7 +32,7 @@ while (1):
         break
 
 try:
-    con = MySQLInit.get_mysql_connection(debug=debugFlag)
+    con = NormalFunctions.get_mysql_connection(debug=debugFlag)
 except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
 cur = con.cursor()

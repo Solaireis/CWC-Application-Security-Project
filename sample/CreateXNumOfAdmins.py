@@ -21,13 +21,6 @@ NormalFunctions = module_from_spec(spec)
 sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
-# Import MySQLInit.py for get_msql_connection() function
-NORMAL_PY_FILE = PYTHON_FILES_PATH.joinpath("MySQLInit.py")
-spec = spec_from_file_location("MySQLInit", str(NORMAL_PY_FILE))
-MySQLInit = module_from_spec(spec)
-sys.modules[spec.name] = MySQLInit
-spec.loader.exec_module(MySQLInit)
-
 CONSTANTS = NormalFunctions.CONSTANTS
 
 """----------------------------------- START OF DEFINING FUNCTIONS -----------------------------------"""
@@ -77,7 +70,7 @@ while (1):
         break
 
 try:
-    con = MySQLInit.get_mysql_connection(debug=debugFlag)
+    con = NormalFunctions.get_mysql_connection(debug=debugFlag)
 except (pymysql.ProgrammingError):
     print("Database Not Found. Please create one first")
     sysExit(1)
