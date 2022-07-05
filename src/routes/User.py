@@ -317,9 +317,6 @@ def courseReview(courseID:str):
 def purchaseView(courseID:str):
     # TODO: Make the argument based on the purchaseID instead of courseID
     print(courseID)
-    #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
-    # the course id is
-    #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     #courseName = courses[0][1]
     if courses == False: #raise 404 error
@@ -472,10 +469,6 @@ def vimeoTesting():
     else:
         vimeo_authorization_url = authorise_vimeo(url_for('userBP.vimeoTesting', _external = True))
         return redirect(vimeo_authorization_url, code = 303)
-
-@userBP.route("/purchase-view/<string:courseID>")
-def purchaseDetails(courseID:str):
-    return render_template("users/loggedin/purchase_view.html", courseID=courseID)
 
 @userBP.route("/purchase-history")
 def purchaseHistory():
