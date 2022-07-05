@@ -1,5 +1,8 @@
 {% extends "guest_base.html" %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
+{% endblock %}
 {% block title %}{{ title }} | CourseFinity{% endblock %}
 
 {% block content %}
@@ -37,7 +40,7 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
-                <form action="" method="POST" class="row g-3 p-2">
+                <form action="" method="POST" class="row g-3 p-2" id="twoFAForm">
                     <h4 class="text-white">{{ formHeader }}</h4>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     {% if formBody != "" %}
@@ -50,11 +53,19 @@
                         {{ render_field(form.twoFATOTP, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        <button type="submit" class="btn btn-colour text-white float-end">Submit</button>
+                        <button data-action="enter_two_fA" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-colour text-white float-end">Submit</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script nonce="{{ csp_nonce() }}">
+        function onSubmit(token) {
+            document.getElementById("twoFAForm").submit();
+        }
+    </script>
 {% endblock %}

@@ -57,10 +57,11 @@ def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JW
     if (not isinstance(expiryInfo, JWTExpiryProperties)):
         raise ValueError("Expiry information must be a JWTExpiryProperties object.")
 
-    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo)
+    tokenID = generate_id(sixteenBytesTimes=2)
+    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
-        table="one_time_use_jwt", mode="add_jwt", jwtToken=token,
-        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+        table="one_time_use_jwt", mode="add_jwt", tokenID=tokenID,
+        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None), limit=1
     )
     return token
 
@@ -159,18 +160,15 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
         con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE)
     except (MySQLErrors.OperationalError):
         print("Database Not Found...")
-        print("Creating Database...")
-        con = MySQLInitialise(debug=CONSTANTS.DEBUG_MODE)
-        print("Created the neccessary tables for the database!\n")
-
-        # Uncomment the code below as to prevent attackers from causing an operational error
-        # Which will drop all the tables in the database and re-initialise them.
-        # write_log_entry(
-        #     logMessage="MySQL server has no database, \"coursefinity\"! The web application will go to maintanence mode until the database is created.",
-        #     severity="EMERGENCY"
-        # )
-        # current_app.config["MAINTENANCE_MODE"] = True
-        # return None
+        if (CONSTANTS.DEBUG_MODE):
+            raise Exception("Database Not Found... Please initialise the database.")
+        else:
+            write_log_entry(
+                logMessage="MySQL server has no database, \"coursefinity\"! The web application will go to maintanence mode until the database is created.",
+                severity="EMERGENCY"
+            )
+            current_app.config["MAINTENANCE_MODE"] = True
+            return None
 
     try:
         if (table == "user"):
@@ -214,38 +212,52 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
     Returns the returned value from the SQL operation.
     """
     if (mode == "add_jwt"):
-        jwtToken = unquote(kwargs["jwtToken"])
+        tokenID = kwargs["tokenID"]
         expiryDate = kwargs["expiryDate"]
+        limit = kwargs.get("limit")
         cursor = connection.cursor()
         cursor.execute(
-            "INSERT INTO one_time_use_jwt (jwt_token, expiry_date) VALUES (%(jwtToken)s, %(expiryDate)s)",
-            {"jwtToken": jwtToken, "expiryDate": expiryDate}
+            "INSERT INTO one_time_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
+            {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
         )
         connection.commit()
-        return True
-    elif (mode == "jwt_exists"):
-        jwtToken = unquote(kwargs["jwtToken"])
-        print("token", jwtToken)
+    elif (mode == "decrement_limit_after_use"):
+        tokenID = kwargs["tokenID"]
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT * FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
-            {"jwtToken": jwtToken}
-        )
-        return (cursor.fetchone() is not None)
-    elif (mode == "delete_jwt"):
-        jwtToken = unquote(kwargs["jwtToken"])
-        cursor = connection.cursor()
-        cursor.execute(
-            "DELETE FROM one_time_use_jwt WHERE jwt_token = %(jwtToken)s",
-            {"jwtToken": jwtToken}
+            "UPDATE one_time_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit > 0",
+            {"tokenID": tokenID}
         )
         connection.commit()
-        return True
+        cursor.execute(
+            "DELETE FROM one_time_use_jwt WHERE id = %(tokenID)s AND token_limit <= 0",
+            {"tokenID": tokenID}
+        )
+        connection.commit()
+    elif (mode == "jwt_is_valid"):
+        tokenID = kwargs["tokenID"]
+        print("token", tokenID)
+        cursor = connection.cursor()
+        cursor.execute(
+            "SELECT token_limit FROM one_time_use_jwt WHERE id = %(tokenID)s",
+            {"tokenID": tokenID}
+        )
+        matched = cursor.fetchone()
+        if (matched is None):
+            return False
+
+        limit = matched[0]
+        # if the limit is defined and is more than 0, then the jwt token is valid
+        # if the limit is not defined, then the jwt token is valid 
+        # as long as it exists (unlimited usage)
+        if (limit is None or limit > 0):
+            return True
+        return False
     elif (mode == "delete_expired_jwt"):
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW()")
+        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
         connection.commit()
     else:
         raise ValueError("Invalid mode")
@@ -663,15 +675,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
+
+        if (matched is None):
+            connection.close()
+            raise EmailDoesNotExistError("Email does not exist!")
+
         username = matched[2]
         roleID = matched[3]
         encryptedPasswordHash = matched[1]
         userID = matched[0]
         emailVerified = matched[4]
-
-        if (not matched):
-            connection.close()
-            raise EmailDoesNotExistError("Email does not exist!")
 
         if (encryptedPasswordHash is None):
             connection.close()

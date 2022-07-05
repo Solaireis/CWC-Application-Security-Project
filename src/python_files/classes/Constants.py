@@ -85,7 +85,7 @@ class ConstantsConfigs:
         self.ADMIN_BlUEPRINTS = ("adminBP", "generalBP", "LoggedInBP", "errorBP","userBP")
         self.TEACHER_BLUEPRINTS = ("userBP", "generalBP", "LoggedInBP", "errorBP","teacherBP") #its better to seperate the teacher and student blueprints
         # Request limit
-        self.REQUEST_LIMIT = "30 per second"
+        self.REQUEST_LIMIT = "120 per minute"
 
         # For lockout policy
         self.MAX_LOGIN_ATTEMPTS = 6
@@ -210,8 +210,7 @@ class ConstantsConfigs:
         # For Google reCAPTCHA API
         RECAPTCHA_JSON = json.loads(self.get_secret_payload(secretID="google-recaptcha"))
         self.RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
-        self.LOGIN_SITE_KEY = "6LfpqZcgAAAAAC7RH7qroayHutXeXkpLuKY5iV6a"
-        self.SIGNUP_SITE_KEY = "6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B"
+        self.COURSEFINITY_SITE_KEY = "6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"
         del RECAPTCHA_JSON
 
         # For Google Key Management Service API

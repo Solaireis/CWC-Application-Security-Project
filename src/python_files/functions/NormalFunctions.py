@@ -4,7 +4,6 @@ flask web application's app variable from app.py.
 
 This is to prevent circular imports.
 """
-
 # import python standard libraries
 import requests as req, uuid, re, json
 from six import ensure_binary
@@ -36,7 +35,7 @@ import PIL
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 
-# import Flask web application configs
+# import Flask libraries
 from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
@@ -133,12 +132,13 @@ def get_google_flow() -> Flow:
     )
     return flow
 
-def create_assessment(siteKey:str="", recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
+def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
     """
     Creates an assessment in Google Cloud reCAPTCHA API.
 
     Args:
     - siteKey (str): The site key of the reCAPTCHA site.
+        - Defaults to COURSEFINITY_SITE_KEY defined in Constants.py
     - recaptchaToken: The token that is sent to the Google Cloud reCAPTCHA API.
     - recaptchaAction: The action name that is expected to be performed by the user.
 
@@ -488,11 +488,11 @@ class JWTExpiryProperties:
     In short:
     - It is used when digitally signing a payload and to configure an active duration time in seconds.
     """
-
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f %z"
 
     def __init__(
-        self, activeDuration:Optional[int]=0, 
+        self, 
+        activeDuration:Optional[int]=0, 
         strDate:Optional[str]=None,
         datetimeObj:Optional[datetime]=None
     ) -> None:
@@ -550,8 +550,9 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-    payload:Union[str, dict]="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, 
-    versionID:int=CONSTANTS.SIGNATURE_VERSION_ID, b64EncodeData:bool=False, expiry:JWTExpiryProperties=None
+        payload:Union[str, dict]="", 
+        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:int=CONSTANTS.SIGNATURE_VERSION_ID, 
+        b64EncodeData:bool=False, expiry:JWTExpiryProperties=None, limit:int=None, tokenID:str=None
     ) -> Union[dict, str]:
     """
     Sign a message using the public key part of an asymmetric EC key.
@@ -570,6 +571,13 @@ def EC_sign(
         - Defaults to SIGNATURE_VERSION_ID defined in NormalFunctions.py
     - b64EncodeData: Whether to base64 encode the data or not.
         - Set this to True if you want to use the base64 encoded data for JWT.
+        - Defaults to False
+    - expiry: The expiry properties of the token (using JWTExpiryProperties class).
+        - Defaults to None
+    - limit: The maximum number of allowed usage of the token.
+        - Defaults to None for unlimited usage
+    - tokenID: The ID of the token.
+        - Used for JWT with usage limit or expiry date.
 
     Returns:
     - A dictionary containing:
@@ -578,11 +586,13 @@ def EC_sign(
                 "key_id" : key name used,
                 "key_ring_id" : key ring name used,
                 "version_id" : key version used
+                "token_id" : token ID generated outside of this function if defined
             },
             "data": {
                 "payload" : the payload,
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
+                "limit" : the maximum number of allowed usage of the token if defined
             },
             "signature": The signature of the data (bytes)
         }
@@ -617,6 +627,14 @@ def EC_sign(
     # If expiry is defined, set the expiry date in the data
     if (expiry is not None and isinstance(expiry, JWTExpiryProperties)):
         data["expiry"] = expiry.get_expiry_str_date()
+
+    # If limit is defined and is more than 0, set the limit in the data
+    if (limit is not None and limit > 0):
+        data["limit"] = limit
+
+    # If tokenID is defined, set the tokenID in the data
+    if (tokenID is not None):
+        header["token_id"] = tokenID
 
     # Create the data to be signed and encode it to bytes
     dataToSign = {"header": header, "data": data}
@@ -681,6 +699,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
                 "payload" : the payload,
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
+                "limit" : the maximum number of allowed usage of the token if defined
             },
             "signature": The signature of the data (bytes)
             "verified": Whether the signature is valid or not (bool)
@@ -694,7 +713,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
             if ("payload" not in payloadData):
                 raise KeyError("payload not found in data")
             dataType = payloadData["data_type"]
-            expiryDate = payloadData["expiry"] if ("expiry" in payloadData) else None
+            expiryDate = payloadData.get("expiry", None)
 
             # get the signature
             signature = data["signature"]
@@ -724,7 +743,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
             if ("payload" not in payloadInfo):
                 raise KeyError("payload not found in data")
             dataType = payloadInfo["data_type"]
-            expiryDate = payloadInfo["expiry"] if ("expiry" in payloadInfo) else None
+            expiryDate = payloadInfo.get("expiry", None)
             newData["data"] = payloadInfo
 
             # get the signature

@@ -20,15 +20,15 @@ from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.Errors import *
-from python_files.classes.Constants import CONSTANTS
 from .RoutesLimiter import limiter
 
 # import python standard libraries
 from zoneinfo import ZoneInfo
 from datetime import datetime
+from time import sleep
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
-limiter.limit(limit_value=CONSTANTS.REQUEST_LIMIT)(guestBP)
+limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(guestBP)
 
 @guestBP.before_app_first_request
 def before_first_request() -> None:
@@ -39,12 +39,13 @@ def before_first_request() -> None:
     - None
     """
     # load google client id from credentials.json
-    current_app.config["GOOGLE_CLIENT_ID"] = CONSTANTS.GOOGLE_CREDENTIALS["web"]["client_id"]
+    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
 
     # get Google oauth flow object
     current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
 
 @guestBP.route("/reset-password", methods=["GET", "POST"])
+@limiter.limit("60 per minute")
 def resetPasswordRequest():
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
@@ -53,11 +54,29 @@ def resetPasswordRequest():
     if (request.method == "POST" and requestForm.validate()):
         # if the request is a post request and the form is valid
         # get the userID from the email
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/request_password_reset.html", form=requestForm)
+
         emailInput = requestForm.email.data
         userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
         if (userInfo is None):
             # if the user does not exist
-            time.sleep(1) # wait one second to throw off attackers
+            sleep(1.5)
             flash("Reset password instructions has been sent to your email!", "Success")
             return redirect(url_for("guestBP.login"))
 
@@ -77,10 +96,12 @@ def resetPasswordRequest():
         # before it expires (something like JWT/JWS but not exactly)
         jsonPayload = {"userID": userInfo[0]}
         expiryInfo = JWTExpiryProperties(activeDuration=60*30)
-        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo)
+        tokenID = generate_id(sixteenBytesTimes=2)
+        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo, limit=1, tokenID=tokenID)
         sql_operation(
             table="one_time_use_jwt", mode="add_jwt", jwtToken=token, 
-            expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+            expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None),
+            limit=1, tokenID=tokenID
         )
 
         # send the token to the user's email
@@ -100,16 +121,19 @@ def resetPassword(token:str):
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
 
-    # check if jwt exists in database
-    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
-    if (not jwtExists):
-        flash("Reset password link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
         # if the token is invalid
+        flash("Reset password link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    # check if jwt exists in database
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+
+    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -142,8 +166,8 @@ def resetPassword(token:str):
 
         if (twoFAEnabled):
             # if 2FA is enabled, check if the 2FA token is valid
-            twoFAInput = request.form.get("totpInput") or ""
-            if (not re.fullmatch(CONSTANTS.TWO_FA_CODE_REGEX, twoFAInput) or not pyotp.TOTP(twoFAToken).verify(twoFAInput)):
+            twoFAInput = request.form.get("totpInput", default="", type=str)
+            if (not re.fullmatch(current_app.config["CONSTANTS"].TWO_FA_CODE_REGEX, twoFAInput) or not pyotp.TOTP(twoFAToken).verify(twoFAInput)):
                 # if the 2FA token is invalid
                 flash("Entered 2FA OTP is invalid or has expired!")
                 return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
@@ -154,7 +178,7 @@ def resetPassword(token:str):
 
         # update the password
         sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
-        sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
+        sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
@@ -169,27 +193,27 @@ def login():
             return render_template("users/guest/login.html", form=loginForm)
 
         if (request.method == "POST" and loginForm.validate()):
-            requestIPAddress = get_remote_address()
-            emailInput = loginForm.email.data
-            passwordInput = loginForm.password.data
             recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is not None and recaptchaToken != ""):
-                try:
-                    recaptchaResponse = create_assessment(siteKey=CONSTANTS.LOGIN_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="login")
-                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                    flash("Please check the reCAPTCHA box and try again.", "Danger")
-                    return render_template("users/guest/login.html", form=loginForm)
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/guest/login.html", form=loginForm)
 
-                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                    # if the score is not within the acceptable threshold
-                    # then the user is likely a bot
-                    # hence, we will flash an error message
-                    flash("Please check the reCAPTCHA box and try again.", "Danger")
-                    return render_template("users/guest/login.html", form=loginForm)
-            else:
+            try:
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="login")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/guest/login.html", form=loginForm)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
                 flash("Please check the reCAPTCHA box and try again.", "Danger")
                 return render_template("users/guest/login.html", form=loginForm)
 
+            requestIPAddress = get_remote_address()
+            emailInput = loginForm.email.data
+            passwordInput = loginForm.password.data
             userInfo = isAdmin = successfulLogin = userHasTwoFA = False
             try:
                 # returns the userID, boolean if user logged in from a new IP address, username, role
@@ -232,7 +256,7 @@ def login():
                 generatedTOTPSecretToken = pyotp.random_base32(length=128)
                 generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
-                ipDetails = CONSTANTS.IPINFO_HANDLER.getDetails(requestIPAddress).all
+                ipDetails = current_app.config["CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
                 # utc+8 time (SGT)
                 currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
                 currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
@@ -315,17 +339,19 @@ def unlockAccount(token:str):
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
 
-    # check if jwt exists in database
-    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
-    if (not jwtExists):
-        flash("Unlock account url is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
         # if the token is invalid
         flash("Unlock account link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    # check if jwt exists in database
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+        flash("Unlock account url is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
     # get the userID from the token
@@ -339,7 +365,7 @@ def unlockAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userID)
-    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
+    sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     flash("Your account has been unlocked! Try logging in now!", "Success")
     return redirect(url_for("guestBP.login"))
 
@@ -376,6 +402,24 @@ def enterGuardTOTP():
         return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
     if (request.method == "POST" and guardAuthForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_two_fA")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+
         totpInput = guardAuthForm.twoFATOTP.data
         totpSecretToken = RSA_decrypt(session["token"])
         if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
@@ -437,7 +481,7 @@ def loginCallback():
         flash("An error occurred while trying to login via Google!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    if (RSA_decrypt(session["state"]) != request.args.get("state")):
+    if (RSA_decrypt(session["state"]) != request.args.get("state", default="", type=str)):
         abort(500) # when state does not match (protect against CSRF attacks)
 
     credentials = current_app.config["GOOGLE_OAUTH_FLOW"].credentials
@@ -499,21 +543,21 @@ def signup():
         if (request.method == "POST" and signupForm.validate()):
             # POST request code below
             recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is not None and recaptchaToken != ""):
-                try:
-                    recaptchaResponse = create_assessment(siteKey=CONSTANTS.SIGNUP_SITE_KEY, recaptchaToken=recaptchaToken, recaptchaAction="signup")
-                except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                    flash("Please check the reCAPTCHA box and try again.")
-                    return render_template("users/guest/signup.html", form=signupForm)
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot.")
+                return render_template("users/guest/signup.html", form=signupForm)
 
-                if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.5)):
-                    # if the score is not within the acceptable threshold
-                    # then the user is likely a bot
-                    # hence, we will flash an error message
-                    flash("Please check the reCAPTCHA box and try again.")
-                    return render_template("users/guest/signup.html", form=signupForm)
-            else:
-                flash("Please check the reCAPTCHA box and try again.")
+            try:
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="signup")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!")
+                return render_template("users/guest/signup.html", form=signupForm)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
+                flash("Please verify that you are not a bot!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
             emailInput = signupForm.email.data
@@ -525,17 +569,17 @@ def signup():
             if (passwordInput != confirmPasswordInput):
                 flash("Entered passwords do not match!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
-                flash(f"Password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")
+            if (len(passwordInput) < current_app.config["CONSTANTS"].MIN_PASSWORD_LENGTH):
+                flash(f"Password must be at least {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
-                flash(f"Password cannot be more than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
+            if (len(passwordInput) > current_app.config["CONSTANTS"].MAX_PASSWORD_LENGTH):
+                flash(f"Password cannot be more than {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
             if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            passwordInput = CONSTANTS.PH.hash(passwordInput)
+            passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
             ipAddress = get_remote_address()
 
             returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
@@ -554,10 +598,15 @@ def signup():
             try:
                 send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
                 flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
-            except:
+            except (Exception) as e:
                 #TODO: Fix it anyways but can't be XSSed i believed
+                print("Error sending email:", e)
+                write_log_entry(
+                    logMessage=f"Error sending verification email: {e}",
+                    severity="ERROR",
+                )
                 flash(
-                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}'?user={returnedVal}'>me</a>!"),
+                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
                     "Danger"
                 )
                 return redirect(url_for("guestBP.login"))
@@ -584,7 +633,12 @@ def sendVerifyEmail():
         try:
             send_verification_email(email=email, username=username, userID=userID)
             flash(f"An email has bent sent to you to verify your email!", "Success")
-        except:
+        except (Exception) as e:
+            print("Error sending email:", e)
+            write_log_entry(
+                logMessage=f"Error sending verification email: {e}",
+                severity="ERROR",
+            )
             flash(
                 Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={userID}'>me</a> later!"),
                 "Danger"
@@ -596,22 +650,24 @@ def sendVerifyEmail():
 
 @guestBP.route("/verify-email/<string:token>")
 def verifyEmail(token:str):
-    # check if jwt exists in database
-    jwtExists = sql_operation(table="one_time_use_jwt", mode="jwt_exists", jwtToken=token)
-    if (not jwtExists):
-        if ("user" in session):
-            flash("Verify email url is invalid or has expired!", "Warning!")
-            return redirect(url_for("userBP.userProfile"))
-        elif ("user" not in session):
-            flash("Verify email url is invalid or has expired!", "Danger")
-            return redirect(url_for("guestBP.login"))
-
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
         # if the token is invalid
         flash("Verify email link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
+
+    # check if jwt exists in database
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+        if ("user" in session):
+            flash("Verify email url is invalid or has expired!", "Warning!")
+            return redirect(url_for("userBP.userProfile"))
+        elif ("user" not in session):
+            flash("Verify email url is invalid or has expired!", "Danger")
+            return redirect(url_for("guestBP.login"))
 
     # get the userID from the token
     jsonPayload = data["data"]["payload"]
@@ -643,7 +699,7 @@ def verifyEmail(token:str):
 
     # update the email verified column to true
     sql_operation(table="user", mode="update_email_to_verified", userID=userID)
-    sql_operation(table="one_time_use_jwt", mode="delete_jwt", jwtToken=token)
+    sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     if ("user" in session):
         flash("Your email has been verified!", "Email Verified!")
         return redirect(url_for("generalBP.home"))
