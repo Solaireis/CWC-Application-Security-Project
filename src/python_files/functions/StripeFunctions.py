@@ -8,8 +8,8 @@ from stripe.error import InvalidRequestError
 
 # import local python libraries
 from python_files.classes.Constants import CONSTANTS
-from .NormalFunctions import EC_sign, JWTExpiryProperties, generate_id
-from .SQLFunctions import sql_operation
+from .NormalFunctions import EC_sign, JWTExpiryProperties
+from .SQLFunctions import generate_limited_usage_jwt_token
 
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 
@@ -49,14 +49,7 @@ def stripe_product_check(courseID:str):
 
 def stripe_checkout(userID: str, cartCourseIDs: list, email: str) -> str:
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
-    tokenID = generate_id(sixteenBytesTimes=2)
-    jwtToken = EC_sign(payload = {'userID': userID, 'cartCourseIDs': cartCourseIDs}, b64EncodeData = True, expiry = expiryInfo, tokenID = tokenID)
-    sql_operation(
-        table="one_time_use_jwt", mode="add_jwt", jwtToken=jwtToken, 
-        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None),
-        limit=1, tokenID=tokenID
-    )
-
+    jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs}, expiryInfo=expiryInfo)
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = url_for("userBP.purchase", _external = True, jwtToken = jwtToken),

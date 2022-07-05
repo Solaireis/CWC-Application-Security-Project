@@ -4,9 +4,10 @@ This python file contains all the functions that touches on the MySQL database.
 # import python standard libraries
 import json
 from typing import Union, Optional
-from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from hashlib import sha512
+from secrets import token_hex
 
 # import Flask web application configs
 from flask import url_for, current_app
@@ -24,43 +25,53 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              send_email, write_log_entry, get_mysql_connection
 from python_files.classes.Constants import CONSTANTS
 
-def add_session(userID:str, userIP:str="") -> str:
+def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
     Generate a 32 byte session ID and add it to the database.
 
     Args:
     - userID (str): The user ID of the use
     - userIP (str): The IP address of the user
+    - userAgent (str): The user agent of the user
 
     Returns:
     - The generated session ID (str)
     """
-    # minimum requirement for a session ID:
+    # minimum requirement for a session ID length is 16 bytes as stated in OWASP's Session Management Cheatsheet,
     # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
-    sessionID = generate_id(sixteenBytesTimes=2) # using a 32 byte session ID
+    sessionID = token_hex(32) # Generate a 32 bytes session ID  using the secrets module from Python standard library
+                              # as recommended by OWASP to ensure higher entropy: 
+                              # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
 
-    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP)
+    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
 
-def generate_one_time_use_token(payload:Union[str, list, dict]="", expiryInfo:JWTExpiryProperties=None) -> str:
+def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None) -> str:
     """
-    Generate a one time use token and add it to the MySQL database.
+    Generate a limited usage token and add it to the MySQL database.
 
     Args:
     - payload (Union[str, list, dict]): The payload of the token.
-    - expiryInfo (JWTExpiryProperties): The expiry information of the token.
+    - expiryInfo (JWTExpiryProperties, Optional): The expiry information of the token.
+    - limit (int, Optional): The usage limit of the token.
     """
-    if (expiryInfo is None):
-        raise ValueError("Expiry information is required.")
+    if (expiryInfo is None and limit is None):
+        raise ValueError("Either expiryInfo OR limit must be specified.")
 
-    if (not isinstance(expiryInfo, JWTExpiryProperties)):
-        raise ValueError("Expiry information must be a JWTExpiryProperties object.")
+    if (expiryInfo is not None and not isinstance(expiryInfo, JWTExpiryProperties)):
+        raise ValueError("Defined expiry information must be a JWTExpiryProperties object.")\
 
-    tokenID = generate_id(sixteenBytesTimes=2)
+    expiryInfoToStore = None
+    if (expiryInfo is not None):
+        expiryInfoToStore = expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
+
+    tokenID = token_hex(32) # Generate a 32 bytes token ID  using the secrets module from Python standard library
+                            # as recommended by OWASP to ensure higher entropy: 
+                            # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
     token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
-        table="one_time_use_jwt", mode="add_jwt", tokenID=tokenID,
-        expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None), limit=1
+        table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
+        expiryDate=expiryInfoToStore, limit=limit
     )
     return token
 
@@ -79,9 +90,10 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
     expiryInfo = JWTExpiryProperties(
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
     )
-    token = generate_one_time_use_token(
+    token = generate_limited_usage_jwt_token(
         payload={"email": email, "userID": userID},
-        expiryInfo=expiryInfo
+        expiryInfo=expiryInfo,
+        limit=1
     )
     htmlBody = [
         f"Welcome to CourseFinity!",
@@ -102,9 +114,10 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     expiryInfo = JWTExpiryProperties(
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
     )
-    token = generate_one_time_use_token(
+    token = generate_limited_usage_jwt_token(
         payload={"email": email, "userID": userID},
-        expiryInfo=expiryInfo
+        expiryInfo=expiryInfo,
+        limit=1
     )
     htmlBody = [
         "Your account has been locked due to too many failed login attempts.",
@@ -184,8 +197,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
         elif (table == "review"):
             returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
-        elif (table == "one_time_use_jwt"):
-            returnValue = one_time_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
+        elif (table == "limited_use_jwt"):
+            returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
         else:
             raise ValueError("Invalid table name")
     except (
@@ -199,7 +212,7 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
     con.close()
     return returnValue
 
-def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     """
     Connects to the database and returns the connection object
 
@@ -212,11 +225,11 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
     """
     if (mode == "add_jwt"):
         tokenID = kwargs["tokenID"]
-        expiryDate = kwargs["expiryDate"]
+        expiryDate = kwargs.get("expiryDate")
         limit = kwargs.get("limit")
         cursor = connection.cursor()
         cursor.execute(
-            "INSERT INTO one_time_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
+            "INSERT INTO limited_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
             {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
         )
         connection.commit()
@@ -224,12 +237,12 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
         tokenID = kwargs["tokenID"]
         cursor = connection.cursor()
         cursor.execute(
-            "UPDATE one_time_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit > 0",
+            "UPDATE limited_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit > 0",
             {"tokenID": tokenID}
         )
         connection.commit()
         cursor.execute(
-            "DELETE FROM one_time_use_jwt WHERE id = %(tokenID)s AND token_limit <= 0",
+            "DELETE FROM limited_use_jwt WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit <= 0",
             {"tokenID": tokenID}
         )
         connection.commit()
@@ -238,13 +251,16 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
         print("token", tokenID)
         cursor = connection.cursor()
         cursor.execute(
-            "SELECT token_limit FROM one_time_use_jwt WHERE id = %(tokenID)s",
+            "SELECT token_limit FROM limited_use_jwt WHERE id = %(tokenID)s",
             {"tokenID": tokenID}
         )
         matched = cursor.fetchone()
         if (matched is None):
             return False
 
+        # Check if the JWT is valid by checking the limit
+        # Note: Since if the JWT is limited by the expiry date, it already has an expiry date set in the JWT and 
+        # will be checked during the verification of the JWT signature. Hence, we will only check the limit here.
         limit = matched[0]
         # if the limit is defined and is more than 0, then the jwt token is valid
         # if the limit is not defined, then the jwt token is valid 
@@ -256,7 +272,7 @@ def one_time_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=Non
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM one_time_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
+        cursor.execute("DELETE FROM limited_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
         connection.commit()
     else:
         raise ValueError("Invalid mode")
@@ -423,8 +439,9 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     if (mode == "create_session"):
         sessionID = kwargs.get("sessionID")
         userID = kwargs.get("userID")
-        userIP = kwargs["userIP"]
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, INET6_ATON(%(userIP)s))", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "userIP":userIP})
+        userToken = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
+
+        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, %(userToken)s)", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "userToken":userToken})
         connection.commit()
 
     elif (mode == "get_user_id"):
@@ -451,14 +468,18 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "check_if_valid"):
         sessionID = kwargs.get("sessionID")
-        cur.execute("SELECT user_id, expiry_date, INET6_NTOA(ip_address) FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
+        cur.execute("SELECT user_id, expiry_date, user_token FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
+        storedUserID = result[0]
         expiryDate = result[1]
-        ipAddress = result[2]
+        storedUserToken = result[2]
         cur.execute("SELECT SGT_NOW()")
         if (expiryDate >= cur.fetchone()[0]):
             # not expired, check if the userID matches the sessionID
-            return ((kwargs.get("userID") == result[0]) and (ipAddress == kwargs.get("userIP")))
+            # and if the userToken matches the storedUserToken
+            userID = kwargs.get("userID")
+            userToken = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
+            return ((userID == storedUserID) and (userToken == storedUserToken))
         else:
             # expired
             return False
@@ -526,6 +547,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (matched is None):
             return None
         return matched if (getEmail) else matched[0]
+
+    elif (mode == "remove_unverified_users_more_than_30_days"):
+        cur.execute("DELETE FROM user WHERE email_verified=FALSE AND created_date < SGT_NOW() - INTERVAL 30 DAY")
+        connection.commit()
 
     elif (mode == "update_email_to_verified"):
         userID = kwargs.get("userID")

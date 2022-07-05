@@ -95,10 +95,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS one_time_use_jwt (
+    cur.execute("""CREATE TABLE IF NOT EXISTS limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
         token_limit TINYINT, -- Min: -128, Max: 127
-        expiry_date DATETIME NOT NULL
+        expiry_date DATETIME,
+        CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
@@ -118,7 +119,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         session_id CHAR(64) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
-        ip_address VARBINARY(16) NOT NULL,
+        user_token CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 

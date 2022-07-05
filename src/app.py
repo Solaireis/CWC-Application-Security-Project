@@ -10,10 +10,11 @@ from flask_seasurf import SeaSurf
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import get_IP_address_blacklist
+from python_files.functions.NormalFunctions import get_IP_address_blacklist, upload_new_secret_version
 from python_files.classes.Constants import CONSTANTS
 
 # import python standard libraries
+from secrets import token_bytes
 from pathlib import Path
 from os import environ
 from datetime import timedelta
@@ -63,14 +64,23 @@ app.config["MAINTENANCE_MODE"] = False
 # it will retrieve the secret key from Google Secret Manager API
 def update_secret_key() -> None:
     """
-    Update Flask's secret key for the web app session cookie by retrieving the 
-    secret key from Google Cloud Platform Secret Manager API.
+    Update Flask's secret key for the web app session cookie by generating a new one
+    and uploading it to Google Secret Manager API.
 
-    Used for setting or rotating the secret key for the session cookie.
+    Used for setting and rotating the secret key for the session cookie.
     """
-    app.config["SECRET_KEY"] = \
-        CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
-update_secret_key()
+    # Generate a new key using the secrets module from Python standard library
+    # as recommended by OWASP to ensure higher entropy: 
+    # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
+    app.config["SECRET_KEY"] = token_bytes(CONSTANTS.SESSION_NUM_OF_BYTES)
+    upload_new_secret_version(
+        secretID=CONSTANTS.FLASK_SECRET_KEY_NAME,
+        secret=app.config["SECRET_KEY"],
+        destroyPastVer=True,
+        destroyOptimise=True
+    )
+
+app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
 # Make it such that the session cookie will be deleted when the browser is closed
 app.config["SESSION_PERMANENT"] = False
@@ -205,7 +215,7 @@ def before_request() -> None:
 
             if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
                 # if session exists
-                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address())):
+                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address(), userAgent=request.user_agent.string)):
                     # if user session is expired or the userID does not match with the sessionID
                     sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                     session.clear()
@@ -244,26 +254,37 @@ if (__name__ == "__main__"):
 
     # APScheduler docs:
     # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
+    # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
-        lambda: sql_operation(table="one_time_use_jwt", mode="delete_expired_jwt"),
+        lambda: sql_operation(table="user", mode="remove_unverified_users_more_than_30_days"),
+        trigger="cron", hour=23, minute=56, second=0, id="removeUnverifiedUsers"
+    )
+    # Free up the database of expired JWT
+    scheduler.add_job(
+        lambda: sql_operation(table="limited_use_jwt", mode="delete_expired_jwt"),
         trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
     )
+    # Free up the database of expired sessions
     scheduler.add_job(
         lambda: sql_operation(table="session", mode="delete_expired_sessions"), 
         trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions"
     )
+    # Free up database of expired login attempts
     scheduler.add_job(
         lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), 
         trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts"
     )
+    # Remove user's IP address from the database if the the user has not logged in from that IP address for more than 10 days
     scheduler.add_job(
         lambda: sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days"),
         trigger="interval", hours=1, id="removeUnusedIPAddresses"
     )
+    # Re-encrypt all the encrypted data in the database due to the monthly key rotations
     scheduler.add_job(
         lambda: sql_operation(table="user", mode="re-encrypt_data_in_database"),
         trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
     )
+    # For key rotation of the secret key for digitally signing the session cookie
     scheduler.add_job(
         update_secret_key,
         trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"

@@ -33,7 +33,6 @@ def shutdown() -> None:
 
 # Define constants
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
-NUM_OF_BYTES = 512 # 512 bytes or 4096 bits
 
 # import Constants_Init.py local python module using absolute path
 CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants.py")
@@ -83,7 +82,7 @@ def main() -> None:
             # generate a new key using the secrets module from Python standard library
             # as recommended by OWASP to ensure higher entropy: 
             # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
-            secretKey = token_bytes(NUM_OF_BYTES) 
+            secretKey = token_bytes(Constants_Init.CONSTANTS.SESSION_NUM_OF_BYTES) 
 
             # construct the secret path to the secret key ID
             secretPath = SM_CLIENT.secret_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME)

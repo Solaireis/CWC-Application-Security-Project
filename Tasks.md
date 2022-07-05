@@ -9,9 +9,12 @@
 ### Cryptographic Failures
 
 #### Implemented:
+- Using Python's [secrets module](https://docs.python.org/3/library/secrets.html#module-secrets) to generate an ID for sensitive actions such as for JWT tokens.
+  - Recommended by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation) to ensure higher entropy
 - Secure Flask Secret Key using `secrets.token_bytes(512)` (4096 bits)
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
+  - Automatically rotated at the end of each month
   - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
@@ -63,7 +66,16 @@
   - Mainly used for detecting bots with malicious intent
   - An ineffective mitigation but acts as last resort mitigation against attackers trying to brute force login or doing other malicious activities such as credential stuffing on the web application
   - Mainly uses this GitHub repository for the list of malicious IP Addresses: [ipsum](https://github.com/stamparm/ipsum)
-- Added reCAPTCHA on the login page
+- IP address based authentication (Guard TOTP)
+  - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
+  - Checks against known IP addresses of users against the login request
+  - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
+  - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
+- Implemented [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) onto the web application
+  - Added on:
+    - Login page
+    - Reset password request page
+    - IP address based authentication (Guard TOTP) page
   - Prevent automated attacks such as
     - Credential stuffing attacks
     - Brute force attacks
@@ -90,8 +102,11 @@
 - Session Management Implementation:
   - Session identifier of 32 bytes (Unlikely to be guessed)
   - Session timeout after 30 mins of inactivity (If there were no request to the web server for 30 mins)
-  - Check session identifier in the database and compare with the session identifier in the cookie
-  - Check if the session cookie comes from the same IP address as the session identifier in the database
+  - Checks the session identifier in the database and compare with the session identifier in the cookie
+  - Computes the SHA512 hash of the user's IP Address and user agent of the request against the SHA512 hash of the same components in the database
+    - Helps to prevent session hijacking
+    - Idea inspired from [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
+      - I did not use this library because it is not consistently maintained
   - All mitigations above are aimed at mitigating the risk of session hijacking
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
@@ -100,10 +115,6 @@
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
   - Preventing the cookie from being sniffed as it is only transmitted via HTTPS (Secure)
   - Preventing client-side scripts from accessing the cookie data (HttpOnly)
-- IP address based authentication
-  - Checks against known IP addresses of users against the login request
-  - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
-  - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
 
 ---
 
@@ -152,13 +163,14 @@
 
 #### Plan:
 - Flask limiter
-- implement reCaptcha (if you have the time to read docs :D)
+- implement reCAPTCHA (if you have the time to read docs :D)
+- Cloudflare!
 - Fix errors
     - For insecure, you can allow user to buy nth num of a course
 - Decide whether to use Flask login or the old style of session management
 
 #### Implemented:
-- reCAPTCHA on signup page
+- Added [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) on the signup page
 
 ---
 
@@ -188,6 +200,7 @@
 - Avoid Bad Coding Practices that lead to Injection Attacks
 - Prevent SQL injections
 - Remember to use multithreading for writing account info to the SQL database
+- Protect against attacks via Markdown inputs (NOT MARKUP)
 
 #### Implemented:
 - SQL Injection

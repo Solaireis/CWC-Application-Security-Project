@@ -99,7 +99,7 @@ def resetPasswordRequest():
         tokenID = generate_id(sixteenBytesTimes=2)
         token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo, limit=1, tokenID=tokenID)
         sql_operation(
-            table="one_time_use_jwt", mode="add_jwt", jwtToken=token, 
+            table="limited_use_jwt", mode="add_jwt", jwtToken=token, 
             expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None),
             limit=1, tokenID=tokenID
         )
@@ -133,7 +133,7 @@ def resetPassword(token:str):
     if (tokenID is None):
         abort(404)
 
-    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -178,7 +178,7 @@ def resetPassword(token:str):
 
         # update the password
         sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
-        sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
@@ -309,7 +309,7 @@ def login():
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
 
             if (successfulLogin and not userHasTwoFA):
-                session["sid"] = add_session(userInfo[0], userIP=get_remote_address())
+                session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
                 if (not isAdmin):
                     session["user"] = userInfo[0]
                 else:
@@ -350,7 +350,7 @@ def unlockAccount(token:str):
     tokenID = data["header"].get("token_id")
     if (tokenID is None):
         abort(404)
-    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         flash("Unlock account url is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -365,7 +365,7 @@ def unlockAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userID)
-    sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     flash("Your account has been unlocked! Try logging in now!", "Success")
     return redirect(url_for("guestBP.login"))
 
@@ -431,7 +431,7 @@ def enterGuardTOTP():
         session.clear()
 
         sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=session["ip_details"])
-        session["sid"] = add_session(userID, userIP=get_remote_address())
+        session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
         # check if password has been compromised
         # if so, flash a message and send an email to the user
@@ -530,7 +530,7 @@ def loginCallback():
     else:
         session["admin"] = userID
 
-    session["sid"] = add_session(userID, userIP=get_remote_address())
+    session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
     return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/signup", methods=["GET", "POST"])
@@ -661,7 +661,7 @@ def verifyEmail(token:str):
     tokenID = data["header"].get("token_id")
     if (tokenID is None):
         abort(404)
-    if (not sql_operation(table="one_time_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         if ("user" in session):
             flash("Verify email url is invalid or has expired!", "Warning!")
             return redirect(url_for("userBP.userProfile"))
@@ -699,7 +699,7 @@ def verifyEmail(token:str):
 
     # update the email verified column to true
     sql_operation(table="user", mode="update_email_to_verified", userID=userID)
-    sql_operation(table="one_time_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     if ("user" in session):
         flash("Your email has been verified!", "Email Verified!")
         return redirect(url_for("generalBP.home"))
@@ -747,7 +747,7 @@ def enter2faTOTP():
             else:
                 session["user"] = userID
 
-            session["sid"] = add_session(userID, userIP=get_remote_address())
+            session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
             # check if password has been compromised
             # if so, flash a message and send an email to the user

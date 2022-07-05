@@ -1090,6 +1090,66 @@ def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
             print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
             return []
 
+def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, destroyPastVer:bool=False, destroyOptimise:bool=False) -> None:
+    """
+    Uploads the new secret to Google Cloud Platform's Secret Manager API.
+
+    Args:
+    - secretID (str): The ID of the secret to upload
+    - secret (str|bytes): The secret to upload
+    - destroyPastVer (bool): Whether to destroy the past version of the secret or not
+    - destroyOptimise (bool): Whether to optimise the process of destroying the past version of the secret
+        - Note: This should be True if the past versions have been consistently destroyed
+            - Example 1: destoryOptimise should be False to ensure all versions have been destroyed
+                - version 1: destroyed
+                - version 2: active
+                - version 3: destroyed
+                - new version: active
+            - Example 2: destroyOptimise should be True as there will be only 2 iterations 
+                      of the loop when destorying the past version instead of 3
+                - version 1: destroyed
+                - version 2: destroyed
+                - version 3: active
+                - new version: active
+    """
+    # construct the secret path to the secret key ID
+    secretPath = CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID)
+
+    # encode the secret to bytes if secret is in string format
+    if (isinstance(secret, str)):
+        secret = secret.encode()
+
+    # calculate the payload crc32c checksum
+    crc32cChecksum = crc32c(secret)
+
+    # Add the secret version and send to Google Secret Management API
+    response = CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secret, "data_crc32c": crc32cChecksum})
+
+    # get the latest secret version
+    latestVer = int(response.name.split("/")[-1])
+    write_log_entry(
+        logMessage={
+            "message": f"Secret {secretID} (version {latestVer}) created successfully!",
+            "details": response
+        },
+        severity="INFO"
+    )
+
+    # disable all past versions if destroyPastVer is True
+    if (destroyPastVer):
+        for version in range(latestVer - 1, 0, -1):
+            secretVersionPath = CONSTANTS.SM_CLIENT.secret_version_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID, version)
+            try:
+                CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
+            except (GoogleErrors.FailedPrecondition):
+                # key is already destroyed
+                if (destroyOptimise):
+                    break
+        write_log_entry(
+            logMessage=f"Successfully destroyed all past versions of the secret {secretID}",
+            severity="INFO"
+        )
+
 def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", message:str="", name:str=None) -> dict:
     """
     Create a message for an email.

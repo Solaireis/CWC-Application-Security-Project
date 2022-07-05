@@ -90,6 +90,8 @@ class ConstantsConfigs:
         # For lockout policy
         self.MAX_LOGIN_ATTEMPTS = 6
 
+        # For Flask's session cookie
+        self.SESSION_NUM_OF_BYTES = 512
         # For invalidating sessions after x mins of inactivity
         # Inactivity in this case: No requests to the web server for x mins
         self.SESSION_EXPIRY_INTERVALS = 30 # 30 mins
