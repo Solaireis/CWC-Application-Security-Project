@@ -66,17 +66,50 @@ def createCourse():
 
 
                 session.pop("course-data")
-                flash("Course Created")
+                flash("Course Created", "Successful Course Created!")
                 return redirect(url_for("userBP.userProfile"))
             else:
                 return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
         else:
-            flash("No Video Uploaded")
+            flash("No Video Uploaded", "File Upload Error!")
             return redirect(url_for("userBP.videoUpload"))
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/delete-course")
+@teacherBP.route("/course-video-list")
+def courseList():
+    if ("user" in session):
+        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        courseList = sql_operation(table="course", mode="get_all_courses", teacherID=userInfo[0])
+
+        #TODO: Test if works, currently not sure cause idk which vimeo module to use
+        page = request.args.get("p", default=1, type=int)
+        eachPageResults = []
+        dictOfResults = {}
+        pageNum = 1
+        
+        if (len(courseList) != 0):
+            for eachResult in courseList:
+                if (len(eachPageResults)!=10):
+                    eachPageResults.append(eachResult)
+                    dictOfResults[pageNum] = eachPageResults
+                else:
+                    dictOfResults[pageNum] = eachPageResults
+                    eachPageResults = [eachResult]
+                    pageNum += 1
+            
+            maxPage = max(list(dictOfResults))
+            if (page > maxPage):
+                abort(404)
+            
+            return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,accType=userInfo[1])
+        
+        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1])
+
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     if ("user" in session):
         courseID = request.args.get("cid", default="test", type=str)
@@ -104,7 +137,7 @@ def videoUpload():
 
         if (request.method == "POST"):
             if (request.files["courseVideo"].filename == ""):
-                flash("Please Upload a Video")
+                flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("teacherBP.videoUpload"))
 
             file = request.files.get("courseVideo")

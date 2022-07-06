@@ -164,6 +164,18 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `pagination`(IN teacher_id VARCHAR(255), IN page_number INT UNSIGNED)
+        BEGIN
+            SET @count := 0;
+            SELECT (@count := @count + 1) row_num, c.course_id, c.teacher_id, u.username, u.profile_image, c.course_name, c.course_description FROM course AS c
+            INNER JOIN user as u on c.teacher_id=u.id
+            WHERE c.teacher_id=teacher_id
+            HAVING row_num > page_number
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+    cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
         DETERMINISTIC 
         COMMENT 'Returns SGT (UTC+8) datetime.'

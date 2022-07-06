@@ -170,7 +170,7 @@ def videoUpload():
 
         if (request.method == "POST"):
             if (request.files["courseVideo"].filename == ""):
-                flash("Please Upload a Video")
+                flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("userBP.videoUpload"))
 
             file = request.files.get("courseVideo")
@@ -237,12 +237,12 @@ def createCourse():
 
 
                 session.pop("course-data")
-                flash("Course Created")
+                flash("Course Created", "Course Created Successfully!")
                 return redirect(url_for("userBP.userProfile"))
             else:
                 return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
         else:
-            flash("No Video Uploaded")
+            flash("No Video Uploaded", "File Upload")
             return redirect(url_for("userBP.videoUpload"))
     else:
         return redirect(url_for("guestBP.login"))
@@ -280,7 +280,7 @@ def courseList():
     else:
         return redirect(url_for("guestBP.login"))
 
-@userBP.route("/delete-course-video")
+@userBP.route("/delete-course-video", methods=["GET", "POST"])
 def courseDelete():
     if ("user" in session):
         courseID = request.args.get("cid", default="test", type=str)
