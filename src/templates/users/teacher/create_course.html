@@ -39,13 +39,19 @@
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="submittedForm" value="courseDetails">
                     <h4 class="text-white">Create Course</h4>
-                    <div class="col">
-                        <div class="embed-responsive embed-responsive-16by9">
-                            <iframe class="embed-responsive-item" src="{{ videoPath }}"></iframe>
-                        </div>
+                    <div class="col-md-4" style="border-right: 1px solid white;">
+                        <video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
+                            <source src="{{ videoPath }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <hr style="color:white;">
+                        <h6 class="text-white">Thumbnail:</h6>
+                        <img id="thumbnail"
+                        src="https://st2.depositphotos.com/3765753/5349/v/600/depositphotos_53491489-stock-illustration-example-rubber-stamp-vector-over.jpg"
+                        alt="Your thumbnail will appear here" class="card-img-top" />
                     </div>
-                    <div class="col">
-                        <div class="col-md-12 text-white col-5">
+                    <div class="col-md-8">
+                        <div class="row text-white col-md-12">
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseTitle, class="form-control", placeholder="Course Title") }}
                             </div>
@@ -55,74 +61,71 @@
                             </div>
 
                             <div class="col-12 text-white">
-                                <div class="mb-5 col-6 gx-5">
-                                    <br>
+                                <div class="col-md-6">
                                     <label for="formFile" class="form-label">Upload Lesson Thumbnail Here!</label>
                                     <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" required id="formFile" type='file'/>
-                                    <br>
-                                    <div class="card" style="width:180px;">
-                                        <img id="thumbnail"
-                                            src="https://st2.depositphotos.com/3765753/5349/v/600/depositphotos_53491489-stock-illustration-example-rubber-stamp-vector-over.jpg"
-                                            alt="Your thumbnail will appear here" class="card-img-top" />
-                                    </div>
                                 </div>
                             </div>
+
                         </div>
-                        <div class="col-4">
-                            <label for="course-tag" class="form-label text-white">Choose Your Course Category!</label>
-                            <select id="browsers" class="form-select" name="courseTag" aria-label="Course Tag">
-                                <optgroup label="Development">
-                                    <option value="Programming">Programming</option>
-                                    <option value="Web_Development">Web Development</option>
-                                    <option value="Game_Development">Game Development</option>
-                                    <option value="Mobile_App_Development">Mobile App Development</option>
-                                    <option value="Software_Development">Software Development</option>
-                                    <option value="Other_Development">Other Development</option>
-                                </optgroup>
-                                <optgroup label="Business">
-                                    <option value="Entrepreneurship">Entrepreneurship</option>
-                                    <option value="Project_Management">Project Management</option>
-                                    <option value="BI_Analytics">Business Intelligence & Analytics</option>
-                                    <option value="Business_Strategy">Business Strategy</option>
-                                    <option value="Other_Business">Other</option>
-                                </optgroup>
-                                <optgroup label="Design">
-                                    <option value="3D_Modelling">3D Modelling</option>
-                                    <option value="Animation">Animation</option>
-                                    <option value="UX_Design">UX Design</option>
-                                    <option value="Design_Tools">Design Tools</option>
-                                    <option value="Other_Design">Other Design</option>
-                                </optgroup>
-                                <optgroup label="Photography">
-                                    <option value="Digital_Photography">Digital Photography</option>
-                                    <option value="Photography_Tools">Photography Tools</option>
-                                    <option value="Video_Production">Video Production</option>
-                                    <option value="Video_Design Tools">Video Design Tools</option>
-                                    <option value="Other_Photography_Videography">Other Photography/Videography</option>
-                                </optgroup>
-                                <optgroup label="Academics">
-                                    <option value="Science">Science</option>
-                                    <option value="Math">Math</option>
-                                    <option value="Language">Language</option>
-                                    <option value="Other Academics">Other Academics</option>
-                                </optgroup>
-                            </select>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="course-tag" class="form-label text-white">Choose Your Course Category!</label>
+                                <select id="browsers" class="form-select" name="courseTag" aria-label="Course Tag">
+                                    <optgroup label="Development">
+                                        <option value="Programming">Programming</option>
+                                        <option value="Web_Development">Web Development</option>
+                                        <option value="Game_Development">Game Development</option>
+                                        <option value="Mobile_App_Development">Mobile App Development</option>
+                                        <option value="Software_Development">Software Development</option>
+                                        <option value="Other_Development">Other Development</option>
+                                    </optgroup>
+                                    <optgroup label="Business">
+                                        <option value="Entrepreneurship">Entrepreneurship</option>
+                                        <option value="Project_Management">Project Management</option>
+                                        <option value="BI_Analytics">Business Intelligence & Analytics</option>
+                                        <option value="Business_Strategy">Business Strategy</option>
+                                        <option value="Other_Business">Other</option>
+                                    </optgroup>
+                                    <optgroup label="Design">
+                                        <option value="3D_Modelling">3D Modelling</option>
+                                        <option value="Animation">Animation</option>
+                                        <option value="UX_Design">UX Design</option>
+                                        <option value="Design_Tools">Design Tools</option>
+                                        <option value="Other_Design">Other Design</option>
+                                    </optgroup>
+                                    <optgroup label="Photography">
+                                        <option value="Digital_Photography">Digital Photography</option>
+                                        <option value="Photography_Tools">Photography Tools</option>
+                                        <option value="Video_Production">Video Production</option>
+                                        <option value="Video_Design Tools">Video Design Tools</option>
+                                        <option value="Other_Photography_Videography">Other Photography/Videography</option>
+                                    </optgroup>
+                                    <optgroup label="Academics">
+                                        <option value="Science">Science</option>
+                                        <option value="Math">Math</option>
+                                        <option value="Language">Language</option>
+                                        <option value="Other Academics">Other Academics</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <!-- coursePrice -->
+                            <div class="col-md-6 text-white">
+                                {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}
+                            </div>
                         </div>
-                        <!-- coursePrice -->
-                        <div class="col-md-12 text-white">
-                            {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}
-                        </div>
+
                         <!-- checkbox -->
                         <div class="col-md-12 form_checkbox">
                             <input class="form-check-input" type="checkbox" value="" id="teacher_condition2" required>
                             <label class="form-label text-white" for="teacher_condition2">I understand that videos uploaded must comply with
                                 CourseFinity's terms and conditions.</label>
                         </div>
-                    </div>
-                    
-                    <!-- Submit Button -->
-                    <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary float-end">Create</button>
+
+                        <div class="col-md-12">
+                            <button type="submit" class="btn btn-primary float-end">Create</button>
+                        </div>
                     </div>
                 </form>
 

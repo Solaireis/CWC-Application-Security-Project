@@ -72,9 +72,36 @@
                                 {% endif %}
                             </small>
                         </p>
-                        <!-- Add Edit & Delete Button -->
-                        <!-- Delete button to have a modal that verifies if the user is sure they want to delete the video.
-                        Edit button redirects to a form, where the user can change the details -->
+                        <span><a href="#" onclick="return false;">Edit Course</a></span>
+                        <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
+                            data-bs-target="#deleteCourse">Delete Course</a></span>
+                        <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
+                        data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
+                        aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="deleteCourseLabel">Delete this course?</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Are you sure that you would like to delete this course from the database</p>
+                                        <p class="text-danger">Warning: Deletion of Course is IRREVERSIBLE</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Back</button>
+                                        <form action="{{ url_for('userBP.courseDelete') }}?cid={{course.course_id}}" method="POST">
+                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-danger">Delete Course!</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit button redirects to a form, where the user can change the details -->
                     </div>
                 </div>
             </div>
@@ -83,17 +110,17 @@
     <div class="center">
         <div class="pagination">
             {% if currentPage != 1 %}
-                <a href="{{ url_for('userBP.courseList')}}p={{currentPage - 1}}">&laquo;</a>
+                <a href="{{ url_for('userBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
             {% endif %}
             {% for i in lenOfDict %}
                 {% if i == currentPage %}
                     <a class="active" href="">{{ i }}</a>
                 {% else %}
-                    <a href="{{ url_for('userBP.courseList') }}p={{i}}">{{ i }}</a>
+                    <a href="{{ url_for('userBP.courseList') }}?p={{i}}">{{ i }}</a>
                 {% endif %}
             {% endfor %}
             {% if currentPage != maxPage %}
-                <a href="{{ url_for('userBP.courseList')}}p={{currentPage + 1}}">&raquo;</a>
+                <a href="{{ url_for('userBP.courseList')}}?p={{currentPage + 1}}">&raquo;</a>
             {% endif %}
         </div>
     </div>
