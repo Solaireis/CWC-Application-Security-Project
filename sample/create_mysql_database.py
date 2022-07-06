@@ -168,7 +168,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SET @count := 0;
             SELECT (@count := @count + 1) row_num, c.course_id, c.teacher_id, u.username, u.profile_image, c.course_name, c.course_description FROM course AS c
-            INNER JOIN user as u on c.teacher_id=u.id
+            INNER JOIN user AS u ON c.teacher_id=u.id
             WHERE c.teacher_id=teacher_id
             HAVING row_num > page_number
             ORDER BY row_num
