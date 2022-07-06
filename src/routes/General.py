@@ -90,16 +90,17 @@ def coursePage(courseID:str):
 
     retrieveReviews = sql_operation(table="review", mode="retrieve_all" , courseID=courseID)
     print("the reviews", retrieveReviews)
-    reviewList = []
-    for i in retrieveReviews:
-        reviewUserId = i[0]
-        reviewCourseId = courseID 
-        reviewRating = i[2]
-        reviewComment = i[3]
-        reviewDate = i[4]
-        reviewUserName = i[5]
-        userImage = get_image_path(reviewUserId)
-        reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
+    reviewList = [] #list to store all the reviews
+    if retrieveReviews != False: #if there are reviews
+        for i in retrieveReviews:
+            reviewUserId = i[0]
+            reviewCourseId = courseID 
+            reviewRating = i[2]
+            reviewComment = i[3]
+            reviewDate = i[4]
+            reviewUserName = i[5]
+            userImage = get_image_path(reviewUserId)
+            reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
 
     # print(reviewList[0].course_id) # Commented this out cus of IndexError
 
