@@ -18,7 +18,7 @@ import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 
 # import local python files
-from python_files.classes.Course import Course
+from python_files.classes.Course import Course, CourseInfo
 from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
@@ -1079,6 +1079,38 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         return courseList
 
+    elif (mode == "get_all_courses_by_teacher"):
+        teacherID = kwargs["teacherID"]
+        pageNum = kwargs["pageNum"]
+        offset = (pageNum - 1) * 10
+        # Not using offset as it will get noticeably slower with more courses
+        cur.execute("""
+            SELECT (@count := @count + 1) AS row_num, 
+            c.course_id, c.teacher_id, u.username, u.profile_image, 
+            c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category,
+            c.date_created, c.course_total_rating, c.course_rating_count
+            FROM course AS c
+            INNER JOIN (SELECT @count := 0) AS n
+            INNER JOIN user AS u ON c.teacher_id=u.id
+            WHERE c.teacher_id=%(teacherID)s
+            HAVING row_num > %(pageNum)s
+            ORDER BY row_num
+            LIMIT 10; 
+        """, {"teacherID":teacherID, "pageNum":offset})
+        resultsList = cur.fetchall()
+        if (resultsList is None):
+            return []
+
+        teacherProfile = get_dicebear_image(res[2]) if (not res[3]) \
+                                                    else res[3]
+
+        courseList = []
+        for tupleInfo in resultsList:
+            courseList.append(
+                CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True)
+            )
+        return courseList
+
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
 
@@ -1109,9 +1141,13 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     res = cur.fetchone()
                     teacherUsername = res[0]
                     teacherProfile = res[1]
-                    teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
-                                                                                else (teacherProfile, False)
-                    courseInfoList.append(Course(((teacherUsername, teacherProfile), matchedList[i]), truncateData=True))
+                    teacherProfile = (
+                        get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
+                                                                   else (teacherProfile, False
+                    )
+                    courseInfoList.append(
+                        Course(((teacherUsername, teacherProfile), matchedList[i]), truncateData=True)
+                    )
                 return courseInfoList
             else:
                 cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1121,7 +1157,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
                                                                             else (teacherProfile, False)
                 for tupleInfo in matchedList:
-                    courseInfoList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))
+                    courseInfoList.append(
+                        Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True)
+                    )
 
                 if (kwargs.get("getTeacherUsername")):
                     return (courseInfoList, res[0])
