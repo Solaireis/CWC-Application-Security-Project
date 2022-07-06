@@ -1169,15 +1169,16 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     cur = connection.cursor()
 
-    userID = kwargs["userID"]
     courseID = kwargs["courseID"]
 
     if mode == "retrieve_user_review":
+        userID = kwargs["userID"]
         cur.execute("SELECT course_rating FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         review_list = cur.fetchall()
         return review_list
 
     elif mode == "insert":
+        userID = kwargs["userID"]
         courseRating = kwargs["courseRating"]
         courseReview = kwargs["courseReview"]
         #reviewDates = kwargs.get("reviewDates")
@@ -1185,9 +1186,9 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         connection.commit()
 
     elif mode == "retrieve_all":
-        cur.execute("SELECT user_id,course_id,course_rating,course_review,review_date,username FROM review r INNER JOIN user u ON r.user_ID = u.id WHERE course_id = %(courseID)s", {"courseID":courseID})
+        cur.execute("SELECT r.user_id, r.course_id, r.course_rating, r.course_review, r.review_date, u.username FROM review r INNER JOIN user u ON r.user_id = u.id WHERE r.course_id = %(courseID)s", {"courseID":courseID})
         review_list = cur.fetchall()
-        return review_list
+        return review_list if (review_list is not None) else []
 
     else:
         connection.close()
