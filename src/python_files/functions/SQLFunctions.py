@@ -264,11 +264,13 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
         tokenID = kwargs["tokenID"]
         print("token", tokenID)
         cursor = connection.cursor()
+        cursor.execute("LOCK TABLES limited_use_jwt READ")
         cursor.execute(
             "SELECT token_limit FROM limited_use_jwt WHERE id = %(tokenID)s",
             {"tokenID": tokenID}
         )
         matched = cursor.fetchone()
+        cursor.execute("UNLOCK TABLEs")
         if (matched is None):
             return False
 
@@ -310,9 +312,10 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
 
     elif (mode == "get_ip_addresses"):
         userID = kwargs["userID"]
-
+        cur.execute("LOCK TABLES user_ip_addresses READ")
         cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
         returnValue = cur.fetchall()
+        cur.execute("UNLOCK TABLES")
         ipAddressList = [ipAddress[0] for ipAddress in returnValue]
         return ipAddressList
 
@@ -356,8 +359,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
     elif (mode == "get_token"):
         userID = kwargs["userID"]
+        cur.execute("LOCK TABLES twofa_token READ")
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (matchedToken is None):
             connection.close()
             raise No2FATokenError("No 2FA OTP found for this user!")
@@ -368,8 +373,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
     elif (mode == "check_if_user_has_2fa"):
         userID = kwargs["userID"]
+        cur.execute("LOCK TABLES twofa_token READ")
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         return True if (matchedToken is not None) else False
 
     elif (mode == "delete_token"):
@@ -390,15 +397,19 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
 
     if (mode == "add_attempt"):
         emailInput = kwargs["email"]
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput})
         userID = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (userID is None):
             connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
         userID = userID[0]
+        cur.execute("LOCK TABLES login_attempts READ")
         cur.execute("SELECT attempts, reset_date FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         attempts = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (attempts is None):
             cur.execute("INSERT INTO login_attempts (user_id, attempts, reset_date) VALUES (%(userID)s, %(attempts)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE)", {"userID":userID, "attempts":1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION})
         else:
@@ -434,8 +445,11 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         cur.execute("DELETE FROM login_attempts WHERE user_id = %(userID)s AND reset_date < SGT_NOW()", {"userID":userID})
         connection.commit()
 
+        # DONT UNCOMMENT, cause if else statement returns, wont execute unlock tables and will lock the tables for the rest of the web app
+        # cur.execute("LOCK TABLES login_attempts READ")
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id = %(userID)s", {"userID":userID})
         return True if (cur.fetchone() is None) else False
+        # cur.execute("UNLOCK TABLES")
 
     else:
         connection.close()
@@ -460,14 +474,18 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "get_user_id"):
         sessionID = ["sessionID"]
+        cur.execute("LOCK TABLES session READ")
         cur.execute("SELECT user_id FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         userID = cur.fetchone()[0]
+        cur.execute("UNLOCK TABLES")
         return userID
 
     elif (mode == "get_session"):
         sessionID = ["sessionID"]
+        cur.execute("LOCK TABLES session READ")
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         return returnValue
 
     elif (mode == "delete_session"):
@@ -482,8 +500,10 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "check_if_valid"):
         sessionID = ["sessionID"]
+        cur.execute("LOCK TABLES session READ")
         cur.execute("SELECT user_id, expiry_date, fingerprint_hash FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         storedUserID = result[0]
         expiryDate = result[1]
         storedFingerprintHash = result[2]
@@ -504,8 +524,10 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "if_session_exists"):
         sessionID = ["sessionID"]
+        cur.execute("LOCK TABLES session READ")
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (returnValue):
             return True
         else:
@@ -556,8 +578,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT email_verified, email FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (matched is None):
             return None
         return matched if (getEmail) else matched[0]
@@ -633,11 +657,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         usernameInput = kwargs["username"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT * FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         emailDupe = bool(cur.fetchone())
 
         cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
         usernameDupes = bool(cur.fetchone())
+        cur.execute("UNLOCK TABLES")
 
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
@@ -666,8 +692,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "check_if_using_google_oauth2"):
         userID = kwargs["userID"]
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (password is None):
             connection.close()
             raise UserDoesNotExist("User does not exist!")
@@ -685,8 +713,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         googleProfilePic = kwargs.get("googleProfilePic")
 
         # check if the email exists
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT * FROM user WHERE email=%(email)s", {"email":email})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (matched is None):
             # user does not exist, create new user with the given information
             cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
@@ -711,8 +741,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         passwordInput = kwargs["password"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
 
         if (matched is None):
             connection.close()
@@ -728,8 +760,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             connection.close()
             raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
 
+        cur.execute("LOCK TABLES login_attempts READ")
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":userID})
         loginAttempts = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
 
         requestIpAddress = kwargs["ipAddress"]
         ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=userID, ipAddress=requestIpAddress)
@@ -770,14 +804,18 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "find_user_for_reset_password"):
         email = kwargs["email"]
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         return matched
 
     elif (mode == "get_user_data"):
         userID = kwargs["userID"]
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (matched is None):
             return False
 
@@ -802,8 +840,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "change_username"):
         userID = kwargs["userID"]
         usernameInput = kwargs.get("username")
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT * FROM user WHERE username=%(username)s", {"username":usernameInput})
         reusedUsername = bool(cur.fetchone())
+        cur.execute("UNLOCK TABLES")
 
         if (reusedUsername):
             connection.close()
@@ -818,6 +858,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
 
         # check if the email is already in use
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         reusedEmail = cur.fetchone()
         if (reusedEmail is not None):
@@ -829,6 +870,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("UNLOCK TABLES")
         currentPassword = symmetric_decrypt(ciphertext=cur.fetchone()[0], keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
             if (CONSTANTS.PH.verify(currentPassword, currentPasswordInput)):
@@ -844,8 +886,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         oldPasswordInput = kwargs["oldPassword"] # to authenticate the changes
         passwordInput = kwargs["password"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         currentPasswordHash = symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.PEPPER_KEY_ID)
 
         try:
@@ -890,8 +934,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "update_to_teacher"):
         userID = kwargs["userID"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
         currentRoleID = cur.fetchone()[0]
+        cur.execute("UNLOCK TABLES")
         cur.execute("CALL get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
         currentRole = cur.fetchone()[0]
 
@@ -920,11 +966,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         courseID = kwargs["courseID"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
 
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
+        cur.execute("UNLOCK TABLES")
 
         if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs:
             cartCourseIDs.append(courseID)
@@ -935,8 +983,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         courseID = kwargs["courseID"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
+        cur.execute("UNLOCK TABLES")
 
         if courseID in cartCourseIDs:
             cartCourseIDs.remove(courseID)
@@ -948,8 +998,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         cartCourseIDs = kwargs["cartCourseIDs"]
 
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
+        cur.execute("UNLOCK TABLES")
 
         for courseID in cartCourseIDs:
 
@@ -1005,8 +1057,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_course_data"):
         course_id = kwargs["courseID"]
         print('Course_ID:', course_id)
+        cur.execute("LOCK TABLES course READ")
         cur.execute("SELECT * FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         matched = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         print('Matched:', matched)
         if (not matched):
             return False
@@ -1058,14 +1112,18 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_all_courses"):
         teacher_id = kwargs["teacherID"]
         courseList = []
+        cur.execute("LOCK TABLES course READ")
         cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacher_id)s", {"teacher_id":teacher_id})
         resultsList = cur.fetchall()
+        cur.execute("UNLOCK TABLES")
         
         if (len(resultsList) == 0):
             return courseList
         #Password will be null if using Google Auth
+        cur.execute("LOCK TABLES user READ")
         cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacher_id)s AND password IS NULL", {"teacher_id":teacher_id})
         teacherData = cur.fetchone()
+        cur.execute("UNLOCK TABLES")
         if (teacherData):
             teacherUsername, teacherProfile = teacherData[0], teacherData[1]
             teacherProfile = (teacherProfile, True)
@@ -1101,7 +1159,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
-
+        cur.execute("LOCK TABLES course READ")
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (teacherID is None):
@@ -1116,6 +1174,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3", {"teacherID":teacherID})
 
         matchedList = cur.fetchall()
+        cur.execute("UNLOCK TABLES")
         if (not matchedList):
             return []
         else:
@@ -1199,8 +1258,10 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     if mode == "retrieve_user_review":
         userID = kwargs["userID"]
+        cur.execute("LOCK TABLES review READ")
         cur.execute("SELECT course_rating FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
         review_list = cur.fetchall()
+        cur.execute("UNLOCK TABLES")
         return review_list
 
     elif mode == "insert":
