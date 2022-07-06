@@ -65,6 +65,8 @@ def coursePage(courseID:str):
     if courses == False: #raise exception
         abort(404)
     #create variable to store these values
+    # TODO: Could have used Course.py's class instead of 
+    # TODO: manually retrieving the data from the tuple
     teacherID = courses[1]
     courseName = courses[2]
     courseDescription = Markup(
@@ -85,13 +87,14 @@ def coursePage(courseID:str):
 
     teacherProfilePath = get_image_path(teacherID)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID, )
-    print(teacherRecords)
     teacherName = teacherRecords[2]
 
-    retrieveReviews = sql_operation(table="review", mode="retrieve_all" , courseID=courseID)
+    retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
     print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
-    if retrieveReviews != False: #if there are reviews
+    if retrieveReviews: #if there are reviews
+        # TODO: Could have used Reviews.py's class instead of 
+        # TODO: manually retrieving the data from the tuple
         for i in retrieveReviews:
             reviewUserId = i[0]
             reviewCourseId = courseID 
