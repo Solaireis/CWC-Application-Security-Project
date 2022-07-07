@@ -253,8 +253,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @page_offset = (page_number - 1) * 10;
             SET @count := 0;
             SELECT COUNT(*) FROM (
-                SET @page_offset = (page_number - 1) * 10;
-                SET @count := 0;
                 SELECT (@count := @count + 1) AS row_num, 
                 c.course_id, c.teacher_id, 
                 u.username, u.profile_image, c.course_name, c.course_description, 
