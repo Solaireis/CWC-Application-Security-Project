@@ -198,6 +198,7 @@ class ConstantsConfigs:
         # For Vimeo API
         self.VIMEO_CLIENT_ID = "9ece1a6fad946abaf1264307713aa7ede45f33a7"
         self.VIMEO_CLIENT_SECRET = self.get_secret_payload(secretID="vimeo-secret")
+        self.VIMEO_ACCESS_TOKEN = self.get_secret_payload(secretID="vimeo-token")
 
         # For Google Cloud Logging API
         self.LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))

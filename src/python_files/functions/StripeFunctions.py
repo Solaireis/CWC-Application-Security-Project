@@ -1,14 +1,16 @@
 # import python standard libraries
 from time import time
+from typing import Optional
 
 # import third-party libraries
 from flask import url_for
 import stripe
 from stripe.error import InvalidRequestError
+from stripe.api_resources.checkout.session import Session as StripeCheckoutSession # Conflicts with Flask session
 
 # import local python libraries
 from python_files.classes.Constants import CONSTANTS
-from .NormalFunctions import EC_sign, JWTExpiryProperties
+from .NormalFunctions import JWTExpiryProperties
 from .SQLFunctions import generate_limited_usage_jwt_token
 
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
@@ -16,6 +18,20 @@ stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 def stripe_product_create(
     courseID:str, courseName:str, courseDescription:str, coursePrice: float, courseImagePath:str=None
 ) -> None:
+    """
+    Create a product to add to Stripe database. 
+    Provide matching details to what is saved in MySQL.
+
+    Inputs:
+    - courseID (str)
+    - courseName (str)
+    - courseDescription (str)
+    - coursePrice (float)
+    - courseImagePath (str)
+
+    Output:
+    None
+    """
     try:
         courseData = stripe.Product.create(
             id = courseID,
@@ -36,7 +52,16 @@ def stripe_product_create(
         print(error)
         print(f"Course: {courseID} already exists in Stripe database.")
 
-def stripe_product_check(courseID:str):
+def stripe_product_check(courseID:str) -> Optional[str]:
+    """
+    Checks if a product exists on Stripe based on Course ID.
+
+    Inputs:
+    - courseID (str): CourseID of the course to check
+
+    Output:
+    - courseData (str, optional): Data about the course, in JSON format.
+    """
     try:
         courseData = stripe.Product.retrieve(courseID)
         # print(courseData)
@@ -47,7 +72,23 @@ def stripe_product_check(courseID:str):
         # print("Creating course in Stripe database.")
         return None
 
-def stripe_checkout(userID: str, cartCourseIDs: list, email: str) -> str:
+def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Optional[StripeCheckoutSession]:
+    """
+    Create a checkout session in Stripe servers.
+    Creates a JWT Token with userID and cartCourseIDs.
+
+    Inputs:
+    - userID (str)          : User ID to add payments to
+    - cartCourseIDs (str)   : List of Course IDs in user cart to add to payments
+    - email (str)           : Email field for Stripe checkout
+
+    Output:
+    - checkoutSession (StripeCheckoutSession)
+        - checkout_session.id: id for reference
+        - checkout_session.url: url to redirect to the Stripe server
+        - Probably more...
+
+    """
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
     jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs}, expiryInfo=expiryInfo)
     try:
@@ -66,7 +107,16 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str) -> str:
          print("Checkout: " + str(error))
          return None
 
-def expire_checkout(checkoutSession:str) -> None:  # In the event shopping cart is altered while checkout is still active; Insecure Design
+def expire_checkout(checkoutSession:str) -> None:
+    """
+    Expires a checkout session.
+    (e.g. shopping cart is altered while checkout is still active.)
+    Inputs:
+    - 
+
+    Output:
+    - None
+    """
     try:
         stripe.checkout.Session.expire(checkoutSession)
     except InvalidRequestError:
