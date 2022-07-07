@@ -115,9 +115,7 @@ def deletePic():
 
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if ("https" not in imageSrcPath):
-            fileName = imageSrcPath.rsplit("/", 1)[-1]
-            Path(current_app.config["PROFILE_UPLOAD_PATH"]).joinpath(fileName).unlink(missing_ok=True)
+        if ("https://storage.googleapis.com/coursefinity" in imageSrcPath):
             sql_operation(table="user", mode="delete_profile_picture", userID=userInfo[0])
             flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
         return redirect(url_for("userBP.userProfile"))
@@ -136,150 +134,28 @@ def uploadPic():
             return redirect(url_for("userBP.userProfile"))
 
         file = request.files["profilePic"]
-        filename = file.filename
-        if (filename.strip() == ""):
-            abort(500)
-
-        if (not accepted_image_extension(filename)):
+        filename = secure_filename(file.filename)
+        if (filename == "" or not accepted_image_extension(filename)):
             flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
             return redirect(url_for("userBP.userProfile"))
 
-        filename = f"{userID}.webp"
-        print(f"This is the filename for the inputted file : {filename}")
-
-        filePath = current_app.config["PROFILE_UPLOAD_PATH"].joinpath(filename)
-        print(f"This is the filepath for the inputted file: {filePath}")
-
+        filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
         imageData = BytesIO(file.read())
-        compress_and_resize_image(imageData=imageData, imagePath=filePath, dimensions=(500, 500))
+        try:
+            imageUrlToStore = compress_and_resize_image(
+                imageData=imageData, imagePath=filePath, dimensions=(500, 500), 
+                folderPath=f"user-profiles"
+            )
+        except (InvalidProfilePictureError):
+            flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
+            return redirect(url_for("userBP.userProfile"))
+        except (UploadFailedError):
+            flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Profile Image!")
+            return redirect(url_for("userBP.userProfile"))
 
-        imageUrlToStore = url_for("static", filename=f"images/user/{filename}")
         sql_operation(table="user", mode="change_profile_picture", userID=userID, profileImagePath=imageUrlToStore)
-
+        flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
         return redirect(url_for("userBP.userProfile"))
-    else:
-        return redirect(url_for("guestBP.login"))
-
-@userBP.route("/video-upload", methods=["GET", "POST"])
-def videoUpload():
-    if ("user" in session):
-        courseID = generate_id()
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo[1] != "Teacher"):
-            abort(500)
-
-        if (request.method == "POST"):
-            if (request.files["courseVideo"].filename == ""):
-                flash("Please Upload a Video", "File Upload Error!")
-                return redirect(url_for("userBP.videoUpload"))
-            file = request.files.get("courseVideo")
-            filename = secure_filename(file.filename)
-
-            print(f"This is the filename for the inputted file : {filename}")
-
-            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-            print(f"This is the folder for the inputted file: {filePath}")
-            filePath.mkdir(parents=True, exist_ok=True)
-
-            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
-            file.save(Path(filePath).joinpath(filename))
-
-            session["course-data"] = (courseID, filePathToStore)
-            return redirect(url_for("userBP.createCourse"))
-        else:
-            return render_template("users/teacher/video_upload.html",imageSrcPath=imageSrcPath, accType=userInfo[1])
-    else:
-        return redirect(url_for("guestBP.login"))
-
-
-#TODO: Hash Video data, implement dropzone to encrpyt video data
-@userBP.route("/create-course", methods=["GET","POST"])
-def createCourse():
-    if ("user" in session):
-        if ("course-data" in session):
-            courseData = session["course-data"]
-            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-            if (userInfo[1] != "Teacher"):
-                abort(500)
-
-            courseForm = CreateCourse(request.form)
-            if (request.method == "POST"):
-                courseTitle = courseForm.courseTitle.data
-                courseDescription = courseForm.courseDescription.data
-                courseTagInput = request.form.get("courseTag")
-                coursePrice = float(courseForm.coursePrice.data)
-
-                file = request.files.get("courseThumbnail")
-                filename = file.filename
-                if (filename.strip() == ""):
-                    abort(500)
-
-                filename = f"{courseData[0]}.webp"
-                print(f"This is the filename for the inputted file : {filename}")
-
-                filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
-                print(f"This is the Directory for the inputted file: {filePath}")
-                filePath.mkdir(parents=True, exist_ok=True)
-
-                imageData = BytesIO(file.read())
-                compress_and_resize_image(imageData=imageData, imagePath=Path(filePath).joinpath(filename), dimensions=(1920, 1080))
-
-                imageUrlToStore = (f"{courseData[0]}/{filename}")
-
-                # print(f"This is the filename for the inputted file : {filename}")
-                # filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-                # print(f"This is the filePath for the inputted file: {filePath}")
-                # file.save(filePath)
-
-                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
-                stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
-
-
-                session.pop("course-data")
-                flash("Course Created", "Course Created Successfully!")
-                return redirect(url_for("userBP.userProfile"))
-            else:
-                return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
-        else:
-            flash("No Video Uploaded", "File Upload")
-            return redirect(url_for("userBP.videoUpload"))
-    else:
-        return redirect(url_for("guestBP.login"))
-
-@userBP.route("/course-video-list")
-def courseList():
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        listInfo = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo[0], pageNum=page)
-        if listInfo:
-            courseList, maxPage = listInfo[0], listInfo[1]
-            page = request.args.get("p", default=1, type=int)
-            
-            if (page > maxPage):
-                abort(404)
-            
-            return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1], maxPage=maxPage, currentPage=page, courseList=courseList)
-
-        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, accType=userInfo[1], courseListLen=0)
-
-    else:
-        return redirect(url_for("guestBP.login"))
-
-@userBP.route("/delete-course-video", methods=["GET", "POST"])
-def courseDelete():
-    if ("user" in session):
-        courseID = request.args.get("cid", default="test", type=str)
-        sql_operation(table="course", mode="delete", courseID=courseID)
-        print("Course Deleted")
-        return redirect(url_for("userBP.courseList"))
-    else:
-        return redirect(url_for("guestBP.login"))
-
-@userBP.route("/course-video-edit", methods=["GET", "POST"])
-def courseUpdate():
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        #TODO: Make the update video details form
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -347,7 +223,7 @@ def addToCart(courseID:str):
     else:
         return redirect(url_for("guestBP.login"))
 
-@userBP.route("/shopping_cart", methods=["GET", "POST"])
+@userBP.route("/shopping-cart", methods=["GET", "POST"])
 def cart():
     print(str(session))
     if "user" in session:
@@ -434,7 +310,7 @@ def purchase(jwtToken:str):
     sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
     return redirect(url_for("userBP.purchaseHistory"))
 
-@userBP.route("/purchase_history")
+@userBP.route("/purchase-history")
 def purchaseHistory():
     if 'user' in session:
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)

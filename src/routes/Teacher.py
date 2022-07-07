@@ -40,26 +40,24 @@ def createCourse():
                 coursePrice = float(courseForm.coursePrice.data)
 
                 file = request.files.get("courseThumbnail")
-                filename = file.filename
-                if (filename.strip() == ""):
-                    abort(500)
+                filename = secure_filename(file.filename)
+                if (filename == "" or not accepted_image_extension(filename)):
+                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
 
-                filename = f"{courseData[0]}.webp"
-                print(f"This is the filename for the inputted file : {filename}")
-
-                filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(courseData[0])
-                print(f"This is the Directory for the inputted file: {filePath}")
-                filePath.mkdir(parents=True, exist_ok=True)
-
+                filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
                 imageData = BytesIO(file.read())
-                compress_and_resize_image(imageData=imageData, imagePath=Path(filePath).joinpath(filename), dimensions=(1920, 1080))
-
-                imageUrlToStore = (f"{courseData[0]}/{filename}")
-
-                # print(f"This is the filename for the inputted file : {filename}")
-                # filePath = Path(current_app.config["THUMBNAIL_UPLOAD_PATH"]).joinpath(filename)
-                # print(f"This is the filePath for the inputted file: {filePath}")
-                # file.save(filePath)
+                try:
+                    imageUrlToStore = compress_and_resize_image(
+                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
+                        folderPath=f"course-thumbnails"
+                    )
+                except (InvalidProfilePictureError):
+                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
+                except (UploadFailedError):
+                    flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
+                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
 
                 sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
                 stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
@@ -72,7 +70,7 @@ def createCourse():
                 return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
         else:
             flash("No Video Uploaded", "File Upload Error!")
-            return redirect(url_for("userBP.videoUpload"))
+            return redirect(url_for("teacherBP.videoUpload"))
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -97,7 +95,7 @@ def courseDelete():
         courseID = request.args.get("cid", default="test", type=str)
         sql_operation(table="course", mode="delete", courseID=courseID)
         print("Course Deleted")
-        return redirect(url_for("userBP.courseList"))
+        return redirect(url_for("teacherBP.courseList"))
     else:
         return redirect(url_for("guestBP.login"))
 

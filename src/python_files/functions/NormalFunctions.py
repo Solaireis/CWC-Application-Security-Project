@@ -15,7 +15,7 @@ from pathlib import Path
 from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from io import IOBase
+from io import IOBase, BytesIO
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -41,7 +41,7 @@ from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
-from google.resumable_media.common import DataCorruption as UploadDataCorruption
+from google.resumable_media.common import DataCorruption as UploadDataCorruption, InvalidResponse
 
 # for google OAuth2 login
 from google_auth_oauthlib.flow import Flow
@@ -67,22 +67,26 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
-def upload_file(
-    bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
-    localFilePath:pathlib.Path=None, 
-    uploadDestination:str=""
+def upload_file_from_path(
+    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    localFilePath:Path=None, 
+    uploadDestination:str="",
+    cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ) -> str:
     """
     Uploads a file to Google Cloud Platform Storage API.
 
     Args:
-    - bucketName (str): Name of the bucket.
+    - bucketName (str, Optional): Name of the bucket.
         - Default: PUBLIC_BUCKET_NAME defined in Constants.py
     - localFilePath (pathlib.Path): A pathlib Path object to the local file.
         - E.g. pathlib.Path("/path/to/file.png")
     - uploadDestination (str): Path to the destination in the bucket to upload to.
         - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
         - E.g. "file.png" to upload to the root of the bucket
+    - cacheControl (str, Optional): The cache control header to set on the uploaded file.
+        - E.g. "public, max-age=60" for a 1 minute cache
+        - Default: DEFAULT_CACHE_CONTROL defined in Constants.py
 
     Returns:
     - str: The public URL of the uploaded file.
@@ -92,33 +96,42 @@ def upload_file(
     uploadDestination = "/".join([uploadDestination, localFilePath.name])
 
     blob = bucket.blob(uploadDestination)
-    # md5Hash = md5(localFilePath.read_bytes(), usedforsecurity=False).hexdigest()
     try:
-        blob.upload_from_filename(localFilePath, checksum="md5")
+        blob.upload_from_filename(localFilePath, checksum="crc32c")
+
+        blob.reload()
+        blob.cache_control = cacheControl
+        blob.patch()
     except (UploadDataCorruption):
         write_log_entry(
             logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
             logLevel="INFO"
         )
         raise UploadFailedError("Data corruption detected!")
+    except (InvalidResponse):
+        raise UploadFailedError("Invalid response from Google Cloud Storage!")
 
     return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
 
 def upload_from_stream(
-    bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, 
     fileObj:IOBase=None, 
-    uploadDestination:str=""                  
+    uploadDestination:str="",
+    cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ):
     """
     Uploads bytes from a stream or other file-like object to Google Cloud Platform Storage API.
 
     Args:
-    - bucketName (str): Name of the bucket.
+    - bucketName (str, Optional): Name of the bucket.
         - Default: PUBLIC_BUCKET_NAME defined in Constants.py
     - fileObj (IOBase): A file-like object to upload.
     - uploadDestination (str): Path to the destination in the bucket to upload to.
         - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
         - E.g. "file.png" to upload to the root of the bucket
+    - cacheControl (str, Optional): The cache control header to set on the uploaded file.
+        - E.g. "public, max-age=60" for a 1 minute cache
+        - Default: DEFAULT_CACHE_CONTROL defined in Constants.py
 
     Raises:
     - UploadFailedError: If the upload fails.
@@ -130,29 +143,29 @@ def upload_from_stream(
     bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
 
     blob = bucket.blob(uploadDestination)
-
-    # Rewind the stream to the beginning just in case
-    fileObj.seek(0)
-
-    # Upload data from the stream to your bucket.
-    # md5Hash = md5(fileObj.read(), usedforsecurity=False).hexdigest()
     try:
-        blob.upload_from_file(fileObj, checksum="md5")
+        blob.upload_from_file(fileObj, checksum="crc32c", rewind=True)
+
+        blob.reload()
+        blob.cache_control = cacheControl
+        blob.patch()
     except (UploadDataCorruption):
         write_log_entry(
             logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
             logLevel="INFO"
         )
         raise UploadFailedError("Data corruption detected!")
+    except (InvalidResponse):
+        raise UploadFailedError("Invalid response from Google Cloud Storage!")
 
     return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
 
-def delete_blob(bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, destinationURL:str="") -> None:
+def delete_blob(bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, destinationURL:str="") -> None:
     """
     Deletes a file from Google Cloud Platform Storage API.
 
     Args:
-    - bucketName (str): Name of the bucket.
+    - bucketName (str, Optional): Name of the bucket.
         - Default: PUBLIC_BUCKET_NAME defined in Constants.py
     - destinationPath (str): Uploaded destination of the file to delete.
         - E.g. "filepath.png"
@@ -1067,14 +1080,19 @@ def RSA_decrypt(cipherData:dict=None) -> str:
 
     return response.plaintext.decode("utf-8")
 
-def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensions:tuple=None, quality:int=75, optimise:bool=True) -> str:
+def compress_and_resize_image(
+    imageData:IOBase=None, imagePath:Path=None,
+    dimensions:tuple=None, quality:int=75, optimise:bool=True,
+    uploadToGoogleStorage:bool=True, bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    folderPath:Optional[str]=None, cacheControl:Optional[str]=None
+)-> str:
     """
     Resizes the image at the given path to the given dimensions and compresses it with the given quality.
 
     Converts the image to webp format as well for smaller image file size and saves the image to the given path.
 
     Args:
-    - imageData (bytes): The image data to compress and resize
+    - imageData (IOBase): The image data to compress and resize
     - imagePath (pathlib.Path): The path to the image to resize
     - dimensions (tuple): The dimensions to resize the image to
         - Must be a tuple of two integers, e.g. (500, 500)
@@ -1083,13 +1101,25 @@ def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensi
         - Defaults to 75
     - optimise (bool): Whether to optimise the image or not
         - Defaults to True
+    - uploadToGoogleStorage (bool): Whether to upload the image to Google Storage API or not
+        - Defaults to True
+    - bucketName (str): The name of the bucket to upload the image to on Google Storage API
+        - Defaults to CONSTANTS.PUBLIC_BUCKET_NAME defined in Constants.py
+    - folderPath (str, Optional): The path to the folder to save the image to on Google Storage API
+        - E.g. "images" to save the image to "images/<imageName>"
+        - If not provided, the image will be saved to the root folder of the bucket
+    - cacheControl (str, Optional): The cache control header to set on the uploaded file.
+        - E.g. "public, max-age=60" for a 1 minute cache
+        - Default: None to use Google's default cache control of "public, max-age=3600" 
 
     Returns:
-    - The path to the compressed image (pathlib.Path)
+    - The path to the compressed image (pathlib.Path) 
+    or the Google Storage public URL of the compressed image (str)
 
     Raises:
     - UnidentifiedImageError: If the image at the given path is not a valid image
     """
+    imageData.seek(0) # reset the file pointer to the beginning of the file
     try:
         # open image file
         image = PillowImage.open(imageData).convert("RGB")
@@ -1106,14 +1136,29 @@ def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensi
         resizedImage = image
 
     # changes the extension to .webp
-    newImagePath = imagePath.with_suffix(".webp")
+    imagePath = imagePath.with_suffix(".webp")
 
-    # remove the image file if user has already uploaded one before
-    newImagePath.unlink(missing_ok=True)
+    if (not uploadToGoogleStorage):
+        # remove the image file if user has already uploaded one before
+        imagePath.unlink(missing_ok=True)
 
-    # save the new and compressed image as webp
-    resizedImage.save(newImagePath, format="webp", optimize=optimise, quality=quality)
-    return newImagePath
+        # save the new and compressed image as webp
+        resizedImage.save(imagePath, format="webp", optimize=optimise, quality=quality)
+
+        # Return the pathlib.Path object of the new and compressed image
+        return imagePath
+
+    # Save the new and compressed image as webp to the stream buffer
+    fileObj = BytesIO()
+    resizedImage.save(fileObj, format="webp", optimize=optimise, quality=quality)
+    fileObj.seek(0) # reset the file pointer to the beginning of the file
+
+    # upload the new and compressed image to Google Storage
+    # and return the public url of the uploaded image
+    destinationPath = "/".join([folderPath, imagePath.name]) if (folderPath is not None) else imagePath.name
+    return upload_from_stream(
+        bucketName=bucketName, fileObj=fileObj, uploadDestination=destinationPath, cacheControl=cacheControl
+    )
 
 def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
     """

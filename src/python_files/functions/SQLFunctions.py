@@ -22,8 +22,20 @@ from python_files.classes.Course import Course, CourseInfo
 from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_email, write_log_entry, get_mysql_connection
+                             send_email, write_log_entry, get_mysql_connection, delete_blob
 from python_files.classes.Constants import CONSTANTS
+
+def get_blob_name(url:str="") -> str:
+    """
+    Get the blob name from the Google Storage API URL.
+
+    Args:
+    - url (str): The URL of the blob.
+
+    Returns:
+    - The blob name (str)
+    """
+    return "/".join(url.split("/")[4:])
 
 def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
@@ -767,12 +779,35 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "change_profile_picture"):
         userID = kwargs["userID"]
-        profileImagePath = kwargs.get("profileImagePath")
+
+        # Delete old profile picture from Google Cloud Storage API
+        cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
+        matched = cur.fetchone()
+        if (matched is not None):
+            oldUrlToDelete = get_blob_name(url=matched[0])
+            try:
+                delete_blob(destinationURL=oldUrlToDelete)
+            except (FileNotFoundError):
+                pass
+
+        # Change profile picture in the database
+        profileImagePath = kwargs["profileImagePath"]
         cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":profileImagePath, "userID":userID})
         connection.commit()
 
     elif (mode == "delete_profile_picture"):
         userID = kwargs["userID"]
+
+        # Delete old profile picture from Google Cloud Storage API
+        cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
+        matched = cur.fetchone()
+        if (matched is not None):
+            oldUrlToDelete = get_blob_name(url=matched[0])
+            try:
+                delete_blob(destinationURL=oldUrlToDelete)
+            except (FileNotFoundError):
+                pass
+
         cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":None, "userID":userID})
         connection.commit()
 
@@ -1015,6 +1050,17 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "update_course_thumbnail"):
         course_id = kwargs["courseID"]
+
+        # Delete old thumbnail from Google Cloud Storage API
+        cur.execute("SELECT course_image_path FROM course WHERE course_id=%(courseID)s", {"courseID":course_id})
+        matched = cur.fetchone()
+        if (matched is not None):
+            oldUrlToDelete = get_blob_name(url=matched[0])
+            try:
+                delete_blob(destinationURL=oldUrlToDelete)
+            except (FileNotFoundError):
+                pass
+
         course_image_path = kwargs["courseImagePath"]
         cur.execute("UPDATE course SET course_image_path=%(course_image_path)s WHERE course_id=%(courseID)s", {"course_image_path":course_image_path, "courseID":course_id})
         connection.commit()

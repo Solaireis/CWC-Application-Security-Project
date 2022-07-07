@@ -106,8 +106,6 @@ app.jinja_env.lstrip_blocks = True
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # for image uploads file path
-app.config["PROFILE_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "user")
-app.config["THUMBNAIL_UPLOAD_PATH"] = Path(app.root_path).joinpath("static", "images", "course_thumbnails")
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
@@ -238,15 +236,15 @@ def before_request() -> None:
 @app.after_request # called after each request to the application
 def after_request(response:wrappers.Response) -> wrappers.Response:
     """
-    Add headers to cache the rendered page for 10 minutes.
-    Note that max-age is for the browser, s-maxage is for the CDN.
-    It will be useful when the flask web app is deployed to a server.
-    This helps to reduce loads on the flask webapp such that the server can handle more requests
-    as it doesn't have to render the page again for each request to the application.
+    Add headers to the response after each request.
     """
     # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
     # will be uncommented when the web app is ready to be hosted on firebase.
-    # response.headers["Cache-Control"] = "public, max-age=600, s-maxage=600"
+    if (request.endpoint != "static"):
+        response.headers["Cache-Control"] = "public, max-age=0"
+    elif (not CONSTANTS.DEBUG_MODE):
+        # Cache for 1 year for static files (except when in debug/dev mode)
+        response.headers["Cache-Control"] = "public, max-age=31536000"
     return response
 
 if (__name__ == "__main__"):

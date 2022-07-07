@@ -7,6 +7,7 @@ from typing import Any, Union
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
 from dicebear import DOptions
+import requests
 
 # For ipinfo.io to get details about a user's IP address
 import ipinfo
@@ -148,9 +149,7 @@ class ConstantsConfigs:
         self.ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
         # For email coursefinity logo image
-        LOGO_PATH = self.ROOT_FOLDER_PATH.joinpath("static", "images", "common", "filled_logo.png")
-        self.LOGO_BYTES = LOGO_PATH.read_bytes()
-        del LOGO_PATH
+        self.LOGO_BYTES = requests.get("https://storage.googleapis.com/coursefinity/web-assets/common/filled_logo.png").content
 
         # For 2FA setup key regex to validate if the setup is a valid base32 setup key
         self.COMPILED_2FA_REGEX_DICT = {
@@ -263,6 +262,7 @@ class ConstantsConfigs:
         GOOGLE_STORAGE_JSON = json.loads(self.get_secret_payload(secretID="google-storage"))
         self.GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
         self.PUBLIC_BUCKET_NAME = "coursefinity"
+        self.DEFAULT_CACHE_CONTROL = "public, max-age=31536000" # 1 year
         del GOOGLE_STORAGE_JSON
 
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""

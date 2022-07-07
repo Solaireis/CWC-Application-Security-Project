@@ -9,26 +9,26 @@
 {% from "includes/_formHelper.html" import render_field %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            {% for category, message in messages %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h6>{{ message }}</h6>
-            </div>
-            {% endfor %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+    {% if messages %}
+        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    {% for category, message in messages %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>{{ message }}</h6>
+                        </div>
+                    {% endfor %}
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
 {% endwith %}
 
 <div class="container">
@@ -137,16 +137,16 @@
 {% endblock %}
 
 {% block extra_js %}
-<script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
-<script nonce="{{ csp_nonce() }}">
-    document.getElementById("formFile").onchange = function() {readURL(this);};
-</script>
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-        <script nonce="{{ csp_nonce() }}">
-            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
-            alertModal.show();
-        </script>
-    {% endif %}
-{% endwith %}
+    <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}">
+        document.getElementById("formFile").onchange = function() {readURL(this);};
+    </script>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <script nonce="{{ csp_nonce() }}">
+                var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+                alertModal.show();
+            </script>
+        {% endif %}
+    {% endwith %}
 {% endblock %}

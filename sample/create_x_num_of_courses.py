@@ -21,7 +21,13 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
-THUMBNAILS_PRESET = ["demo_thumbnail_1.webp", "demo_thumbnail_2.webp", "demo_thumbnail_3.webp", "demo_thumbnail_4.webp", "demo_thumbnail_5.webp"]
+THUMBNAILS_PRESET = [
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp", 
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp", 
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_3.webp", 
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_4.webp", 
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_5.webp"
+]
 
 # Get Stripe API Key
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY

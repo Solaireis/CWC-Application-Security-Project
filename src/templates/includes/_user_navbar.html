@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-lg bg-dark">
 	<div class="container-fluid navbar_margin">
-		<a id="logo" href="/"><img src="{{ url_for('static', filename='images/common/logo.png') }}" alt="CourseFinity Logo"></a>
+		<a id="logo" href="/"><img src="https://storage.googleapis.com/coursefinity/web-assets/common/logo.png" alt="CourseFinity Logo"></a>
 		</a>
 		<input type="checkbox" id="check" data-bs-toggle="collapse" data-bs-target="#navbar-content"  aria-expanded="false" aria-label="Toggle navigation">
 		<label for="check" id="nav-icon">
@@ -131,8 +131,8 @@
 					<ul class="dropdown-menu shadow">
 						{% if accType == "Teacher" %}
 						<!-- <li><a href="{{ url_for('generalBP.teacherPage', teacherID=session.get('user')) }}" class="dropdown-item"><i class="far fa-id-card"></i> Your Channel</a></li> -->
-						<li><a href="{{ url_for('userBP.videoUpload') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
-						<li><a href="{{ url_for('userBP.courseList') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Course List</a></li>
+						<li><a href="{{ url_for('teacherBP.videoUpload') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Create Course</a></li>
+						<li><a href="{{ url_for('teacherBP.courseList') }}" class="dropdown-item"><i class="fas fa-plus-circle"></i> Course List</a></li>
 						<!--li><a href="/channel_content/{{ teacherUID }}/1" class="dropdown-item"><i class="fas fa-tasks"></i> Course Management</a></li-->
 						{% endif %}
 						<li><a href="{{ url_for('userBP.purchaseHistory') }}" class="dropdown-item"><i class="fas fa-history"></i> Purchases</a></li>
