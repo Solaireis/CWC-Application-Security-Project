@@ -80,7 +80,7 @@ class ConstantsConfigs:
         self.DEBUG_MODE = True 
 
         # Blueprints endpoint routes
-        self.GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
+        self.GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP","userBP")
         self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
         self.ADMIN_BlUEPRINTS = ("adminBP", "generalBP", "LoggedInBP", "errorBP","userBP")
         self.TEACHER_BLUEPRINTS = ("userBP", "generalBP", "LoggedInBP", "errorBP","teacherBP") #its better to seperate the teacher and student blueprints
