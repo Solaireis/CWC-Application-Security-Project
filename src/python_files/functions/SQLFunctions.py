@@ -1072,6 +1072,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         resultsList = cur.fetchall()
         if (resultsList is None):
             return []
+        
+        cur.execute("CALL max_page_paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
+        maxPage = cur.fetchone()[0]
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1082,7 +1085,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             courseList.append(
                 CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True)
             )
-        return courseList
+        
+
+        return courseList, maxPage
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
@@ -1199,22 +1204,25 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "search"):
         searchInput = kwargs.get("searchInput", "")
+        pageNum = kwargs["pageNum"]
         resultsList = []
 
-        cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
+        cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         foundResults = cur.fetchall()
 
         teacherIDList = [teacherID[1] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
             res = cur.fetchone()
-            teacherUsername = res[0]
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
 
             resultsList.append(CourseInfo( foundResults[i], profilePic=teacherProfile, truncateData=True))
 
-        return resultsList
+        cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
+        maxPage = cur.fetchone()[0]
+
+        return resultsList, maxPage
 
     else:
         connection.close()
