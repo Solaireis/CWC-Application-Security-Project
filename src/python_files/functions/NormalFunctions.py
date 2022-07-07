@@ -21,7 +21,7 @@ from io import IOBase
 if (__name__ == "__main__"):
     from sys import path as sys_path
     import pathlib
-    sys_path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
+    sys_path.append(str(Path(__file__).parent.parent.parent.absolute()))
     from python_files.classes.Constants import CONSTANTS
     from python_files.classes.Errors import *
 elif (__package__ is None or __package__ == ""):
@@ -69,7 +69,7 @@ from google.cloud.recaptchaenterprise_v1 import Assessment
 
 def upload_file(
     bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
-    localFilePath:pathlib.Path=None, 
+    localFilePath:Path=None, 
     uploadDestination:str=""
 ) -> str:
     """
@@ -78,8 +78,8 @@ def upload_file(
     Args:
     - bucketName (str): Name of the bucket.
         - Default: PUBLIC_BUCKET_NAME defined in Constants.py
-    - localFilePath (pathlib.Path): A pathlib Path object to the local file.
-        - E.g. pathlib.Path("/path/to/file.png")
+    - localFilePath (Path): A pathlib Path object to the local file.
+        - E.g. Path("/path/to/file.png")
     - uploadDestination (str): Path to the destination in the bucket to upload to.
         - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
         - E.g. "file.png" to upload to the root of the bucket
@@ -1075,7 +1075,7 @@ def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensi
 
     Args:
     - imageData (bytes): The image data to compress and resize
-    - imagePath (pathlib.Path): The path to the image to resize
+    - imagePath (Path): The path to the image to resize
     - dimensions (tuple): The dimensions to resize the image to
         - Must be a tuple of two integers, e.g. (500, 500)
     - quality (int): The quality of the image to resize to
@@ -1085,7 +1085,7 @@ def compress_and_resize_image(imageData:bytes=None, imagePath:Path=None, dimensi
         - Defaults to True
 
     Returns:
-    - The path to the compressed image (pathlib.Path)
+    - The path to the compressed image (Path)
 
     Raises:
     - UnidentifiedImageError: If the image at the given path is not a valid image
