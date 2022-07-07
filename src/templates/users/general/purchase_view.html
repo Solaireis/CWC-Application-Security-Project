@@ -26,7 +26,12 @@
 
     <div class="container-lg">
         <div class="row">
-            {{ courseVideoPath | safe }}
+            <video-js id="course-video" class="vjs-theme-forest vjs-matrix" poster="{{ None }}">
+                <source src="{{ None }}" type="video/mp4">
+                <p class="vjs-no-js">
+                  To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+              </video-js>
         </div>
     </div>
 
@@ -93,6 +98,22 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/video_js.css') }}">
+<link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet">
+<link href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css" rel="stylesheet">
 {% endblock %}
 
-    
+{% block extra_js %}
+<script src="https://vjs.zencdn.net/7.19.2/video.min.js"></script>
+<script>
+    videojs('course-video', {
+        playbackRates: [0.5, 1, 1.5, 2],
+        aspectRatio: "16:9",
+        fluid: true,       //The video player
+        responsive: true,  //The video controls
+        autoplay: true,    //Or attempts to
+        controls: true,
+        preload: "auto",
+    });
+</script>
+{% endblock %}

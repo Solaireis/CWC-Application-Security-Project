@@ -41,25 +41,25 @@
         {% for course in courseList %}
         <div class="row g-0 casing mx-auto border">
             <div class="col-5">            
-                {% if (course['courseThumbnailPath'] == None) %}
+                {% if (course.courseImagePath == None) %}
                     <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
                 {% else %}
-                    <img src= "{{ course['courseThumbnailPath'] }}" class="card-img" alt="Course Thumbnail">
+                    <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
                 {% endif %}
             </div>
             <div class="col-7">
                 <div class="card-body">
-                    <h5 class="card-title"><a href="/course/{{ course['courseID'] }}">{{ course["courseName"] }}</a></h5>
-                    <p class="card-text">{{ course["courseDescription"] }}</p>
+                    <h5 class="card-title"><a href="/course/{{ course.courseID }}">{{ course.courseName }}</a></h5>
+                    <p class="card-text">{{ course.courseDescription }}</p>
                 </div>
                 <div class="card-body">
                     <div class="row g-0">
                         <div class="selection col">
-                            <a href="/purchase-view/{{ course['courseID'] }}" class="view">View course materials</a>
+                            <a href="/purchase-view/{{ course.courseID }}" class="view">View course materials</a>
                             {% if course["ReviewChecker"] == False %}
-                                <a class="btn btn-link" href="/purchase-review/{{ course['courseID'] }}">Submit Review</a>
+                                <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">Submit Review</a>
                             {% else %}
-                                <a class="btn btn-link" href="/purchase-review/{{ course['courseID'] }}">View Review</a>
+                                <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">View Review</a>
                             {% endif %}
                         </div>
                     </div>

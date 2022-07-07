@@ -167,7 +167,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SELECT 
             c.course_id, c.teacher_id, 
             u.username, u.profile_image, c.course_name, c.course_description,
-            c.course_image_path, c.course_price, c.course_category, c.date_created,
+            c.course_image_path, c.course_price, c.course_category, c.date_created, 
             ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
             FROM course AS c
             INNER JOIN review AS r

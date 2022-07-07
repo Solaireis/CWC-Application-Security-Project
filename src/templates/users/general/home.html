@@ -86,7 +86,7 @@
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
 									{% if (course.courseID in userPurchasedCourses) %}
-										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.courseID) }}" class="btn btn-success float-end">
+										<a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}
@@ -155,7 +155,7 @@
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
 									{% if (course.courseID in userPurchasedCourses) %}
-										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.courseID) }}" class="btn btn-success float-end">
+										<a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}

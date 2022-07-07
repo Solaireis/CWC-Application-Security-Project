@@ -179,6 +179,7 @@ def purchaseView(courseID:str):
     # TODO: Make the argument based on the purchaseID instead of courseID
     print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    print(courses)
     #courseName = courses[0][1]
     if courses == False: #raise 404 error
         abort(404)
@@ -193,10 +194,7 @@ def purchaseView(courseID:str):
         )
     )
 
-    # videoID = vimeo_upload(r"C:\Users\wrenp\Downloads\the_fuck.mp4", r"C:\Users\wrenp\Downloads\Emote\DoremyToot_Optimised.png", 'Imperishable Night', 'This is a test video.')
-    videoData = get_vimeo_video(726279222)
-    courseVideoPath = loads(videoData.text)["html"]
-    print(loads(videoData.text)["html"])
+    courseVideoPath = None
 
 
     teacherProfilePath = get_image_path(courses.teacherID)
@@ -224,7 +222,7 @@ def addToCart(courseID:str):
         return redirect(url_for("guestBP.login"))
 
 @userBP.route("/shopping-cart", methods=["GET", "POST"])
-def cart():
+def shoppingCart():
     print(str(session))
     if "user" in session:
         userID = session["user"]
@@ -322,18 +320,15 @@ def purchaseHistory():
         # TODO: manually retrieving the data from the tuple
         for courseID in purchasedCourseIDs:
             course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+            print(course)
             if course != False:
-                courseList.append({
-                    "courseID" : course[0],
-                    "courseOwnerLink" : url_for("generalBP.teacherPage", teacherID=course[1]), # course[1] is teacherID
-                    "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
-                    "courseOwnerImagePath" : get_image_path(course[1]),
-                    "courseName" : course[2],
-                    "courseDescription" : course[3],
-                    "courseThumbnailPath" : course[4],
-                    "coursePrice" : f"{course[5]:,.2f}",
-                })
+                courseList.append(course)
 
         return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
     else:
         return redirect(url_for('guestBP.login'))
+
+# blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
+@userBP.route("/static/course_videos/<path:filename>")
+def blockAccess(filename):
+    abort(403)
