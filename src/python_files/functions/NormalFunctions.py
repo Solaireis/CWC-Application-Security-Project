@@ -21,7 +21,7 @@ from io import IOBase, BytesIO
 if (__name__ == "__main__"):
     from sys import path as sys_path
     import pathlib
-    sys_path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
+    sys_path.append(str(Path(__file__).parent.parent.parent.absolute()))
     from python_files.classes.Constants import CONSTANTS
     from python_files.classes.Errors import *
 elif (__package__ is None or __package__ == ""):
@@ -79,8 +79,8 @@ def upload_file_from_path(
     Args:
     - bucketName (str, Optional): Name of the bucket.
         - Default: PUBLIC_BUCKET_NAME defined in Constants.py
-    - localFilePath (pathlib.Path): A pathlib Path object to the local file.
-        - E.g. pathlib.Path("/path/to/file.png")
+    - localFilePath (Path): A pathlib Path object to the local file.
+        - E.g. Path("/path/to/file.png")
     - uploadDestination (str): Path to the destination in the bucket to upload to.
         - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
         - E.g. "file.png" to upload to the root of the bucket
