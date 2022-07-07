@@ -116,14 +116,23 @@ def search():
         abort(413)
 
     page = request.args.get("p", default=1, type=int)
-    foundResults, maxPage = sql_operation(table="course", mode="search", searchInput=searchInput)
-    if (page > maxPage):
-        abort(404)
+    listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
+    if (listInfo):
+        foundResults, maxPage = listInfo[0], listInfo[1]
+        if (page > maxPage):
+            abort(404)
 
+
+        accType = imageSrcPath = None
+        if ("user" in session):
+            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=userInfo[1])
+
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=accType)
 
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=imageSrcPath, accType=userInfo[1])
 
-    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=accType)

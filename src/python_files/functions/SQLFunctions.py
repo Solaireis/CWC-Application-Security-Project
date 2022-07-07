@@ -1053,7 +1053,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             )
         
 
-        return courseList, maxPage
+        return (courseList, maxPage)
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
@@ -1169,21 +1169,20 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 return courseInfoList
 
     elif (mode == "search"):
-        searchInput = kwargs.get("searchInput", "")
-        pageNum = kwargs["pageNum"]
+        searchInput = kwargs.get("searchInput")
+        pageNum = kwargs.get("pageNum")
         resultsList = []
 
         cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         foundResults = cur.fetchall()
-
-        teacherIDList = [teacherID[1] for teacherID in foundResults]
+        teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
             res = cur.fetchone()
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
 
-            resultsList.append(CourseInfo( foundResults[i], profilePic=teacherProfile, truncateData=True))
+            resultsList.append(CourseInfo(foundResults[i], profilePic=teacherProfile, truncateData=True))
 
         cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         maxPage = cur.fetchone()[0]
