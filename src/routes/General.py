@@ -69,12 +69,12 @@ def coursePage(courseID:str):
     # TODO: manually retrieving the data from the tuple
     # teacherID = courses[1]
     # courseName = courses[2]
-    # courseDescription = Markup(
-    #     markdown.markdown(
-    #         courses[3],
-    #         extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
-    #     )
-    # )
+    courseDescription = Markup(
+        markdown.markdown(
+            courses.courseDescription,
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+        )
+    )
     # courseImagePath = courses[4]
     # coursePrice = courses[5]
     # courseCategory = courses[6]
@@ -115,7 +115,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-         accType=accType, reviewList= reviewList, courses=courses
+         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")

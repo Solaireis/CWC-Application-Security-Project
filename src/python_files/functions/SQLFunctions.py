@@ -1017,9 +1017,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("CALL get_course_data(%(course_id)s)", {"course_id":course_id})
         matched = cur.fetchone()
         print('Matched:', matched)
-        if (not matched):
+        if (matched is None):
             return False
-        return CourseInfo(matched[0])
+        teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
+        return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False)
 
     # Added just in case want to do updating
 

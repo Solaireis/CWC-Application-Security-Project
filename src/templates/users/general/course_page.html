@@ -40,7 +40,7 @@
         <div class="col-lg-8">
             <h1>{{ courses.courseName }}</h1>
             <hr>
-            <p>{{ courses.courseDescription }}</p>
+            <p>{{ courseDescription }}</p>
             <p>Course Structure</p>
         </div>
         <div class="col-lg-4">
@@ -49,11 +49,11 @@
             <p>Uploaded by: 
                 <div>            
                     <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
-                    {{ courses.teacherName }}
+                    {{ courses.teacherUsername }}
                 </div></p>
             <p>Date Published: {{courses.dateCreated}}</p>
             <p>Course Rating: 
-                {% if (course.averageRating > 0) %}
+                {% if (courses.averageRating > 0) %}
                 <span class="ratings">
                     {% with remainingStars = 5 - courses.averageRating %}
                         {% for _ in range(courses.averageRating) %}
