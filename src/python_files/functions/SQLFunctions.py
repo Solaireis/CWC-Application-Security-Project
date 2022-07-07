@@ -1097,7 +1097,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         if (resultsList is None):
             return []
 
-        teacherProfile = get_dicebear_image(res[2]) if (not res[3]) \
+        teacherProfile = get_dicebear_image(res[2]) if (res[3 is None]) \
                                                     else res[3]
 
         courseList = []

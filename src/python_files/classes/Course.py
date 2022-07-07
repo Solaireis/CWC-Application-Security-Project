@@ -59,18 +59,18 @@ class CourseInfo:
         Constructor for course info object.
     
         Args:
-        - tupleInfo (tuple): Tuple retrieved from the sql query
+        - tupleInfo (tuple): Tuple retrieved from the sql query using the stored procedure, "get_course_data".
             - Tuple format (12 elements): (
-                    c.course_id, c.teacher_id, u.username, u.profile_pic
-                    c.course_name, c.course_description, c.course_image_path, c.course_price, 
-                    c.course_category, c.date_created, c.course_total_rating, c.course_rating_count
+                    c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created, c.avg_rating
                 )
         - profilePic (str): The dicebear url or the path to the teacher's profile picture
         - truncateData (bool): Truncate the course description to 300 characters
         """
         self.teacherID = tupleInfo[1]
         self.teacherUsername = tupleInfo[2]
-        self.teacherProfile = profilePic # Note: tupleInfo[3] is the profile pic but will not be used!
+        self.teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]
         self.courseName = tupleInfo[4]
         self.courseDescription = tupleInfo[5] if (not truncateData) \
                                               else tupleInfo[5][:300].strip() + "..."
@@ -78,6 +78,7 @@ class CourseInfo:
         self.coursePrice = tupleInfo[7]
         self.courseCategory = tupleInfo[8]
         self.dateCreated = tupleInfo[9]
+        self.averageRating = tupleInfo[10]
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""
