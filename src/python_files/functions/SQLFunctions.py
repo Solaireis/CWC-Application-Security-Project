@@ -1099,7 +1099,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
-                                                               else res[3]
+                                                               else resultsList[0][3]
 
         courseList = []
         for tupleInfo in resultsList:
