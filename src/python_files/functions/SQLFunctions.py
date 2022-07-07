@@ -859,7 +859,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     connection.close()
                     raise PwdTooLongError(f"The password must be less than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
 
-                if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
+                passwordCompromised = pwd_has_been_pwned(passwordInput)
+                if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
+                    connection.close()
+                    write_log_entry(
+                        logMessage="haveibeenpwned's API is down, will fall back to strict password checking!",
+                        severity="NOTICE"
+                    )
+                    raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
+
+                if (not passwordCompromised or not pwd_is_strong(passwordInput)):
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 

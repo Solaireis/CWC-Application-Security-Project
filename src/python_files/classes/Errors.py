@@ -72,6 +72,11 @@ class PwdTooWeakError(Exception):
     It is also raised if the password does not meet the minimum complexity requirements.
     """
 
+class haveibeenpwnedAPIDownError(Exception):
+    """
+    Raised if the haveibeenpwned API is down.
+    """
+
 class CardDoesNotExistError(Exception):
     """
     Raised if the user tries to do CRUD operations on their credit card but their credit card does not exist.
