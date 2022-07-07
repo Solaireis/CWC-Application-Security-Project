@@ -262,6 +262,7 @@ class ConstantsConfigs:
         # For Google Cloud Storage API
         GOOGLE_STORAGE_JSON = json.loads(self.get_secret_payload(secretID="google-storage"))
         self.GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
+        self.PUBLIC_BUCKET_NAME = "coursefinity"
         del GOOGLE_STORAGE_JSON
 
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""

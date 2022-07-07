@@ -10,11 +10,12 @@ from six import ensure_binary
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
-from hashlib import sha1, sha384
+from hashlib import md5, sha1, sha384
 from pathlib import Path
 from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from io import IOBase
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -40,6 +41,7 @@ from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
+from google.resumable_media.common import DataCorruption as UploadDataCorruption
 
 # for google OAuth2 login
 from google_auth_oauthlib.flow import Flow
@@ -64,6 +66,107 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
+
+def upload_file(
+    bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    localFilePath:pathlib.Path=None, 
+    uploadDestination:str=""
+) -> str:
+    """
+    Uploads a file to Google Cloud Platform Storage API.
+
+    Args:
+    - bucketName (str): Name of the bucket.
+        - Default: PUBLIC_BUCKET_NAME defined in Constants.py
+    - localFilePath (pathlib.Path): A pathlib Path object to the local file.
+        - E.g. pathlib.Path("/path/to/file.png")
+    - uploadDestination (str): Path to the destination in the bucket to upload to.
+        - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
+        - E.g. "file.png" to upload to the root of the bucket
+
+    Returns:
+    - str: The public URL of the uploaded file.
+    """
+    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+
+    uploadDestination = "/".join([uploadDestination, localFilePath.name])
+
+    blob = bucket.blob(uploadDestination)
+    # md5Hash = md5(localFilePath.read_bytes(), usedforsecurity=False).hexdigest()
+    try:
+        blob.upload_from_filename(localFilePath, checksum="md5")
+    except (UploadDataCorruption):
+        write_log_entry(
+            logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
+            logLevel="INFO"
+        )
+        raise UploadFailedError("Data corruption detected!")
+
+    return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
+
+def upload_from_stream(
+    bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    fileObj:IOBase=None, 
+    uploadDestination:str=""                  
+):
+    """
+    Uploads bytes from a stream or other file-like object to Google Cloud Platform Storage API.
+
+    Args:
+    - bucketName (str): Name of the bucket.
+        - Default: PUBLIC_BUCKET_NAME defined in Constants.py
+    - fileObj (IOBase): A file-like object to upload.
+    - uploadDestination (str): Path to the destination in the bucket to upload to.
+        - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
+        - E.g. "file.png" to upload to the root of the bucket
+
+    Raises:
+    - UploadFailedError: If the upload fails.
+        - Happens if the file is corrupted.
+
+    Returns:
+    - str: The public URL of the uploaded file.
+    """
+    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+
+    blob = bucket.blob(uploadDestination)
+
+    # Rewind the stream to the beginning just in case
+    fileObj.seek(0)
+
+    # Upload data from the stream to your bucket.
+    # md5Hash = md5(fileObj.read(), usedforsecurity=False).hexdigest()
+    try:
+        blob.upload_from_file(fileObj, checksum="md5")
+    except (UploadDataCorruption):
+        write_log_entry(
+            logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
+            logLevel="INFO"
+        )
+        raise UploadFailedError("Data corruption detected!")
+
+    return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
+
+def delete_blob(bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, destinationURL:str="") -> None:
+    """
+    Deletes a file from Google Cloud Platform Storage API.
+
+    Args:
+    - bucketName (str): Name of the bucket.
+        - Default: PUBLIC_BUCKET_NAME defined in Constants.py
+    - destinationPath (str): Uploaded destination of the file to delete.
+        - E.g. "filepath.png"
+        - E.g. "folder/filepath.png"
+
+    Raises:
+    - FileNotFoundError: If the file to delete does not exist in the bucket.
+    """
+    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+    blob = bucket.blob(destinationURL)
+    try:
+        blob.delete()
+    except (GoogleErrors.NotFound):
+        raise FileNotFoundError("File not found!")
 
 def get_mysql_connection(
     debug:bool=CONSTANTS.DEBUG_MODE, 
