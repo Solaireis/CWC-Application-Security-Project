@@ -1065,30 +1065,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         connection.commit()
 
-    elif (mode == "get_all_courses"):
-        teacher_id = kwargs["teacherID"]
-        courseList = []
-        cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacher_id)s", {"teacher_id":teacher_id})
-        resultsList = cur.fetchall()
-        
-        if (len(resultsList) == 0):
-            return courseList
-        #Password will be null if using Google Auth
-        cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacher_id)s AND password IS NULL", {"teacher_id":teacher_id})
-        teacherData = cur.fetchone()
-        if (teacherData):
-            teacherUsername, teacherProfile = teacherData[0], teacherData[1]
-            teacherProfile = (teacherProfile, True)
-            for tupleInfo in resultsList:
-                courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))
-        else:
-            teacherUsername, teacherProfile = teacherData[0], teacherData[1]
-            teacherProfile = (teacherProfile, False)
-            for tupleInfo in resultsList:
-                courseList.append(Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True))            
-
-        return courseList
-
     elif (mode == "get_all_courses_by_teacher"):
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
@@ -1200,25 +1176,21 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                     res = cur.fetchone()
                     teacherUsername = res[0]
-                    teacherProfile = res[1]
-                    teacherProfile = (
-                        get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
-                                                                   else (teacherProfile, False
-                    )
+                    teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
+                                                                        else res[1]
                     courseInfoList.append(
-                        Course(((teacherUsername, teacherProfile), matchedList[i]), truncateData=True)
+                        CourseInfo(matchedList[i], profilePic=teacherProfile, truncateData=True)
                     )
                 return courseInfoList
             else:
                 cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                 res = cur.fetchone()
                 teacherUsername = res[0]
-                teacherProfile = res[1]
-                teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
-                                                                            else (teacherProfile, False)
+                teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
+                                                                    else res[1]
                 for tupleInfo in matchedList:
                     courseInfoList.append(
-                        Course(((teacherUsername, teacherProfile), tupleInfo), truncateData=True)
+                        CourseInfo( tupleInfo, profilePic=teacherProfile, truncateData=True)
                     )
 
                 if (kwargs.get("getTeacherUsername")):
@@ -1238,13 +1210,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
             res = cur.fetchone()
             teacherUsername = res[0]
-            teacherProfile = res[1]
-            teacherProfile = (get_dicebear_image(teacherUsername), True) if (not teacherProfile) \
-                                                                         else (teacherProfile, False)
-            if ("googleusercontent" in teacherProfile[0]):
-                teacherProfile = (res[1], True)
+            teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
+                                                                else res[1]
 
-            resultsList.append(Course(((teacherUsername, teacherProfile), foundResults[i]), truncateData=True))
+            resultsList.append(CourseInfo( foundResults[i], profilePic=teacherProfile, truncateData=True))
 
         return resultsList
 
