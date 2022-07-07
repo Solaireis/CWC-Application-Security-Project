@@ -293,7 +293,6 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
 
 def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):
-        connection.close()
         raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
 
     cur = connection.cursor()
@@ -331,12 +330,10 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
         connection.commit()
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
 
 def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
-        connection.close()
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
 
     """
@@ -359,7 +356,6 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
         if (matchedToken is None):
-            connection.close()
             raise No2FATokenError("No 2FA OTP found for this user!")
 
         # decrypt the encrypted secret token for 2fa
@@ -378,12 +374,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         connection.commit()
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the twofa_token_sql_operation function!")
 
 def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kwargs) -> None:
     if (mode is None):
-        connection.close()
         raise ValueError("You must specify a mode in the login_attempts_sql_operation function!")
 
     cur = connection.cursor()
@@ -393,7 +387,6 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         cur.execute("SELECT id FROM user WHERE email = %(emailInput)s", {"emailInput":emailInput})
         userID = cur.fetchone()
         if (userID is None):
-            connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
         userID = userID[0]
@@ -414,7 +407,6 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
 
             if (currentAttempts > CONSTANTS.MAX_LOGIN_ATTEMPTS):
                 # if reached max attempts per account
-                connection.close()
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
             cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION, "userID":userID})
@@ -438,12 +430,10 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
         return True if (cur.fetchone() is None) else False
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the login_attempts_sql_operation function!")
 
 def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, bool, None]:
     if (mode is None):
-        connection.close()
         raise ValueError("You must specify a mode in the session_sql_operation function!")
 
     cur = connection.cursor()
@@ -519,7 +509,6 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         connection.commit()
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
 def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[str, tuple, bool, dict, None]:
@@ -536,7 +525,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     delete keywords: userID
     """
     if (mode is None):
-        connection.close()
         raise ValueError("You must specify a mode in the user_sql_operation function!")
 
     cur = connection.cursor()
@@ -544,7 +532,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     if (mode == "verify_userID_existence"):
         userID = kwargs["userID"]
         if (userID is None):
-            connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
@@ -553,7 +540,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         getEmail = kwargs.get("email") or False
         if (userID is None):
-            connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
 
         cur.execute("SELECT email_verified, email FROM user WHERE id=%(userID)s", {"userID":userID})
@@ -569,7 +555,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "update_email_to_verified"):
         userID = kwargs["userID"]
         if (userID is None):
-            connection.close()
             raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("UPDATE user SET email_verified = TRUE WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
@@ -594,7 +579,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                         keyID=CONSTANTS.PEPPER_KEY_ID
                     )
                 except (DecryptionError):
-                    connection.close()
                     write_log_entry(
                         logMessage="Re-encryption of password hash has failed...",
                         severity="ALERT"
@@ -615,7 +599,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                         keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
                     )
                 except (DecryptionError):
-                    connection.close()
                     write_log_entry(
                         logMessage="Re-encryption of 2FA token has failed...",
                         severity="ALERT"
@@ -669,7 +652,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         password = cur.fetchone()
         if (password is None):
-            connection.close()
             raise UserDoesNotExist("User does not exist!")
 
         # since those using Google OAuth2 will have a null password, we can check if it is null
@@ -715,7 +697,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         matched = cur.fetchone()
 
         if (matched is None):
-            connection.close()
             raise EmailDoesNotExistError("Email does not exist!")
 
         username = matched[2]
@@ -725,7 +706,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailVerified = matched[4]
 
         if (encryptedPasswordHash is None):
-            connection.close()
             raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
 
         cur.execute("SELECT attempts FROM login_attempts WHERE user_id= %(userID)s", {"userID":userID})
@@ -741,13 +721,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             # If the user has exceeded the maximum number of login attempts,
             # but the timeout is not up yet...
             if (not resetAttempts):
-                connection.close()
                 send_unlock_locked_acc_email(email=emailInput, userID=userID)
                 raise AccountLockedError("Account is locked!")
 
         # send verification email if the user has not verified their email
         if (not emailVerified):
-            connection.close()
             send_verification_email(email=emailInput, userID=userID, username=username)
             raise EmailNotVerifiedError("Email has not been verified, please verify your email!")
 
@@ -765,7 +743,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
                 return (userID, newIpAddress, username, roleName)
         except (VerifyMismatchError):
-            connection.close()
             raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "find_user_for_reset_password"):
@@ -806,7 +783,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         reusedUsername = bool(cur.fetchone())
 
         if (reusedUsername):
-            connection.close()
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
 
         cur.execute("UPDATE user SET username=%(usernameInput)s WHERE id=%(userID)s", {"usernameInput": usernameInput, "userID": userID})
@@ -822,10 +798,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         reusedEmail = cur.fetchone()
         if (reusedEmail is not None):
             if (reusedEmail[0] == userID):
-                connection.close()
                 raise SameAsOldEmailError(f"The email {emailInput} is the same as the old email!")
             else:
-                connection.close()
                 raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
 
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
@@ -836,7 +810,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 connection.commit()
                 send_verification_email(email=emailInput, userID=userID)
         except (VerifyMismatchError):
-            connection.close()
             raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "change_password"):
@@ -852,16 +825,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             # check if the supplied old password matches the current password
             if (CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)):
                 if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
-                    connection.close()
                     raise PwdTooShortError(f"The password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")
 
                 if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
-                    connection.close()
                     raise PwdTooLongError(f"The password must be less than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
 
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
                 if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
-                    connection.close()
                     write_log_entry(
                         logMessage="haveibeenpwned's API is down, will fall back to strict password checking!",
                         severity="NOTICE"
@@ -869,7 +839,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
 
                 if (not passwordCompromised or not pwd_is_strong(passwordInput)):
-                    connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
                 cur.execute(
@@ -878,7 +847,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 )
                 connection.commit()
         except (VerifyMismatchError):
-            connection.close()
             raise ChangePwdError("The old password is incorrect!")
 
     elif (mode == "reset_password"):
@@ -911,7 +879,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             cur.execute("UPDATE user SET role=%(teacherRoleID)s WHERE id=%(userID)s", {"teacherRoleID": teacherRoleID, "userID":userID})
             connection.commit()
         else:
-            connection.close()
             raise IsAlreadyTeacherError("The user is already a teacher!")
 
     elif (mode == "get_user_purchases"):
@@ -974,7 +941,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         connection.commit()
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the user_sql_operation function!")
 
 def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)  -> Union[list, tuple, bool, None]:
@@ -988,7 +954,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     edit keywords:
     """
     if (not mode):
-        connection.close()
         raise ValueError("You must specify a mode in the course_sql_operation function!")
 
     cur = connection.cursor()
@@ -1017,9 +982,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("CALL get_course_data(%(course_id)s)", {"course_id":course_id})
         matched = cur.fetchone()
         print('Matched:', matched)
-        if (not matched):
+        if (matched is None):
             return False
-        return CourseInfo(matched[0])
+        teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
+        return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False)
 
     # Added just in case want to do updating
 
@@ -1225,7 +1191,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         return resultsList, maxPage
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the session_sql_operation function!")
 
 def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
@@ -1238,7 +1203,6 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     """
     if mode is None:
-        connection.close()
         raise ValueError("You must specify a mode in the review_sql_operation function!")
 
     cur = connection.cursor()
@@ -1265,5 +1229,4 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         return review_list if (review_list is not None) else []
 
     else:
-        connection.close()
         raise ValueError("Invalid mode in the review_sql_operation function!")

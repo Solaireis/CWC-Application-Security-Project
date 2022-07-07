@@ -56,32 +56,16 @@ def teacherPage(teacherID:str):
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
     print(courseID)
-    #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
-    # the course id is
-    #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    # courseName = courses[0][1]
-    # print(courses)
     if courses == False: #raise exception
         abort(404)
     #create variable to store these values
-    # TODO: Could have used Course.py's class instead of 
-    # TODO: manually retrieving the data from the tuple
-    # teacherID = courses[1]
-    # courseName = courses[2]
-    # courseDescription = Markup(
-    #     markdown.markdown(
-    #         courses[3],
-    #         extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
-    #     )
-    # )
-    # courseImagePath = courses[4]
-    # coursePrice = courses[5]
-    # courseCategory = courses[6]
-    # courseDate = courses[7]
-    # courseVideoPath = courses[8]
-
-
+    courseDescription = Markup(
+        markdown.markdown(
+            courses.courseDescription,
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+        )
+    )
     print("hi",courses)
     teacherProfilePath = get_image_path(courses.teacherID)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID, )
@@ -91,19 +75,13 @@ def coursePage(courseID:str):
     print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
-        # TODO: Could have used Reviews.py's class instead of 
-        # TODO: manually retrieving the data from the tuple
-        for i in retrieveReviews:
-            reviewUserId = i[0]
-            reviewCourseId = courseID 
-            reviewRating = i[2]
-            reviewComment = i[3]
-            reviewDate = i[4]
-            reviewUserName = i[5]
-            userImage = get_image_path(reviewUserId)
-            reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
 
-    # print(reviewList[0].course_id) # Commented this out cus of IndexError
+        for tupleData in retrieveReviews:
+            reviewUserID = tupleData[0]
+            userImage = get_image_path(reviewUserID)
+            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=userImage))
+
+
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
@@ -115,7 +93,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-         accType=accType, reviewList= reviewList, courses=courses
+        accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")
