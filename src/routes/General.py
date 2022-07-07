@@ -75,19 +75,13 @@ def coursePage(courseID:str):
     print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
-        # TODO: Could have used Reviews.py's class instead of 
-        # TODO: manually retrieving the data from the tuple
-        for i in retrieveReviews:
-            reviewUserId = i[0]
-            reviewCourseId = courseID 
-            reviewRating = i[2]
-            reviewComment = i[3]
-            reviewDate = i[4]
-            reviewUserName = i[5]
-            userImage = get_image_path(reviewUserId)
-            reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
 
-    # print(reviewList[0].course_id) # Commented this out cus of IndexError
+        for tupleData in retrieveReviews:
+            reviewUserID = tupleData[0]
+            userImage = get_image_path(reviewUserID)
+            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=userImage))
+
+
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
@@ -99,7 +93,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
+        accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")
