@@ -78,8 +78,6 @@ class CourseInfo:
         self.coursePrice = tupleInfo[7]
         self.courseCategory = tupleInfo[8]
         self.dateCreated = tupleInfo[9]
-        self.averageRating = int(round(tupleInfo[10] / tupleInfo[11], 0)) \
-                             if (tupleInfo[10] > 0) else 0
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""
@@ -87,5 +85,4 @@ class CourseInfo:
                f"By: {self.teacherUsername} | " + \
                f"Price: ${self.coursePrice} | " + \
                f"Category: {self.courseCategory} | " + \
-               f"Date Created: {self.dateCreated} | " + \
-               f"Rating: {self.averageRating} ]\n"
+               f"Date Created: {self.dateCreated} | " 

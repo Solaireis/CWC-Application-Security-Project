@@ -116,7 +116,7 @@ def coursePage(courseID:str):
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
         courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
+             courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
         reviewList= reviewList, courseImagePath = courseImagePath
     )
 
