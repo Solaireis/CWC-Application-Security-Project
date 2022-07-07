@@ -37,10 +37,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function setCookie(cname, cvalue, exdays) {
         var d = new Date();
         d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-        var expires = "expires=" + d.toUTCString();
         // cookie attributes settings in javascript: 
         // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
-        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/" + ";SameSite=lax" + ";Secure";
+        document.cookie = `${cname}=${cvalue}; expires=${d.toUTCString()}; Path=/; SameSite=lax; Secure`;
     }
 
     // TODO: Check this javascript function if it is vulnerable to XSS
