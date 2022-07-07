@@ -62,7 +62,7 @@
 								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
 								<p class="card-text">{{ course.course_description }}</p>
 								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
-								{% if (course.rating_count > 0) %}
+								{% if (False) %}
 								<div class="ratings">
 									{% with remainingStars = 5 - course.average_rating %}
 										{% for _ in range(course.average_rating) %}
