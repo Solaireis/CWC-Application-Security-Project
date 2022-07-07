@@ -1014,7 +1014,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_course_data"):
         course_id = kwargs["courseID"]
         print('Course_ID:', course_id)
-        cur.execute("SELECT * FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
+        cur.execute("CALL get_course_data(%(course_id)s)", {"course_id":course_id})
         matched = cur.fetchone()
         print('Matched:', matched)
         if (not matched):

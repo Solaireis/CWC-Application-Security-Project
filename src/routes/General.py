@@ -82,7 +82,7 @@ def coursePage(courseID:str):
     # courseVideoPath = courses[8]
 
 
-
+    print("hi",courses)
     teacherProfilePath = get_image_path(courses.teacherID)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID, )
     teacherName = teacherRecords[2]
