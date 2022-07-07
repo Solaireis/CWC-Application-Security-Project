@@ -172,7 +172,6 @@ def videoUpload():
             if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("userBP.videoUpload"))
-
             file = request.files.get("courseVideo")
             filename = secure_filename(file.filename)
 
@@ -258,7 +257,7 @@ def courseList():
         eachPageResults = []
         dictOfResults = {}
         pageNum = 1
-        
+
         if (len(courseList) != 0):
             for eachResult in courseList:
                 if (len(eachPageResults)!=10):
@@ -268,13 +267,13 @@ def courseList():
                     dictOfResults[pageNum] = eachPageResults
                     eachPageResults = [eachResult]
                     pageNum += 1
-            
+
             maxPage = max(list(dictOfResults))
             if (page > maxPage):
                 abort(404)
-            
+
             return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,accType=userInfo[1])
-        
+
         return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1])
 
     else:
@@ -322,7 +321,7 @@ def purchaseView(courseID:str):
     if courses == False: #raise 404 error
         abort(404)
 
-    # TODO: Could have used Course.py's class instead of 
+    # TODO: Could have used Course.py's class instead of
     # TODO: manually retrieving the data from the tuple
     #create variable to store these values
     teacherID = courses[1]
@@ -340,6 +339,11 @@ def purchaseView(courseID:str):
     courseRatingCount = courses[8]
     courseDate = courses[9]
     courseVideoPath = courses[10]
+
+    # videoID = vimeo_upload(r"C:\Users\wrenp\Downloads\the_fuck.mp4", r"C:\Users\wrenp\Downloads\Emote\DoremyToot_Optimised.png", 'Imperishable Night', 'This is a test video.')
+    videoData = get_vimeo_video(726279222)
+    courseVideoPath = loads(videoData.text)["html"]
+    print(loads(videoData.text)["html"])
 
     print("course",courses[1])
 
@@ -371,6 +375,7 @@ def addToCart(courseID:str):
 
 @userBP.route("/shopping_cart", methods=["GET", "POST"])
 def cart():
+    print(str(session))
     if "user" in session:
         userID = session["user"]
         if request.method == "POST":
@@ -388,7 +393,7 @@ def cart():
             courseList = []
             subtotal = 0
 
-            # TODO: Could have used Course.py's class instead of 
+            # TODO: Could have used Course.py's class instead of
             # TODO: manually retrieving the data from the tuple
             for courseID in cartCourseIDs:
                 course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
@@ -428,8 +433,6 @@ def checkout():
         print(checkout_session)
         print(type(checkout_session))
 
-        session['stripe_session_id'] = checkout_session.id
-
         return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
     else:
         return redirect(url_for('guestBP.login'))
@@ -457,20 +460,7 @@ def purchase(jwtToken:str):
     sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
     return redirect(url_for("userBP.purchaseHistory"))
 
-@userBP.route("/vimeoTesting")
-def vimeoTesting():
-
-    code = request.args.get('code', default=None, type=str)
-    state = request.args.get('state', default=None, type=str)
-
-    if code is not None and state is not None:
-        token, user, scope = get_vimeo_data(code)
-        return redirect(url_for("userBP.purchaseHistory"))
-    else:
-        vimeo_authorization_url = authorise_vimeo(url_for('userBP.vimeoTesting', _external = True))
-        return redirect(vimeo_authorization_url, code = 303)
-
-@userBP.route("/purchase-history")
+@userBP.route("/purchase_history")
 def purchaseHistory():
     if 'user' in session:
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -478,7 +468,7 @@ def purchaseHistory():
         purchasedCourseIDs = loads(userInfo[-1])
         courseList = []
 
-        # TODO: Could have used Course.py's class instead of 
+        # TODO: Could have used Course.py's class instead of
         # TODO: manually retrieving the data from the tuple
         for courseID in purchasedCourseIDs:
             course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
