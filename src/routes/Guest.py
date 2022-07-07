@@ -172,7 +172,13 @@ def resetPassword(token:str):
                 flash("Entered 2FA OTP is invalid or has expired!")
                 return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
-        if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
+        pwnedPassword = pwd_has_been_pwned(passwordInput)
+        if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
+            # If the haveibeenpwned's API is down, tell user to match all requirements
+            flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+
+        if (not pwnedPassword or not pwd_is_strong(passwordInput)):
             flash("Password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
@@ -293,7 +299,14 @@ def login():
 
                 session["user_email"] = emailInput
                 session["ip_details"] = ipDetails
-                session["password_compromised"] = pwd_has_been_pwned(passwordInput)
+
+                # Check if password has been compromised using haveibeenpwned's API,
+                # If the API is down, then we will not check for the time being
+                passwordCompromised = pwd_has_been_pwned(passwordInput)
+                if (isinstance(passwordCompromised, tuple)):
+                    session["password_compromised"] = False
+                else:
+                    session["password_compromised"] = passwordCompromised
                 session["temp_uid"] = userInfo[0]
                 session["username"] = userInfo[2]
                 session["token"] = RSA_encrypt(generatedTOTPSecretToken)
@@ -303,10 +316,14 @@ def login():
 
             passwordCompromised = None
             if (successfulLogin):
-                # check if password has been compromised
-                # if so, we will send an email to the user and flash
+                # Check if password has been compromised using haveibeenpwned's API,
+                # If the API is down, then we will not check for the time being
+                # Otherwise, if the API is available, check if compromised.
+                # If so, we will send an email to the user and flash a message
                 # on the home page after the login process
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
+                if (isinstance(passwordCompromised, tuple)):
+                    passwordCompromised = False
 
             if (successfulLogin and not userHasTwoFA):
                 session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
@@ -575,7 +592,14 @@ def signup():
             if (len(passwordInput) > current_app.config["CONSTANTS"].MAX_PASSWORD_LENGTH):
                 flash(f"Password cannot be more than {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long!")
                 return render_template("users/guest/signup.html", form=signupForm)
-            if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
+
+            pwnedPassword = pwd_has_been_pwned(passwordInput)
+            if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
+                # If the haveibeenpwned's API is down, tell user to match all requirements
+                flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
+                return render_template("users/guest/signup.html", form=signupForm)
+
+            if (not pwnedPassword or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 

@@ -1331,7 +1331,7 @@ def pwd_has_been_pwned(password:str) -> bool:
             # checking of the password strength very strictly
             # i.e. must meet all the minimum requirements
             # if user is signing up or changing password
-            return pwd_is_strong(password, strict=True)
+            return (pwd_is_strong(password, strict=True), "strict")
 
     # compare the possible ranges with the hash suffix (after the first five characters) of the sha1 hash
     for result in results:

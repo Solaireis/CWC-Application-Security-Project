@@ -859,7 +859,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     connection.close()
                     raise PwdTooLongError(f"The password must be less than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
 
-                if (pwd_has_been_pwned(passwordInput) or not pwd_is_strong(passwordInput)):
+                passwordCompromised = pwd_has_been_pwned(passwordInput)
+                if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
+                    connection.close()
+                    write_log_entry(
+                        logMessage="haveibeenpwned's API is down, will fall back to strict password checking!",
+                        severity="NOTICE"
+                    )
+                    raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
+
+                if (not passwordCompromised or not pwd_is_strong(passwordInput)):
                     connection.close()
                     raise PwdTooWeakError("The password is too weak!")
 
@@ -1084,19 +1093,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         pageNum = kwargs["pageNum"]
         offset = (pageNum - 1) * 10
         # Not using offset as it will get noticeably slower with more courses
-        cur.execute("""
-            SELECT (@count := @count + 1) AS row_num, 
-            c.course_id, c.teacher_id, u.username, u.profile_image, 
-            c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category,
-            c.date_created, c.course_total_rating, c.course_rating_count
-            FROM course AS c
-            INNER JOIN (SELECT @count := 0) AS n
-            INNER JOIN user AS u ON c.teacher_id=u.id
-            WHERE c.teacher_id=%(teacherID)s
-            HAVING row_num > %(pageNum)s
-            ORDER BY row_num
-            LIMIT 10; 
-        """, {"teacherID":teacherID, "pageNum":offset})
+        cur.execute("CALL paginate_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":offset})
         resultsList = cur.fetchall()
         if (resultsList is None):
             return []

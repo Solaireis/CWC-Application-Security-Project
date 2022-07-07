@@ -207,6 +207,8 @@ def updatePassword():
                     flash(f"Password must be between {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} and {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long.")
                 except (PwdTooWeakError):
                     flash("Password is too weak, please enter a stronger password!")
+                except (haveibeenpwnedAPIDownError):
+                    flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
 
                 if (changed):
                     flash("Your password has been successfully changed.", "Account Details Updated!")
