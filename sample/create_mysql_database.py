@@ -158,7 +158,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `search_for`(IN search_term VARCHAR(255))
         BEGIN
-            SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE course_name LIKE CONCAT('%', search_term , '%');
+            SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course WHERE course_name LIKE CONCAT('%', search_term , '%');
         END
     """)
     cur.execute(f"""
@@ -168,7 +168,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SELECT (@count := @count + 1) AS row_num, 
             c.course_id, c.teacher_id, u.username, u.profile_image, 
             c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category,
-            c.date_created, c.course_total_rating, c.course_rating_count
+            c.date_created
             FROM course AS c
             INNER JOIN user AS u on c.teacher_id=u.id
             WHERE c.teacher_id=teacher_id
