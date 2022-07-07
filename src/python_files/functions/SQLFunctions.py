@@ -1115,25 +1115,70 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (teacherID is None):
-                # cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY date_created DESC LIMIT 3")
-                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course ORDER BY date_created DESC LIMIT 3")
+                cur.execute("""
+                    SELECT 
+                    c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created,
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    FROM course AS c
+                    INNER JOIN review AS r
+                    ON c.course_id = r.course_id
+                    INNER JOIN user AS u
+                    ON c.teacher_id=u.id
+                    ORDER BY c.date_created DESC LIMIT 3;
+                """)
             else:
-                # cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY date_created DESC LIMIT 3", {"teacherID":teacherID})
-                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course WHERE teacher_id=%(teacherID)s ORDER BY date_created DESC LIMIT 3", {"teacherID":teacherID})
+                cur.execute("""
+                    SELECT 
+                    c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created,
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    FROM course AS c
+                    INNER JOIN review AS r
+                    ON c.course_id = r.course_id
+                    INNER JOIN user AS u
+                    ON c.teacher_id=u.id
+                    WHERE c.teacher_id=%(teacherID)s
+                    ORDER BY c.date_created DESC LIMIT 3;
+                """, {"teacherID":teacherID})
         else:
             # get top 3 highly rated courses
             if (teacherID is None):
-                # cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3")
-                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course ORDER BY date_created DESC LIMIT 3")
+                cur.execute("""
+                    SELECT 
+                    c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created,
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    FROM course AS c
+                    INNER JOIN review AS r
+                    ON c.course_id = r.course_id
+                    INNER JOIN user AS u
+                    ON c.teacher_id=u.id
+                    ORDER BY avg_rating DESC LIMIT 3;
+                """)
             else:
-                # cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, course_total_rating, course_rating_count FROM course WHERE teacher_id=%(teacherID)s ORDER BY (course_total_rating/course_rating_count) DESC LIMIT 3", {"teacherID":teacherID})
-                cur.execute("SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course WHERE teacher_id=%(teacherID)s ORDER BY date_created DESC LIMIT 3", {"teacherID":teacherID})
+                cur.execute("""
+                    SELECT 
+                    c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created,
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    FROM course AS c
+                    INNER JOIN review AS r
+                    ON c.course_id = r.course_id
+                    INNER JOIN user AS u
+                    ON c.teacher_id=u.id
+                    WHERE c.teacher_id=%(teacherID)s
+                    ORDER BY avg_rating DESC LIMIT 3;
+                """, {"teacherID":teacherID})
 
         matchedList = cur.fetchall()
         if (not matchedList):
             return []
         else:
-            # e.g. [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
             courseInfoList = []
             # get the teacher name for each course
             if (not teacherID):
