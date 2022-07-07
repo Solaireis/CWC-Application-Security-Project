@@ -7,7 +7,8 @@ from pathlib import Path
 from inspect import stack, getframeinfo
 from datetime import datetime, timezone
 from time import time
-
+# TODO: https://flask.palletsprojects.com/en/2.1.x/logging
+# TODO: https://www.cloudflare.com/plans/free, https://blog.cloudflare.com/python-cloudflare/
 def get_splunk_token(eventCollectorName: str = 'Logging') -> str:
     """
     Retrieves the Splunk token from Splunk server. 
