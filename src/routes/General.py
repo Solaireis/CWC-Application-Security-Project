@@ -28,6 +28,8 @@ def home():
     elif ("admin" in session):
         accType = "Admin"
 
+    # for course in threeHighlyRatedCourses:
+    #     print(course.courseID)
     return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
