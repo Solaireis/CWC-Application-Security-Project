@@ -67,24 +67,24 @@ def coursePage(courseID:str):
     #create variable to store these values
     # TODO: Could have used Course.py's class instead of 
     # TODO: manually retrieving the data from the tuple
-    teacherID = courses[1]
-    courseName = courses[2]
-    courseDescription = Markup(
-        markdown.markdown(
-            courses[3],
-            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
-        )
-    )
-    courseImagePath = courses[4]
-    coursePrice = courses[5]
-    courseCategory = courses[6]
-    courseDate = courses[7]
-    courseVideoPath = courses[8]
+    # teacherID = courses[1]
+    # courseName = courses[2]
+    # courseDescription = Markup(
+    #     markdown.markdown(
+    #         courses[3],
+    #         extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+    #     )
+    # )
+    # courseImagePath = courses[4]
+    # coursePrice = courses[5]
+    # courseCategory = courses[6]
+    # courseDate = courses[7]
+    # courseVideoPath = courses[8]
 
-    print("course",courses[1])
 
-    teacherProfilePath = get_image_path(teacherID)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID, )
+
+    teacherProfilePath = get_image_path(courses.teacherID)
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID, )
     teacherName = teacherRecords[2]
 
     retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
@@ -115,9 +115,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-        courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-             courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
-        reviewList= reviewList, courseImagePath = courseImagePath
+         accType=accType, reviewList= reviewList, courses=courses
     )
 
 @generalBP.route("/search")

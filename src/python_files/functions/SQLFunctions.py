@@ -1019,7 +1019,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         print('Matched:', matched)
         if (not matched):
             return False
-        return matched
+        return CourseInfo(matched[0])
 
     # Added just in case want to do updating
 
