@@ -121,8 +121,6 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
     course_category = "Other Academics"
-    course_total_rating = randint(0, 5)
-    course_rating_count = 1
 
     #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path

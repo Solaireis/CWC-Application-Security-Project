@@ -79,8 +79,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_image_path VARCHAR(255) DEFAULT NULL,
         course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
         course_category VARCHAR(255) NOT NULL,
-        course_total_rating INTEGER UNSIGNED NOT NULL DEFAULT 0,
-        course_rating_count INTEGER UNSIGNED NOT NULL DEFAULT 0,
         date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
