@@ -49,9 +49,9 @@ class CourseInfo:
 
     tupleInfo Tuple format (12 elements):
     (
-        c.course_id, c.teacher_id, u.username, u.profile_pic,
-        c.course_name, c.course_description, c.course_image_path, c.course_price, 
-        c.course_category, c.date_created, c.course_total_rating, c.course_rating_count
+        c.course_id, c.teacher_id, 
+        u.username, u.profile_image, c.course_name, c.course_description,
+        c.course_image_path, c.course_price, c.course_category, c.date_created, c.avg_rating
     )
     """
     def __init__(self, tupleInfo:tuple="", profilePic:str="", truncateData:bool=False):
