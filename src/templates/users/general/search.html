@@ -23,7 +23,7 @@
             <div class="card mb-3">
                 <div class="row g-0">
                     <div class="col-md-4">
-                        {% if (results.course_image_path == None) %}
+                        {% if (results.courseImagePath == None) %}
                             <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% else %}
                             <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
@@ -31,14 +31,14 @@
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <h5 class="card-title"><a href="#">{{ results.course_name }}</a></h5>
-                            <p class="card-text">{{ results.course_description }}</p>
+                            <h5 class="card-title"><a href="#">{{ results.courseName }}</a></h5>
+                            <p class="card-text">{{ results.courseDescription }}</p>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    {% if (results.rating_count > 0) %}
+                                    {% if (results.averageRating > 0) %}
                                     <div class="ratings">
-                                        {% with remainingStars = 5 - results.average_rating %}
-                                            {% for _ in range(results.average_rating) %}
+                                        {% with remainingStars = 5 - results.averageRating %}
+                                            {% for _ in range(results.averageRating) %}
                                                 <span class="fas fa-star"></span>
                                             {% endfor %}
                                             {% for _ in range(remainingStars) %}
@@ -53,11 +53,11 @@
                             </p>
                             <p class="card-text">
                                 {% if (not results.dicebear_profile_image) %}
-                                    <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ results.teacher_profile_image) }}" id="user_profile" alt="Profile Icon">
+                                    <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ results.teacherProfile) }}" id="user_profile" alt="Profile Icon">
                                 {% else %}
-                                    <img src="{{ results.teacher_profile_image }}" id="user_profile" alt="Profile Icon">
+                                    <img src="{{ results.teacherProfile }}" id="user_profile" alt="Profile Icon">
                                 {% endif %}
-                                {{ results.teacher_name }}
+                                {{ results.teacherUsername }}
                             </p>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                 {% if currentPage != 1 %}
                     <a href="{{ url_for('generalBP.search')}}?q={{searchInput}}&p={{currentPage - 1}}">&laquo;</a>
                 {% endif %}
-                {% for i in range(maxPage + 1) %}
+                {% for i in range(1,maxPage + 1) %}
                     {% if i == currentPage %}
                         <a class="active" href="">{{ i }}</a>
                     {% else %}

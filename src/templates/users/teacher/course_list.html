@@ -44,7 +44,7 @@
         <div class="card mb-3">
             <div class="row g-0">
                 <div class="col-md-4">
-                    {% if (course.course_image_path == None) %}
+                    {% if (course.courseImagePath == None) %}
                         <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                     {% else %}
                         <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
@@ -52,14 +52,14 @@
                 </div>
                 <div class="col-md-8">
                     <div class="card-body">
-                        <h5 class="card-title">{{ course.course_name }}</h5>
-                        <p class="card-text">{{ course.course_description }}</p>
+                        <h5 class="card-title">{{ course.courseName }}</h5>
+                        <p class="card-text">{{ course.courseDescription }}</p>
                         <p class="card-text">
                             <small class="text-muted">
-                                {% if (course.rating_count > 0) %}
+                                {% if (course.averageRating > 0) %}
                                 <div class="ratings">
-                                    {% with remainingStars = 5 - course.average_rating %}
-                                        {% for _ in range(course.average_rating) %}
+                                    {% with remainingStars = 5 - course.averageRating %}
+                                        {% for _ in range(course.averageRating) %}
                                             <span class="fas fa-star"></span>
                                         {% endfor %}
                                         {% for _ in range(remainingStars) %}
@@ -112,7 +112,7 @@
             {% if currentPage != 1 %}
                 <a href="{{ url_for('userBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
             {% endif %}
-            {% for i in range(maxPage+1) %}
+            {% for i in range(1,maxPage+1) %}
                 {% if i == currentPage %}
                     <a class="active" href="">{{ i }}</a>
                 {% else %}

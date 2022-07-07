@@ -248,7 +248,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `max_page_search_course_paginate`(IN teacher_id VARCHAR(255), IN page_number INT UNSIGNED)
+        CREATE DEFINER=`{definer}` PROCEDURE `max_page_search_course_paginate`(IN page_number INT UNSIGNED, IN search_term VARCHAR(255))
         BEGIN
             SET @page_offset = (page_number - 1) * 10;
             SET @count := 0;

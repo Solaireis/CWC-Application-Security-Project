@@ -163,6 +163,10 @@ def before_request() -> None:
     - None
     """
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
+    if (not request.endpoint):
+        print("Route Error: Either Does Not Exist or Cannot Access")
+        abort(404)
+
     if (request.endpoint != "static"):
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
         print("Request Endpoint:", request.endpoint)

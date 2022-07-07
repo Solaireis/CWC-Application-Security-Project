@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from hashlib import sha512
 from secrets import token_hex
+from math import ceil
 
 # import Flask web application configs
 from flask import url_for, current_app
@@ -561,7 +562,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         return matched if (getEmail) else matched[0]
 
     elif (mode == "remove_unverified_users_more_than_30_days"):
-        cur.execute("DELETE FROM user WHERE email_verified=FALSE AND created_date < SGT_NOW() - INTERVAL 30 DAY")
+        cur.execute("DELETE FROM user WHERE email_verified=FALSE AND date_joined < SGT_NOW() - INTERVAL 30 DAY")
         connection.commit()
 
     elif (mode == "update_email_to_verified"):
@@ -1086,7 +1087,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             return []
         
         cur.execute("CALL max_page_paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
-        maxPage = cur.fetchone()[0]
+        maxPage = ceil(cur.fetchone()[0] / 10)
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1226,14 +1227,14 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             res = cur.fetchone()
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
-            #TODO: FIND ERROR CAUSING INCORRECT INTEGER VALUE
             foundResultsTuple = foundResults[i][1:]
             resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
-        cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
-        maxPage = cur.fetchone()[0]
+        cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput}) 
+        maxPage = ceil(cur.fetchone()[0] / 10)
 
         return resultsList, maxPage
+        
 
     else:
         raise ValueError("Invalid mode in the session_sql_operation function!")
