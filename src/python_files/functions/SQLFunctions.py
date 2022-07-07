@@ -1038,6 +1038,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         resultsList = cur.fetchall()
         if (resultsList is None):
             return []
+        
+        cur.execute("CALL max_page_paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
+        maxPage = cur.fetchone()[0]
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1045,10 +1048,13 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         courseList = []
         for tupleInfo in resultsList:
+            foundResultsTuple = tupleInfo[1:]
             courseList.append(
-                CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True)
+                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
             )
-        return courseList
+        
+
+        return (courseList, maxPage)
 
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
@@ -1140,7 +1146,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 for i, teacherID in enumerate(teacherIDList):
                     cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                     res = cur.fetchone()
-                    teacherUsername = res[0]
                     teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                         else res[1]
                     courseInfoList.append(
@@ -1150,7 +1155,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             else:
                 cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                 res = cur.fetchone()
-                teacherUsername = res[0]
                 teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                     else res[1]
                 for tupleInfo in matchedList:
@@ -1164,23 +1168,25 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 return courseInfoList
 
     elif (mode == "search"):
-        searchInput = kwargs.get("searchInput", "")
+        searchInput = kwargs.get("searchInput")
+        pageNum = kwargs.get("pageNum")
         resultsList = []
 
-        cur.execute("CALL search_for(%(searchInput)s)", {"searchInput":searchInput})
+        cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         foundResults = cur.fetchall()
-
-        teacherIDList = [teacherID[1] for teacherID in foundResults]
+        teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
             res = cur.fetchone()
-            teacherUsername = res[0]
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
+            foundResultsTuple = foundResults[i][1:]
+            resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
-            resultsList.append(CourseInfo( foundResults[i], profilePic=teacherProfile, truncateData=True))
+        cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
+        maxPage = cur.fetchone()[0]
 
-        return resultsList
+        return resultsList, maxPage
 
     else:
         raise ValueError("Invalid mode in the session_sql_operation function!")

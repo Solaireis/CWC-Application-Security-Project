@@ -68,6 +68,7 @@ class CourseInfo:
         - profilePic (str): The dicebear url or the path to the teacher's profile picture
         - truncateData (bool): Truncate the course description to 300 characters
         """
+        self.courseID = tupleInfo[0]
         self.teacherID = tupleInfo[1]
         self.teacherUsername = tupleInfo[2]
         self.teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]

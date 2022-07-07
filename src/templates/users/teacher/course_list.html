@@ -112,7 +112,7 @@
             {% if currentPage != 1 %}
                 <a href="{{ url_for('userBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
             {% endif %}
-            {% for i in lenOfDict %}
+            {% for i in range(maxPage+1) %}
                 {% if i == currentPage %}
                     <a class="active" href="">{{ i }}</a>
                 {% else %}

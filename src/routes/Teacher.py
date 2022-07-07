@@ -80,31 +80,13 @@ def createCourse():
 def courseList():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        courseList = sql_operation(table="course", mode="get_all_courses", teacherID=userInfo[0])
-
-        #TODO: Test if works, currently not sure cause idk which vimeo module to use
+        courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo[0])
         page = request.args.get("p", default=1, type=int)
-        eachPageResults = []
-        dictOfResults = {}
-        pageNum = 1
         
-        if (len(courseList) != 0):
-            for eachResult in courseList:
-                if (len(eachPageResults)!=10):
-                    eachPageResults.append(eachResult)
-                    dictOfResults[pageNum] = eachPageResults
-                else:
-                    dictOfResults[pageNum] = eachPageResults
-                    eachPageResults = [eachResult]
-                    pageNum += 1
-            
-            maxPage = max(list(dictOfResults))
-            if (page > maxPage):
-                abort(404)
-            
-            return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), currentPage=page, courseList=dictOfResults[page], lenOfDict=dictOfResults, maxPage=maxPage,accType=userInfo[1])
+        if (page > maxPage):
+            abort(404)
         
-        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1])
+        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1], maxPage=maxPage, currentPage=page, courseList=courseList)
 
     else:
         return redirect(url_for("guestBP.login"))

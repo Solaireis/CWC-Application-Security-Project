@@ -28,6 +28,8 @@ def home():
     elif ("admin" in session):
         accType = "Admin"
 
+    # for course in threeHighlyRatedCourses:
+    #     print(course.courseID)
     return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
@@ -75,19 +77,13 @@ def coursePage(courseID:str):
     print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
-        # TODO: Could have used Reviews.py's class instead of 
-        # TODO: manually retrieving the data from the tuple
-        for i in retrieveReviews:
-            reviewUserId = i[0]
-            reviewCourseId = courseID 
-            reviewRating = i[2]
-            reviewComment = i[3]
-            reviewDate = i[4]
-            reviewUserName = i[5]
-            userImage = get_image_path(reviewUserId)
-            reviewList.append(Reviews(reviewUserId, reviewCourseId, reviewRating, reviewComment, reviewDate, reviewUserName,userImage))
 
-    # print(reviewList[0].course_id) # Commented this out cus of IndexError
+        for tupleData in retrieveReviews:
+            reviewUserID = tupleData[0]
+            userImage = get_image_path(reviewUserID)
+            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=userImage))
+
+
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
@@ -99,7 +95,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
+        accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")
@@ -122,47 +118,23 @@ def search():
         abort(413)
 
     page = request.args.get("p", default=1, type=int)
-
-    eachPageResults = []
-    dictOfResults = {}
-    pageNum = 1
-    foundResults = sql_operation(table="course", mode="search", searchInput=searchInput)
-    
-    """
-    Validates if any results are found to not induce a key errror
-    """
-    if (len(foundResults) != 0):
-        """
-        To seperate the results into to lists of 10.
-        Stores the lists in a dictionary where the key is the Page of where the results should be displayed
-        """
-        for i in foundResults:
-            if (len(eachPageResults)!=10):
-                eachPageResults.append(i)
-                dictOfResults[pageNum] = eachPageResults
-            else:
-                dictOfResults[pageNum] = eachPageResults
-                eachPageResults = [i]
-                pageNum += 1
-        
-        """
-        To find the greatese page the pagination can extend to
-        To help in validation
-        """
-        maxPage = max(list(dictOfResults))
+    listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
+    if (listInfo):
+        foundResults, maxPage = listInfo[0], listInfo[1]
         if (page > maxPage):
             abort(404)
+
 
         accType = imageSrcPath = None
         if ("user" in session):
             imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, maxPage=maxPage, accType=userInfo[1])
+            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=userInfo[1])
 
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults[page], foundResultsLen=len(foundResults), lenOfDict=dictOfResults, maxPage=maxPage, accType=accType)
-    
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=accType)
+
     accType = imageSrcPath = None
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, lenOfDict=dictOfResults, accType=userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=imageSrcPath, accType=userInfo[1])
 
-    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=dictOfResults, foundResultsLen=len(foundResults), lenOfDict=dictOfResults, accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=accType)
