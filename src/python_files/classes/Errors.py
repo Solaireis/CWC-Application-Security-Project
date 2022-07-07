@@ -159,3 +159,8 @@ class EncryptionError(Exception):
     """
     Raised if the encryption fails.
     """
+
+class UploadFailedError(Exception):
+    """
+    Raised if the uploading of files to Google Cloud Platform Storage API fails.
+    """
