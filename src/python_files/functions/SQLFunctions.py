@@ -1126,6 +1126,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
+                    GROUP BY c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY c.date_created DESC LIMIT 3;
                 """)
             else:
@@ -1141,6 +1144,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.teacher_id=%(teacherID)s
+                    GROUP BY c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY c.date_created DESC LIMIT 3;
                 """, {"teacherID":teacherID})
         else:
@@ -1157,6 +1163,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
+                    GROUP BY c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY avg_rating DESC LIMIT 3;
                 """)
             else:
@@ -1172,6 +1181,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.teacher_id=%(teacherID)s
+                    GROUP BY c.course_id, c.teacher_id, 
+                    u.username, u.profile_image, c.course_name, c.course_description,
+                    c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY avg_rating DESC LIMIT 3;
                 """, {"teacherID":teacherID})
 
