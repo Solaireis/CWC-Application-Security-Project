@@ -179,8 +179,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """)
     # TODO: test the stored proc for the review
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_courses`(IN teacher_id VARCHAR(255), IN page_number INT UNSIGNED)
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacher_id VARCHAR(255), IN page_number INT UNSIGNED)
         BEGIN
+            SET @page_offset = (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             c.course_id, c.teacher_id, 
@@ -191,7 +192,32 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             INNER JOIN review AS r ON c.course_id=r.course_id
             INNER JOIN user AS u ON c.teacher_id=u.id
             WHERE c.teacher_id=teacher_id
-            HAVING row_num > page_number
+            GROUP BY c.course_id, c.teacher_id, 
+            u.username, u.profile_image, c.course_name, c.course_description, 
+            c.course_image_path, c.course_price, c.course_category, c.date_created
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT UNSIGNED, IN search_term VARCHAR(255))
+        BEGIN
+            SET @page_offset = (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+            c.course_id, c.teacher_id, 
+            u.username, u.profile_image, c.course_name, c.course_description, 
+            c.course_image_path, c.course_price, c.course_category, c.date_created, 
+            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+            FROM coursefinity.course AS c
+            INNER JOIN coursefinity.review AS r ON c.course_id=r.course_id
+            INNER JOIN coursefinity.user AS u ON c.teacher_id=u.id
+            WHERE c.course_name LIKE CONCAT('%', search_term , '%')
+            GROUP BY c.course_id, c.teacher_id, 
+            u.username, u.profile_image, c.course_name, c.course_description, 
+            c.course_image_path, c.course_price, c.course_category, c.date_created
+            HAVING row_num > @page_offset
             ORDER BY row_num
             LIMIT 10;
         END
