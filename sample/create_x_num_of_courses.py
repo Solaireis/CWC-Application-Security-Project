@@ -130,6 +130,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
 
 # Add student
 STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
+STUDENT_ID2 = "76456a9aa7104d7db2c89b24cab697c5"
 cur.execute(f"SELECT * FROM user WHERE id='{STUDENT_ID}'")
 res = cur.fetchone()
 if (res is None):
@@ -150,6 +151,19 @@ if (res is None):
     ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
     cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
     con.commit()
+
+    userID = STUDENT_ID2
+    username = "Ciel"
+    email = "test2@student.com"
+    password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User1234!"), keyID=CONSTANTS.PEPPER_KEY_ID)
+
+    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
+    con.commit()
+    ipAddress = "127.0.0.1"
+    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
+    con.commit()
+
 
 print("Added", demoCourse, "demo courses to the database")
 
@@ -185,7 +199,30 @@ while (1):
                 )
                 con.commit()
                 # print(f"course details {course}")
-                # print(f"Added review to course: {courseID}")
+                print(f"Added review to course: {courseID}")
+
+            #Adding second review to review
+            print("Adding second review to review")
+            courseReview = """
+            
+            Daniel explained to me Pattern Defeating quicksort in such a simple way.
+            Thank you!
+            
+            """
+            userID = STUDENT_ID2
+            cur.execute(f"SELECT * FROM course")
+            res = cur.fetchall()
+            for course in res:
+                courseRating = randint(1,5)
+                
+                courseID = course[0]
+                cur.execute(
+                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
+                    {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
+                )
+                con.commit()
+                # print(f"course details {course}")
+                print(f"Added review to course: {courseID}")
             break
 
 con.commit()

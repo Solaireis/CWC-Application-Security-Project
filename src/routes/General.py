@@ -78,10 +78,8 @@ def coursePage(courseID:str):
     courseImagePath = courses[4]
     coursePrice = courses[5]
     courseCategory = courses[6]
-    courseRating = courses[7]
-    courseRatingCount = courses[8]
-    courseDate = courses[9]
-    courseVideoPath = courses[10]
+    courseDate = courses[7]
+    courseVideoPath = courses[8]
 
     print("course",courses[1])
 
