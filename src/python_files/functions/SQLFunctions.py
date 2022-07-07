@@ -1180,6 +1180,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             res = cur.fetchone()
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
+            #TODO: FIND ERROR CAUSING INCORRECT INTEGER VALUE
             foundResultsTuple = foundResults[i][1:]
             resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
