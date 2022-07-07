@@ -118,7 +118,7 @@ def main() -> None:
 
             if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
                 count = 0
-                profilePic = "/static/images/user/default.png"
+                profilePic = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
                 for i in range(existingAdminCount, noOfAdmin + existingAdminCount):
                     adminID = NormalFunctions.generate_id()
                     username = f"Admin-{i}"

@@ -27,6 +27,9 @@ from google.cloud.sql.connector import Connector as MySQLConnector
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
 
+# For Google Cloud Storage API (Third-party libraries)
+from google.cloud import storage
+
 class ConstantsConfigs:
     """
     This class is used to store all the constants used in the application.
@@ -255,6 +258,11 @@ class ConstantsConfigs:
             "host": "localhost",
             "password": environ.get("LOCAL_SQL_PASS")
         }
+
+        # For Google Cloud Storage API
+        GOOGLE_STORAGE_JSON = json.loads(self.get_secret_payload(secretID="google-storage"))
+        self.GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
+        del GOOGLE_STORAGE_JSON
 
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
