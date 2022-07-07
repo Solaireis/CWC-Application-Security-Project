@@ -1048,8 +1048,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         courseList = []
         for tupleInfo in resultsList:
+            foundResultsTuple = tupleInfo[1:]
             courseList.append(
-                CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True)
+                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
             )
         
 
@@ -1145,7 +1146,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 for i, teacherID in enumerate(teacherIDList):
                     cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                     res = cur.fetchone()
-                    teacherUsername = res[0]
                     teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                         else res[1]
                     courseInfoList.append(
@@ -1155,7 +1155,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             else:
                 cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
                 res = cur.fetchone()
-                teacherUsername = res[0]
                 teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                     else res[1]
                 for tupleInfo in matchedList:
@@ -1181,8 +1180,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             res = cur.fetchone()
             teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                 else res[1]
-
-            resultsList.append(CourseInfo(foundResults[i], profilePic=teacherProfile, truncateData=True))
+            foundResultsTuple = foundResults[i][1:]
+            resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
         cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         maxPage = cur.fetchone()[0]
