@@ -324,31 +324,21 @@ def purchaseView(courseID:str):
     # TODO: Could have used Course.py's class instead of
     # TODO: manually retrieving the data from the tuple
     #create variable to store these values
-    teacherID = courses[1]
-    courseName = courses[2]
     courseDescription = Markup(
         markdown.markdown(
-            courses[3],
+            courses.courseDescription,
             extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
         )
     )
-    course_image_path = courses[4]
-    coursePrice = courses[5]
-    courseCategory = courses[6]
-    courseRating = courses[7]
-    courseRatingCount = courses[8]
-    courseDate = courses[9]
-    courseVideoPath = courses[10]
 
     # videoID = vimeo_upload(r"C:\Users\wrenp\Downloads\the_fuck.mp4", r"C:\Users\wrenp\Downloads\Emote\DoremyToot_Optimised.png", 'Imperishable Night', 'This is a test video.')
     videoData = get_vimeo_video(726279222)
     courseVideoPath = loads(videoData.text)["html"]
     print(loads(videoData.text)["html"])
 
-    print("course",courses[1])
 
-    teacherProfilePath = get_image_path(teacherID)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=teacherID)
+    teacherProfilePath = get_image_path(courses.teacherID)
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
     print(teacherRecords)
     teacherName = teacherRecords[2]
 
@@ -361,9 +351,7 @@ def purchaseView(courseID:str):
 
     return render_template("users/general/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
-        , courseID=courseID, courseName=courseName, courseDescription=courseDescription, coursePrice=coursePrice, courseCategory=courseCategory, \
-        courseRating=courseRating, courseRatingCount=courseRatingCount, courseDate=courseDate, courseVideoPath=courseVideoPath, accType=accType,\
-        course_image_path=course_image_path)
+        , courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):

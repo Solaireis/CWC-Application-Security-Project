@@ -78,7 +78,7 @@ class CourseInfo:
         self.coursePrice = tupleInfo[7]
         self.courseCategory = tupleInfo[8]
         self.dateCreated = tupleInfo[9]
-        self.averageRating = tupleInfo[10]
+        self.averageRating = int(tupleInfo[10])
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""

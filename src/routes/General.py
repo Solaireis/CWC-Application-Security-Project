@@ -56,33 +56,17 @@ def teacherPage(teacherID:str):
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
     print(courseID)
-    #courseID = "a78da127690d40d4bebaf5d9c45a09a8"
-    # the course id is
-    #   a78da127690d40d4bebaf5d9c45a09a8
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    # courseName = courses[0][1]
-    # print(courses)
     if courses == False: #raise exception
         abort(404)
     #create variable to store these values
-    # TODO: Could have used Course.py's class instead of 
-    # TODO: manually retrieving the data from the tuple
-    # teacherID = courses[1]
-    # courseName = courses[2]
-    # courseDescription = Markup(
-    #     markdown.markdown(
-    #         courses[3],
-    #         extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
-    #     )
-    # )
-    # courseImagePath = courses[4]
-    # coursePrice = courses[5]
-    # courseCategory = courses[6]
-    # courseDate = courses[7]
-    # courseVideoPath = courses[8]
-
-
-
+    courseDescription = Markup(
+        markdown.markdown(
+            courses.courseDescription,
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+        )
+    )
+    print("hi",courses)
     teacherProfilePath = get_image_path(courses.teacherID)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID, )
     teacherName = teacherRecords[2]
@@ -115,7 +99,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
-         accType=accType, reviewList= reviewList, courses=courses
+         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")
