@@ -19,11 +19,7 @@
         <div class="col card w-90 mb-3 border bg-light flex-row">
             <div class="row">
                 <div id="pfp" class="col-md-3">
-                    {% if "https" in teacherProfilePath %}
-                        <img src="{{ teacherProfilePath }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
-                    {% else %}
-                        <img src="{{ url_for('static', filename='images/user/' ~ teacherProfilePath) }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
-                    {% endif %}
+					<img src="{{ teacherProfilePath }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
                 </div>
             </div>
         </div>
