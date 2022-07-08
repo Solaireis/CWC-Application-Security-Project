@@ -193,7 +193,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(255), IN page_number INT UNSIGNED)
         BEGIN
-            SET @page_offset = (page_number - 1) * 10;
+            SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             c.course_id, c.teacher_id, 
@@ -214,8 +214,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT UNSIGNED, IN search_term VARCHAR(255))
         BEGIN
-            SET @page_offset = (page_number - 1) * 10;
-            SET @search_query = CONCAT('%', search_term, '%');
+            SET @page_offset := (page_number - 1) * 10;
+            SET @search_query := CONCAT('%', search_term, '%');
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             c.course_id, c.teacher_id, 
@@ -246,6 +246,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             WHERE u.id=user_id;
         END
     """)
+    # cur.execute(f"""
+    #     CREATE DEFINER=`{definer}` PROCEDURE `paginate_user` (IN page_number INT UNSIGNED)
+    #     BEGIN
+    #         SET @page_offset := (page_number - 1) * 10;
+    #         SELECT         
+                
+    # """)
     cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
         DETERMINISTIC 
