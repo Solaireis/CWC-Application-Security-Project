@@ -161,18 +161,14 @@ def uploadPic():
 
 @userBP.route("/course-review/<string:courseID>") #writing of review
 def courseReview(courseID:str):
-    accType = imageSrcPath = None
-    userPurchasedCourses = {}
-    reviewDate = datetime.datetime.now().strftime("%Y-%m-%d")
-    courses = sql_operation(table="", mode="", courseID=courseID)
+
+    course=sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = sql_operation(table="user", mode="get_user_purchases", userID=session["user"])
-        accType = userInfo[1]
+        pass
 
     return render_template("users/general/course_page_review.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, courseID=courseID, accType=accType)
+        course=course)
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
