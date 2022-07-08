@@ -246,13 +246,46 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             WHERE u.id=user_id;
         END
     """)
-    # cur.execute(f"""
-    #     CREATE DEFINER=`{definer}` PROCEDURE `paginate_user` (IN page_number INT UNSIGNED)
-    #     BEGIN
-    #         SET @page_offset := (page_number - 1) * 10;
-    #         SELECT         
-                
-    # """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_user` (IN page_number INT UNSIGNED)
+        BEGIN
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+			u.id, r.role_name, u.username, 
+            u.email, u.email_verified, u.password, 
+            u.profile_image, u.date_joined, u.cart_courses, 
+            u.purchased_courses, u.status,
+			(SELECT COUNT(*) FROM user) AS total_users
+            FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            GROUP BY u.id
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_user_by_username` (IN page_number INT UNSIGNED, IN username VARCHAR(255))
+        BEGIN
+            SET @page_offset := (page_number - 1) * 10;
+            SET @search_query := CONCAT('%', username, '%');
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+			u.id, r.role_name, u.username, 
+            u.email, u.email_verified, u.password, 
+            u.profile_image, u.date_joined, u.cart_courses, 
+            u.purchased_courses, u.status,
+			(SELECT COUNT(*) FROM user WHERE username LIKE @search_query) AS total_users
+            FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            WHERE u.username LIKE @search_query
+            GROUP BY u.id
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
     cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
         DETERMINISTIC 
