@@ -75,7 +75,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         date_joined DATETIME NOT NULL,
         cart_courses JSON DEFAULT NULL, -- can be null for admin user
         purchased_courses JSON DEFAULT NULL, -- can be null for admin user
-        FOREIGN KEY (role) REFERENCES role(role_id)
+        status VARCHAR(255) NOT NULL DEFAULT 'Active', -- can be 'Active', 'Inactive', 'Banned'
+        FOREIGN KEY (role) REFERENCES role(role_id),
+        CONSTRAINT status_check CHECK (status IN ('Active', 'Inactive', 'Banned'))
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS course (
@@ -276,6 +278,19 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 HAVING row_num > @page_offset
                 ORDER BY row_num
             ) src;
+        END
+    """)
+    cur.execute(f"""
+        CREATE DEFINER`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
+        BEGIN
+            SELECT
+            u.id, r.role_name, u.username, 
+            u.email, u.email_verified, u.password, 
+            u.profile_image, u.date_joined, u.cart_courses, 
+            u.purchased_courses, u.status
+            FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            WHERE u.id=user_id;
         END
     """)
     cur.execute(f"""

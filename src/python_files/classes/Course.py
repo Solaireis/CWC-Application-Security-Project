@@ -87,5 +87,5 @@ class CourseInfo:
                f"By: {self.teacherUsername} | " + \
                f"Price: ${self.coursePrice} | " + \
                f"Category: {self.courseCategory} | " + \
-               f"Date Created: {self.dateCreated} | " \
+               f"Date Created: {self.dateCreated} | " + \
                f"Average Rating: {self.averageRating} | "
