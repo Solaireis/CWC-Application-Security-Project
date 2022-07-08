@@ -300,7 +300,7 @@ def purchaseHistory():
     if 'user' in session:
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
         print(userInfo)
-        purchasedCourseIDs = loads(userInfo[-1])
+        purchasedCourseIDs = loads(userInfo[-2])
         courseList = []
 
         # TODO: Could have used Course.py's class instead of
