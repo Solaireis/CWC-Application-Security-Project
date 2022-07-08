@@ -24,7 +24,3 @@ def adminProfile():
 def userManagement():
     pageNum = request.args.get("page", default=1, type=int)
     return render_template("users/admin/user_management.html", pageNum=pageNum)
-
-@adminBP.route("/admin-dashboard", methods=["GET","POST"])
-def adminDashboard():
-    return "test"
