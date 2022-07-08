@@ -55,6 +55,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("""CREATE TABLE IF NOT EXISTS role (
         role_id INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         role_name VARCHAR(255) NOT NULL UNIQUE
+        guest_bp bool NOT NULL DEFAULT 0
+        general_bp bool NOT NULL DEFAULT 0
+        admin_bp bool NOT NULL DEFAULT 0
+        logged_in_bp bool NOT NULL DEFAULT 0
+        error_bp bool NOT NULL DEFAULT 1
+        teacher_bp bool NOT NULL DEFAULT 0
+        user_bp bool NOT NULL DEFAULT 0
+
     )""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS user (
@@ -131,6 +139,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
+
 
     # end of table creation
     mydb.commit()
@@ -283,7 +292,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     mydb.commit()
 
     # data initialisation
-    cur.execute("INSERT INTO role (role_name) VALUES ('Student')")
+    cur.execute("INSERT INTO role (role_name) VALUES ('Student') ")
     mydb.commit()
 
     cur.execute("INSERT INTO role (role_name) VALUES ('Teacher')")
@@ -292,6 +301,29 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("INSERT INTO role (role_name) VALUES ('Admin')")
     mydb.commit()
 
+    cur.execute("INSERT INTO role (role_name) VALUES ('Super Admin')")
+
+    cur.execute("INSERT INTO role (role_name) VALUES ('Guest')")
+
+    #insert into student role the rbac
+    cur.execute("INSERT INTO roles (guest_bp,general_bp,admin_bp,logged_in_bp ,error_bp,teacher_bp,user_bp) \
+        VALUES (0,1,0,1,1,0,1) WHERE role_id = 1")
+
+    #insert into Teacher role the rbac
+    cur.execute("INSERT INTO roles (guest_bp,general_bp,admin_bp,logged_in_bp ,error_bp,teacher_bp,user_bp) \
+        VALUES (0,1,0,1,1,1,1) WHERE role_id = 2")
+
+    #insert into Admin role the rbac
+    cur.execute("INSERT INTO roles (guest_bp,general_bp,admin_bp,logged_in_bp ,error_bp,teacher_bp,user_bp) \
+        VALUES (0,1,1,1,1,0,0) WHERE role_id = 3")
+
+    #insert into Super Admin role the rbac
+    cur.execute("INSERT INTO roles (guest_bp,general_bp,admin_bp,logged_in_bp ,error_bp,teacher_bp,user_bp) \
+        VALUES (0,0,1,1,1,0,0) WHERE role_id = 4")
+
+    #insert into Guest role the rbac
+    cur.execute("INSERT INTO roles (guest_bp,general_bp,admin_bp,logged_in_bp ,error_bp,teacher_bp,user_bp) \
+        VALUES (1,1,0,0,1,0,0) WHERE role_id = 5")
     return mydb
 
 if (__name__ == "__main__"):
