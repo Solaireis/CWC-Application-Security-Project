@@ -19,6 +19,3 @@ def adminProfile():
 
     return render_template("users/admin/admin_profile.html", username=adminUsername, email=adminEmail, adminID=adminID, accType=userInfo[1])
 
-@adminBP.route("/admin-dashboard", methods=["GET","POST"])
-def adminDashboard():
-    return "test"
