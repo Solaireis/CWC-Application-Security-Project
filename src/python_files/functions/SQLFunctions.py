@@ -213,6 +213,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "limited_use_jwt"):
                 returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "role"):
+                returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -1241,7 +1243,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
 def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
-    Do CRUD operations on the purchased table
+    Do CRUD operations on the review table
 
     revieve_user_review keywords: userID, courseID,
     insert keywords: userID, courseID, courseRating, CourseReview
@@ -1276,3 +1278,21 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     else:
         raise ValueError("Invalid mode in the review_sql_operation function!")
+
+def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
+    """
+    Do CRUD operations on the review table
+    
+    """
+    if mode is None:
+        raise ValueError("You must specify a mode in the role_sql_operation function!")
+
+    cur = connection.cursor()
+
+    if mode == "retrieve_all":
+        cur.execute("SELECT * FROM role")
+        role_list = cur.fetchall()
+        return role_list if (role_list is not None) else []
+
+    else:
+        raise ValueError("Invalid mode in the role_sql_operation function!")
