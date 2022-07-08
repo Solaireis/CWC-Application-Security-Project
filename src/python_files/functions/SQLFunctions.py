@@ -1085,11 +1085,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         # Not using offset as it will get noticeably slower with more courses
         cur.execute("CALL paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
+        maxPage = ceil(cur.fetchone()[-1] / 10)
         if (resultsList is None):
             return []
         
-        cur.execute("CALL max_page_paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
-        maxPage = ceil(cur.fetchone()[0] / 10)
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1223,6 +1222,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         foundResults = cur.fetchall()
+        maxPage = ceil(cur.fetchone()[-1] / 10)
         teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1231,9 +1231,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                                                                 else res[1]
             foundResultsTuple = foundResults[i][1:]
             resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
-
-        cur.execute("CALL max_page_search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput}) 
-        maxPage = ceil(cur.fetchone()[0] / 10)
 
         return resultsList, maxPage
         
