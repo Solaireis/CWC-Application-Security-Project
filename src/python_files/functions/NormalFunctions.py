@@ -440,7 +440,7 @@ def crc32c(data:Union[bytes, str]) -> int:
     Returns:
     - An int representing the CRC32C checksum of the provided bytes
     """
-    return g_crc32c(initial_value=ensure_binary(data)).hexdigest().hex()
+    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> bytes:
     """
