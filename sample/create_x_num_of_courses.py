@@ -1,5 +1,6 @@
 # import third party libraries
 import pymysql, stripe
+from stripe.error import InvalidRequestError
 
 # import python standard libraries
 from random import randint, choice as rand_choice
@@ -25,10 +26,10 @@ spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
 THUMBNAILS_PRESET = [
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp", 
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp", 
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_3.webp", 
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_4.webp", 
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp",
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp",
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_3.webp",
+"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_4.webp",
 "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_5.webp"
 ]
 
@@ -42,15 +43,6 @@ while (1):
         continue
     else:
         debugFlag = True if (debugPrompt != "n") else False
-        break
-
-while debugFlag == True:
-    stripePrompt = input("Use with Stripe? (Y/n): ").lower().strip()
-    if stripePrompt not in ("y", "n", ""):
-        print("Invalid input", end = '\n\n')
-        continue
-    else:
-        stripeFlag = True if (stripePrompt != "n") else False
         break
 
 try:
@@ -92,22 +84,11 @@ if (not res):
     cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
     con.commit()
 
-if stripeFlag:
-    print("Creating 5 courses in line with Stripe data.")
-    demoCourse = 5
-else:
-    while (1):
-        print("Please enter at least 5.")
-        demoCourse = input("How many courses would you like to create? (Min: 5): ")
-        if (re.fullmatch(NUM_REGEX, demoCourse)):
-            demoCourse = int(demoCourse)
-            if (demoCourse < 5):
-                print("Please enter at least more than or equal to 5.", end="\n\n")
-                continue
-            break
-        else:
-            print("Please enter a number!", end="\n\n")
-            continue
+
+demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
+while (demoCourse < 5):
+    print("Please enter at least 5.")
+    demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
 
 cur.execute(f"SELECT course_name FROM course WHERE teacher_id='{TEACHER_UID}' ORDER BY date_created DESC LIMIT 1")
 latestDemoCourse = cur.fetchall()
@@ -119,30 +100,27 @@ else:
 course_id_list = []
 
 for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
-    if stripeFlag:
-        course_id = f"Test_Course_ID_{i - latestDemoCourse + 1}_v2"
-    else:
-        course_id = NormalFunctions.generate_id()
+    course_id = NormalFunctions.generate_id()
     course_id_list.append(course_id)
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Data Structure and Algorithms Demo Course {i}"
-    course_description = (f""" This is a demo course for Data Structure and Algorithms.     
-    It is a course for students who are interested in learning about Data Structure and Algorithms.    
-    In this course you will learn about the following topics:    
-    1. Arrays    
-    2. Linked Lists    
-    3. Stack and Queue    
-    4. Trees    
-    5. Graphs    
-    6. Binary Search Tree    
-    7. Red Black Binary Tree    
-    8. Binary Heap    
-    9. Hash Table    
-    10. Advance sorting    
-    11. Searching    
-    12. Pattern Defeating QuickSort    
+    course_description = (f""" This is a demo course for Data Structure and Algorithms.
+    It is a course for students who are interested in learning about Data Structure and Algorithms.
+    In this course you will learn about the following topics:
+    1. Arrays
+    2. Linked Lists
+    3. Stack and Queue
+    4. Trees
+    5. Graphs
+    6. Binary Search Tree
+    7. Red Black Binary Tree
+    8. Binary Heap
+    9. Hash Table
+    10. Advance sorting
+    11. Searching
+    12. Pattern Defeating QuickSort
 
-    Thanks for watching the demo course!  
+    Thanks for watching the demo course!
         """)
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
@@ -152,7 +130,25 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
 
     cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s)", (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, video_path))
-    #stripe_product_create(courseID=course_id, courseName=course_name, courseDescription=course_description, coursePrice=course_price, debug=True)
+    try:
+        courseData = stripe.Product.create(
+            id = course_id,
+            name = course_name,
+            description = course_description,
+
+            default_price_data = {
+                "currency" : "USD",
+                "unit_amount_decimal" : course_price*100
+            },
+            images = [course_image_path],
+            url = None # url_for("generalBP.coursePage", _external = True, courseID = courseID)
+        )
+
+        # print(courseData)
+
+    except InvalidRequestError as error:
+        print(error)
+
 
 # Add student
 STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
@@ -221,23 +217,23 @@ while (1):
         cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
         res = cur.fetchone()
         if (res is None):
-            
+
             courseReview = """
-            
+
             Daniel is actually a very helpful person.
             he has shared many tips and tricks to teaching me
             how to do better at data structure and algorithms
-            
+
             """
             userID = STUDENT_ID
             cur.execute(f"SELECT * FROM course")
             res = cur.fetchall()
             for course in res:
                 courseRating = randint(1,5)
-                
+
                 courseID = course[0]
                 cur.execute(
-                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
+                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
                     {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
                 )
                 con.commit()
@@ -247,20 +243,20 @@ while (1):
             #Adding second review to review
             print("Adding second review to review")
             courseReview = """
-            
+
             Daniel explained to me Pattern Defeating quicksort in such a simple way.
             Thank you!
-            
+
             """
             userID = STUDENT_ID2
             cur.execute(f"SELECT * FROM course")
             res = cur.fetchall()
             for course in res:
                 courseRating = randint(1,5)
-                
+
                 courseID = course[0]
                 cur.execute(
-                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", 
+                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
                     {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
                 )
                 con.commit()

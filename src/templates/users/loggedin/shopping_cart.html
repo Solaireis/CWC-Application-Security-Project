@@ -87,22 +87,22 @@
             <div class="card-body">
                 <div class="row g-0">
                     <div class="col">
-                        {% if (course['courseThumbnailPath'] == None) %}
+                        {% if (course.courseImagePath == None) %}
                             <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
                         {% else %}
-                            <img src= "{{ course['courseThumbnailPath'] }}" class="card-img" alt="Course Thumbnail">
+                            <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
                         {% endif %}
                         
                     </div>
                     <div class="col">
                         <div class="information">
                             <p class="text-center">
-                                <a class="d-inline-flex align-items-center" href="{{ course['courseOwnerLink'] }}">
-                                    <span>{{ course['courseOwnerUsername'] }}</span>&nbsp;
-                                    <img src="{{ course['courseOwnerImagePath'] }}" alt="Course Creator Profile">
+                                <a class="d-inline-flex align-items-center" href="{{ course.courseOwnerLink }}">
+                                    <span>{{ course.courseOwnerUsername }}</span>&nbsp;
+                                    <img src="{{ course.teacherProfile }}" alt="Course Creator Profile">
                                 </a>
                                 <br>
-                                <span class="fw-bold">US${{ course['coursePrice'] }}</span>
+                                <span class="fw-bold">US${{ course.coursePrice }}</span>
                             </a></p>
                         </div>
                     </div>
@@ -112,8 +112,8 @@
 
 
             <div class="card-body text">
-                <h5 class="card-title"><a href="/course/{{ course['courseID'] }}">{{ course['courseName'] }}</a><i class="fas fa-times" id = "{{ course['courseID'] }}"></i></h5>
-                <p class="card-text">{{ course['courseDescription'] }}</p>
+                <h5 class="card-title"><a href="/course/{{ course.courseID }}">{{ course.courseName }}</a><i class="fas fa-times" id = "{{ course.courseID }}"></i></h5>
+                <p class="card-text">{{ course.courseDescription }}</p>
             </div>
 
         </div>
@@ -194,7 +194,7 @@
     }
 
     {% for course in courseList %}
-        document.getElementById("{{ course['courseID'] }}").onclick = function(){removeCourse("{{ course['courseID'] }}")}
+        document.getElementById("{{ course.courseID }}").onclick = function(){removeCourse("{{ course.courseID }}")}
     {% endfor %}
 
 </script>

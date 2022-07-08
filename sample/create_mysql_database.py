@@ -3,6 +3,8 @@ For development purposes, to be removed from any imports during production envir
 """
 # import third party libraries
 import pymysql
+import stripe
+from stripe.error import InvalidRequestError
 
 # import python standard libraries
 import pathlib, sys
@@ -23,6 +25,26 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
+stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
+
+def deactivate_stripe_courses(debug:bool=False):
+
+    try:
+        mydb = NormalFunctions.get_mysql_connection(debug=debug)
+        cur = mydb.cursor()
+        cur.execute("SELECT course_id FROM course")
+        courses = cur.fetchall()
+    except pymysql.err.ProgrammingError:
+        print('Database does not yet exist')
+        return
+
+    for courseID in courses:
+        courseID = courseID[0]
+
+        try:
+            stripe.Product.modify(courseID, active = False)
+        except InvalidRequestError as error:
+            print(error)
 
 def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """
@@ -406,6 +428,10 @@ if (__name__ == "__main__"):
         else:
             debugFlag = True if (debugPrompt != "n") else False
             break
+    try:
+        deactivate_stripe_courses(debug=debugFlag)
+    except pymysql.err.ProgrammingError:
+        pass
 
     try:
         mysql_init_tables(debug=debugFlag)
