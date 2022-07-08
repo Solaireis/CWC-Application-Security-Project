@@ -53,9 +53,9 @@
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
-								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
+								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
@@ -121,10 +121,10 @@
 				{% for course in latestThreeCourses %}
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
-							{% if (course.course_image_path == None) %}
-								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+							{% if (course.courseImagePath == None) %}
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
+								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>

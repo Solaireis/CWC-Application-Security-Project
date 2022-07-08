@@ -52,6 +52,12 @@ def stripe_product_create(
         print(error)
         print(f"Course: {courseID} already exists in Stripe database.")
 
+def stripe_product_deactivate(courseID:str):
+    try:
+        stripe.Product.modify(courseID, active = False)
+    except InvalidRequestError as error:
+        print(error)
+
 def stripe_product_check(courseID:str) -> Optional[str]:
     """
     Checks if a product exists on Stripe based on Course ID.
@@ -94,7 +100,7 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = url_for("userBP.purchase", _external = True, jwtToken = jwtToken),
-            cancel_url = url_for("userBP.cart", _external = True),
+            cancel_url = url_for("userBP.shoppingCart", _external = True),
             customer_email = email,
             expires_at = int(time()) + 3600,
             line_items = [{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],

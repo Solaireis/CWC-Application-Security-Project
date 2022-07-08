@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, send_from_directory
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -213,7 +213,7 @@ def purchaseView(courseID:str):
 def addToCart(courseID:str):
     if ("user" in session):
         sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
-        return redirect(url_for("userBP.cart"))
+        return redirect(url_for("userBP.shoppingCart"))
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -241,17 +241,8 @@ def shoppingCart():
             # TODO: manually retrieving the data from the tuple
             for courseID in cartCourseIDs:
                 course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
-                courseList.append({
-                    "courseID" : course[0],
-                    "courseOwnerLink" : url_for("generalBP.teacherPage", teacherID=course[1]), # course[1] is teacherID
-                    "courseOwnerUsername" : sql_operation(table="user", mode="get_user_data", userID=course[1])[2],
-                    "courseOwnerImagePath" : get_image_path(course[1]),
-                    "courseName" : course[2],
-                    "courseDescription" : course[3],
-                    "courseThumbnailPath" : course[4],
-                    "coursePrice" : f"{course[5]:,.2f}",
-                })
-                subtotal += course[5]
+                courseList.append(course)
+                subtotal += course.coursePrice
 
             return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=imageSrcPath, accType=userInfo[1])
 
@@ -327,4 +318,7 @@ def purchaseHistory():
 # blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
 @userBP.route("/static/course_videos/<path:filename>")
 def blockAccess(filename):
-    abort(403)
+    if "admin" in session:
+        return send_from_directory(Path(__file__).parent.joinpath(f'static/{filename}'))
+    else:
+        abort(403)
