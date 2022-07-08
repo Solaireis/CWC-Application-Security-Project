@@ -75,27 +75,51 @@
                                     <td>Email</td>
                                     <td colspan="3">Status</td>
                                 </tr>
-                                <tr>
-                                    <td>
-                                        
-                                    </td>
-                                </tr>
+                                {% for user in userArr %}
+                                    <tr>
+                                        <td>
+                                            {{ user.uid }}
+                                        </td>
+                                        <td>
+                                            <img src="{{ user.profileImage }}" alt="user profile image" class="profile_image">
+                                        </td>
+                                        <td>
+                                            {{ user.username }}
+                                        </td>
+                                        <td>
+                                            {{ user.role }}
+                                        </td>
+                                        <td>
+                                            {{ user.email }}
+                                        </td>
+                                        <td>
+                                            {{ user.status }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
                             </table>
                             <div class="center">
                                 <div class="pagination">
-                                    {% if currentPage != 1 %}
-                                        <a href="{{ url_for('generalBP.search')}}?q={{searchInput}}&p={{currentPage - 1}}">&laquo;</a>
-                                    {% endif %}
-                                    {% for i in range(1,maxPage + 1) %}
-                                        {% if i == currentPage %}
-                                            <a class="active" href="">{{ i }}</a>
+                                    {% with urlPath = url_for('adminBP.userManagement') %}
+                                        {% if request.args.get('user', default=None, type=str) != None %}
+                                            {% set urlPath = urlPath + "?user=" + request.args.get("user", type=str) + "&filter=" + request.args.get("filter", default="username", type=str) + "&p=" %}
                                         {% else %}
-                                            <a href="{{ url_for('generalBP.search') }}?q={{searchInput}}&p={{i}}">{{ i }}</a>
+                                            {% set urlPath = urlPath + "?p=" %}
                                         {% endif %}
-                                    {% endfor %}
-                                    {% if currentPage != maxPage %}
-                                        <a href="{{ url_for('generalBP.search')}}?q={{searchInput}}&p={{currentPage + 1}}">&raquo;</a>
-                                    {% endif %}
+                                        {% if currentPage != 1 %}
+                                            <a href="{{ urlPath }}{{ currentPage - 1 }}">&laquo;</a>
+                                        {% endif %}
+                                        {% for i in range(1,maxPage + 1) %}
+                                            {% if i == currentPage %}
+                                                <a class="active" href="">{{ i }}</a>
+                                            {% else %}
+                                                <a href="{{ urlPath }}{{ i }}">{{ i }}</a>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if currentPage != maxPage %}
+                                            <a href="{{ urlPath }}{{currentPage + 1}}">&raquo;</a>
+                                        {% endif %}
+                                    {% endwith %}
                                 </div>
                             </div>
                         </div>

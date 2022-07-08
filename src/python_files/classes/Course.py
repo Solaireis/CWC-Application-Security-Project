@@ -47,11 +47,12 @@ class CourseInfo:
     """
     This class is used to store the course info for code readability in jinja2 templates.
 
-    tupleInfo Tuple format (12 elements):
+    tupleInfo Tuple format (13 elements):
     (
         c.course_id, c.teacher_id, 
         u.username, u.profile_image, c.course_name, c.course_description,
-        c.course_image_path, c.course_price, c.course_category, c.date_created, c.avg_rating
+        c.course_image_path, c.course_price, c.course_category, c.date_created, 
+        c.avg_rating, number_of_results
     )
     """
     def __init__(self, tupleInfo:tuple="", profilePic:str="", truncateData:bool=False):
@@ -60,10 +61,11 @@ class CourseInfo:
     
         Args:
         - tupleInfo (tuple): Tuple retrieved from the sql query using the stored procedure, "get_course_data".
-            - Tuple format (12 elements): (
+            - Tuple format (13 elements): (
                     c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
-                    c.course_image_path, c.course_price, c.course_category, c.date_created, c.avg_rating
+                    c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                    c.avg_rating, number_of_results
                 )
         - profilePic (str): The dicebear url or the path to the teacher's profile picture
         - truncateData (bool): Truncate the course description to 300 characters

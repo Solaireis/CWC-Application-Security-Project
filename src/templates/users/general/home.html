@@ -18,7 +18,7 @@
             <div class="modal-content">
                 {% for category, message in messages %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="alertModalLabel">{{ course.courseCategory }}</h5>
+                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -55,7 +55,7 @@
 							{% if (course.courseImagePath == None) %}
 								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.courseImagePath) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
@@ -124,7 +124,7 @@
 							{% if (course.course_image_path == None) %}
 								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.courseImagePath) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
 								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>

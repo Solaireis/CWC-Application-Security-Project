@@ -3,8 +3,11 @@ import pymysql, stripe
 
 # import python standard libraries
 from random import randint, choice as rand_choice
-import pathlib, sys, json
+import pathlib, sys, json, re
 from importlib.util import spec_from_file_location, module_from_spec
+from socket import inet_aton, inet_pton, AF_INET6
+
+NUM_REGEX = re.compile(r"^\d+$")
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -73,21 +76,38 @@ if (not res):
     username = "Daniel Pang"
     email = "daniel@gmail.com"
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
-    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined) VALUES (%s, %s, %s, %s, %s, SGT_NOW())", (userID, TEACHER_ROLE_ID, username, email, password))
+    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined) VALUES (%s, %s, %s, %s, %s, %s, SGT_NOW())", (userID, TEACHER_ROLE_ID, username, email, True, password))
     con.commit()
     ipAddress = "127.0.0.1"
     ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
+
+    # Convert the IP address to binary format
+    try:
+        ipAddress = inet_aton(ipAddress).hex()
+        isIpv4 = True
+    except (OSError):
+        isIpv4 = False
+        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
     con.commit()
 
 if stripeFlag:
     print("Creating 5 courses in line with Stripe data.")
     demoCourse = 5
 else:
-    demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
-    while (demoCourse < 5):
+    while (1):
         print("Please enter at least 5.")
-        demoCourse = int(input("How many courses would you like to create? (Min: 5): "))
+        demoCourse = input("How many courses would you like to create? (Min: 5): ")
+        if (re.fullmatch(NUM_REGEX, demoCourse)):
+            demoCourse = int(demoCourse)
+            if (demoCourse < 5):
+                print("Please enter at least more than or equal to 5.", end="\n\n")
+                continue
+            break
+        else:
+            print("Please enter a number!", end="\n\n")
+            continue
 
 cur.execute(f"SELECT course_name FROM course WHERE teacher_id='{TEACHER_UID}' ORDER BY date_created DESC LIMIT 1")
 latestDemoCourse = cur.fetchall()
@@ -151,11 +171,20 @@ if (res is None):
     email = "test@student.com"
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
-    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
+    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
     con.commit()
     ipAddress = "127.0.0.1"
     ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
+
+    # Convert the IP address to binary format
+    try:
+        ipAddress = inet_aton(ipAddress).hex()
+        isIpv4 = True
+    except (OSError):
+        isIpv4 = False
+        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
     con.commit()
 
     userID = STUDENT_ID2
@@ -163,13 +192,21 @@ if (res is None):
     email = "test2@student.com"
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User1234!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
-    cur.execute("INSERT INTO user (id, role, username, email, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
+    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
     con.commit()
     ipAddress = "127.0.0.1"
     ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails})
-    con.commit()
 
+    # Convert the IP address to binary format
+    try:
+        ipAddress = inet_aton(ipAddress).hex()
+        isIpv4 = True
+    except (OSError):
+        isIpv4 = False
+        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
+    con.commit()
 
 print("Added", demoCourse, "demo courses to the database")
 

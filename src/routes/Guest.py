@@ -445,15 +445,18 @@ def enterGuardTOTP():
 
         userID = session["temp_uid"]
         isAdmin = session["is_admin"]
+        ipDetails = session["ip_details"]
+        passwordCompromised = session["password_compromised"]
+        userEmail = session["user_email"]
         session.clear()
 
-        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=session["ip_details"])
+        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=ipDetails)
         session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
         # check if password has been compromised
         # if so, flash a message and send an email to the user
-        if (session["password_compromised"]):
-            send_change_password_alert_email(email=session["user_email"])
+        if (passwordCompromised):
+            send_change_password_alert_email(email=userEmail)
 
         if (isAdmin):
             session["admin"] = userID

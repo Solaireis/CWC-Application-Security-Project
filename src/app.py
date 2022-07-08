@@ -121,6 +121,9 @@ with app.app_context():
     limiter.init_app(app)
 
 # Register all app routes
+from routes.SuperAdmin import superAdminBP
+app.register_blueprint(superAdminBP)
+
 from routes.Admin import adminBP
 app.register_blueprint(adminBP)
 
@@ -163,7 +166,7 @@ def before_request() -> None:
     - None
     """
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
-    if (not request.endpoint):
+    if (request.endpoint is None):
         print("Route Error: Either Does Not Exist or Cannot Access")
         abort(404)
 
@@ -172,7 +175,7 @@ def before_request() -> None:
         print("Request Endpoint:", request.endpoint)
         if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
             pass # allow the user to access the page
-        
+
         elif("teacher" in session and requestBlueprint in CONSTANTS.TEACHER_BLUEPRINTS):
             pass #allow the teacher to access the page
 

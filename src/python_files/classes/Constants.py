@@ -86,9 +86,9 @@ class ConstantsConfigs:
         # Blueprints endpoint routes
         self.GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP","userBP")
         self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
-        self.ADMIN_BlUEPRINTS = ("adminBP", "generalBP", "LoggedInBP", "errorBP","userBP")
-        self.SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "LoggedInBP", "errorBP","userBP")
-        self.TEACHER_BLUEPRINTS = ("userBP", "generalBP", "LoggedInBP", "errorBP","teacherBP") #its better to seperate the teacher and student blueprints
+        self.ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
+        self.SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP")
+        self.TEACHER_BLUEPRINTS = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
         # Request limit
         self.REQUEST_LIMIT = "120 per minute"
 

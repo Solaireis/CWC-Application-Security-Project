@@ -5,6 +5,7 @@ import pymysql
 from sys import exit as sysExit
 import re, pathlib, sys, json
 from importlib.util import spec_from_file_location, module_from_spec
+from socket import inet_aton, inet_pton, AF_INET6
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -127,14 +128,23 @@ def main() -> None:
                     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("Admin123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
                     cur.execute(
-                        "INSERT INTO user (id, role, username, email, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, %(password)s, %(profilePic)s, SGT_NOW())", \
+                        "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())", \
                         {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": profilePic}
                     )
                     con.commit()
 
                     ipAddress = "127.0.0.1"
                     ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s)", {"adminID": adminID, "ipAddress": ipAddress, "ipDetails": ipDetails})
+
+                    # Convert the IP address to binary format
+                    try:
+                        ipAddress = inet_aton(ipAddress).hex()
+                        isIpv4 = True
+                    except (OSError):
+                        isIpv4 = False
+                        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"adminID": adminID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
                     con.commit()
 
                     count += 1

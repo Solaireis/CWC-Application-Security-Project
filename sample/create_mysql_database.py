@@ -95,9 +95,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE IF NOT EXISTS user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
-        ip_address VARBINARY(16) NOT NULL,
+        ip_address VARCHAR(32) NOT NULL, -- in hex format, length of 8 for IPv4, length of 32 for IPv6
         last_accessed DATETIME NOT NULL,
         ip_address_details JSON NOT NULL,
+        is_ipv4 BOOL NOT NULL DEFAULT TRUE,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
@@ -247,7 +248,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_user` (IN page_number INT UNSIGNED)
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users` (IN page_number INT UNSIGNED)
         BEGIN
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -256,9 +257,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, u.cart_courses, 
             u.purchased_courses, u.status,
-			(SELECT COUNT(*) FROM user) AS total_users
+			(SELECT COUNT(*) FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            WHERE r.role_name<>"Admin") AS total_users
             FROM user AS u
             INNER JOIN role AS r ON u.role=r.role_id
+            WHERE r.role_name<>'Admin'
             GROUP BY u.id
             HAVING row_num > @page_offset
             ORDER BY row_num
@@ -266,7 +270,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_user_by_username` (IN page_number INT UNSIGNED, IN username VARCHAR(255))
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_username` (IN page_number INT UNSIGNED, IN username VARCHAR(255))
         BEGIN
             SET @page_offset := (page_number - 1) * 10;
             SET @search_query := CONCAT('%', username, '%');
@@ -276,7 +280,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, u.cart_courses, 
             u.purchased_courses, u.status,
-			(SELECT COUNT(*) FROM user WHERE username LIKE @search_query) AS total_users
+            (SELECT COUNT(*) FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            WHERE username LIKE @search_query AND r.role_name<>"Admin") AS total_users
             FROM user AS u
             INNER JOIN role AS r ON u.role=r.role_id
             WHERE u.username LIKE @search_query

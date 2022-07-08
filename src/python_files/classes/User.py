@@ -1,4 +1,4 @@
-class User:
+class UserInfo:
     """
     This class is used to store the user info for code readability in jinja2 templates.
 
@@ -7,7 +7,7 @@ class User:
         u.id, r.role_name, u.username, 
         u.email, u.email_verified, u.password, 
         u.profile_image, u.date_joined, u.cart_courses, 
-        u.purchased_courses, u.status
+        u.purchased_courses, u.status, total_users
     )
     """
     def __init__(self, tupleData:tuple=None, userProfile:str=""):
@@ -16,15 +16,15 @@ class User:
 
         Args:
         - tupleInfo (tuple): Tuple retrieved from the sql query using the stored procedure, "get_user_data".
-            - Tuple format (11 elements): (
+            - Tuple format (12 elements): (
                     u.id, r.role_name, u.username, 
                     u.email, u.email_verified, u.password, 
                     u.profile_image, u.date_joined, u.cart_courses, 
-                    u.purchased_courses, u.status
+                    u.purchased_courses, u.status, total_users
                 )
         - userProfile (str): The dicebear url or the path to the user's profile picture
         """
-        self.id = tupleData[0]
+        self.uid = tupleData[0]
         self.role = tupleData[1]
         self.username = tupleData[2]
         self.email = tupleData[3]

@@ -3,6 +3,7 @@ This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
 import json
+from socket import inet_aton, inet_pton, AF_INET6
 from typing import Union, Optional
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -19,7 +20,8 @@ import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 
 # import local python files
-from python_files.classes.Course import Course, CourseInfo
+from python_files.classes.Course import CourseInfo
+from python_files.classes.User import UserInfo
 from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
@@ -312,32 +314,47 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
 
     cur = connection.cursor()
 
-    # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
-    # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
     if (mode == "add_ip_address"):
         userID = kwargs["userID"]
         ipAddress = kwargs["ipAddress"]
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
+        # Convert the IP address to binary format
+        try:
+            ipAddress = inet_aton(ipAddress).hex()
+            isIpv4 = True
+        except (OSError):
+            isIpv4 = False
+            ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed, is_ipv4) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails, "isIpv4":isIpv4})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
         userID = kwargs["userID"]
 
-        cur.execute("SELECT INET6_NTOA(ip_address) FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
+        cur.execute("SELECT ip_address FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
         returnValue = cur.fetchall()
         ipAddressList = [ipAddress[0] for ipAddress in returnValue]
         return ipAddressList
 
     elif (mode == "add_ip_address_only_if_unique"):
         userID = kwargs["userID"]
-        ipAddress = kwargs.get("ipAddress")
+        ipAddress = kwargs["ipAddress"]
         ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
-        cur.execute("SELECT * FROM user_ip_addresses WHERE user_id = %(userID)s AND ip_address = INET6_ATON(%(ipAddress)s)", {"userID":userID, "ipAddress":ipAddress})
+        # Convert the IP address to binary format
+        try:
+            ipAddress = inet_aton(ipAddress).hex()
+            isIpv4 = True
+        except (OSError):
+            isIpv4 = False
+            ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+        cur.execute("SELECT * FROM user_ip_addresses WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s AND is_ipv4=0", {"userID":userID, "ipAddress":ipAddress})
+
         if (cur.fetchone() is None):
-            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW())", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails})
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, %(ipDetails)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails, "isIpv4":isIpv4})
             connection.commit()
 
     elif (mode == "remove_last_accessed_more_than_10_days"):
@@ -686,11 +703,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         matched = cur.fetchone()
         if (matched is None):
             # user does not exist, create new user with the given information
-            cur.execute("CALL get_role_id(%(Student)s)", {"Student":"Student"})
+            cur.execute("CALL get_role_id('Student')")
             roleID = cur.fetchone()[0]
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(cart_courses)s, %(purchased_courses)s)",
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(cart_courses)s, %(purchased_courses)s, 'Active')",
                 {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic, "cart_courses":"[]", "purchased_courses":"[]"}
             )
             connection.commit()
@@ -727,7 +744,14 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         loginAttempts = cur.fetchone()
 
         requestIpAddress = kwargs["ipAddress"]
-        ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=userID, ipAddress=requestIpAddress)
+
+        # Convert request IP address to hexadecimal format
+        try:
+            requestIPAddressHex = inet_aton(requestIpAddress).hex()
+        except (OSError):
+            requestIPAddressHex = inet_pton(AF_INET6, requestIpAddress).hex()
+
+        ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=userID)
 
         # send an email to the authentic user if their account got locked
         if (loginAttempts and loginAttempts[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
@@ -749,7 +773,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         try:
             if (CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)):
                 # check if the login request is from the same IP address as the one that made the request
-                if (requestIpAddress not in ipAddressList):
+                if (requestIPAddressHex not in ipAddressList):
                     newIpAddress = True
 
                 # convert the role id to a readable format
@@ -918,6 +942,28 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             connection.commit()
         else:
             raise IsAlreadyTeacherError("The user is already a teacher!")
+
+    elif (mode == "paginate_users"):
+        pageNum = kwargs["pageNum"]
+        userInput = kwargs.get("user")
+        filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
+
+        if (userInput is None):
+            cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
+        elif (filterType == "username"):
+            cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        matched = cur.fetchall() or []
+
+        maxPage = 1
+        if (len(matched) > 0):
+            maxPage = ceil(matched[0][-1] / 10)
+
+        courseArr = []
+        for data in matched:
+            userProfile = get_dicebear_image(data[2]) if (data[6] is None) else data[6]
+            courseArr.append(UserInfo(tupleData=data, userProfile=userProfile))
+
+        return courseArr, maxPage
 
     elif (mode == "get_user_purchases"):
         userID = kwargs["userID"]

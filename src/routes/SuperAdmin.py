@@ -11,7 +11,7 @@ from python_files.classes.Roles import RoleInfo
 
 superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", template_folder="template")
 
-@superAdminBP.route("/admin-profile", methods=["GET","POST"])
+@superAdminBP.route("/admin-dashboard", methods=["GET","POST"])
 def adminDashboard():
     roles= sql_operation(table="review", mode="retrieve_all")
     roleList = []
