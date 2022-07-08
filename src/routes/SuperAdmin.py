@@ -14,7 +14,9 @@ superAdminBP = Blueprint("adminBP", __name__, static_folder="static", template_f
 @superAdminBP.route("/admin-profile", methods=["GET","POST"])
 def adminDashboard():
     roles= sql_operation(table="review", mode="retrieve_all")
-    RoleInfo(roles)
+    roleList = []
+    for roleID in roles:
+        roleList.append(RoleInfo(roleID))
 
     return 
 
