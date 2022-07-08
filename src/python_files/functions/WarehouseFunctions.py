@@ -19,8 +19,9 @@ headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
 }
 
-dirname = Path(__file__).absolute().parent.parent.parent.joinpath("requirements.txt")
-packagedir = Path(__file__).absolute().parent.parent.joinpath("python_packages")
+rootDir = Path(__file__).absolute().parent.parent.parent.parent
+dirname = rootDir.joinpath("requirements.txt")
+packagedir = rootDir.joinpath("python_packages")
 packagedir.mkdir(parents=True, exist_ok=True)
 
 with open(dirname) as f:
@@ -85,7 +86,7 @@ for i in dependencies:
         sha256.update(data)
 
     if (sha256.hexdigest() != hashed):
-        # Path(path).unlink()
+        # Path(path).unlink(missing_ok=True)
         print(f"Dependency {i} does not match the hash!")
     else:
         # Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
