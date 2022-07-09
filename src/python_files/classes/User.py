@@ -31,7 +31,6 @@ class UserInfo:
         self.username = tupleData[3]
         self.email = tupleData[4]
         self.emailVerified = tupleData[5]
-        self.password = tupleData[6]
         self.googleOAuth = True if (tupleData[6] is None) else False
         self.profileImage = userProfile # Note: Use get_dicebear_image() on the username if the profile image is None
         self.dateJoined = tupleData[8]
