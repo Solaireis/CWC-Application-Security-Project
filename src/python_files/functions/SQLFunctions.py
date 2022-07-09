@@ -491,7 +491,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     # INET6_ATON and INET6_NTOA are functions in-built to mysql and are used to convert IPv4 and IPv6 addresses to and from a binary string
     # https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_inet6-ntoa
     if (mode == "create_session"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         userID = kwargs["userID"]
         fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
 
@@ -499,29 +499,29 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         connection.commit()
 
     elif (mode == "get_user_id"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("SELECT user_id FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         userID = cur.fetchone()[0]
         return userID
 
     elif (mode == "get_session"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         return returnValue
 
     elif (mode == "delete_session"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("DELETE FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         connection.commit()
 
     elif (mode == "update_session"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID": sessionID})
         connection.commit()
 
     elif (mode == "check_if_valid"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("SELECT user_id, expiry_date, fingerprint_hash FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         result = cur.fetchone()
         storedUserID = result[0]
@@ -543,7 +543,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         connection.commit()
 
     elif (mode == "if_session_exists"):
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         returnValue = cur.fetchone()
         if (returnValue):
@@ -554,7 +554,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
     elif (mode == "delete_users_other_session"):
         # delete all session of a user except the current session id
         userID = kwargs["userID"]
-        sessionID = ["sessionID"]
+        sessionID = kwargs["sessionID"]
         cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
 
