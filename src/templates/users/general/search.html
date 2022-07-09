@@ -26,7 +26,7 @@
                         {% if (results.courseImagePath == None) %}
                             <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% else %}
-                            <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ results.course_image_path) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                            <img src="{{ results.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% endif %}
                     </div>
                     <div class="col-md-8">
@@ -52,7 +52,7 @@
                                 </small>
                             </p>
                             <p class="card-text">
-                                {% if (not results.dicebear_profile_image) %}
+                                {% if "https" not in results.teacherProfile %}
                                     <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ results.teacherProfile) }}" id="user_profile" alt="Profile Icon">
                                 {% else %}
                                     <img src="{{ results.teacherProfile }}" id="user_profile" alt="Profile Icon">

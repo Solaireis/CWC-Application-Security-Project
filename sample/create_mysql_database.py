@@ -188,24 +188,21 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM user WHERE id = user_id_input;
         END
     """)
+    """Functions to get Data"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_role_name`(IN roleID INT UNSIGNED)
         BEGIN
             SELECT role_name FROM role WHERE role_id=roleID;
         END
         """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_role_id`(IN roleName VARCHAR(255))
         BEGIN
             SELECT role_id FROM role WHERE role_name=roleName;
         END
         """)
-    cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `search_for`(IN search_term VARCHAR(255))
-        BEGIN
-            SELECT course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created FROM course WHERE course_name LIKE CONCAT('%', search_term , '%');
-        END
-    """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_course_data`(IN courseID CHAR(32))
         BEGIN
@@ -223,6 +220,21 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             GROUP BY c.course_id;
         END
     """)
+
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
+        BEGIN
+            SELECT
+            u.id, r.role_name, u.username, 
+            u.email, u.email_verified, u.password, 
+            u.profile_image, u.date_joined, u.cart_courses, 
+            u.purchased_courses, u.status
+            FROM user AS u
+            INNER JOIN role AS r ON u.role=r.role_id
+            WHERE u.id=user_id;
+        END
+    """)
+    """Pagination Functions"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT UNSIGNED)
         BEGIN
@@ -249,6 +261,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT UNSIGNED, IN search_term VARCHAR(255))
         BEGIN
@@ -276,19 +289,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
-    cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
-        BEGIN
-            SELECT
-            u.id, r.role_name, u.username, 
-            u.email, u.email_verified, u.password, 
-            u.profile_image, u.date_joined, u.cart_courses, 
-            u.purchased_courses, u.status
-            FROM user AS u
-            INNER JOIN role AS r ON u.role=r.role_id
-            WHERE u.id=user_id;
-        END
-    """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users` (IN page_number INT UNSIGNED)
         BEGIN
@@ -316,6 +317,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_username` (IN page_number INT UNSIGNED, IN username_input VARCHAR(255))
         BEGIN
@@ -344,6 +346,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_uid` (IN page_number INT UNSIGNED, IN uid_input VARCHAR(32))
         BEGIN
@@ -372,6 +375,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_email` (IN page_number INT UNSIGNED, IN email_input VARCHAR(255))
         BEGIN
@@ -400,6 +404,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+    """Datetime function"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
         DETERMINISTIC 

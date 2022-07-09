@@ -110,17 +110,17 @@
     <div class="center">
         <div class="pagination">
             {% if currentPage != 1 %}
-                <a href="{{ url_for('userBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
+                <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
             {% endif %}
             {% for i in range(1,maxPage+1) %}
                 {% if i == currentPage %}
                     <a class="active" href="">{{ i }}</a>
                 {% else %}
-                    <a href="{{ url_for('userBP.courseList') }}?p={{i}}">{{ i }}</a>
+                    <a href="{{ url_for('teacherBP.courseList') }}?p={{i}}">{{ i }}</a>
                 {% endif %}
             {% endfor %}
             {% if currentPage != maxPage %}
-                <a href="{{ url_for('userBP.courseList')}}?p={{currentPage + 1}}">&raquo;</a>
+                <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage + 1}}">&raquo;</a>
             {% endif %}
         </div>
     </div>

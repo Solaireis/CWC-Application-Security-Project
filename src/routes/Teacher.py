@@ -78,13 +78,15 @@ def createCourse():
 def courseList():
     if ("user" in session):
         imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo[0])
         page = request.args.get("p", default=1, type=int)
+        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo[0], pageNum=page)
+        maxPage = 0
+        if len(courseList)!= 0:
+            courseList, maxPage = courseList[0], courseList[1]         
+            if (page > maxPage):
+                abort(404)
         
-        if (page > maxPage):
-            abort(404)
-        
-        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1], maxPage=maxPage, currentPage=page, courseList=courseList)
+        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1], pageNum=page, maxPage=maxPage, courseList=courseList)
 
     else:
         return redirect(url_for("guestBP.login"))

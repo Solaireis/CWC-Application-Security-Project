@@ -9,7 +9,7 @@ from flask_talisman import Talisman
 from flask_seasurf import SeaSurf
 
 # import local python libraries
-from python_files.functions.SQLFunctions import sql_operation
+from python_files.functions.SQLFunctions import sql_operation, get_image_path
 from python_files.functions.NormalFunctions import get_IP_address_blacklist, upload_new_secret_version
 from python_files.classes.Constants import CONSTANTS
 
@@ -152,6 +152,9 @@ app.register_blueprint(loggedInBP)
 from routes.User import userBP
 app.register_blueprint(userBP)
 
+from routes.Teacher import teacherBP
+app.register_blueprint(teacherBP)
+
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 
 """------------------------------------- START OF APP REQUESTS FUNCTIONS -------------------------------------"""
@@ -201,8 +204,11 @@ def before_request() -> None:
         if ("user" in session and requestBlueprint in CONSTANTS.USER_BLUEPRINTS):
             pass # allow the user to access the page
 
-        elif("teacher" in session and requestBlueprint in CONSTANTS.TEACHER_BLUEPRINTS):
-            pass #allow the teacher to access the page
+        elif("user" in session and requestBlueprint in CONSTANTS.TEACHER_BLUEPRINTS):
+            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+            if userInfo[1] != "Teacher":
+                return abort(404) #allow the teacher to access the page
+            pass
 
         elif("admin" in session and requestBlueprint in CONSTANTS.ADMIN_BLUEPRINTS):
             pass #allow the admin to access the page
