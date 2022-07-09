@@ -79,7 +79,7 @@ class ConstantsConfigs:
         self.__DEBUG_MODE = True 
 
         # Blueprints endpoint routes
-        self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP","userBP")
+        self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
         self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
         self.__ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
         self.__SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP")
