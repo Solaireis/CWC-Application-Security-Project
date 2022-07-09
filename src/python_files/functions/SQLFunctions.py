@@ -1081,7 +1081,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False)
 
     # Added just in case want to do updating
-
     elif (mode == "update_course_title"):
         course_id = kwargs["courseID"]
         course_title = kwargs["courseTitle"]
@@ -1138,12 +1137,11 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
         # Not using offset as it will get noticeably slower with more courses
-        cur.execute("CALL paginate_teacher_courses(%(teacher_id)s, %(offset)s)", {"teacherID":teacherID, "pageNum":pageNum})
+        cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
-        maxPage = ceil(cur.fetchone()[-1] / 10)
-        if (resultsList is None):
+        if (len(resultsList) == 0):
             return []
-        
+        maxPage = ceil(foundResults[1][-1] / 10)
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1277,7 +1275,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         foundResults = cur.fetchall()
-        maxPage = ceil(cur.fetchone()[-1] / 10)
+        if (len(foundResults) == 0):
+            return []
+        maxPage = ceil(foundResults[1][-1] / 10)
         teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1287,7 +1287,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             foundResultsTuple = foundResults[i][1:]
             resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
-        return resultsList, maxPage
+        return (resultsList, maxPage)
         
 
     else:

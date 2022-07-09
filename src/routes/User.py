@@ -40,7 +40,6 @@ def userProfile():
         """
         Updates to teacher but page does not change, requires refresh
         """
-
         return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo[1])
     else:
         return redirect(url_for("guestBP.login"))

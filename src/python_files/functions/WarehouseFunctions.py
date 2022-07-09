@@ -7,13 +7,13 @@ from pathlib import Path
 from pip._internal import main as pipmain # Old Pip Wrapper, for now it works
 
 #Index of jason file where will return respective file
-platforms = {"Darwin": 0, "Linux": 1, "Windows": 2}
 platformType = platform.system()
 
 # Get system's python version
 pyMajorVer = sys.version_info[0]
 pyMinorVer = sys.version_info[1]
 pyVer = str(pyMajorVer) + str(pyMinorVer) # will get 39, 310, etc.
+print(f"Your Python version is: {pyVer}. Your using a {platformType} system.")
 
 headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -28,12 +28,12 @@ with open(dirname) as f:
     dependencies = f.readlines()
 
 
-for i in dependencies:
+for lib in dependencies:
     maximum = False
     sha256 = hashlib.sha256()
 
-    name = i.split(">")[0]
-    version = (i.split("=")[-1]).strip()
+    name = lib.split(">")[0]
+    version = (lib.split("=")[-1]).strip()
     try:
         version = (version.split(",")[1]).strip()
         maximum = True
@@ -54,21 +54,21 @@ for i in dependencies:
                 version = versions[j]
                 break
     try:
-        file = datafile["releases"][version][2] #Those that does not deal with OS only have 2 items in list
-        for i in datafile["releases"][version]["url"]:
-            # Never specify to look for 64 bit or 32 bit files, but SHOULD WORK
-            if (platformType == "Darwin"):
-                if ("macosx" in i) and (f"cp{pyVer}" not in i):
-                    url = i
-                    break
-            elif (platformType == "Linux"):
-                if ("linux" in i) and (f"cp{pyVer}" not in i):
-                    url = i
-                    break
-            else:
-                if ("win" in i and (f"cp{pyVer}" not in i)):
-                    url = i
-                    break
+        file = datafile["releases"][version][2]
+        for i in datafile["releases"][version]:
+            url = i["url"]
+            file = i
+            if(f"cp{pyVer}" in url) or (f"pp{pyVer}" in url):
+                if (platformType == "Darwin"):
+                    if ("macosx" in url):
+                        break
+                elif (platformType == "Linux"):
+                    if ("linux" in url) and ("64" in url):
+        
+                        break
+                else:
+                    if ("win" in url) and ("64" in url):
+                        break
     except:
         file = datafile["releases"][version][0]
         url = file["url"]
@@ -87,10 +87,10 @@ for i in dependencies:
 
     if (sha256.hexdigest() != hashed):
         # Path(path).unlink(missing_ok=True)
-        print(f"Dependency {i} does not match the hash!")
+        print(f"Dependency {lib} does not match the hash!")
     else:
         # Don't uncomment yet, kinda weird, it uninstalled some of my shit because i put latest version
         # It works but its an old way of doing it so need find improved way
         # pipmain(['install', path])
-        print(f"Dependency {i} matches the hash! Successfully Installed & Deleted")
+        print(f"Dependency {lib} matches the hash! Successfully Installed & Deleted")
         # Path(path).unlink(missing_ok=True)
