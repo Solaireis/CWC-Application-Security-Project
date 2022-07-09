@@ -1,4 +1,5 @@
 # import python standard libraries
+from datetime import datetime
 import warnings
 
 class Course:
@@ -70,18 +71,52 @@ class CourseInfo:
         - profilePic (str): The dicebear url or the path to the teacher's profile picture
         - truncateData (bool): Truncate the course description to 300 characters
         """
-        self.courseID = tupleInfo[0]
-        self.teacherID = tupleInfo[1]
-        self.teacherUsername = tupleInfo[2]
-        self.teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]
-        self.courseName = tupleInfo[4]
-        self.courseDescription = tupleInfo[5] if (not truncateData) \
+        self.__courseID = tupleInfo[0]
+        self.__teacherID = tupleInfo[1]
+        self.__teacherUsername = tupleInfo[2]
+        self.__teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]
+        self.__courseName = tupleInfo[4]
+        self.__courseDescription = tupleInfo[5] if (not truncateData) \
                                               else tupleInfo[5][:300].strip() + "..."
-        self.courseImagePath = tupleInfo[6]
-        self.coursePrice = tupleInfo[7]
-        self.courseCategory = tupleInfo[8]
-        self.dateCreated = tupleInfo[9]
-        self.averageRating = int(tupleInfo[10])
+        self.__courseImagePath = tupleInfo[6]
+        self.__coursePrice = tupleInfo[7]
+        self.__courseCategory = tupleInfo[8]
+        self.__dateCreated = tupleInfo[9]
+        self.__averageRating = int(tupleInfo[10])
+
+    @property
+    def courseID(self) -> str:
+        return self.__courseID
+    @property
+    def teacherID(self) -> str:
+        return self.__teacherID
+    @property
+    def teacherUsername(self) -> str:
+        return self.__teacherUsername
+    @property
+    def teacherProfile(self) -> str:
+        return self.__teacherProfile
+    @property
+    def courseName(self) -> str:
+        return self.__courseName
+    @property
+    def courseDescription(self) -> str:
+        return self.__courseDescription
+    @property
+    def courseImagePath(self) -> str:
+        return self.__courseImagePath
+    @property
+    def coursePrice(self) -> float:
+        return self.__coursePrice
+    @property
+    def courseCategory(self) -> str:
+        return self.__courseCategory
+    @property
+    def dateCreated(self) -> datetime:
+        return self.__dateCreated
+    @property
+    def averageRating(self) -> int:
+        return self.__averageRating
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""

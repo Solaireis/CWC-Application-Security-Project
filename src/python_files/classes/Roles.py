@@ -9,7 +9,6 @@ class RoleInfo:
         
         Note that all attributes are public.
         """
-
         self.role_id = tupleData[0]
         self.role_name= tupleData[1]
         self.guest_bp = tupleData[2]
@@ -19,4 +18,3 @@ class RoleInfo:
         self.error_bp = tupleData[6]
         self.teacher_bp = tupleData[7]
         self.user_bp = tupleData[8]
-

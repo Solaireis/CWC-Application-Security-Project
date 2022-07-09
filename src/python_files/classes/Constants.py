@@ -1,4 +1,5 @@
 # import python standard libraries
+from ast import pattern
 import pathlib, json, re
 from os import environ
 from sys import exit as sysExit
@@ -54,11 +55,11 @@ class ConstantsConfigs:
         - secretPayload (str|bytes): the secret payload
         """
         # construct the resource name of the secret version
-        secretName = self.SM_CLIENT.secret_version_path(self.GOOGLE_PROJECT_ID, secretID, versionID)
+        secretName = self.__SM_CLIENT.secret_version_path(self.__GOOGLE_PROJECT_ID, secretID, versionID)
 
         # get the secret version
         try:
-            response = self.SM_CLIENT.access_secret_version(request={"name": secretName})
+            response = self.__SM_CLIENT.access_secret_version(request={"name": secretName})
         except (GoogleErrors.NotFound) as e:
             # secret version not found
             print("Error caught:")
@@ -69,65 +70,59 @@ class ConstantsConfigs:
         secret = response.payload.data
         return secret.decode("utf-8") if (decodeSecret) else secret
 
-    def add_new_constant(self, constantName:str, constantValue:Any) -> None:
-        """
-        Add a new constant (Never use this function with inputs from end users!)
-        """
-        setattr(self, constantName, constantValue)
-
     """------------------------ END OF DEFINING FUNCTIONS ------------------------"""
 
     """------------------------ START OF DEFINING CONSTANTS ------------------------"""
 
     def __init__(self):
         # Debug flag
-        self.DEBUG_MODE = True 
+        self.__DEBUG_MODE = True 
 
         # Blueprints endpoint routes
-        self.GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP","userBP")
-        self.USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
-        self.ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-        self.SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-        self.TEACHER_BLUEPRINTS = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
+        self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP","userBP")
+        self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
+        self.__ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
+        self.__SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP")
+        self.__TEACHER_BLUEPRINTS = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
         # Request limit
-        self.REQUEST_LIMIT = "120 per minute"
+        self.__REQUEST_LIMIT = "120 per minute"
 
         # For lockout policy
-        self.MAX_LOGIN_ATTEMPTS = 6
+        self.__MAX_LOGIN_ATTEMPTS = 6
 
         # For Flask's session cookie
-        self.SESSION_NUM_OF_BYTES = 512
+        self.__SESSION_NUM_OF_BYTES = 512
         # For invalidating sessions after x mins of inactivity
         # Inactivity in this case: No requests to the web server for x mins
-        self.SESSION_EXPIRY_INTERVALS = 60 # 60 mins/1 hr
+        self.__SESSION_EXPIRY_INTERVALS = 60 # 60 mins/1 hr
 
         # Duration (in minutes) for locked accounts
         # before user can try to login again
-        self.LOCKED_ACCOUNT_DURATION = 30 # 30 mins
+        self.__LOCKED_ACCOUNT_DURATION = 30 # 30 mins
 
         # Configurations for dicebear api for user profile image options
-        self.DICEBEAR_OPTIONS = DOptions(size=250)
+        self.__DICEBEAR_OPTIONS = DOptions(size=250)
 
         # Configurations on the allowed image extensions
-        self.ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
+        self.__ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
 
         # path to the root directory of the project
-        self.ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.parent.absolute()
+        self.__ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.parent.absolute()
 
         # for the config files folder
-        self.CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
-        self.CONFIG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
+        self.__CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
+        self.__CONFIG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
         # For comparing the date on the github repo
-        self.DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-        self.BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("config_files", "ip_blacklist.txt")
+        self.__DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
+        self.__BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("config_files", "ip_blacklist.txt")
 
         # Password regex follows OWASP's recommendations
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
-        self.MIN_PASSWORD_LENGTH = 8
-        self.MAX_PASSWORD_LENGTH = 128
+        self.__MIN_PASSWORD_LENGTH = 8
+        self.__MAX_PASSWORD_LENGTH = 128
         # Strict password regex to be used when haveibeenpwned's API is down (acts as a fallback)
-        self.STRICT_PASSWORD_REGEX = re.compile(r"""
+        self.__STRICT_PASSWORD_REGEX = re.compile(r"""
         ^                                                                   # beginning of password
         (?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2})    # not more than 2 identical characters in a row
         (?=.*?[a-z])                                                        # at least one lowercase letter
@@ -139,28 +134,28 @@ class ConstantsConfigs:
         $                                                                   # end of password
         """, re.VERBOSE)
         # For individually test the password regex for each of the following:
-        self.TWO_REPEAT_CHAR_REGEX = re.compile(
+        self.__TWO_REPEAT_CHAR_REGEX = re.compile(
             r"^(?!.*([A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^])\1{2}).+$"
         )
-        self.LOWERCASE_REGEX = re.compile(r"[a-z]+")
-        self.UPPERCASE_REGEX = re.compile(r"[A-Z]+")
-        self.DIGIT_REGEX = re.compile(r"[\d]+")
-        self.SPECIAL_CHAR_REGEX = re.compile(r"[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]+")
-        self.LENGTH_REGEX = re.compile(r"^.{8,}$")
-        self.ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
+        self.__LOWERCASE_REGEX = re.compile(r"[a-z]+")
+        self.__UPPERCASE_REGEX = re.compile(r"[A-Z]+")
+        self.__DIGIT_REGEX = re.compile(r"[\d]+")
+        self.__SPECIAL_CHAR_REGEX = re.compile(r"[!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]+")
+        self.__LENGTH_REGEX = re.compile(r"^.{8,}$")
+        self.__ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
         # For email coursefinity logo image
-        self.LOGO_BYTES = requests.get("https://storage.googleapis.com/coursefinity/web-assets/common/filled_logo.png").content
+        self.__LOGO_BYTES = requests.get("https://storage.googleapis.com/coursefinity/web-assets/common/filled_logo.png").content
 
         # For 2FA setup key regex to validate if the setup is a valid base32 setup key
-        self.COMPILED_2FA_REGEX_DICT = {
+        self.__COMPILED_2FA_REGEX_DICT = {
             32: re.compile(r"^[A-Z2-7]{32}$")
         }
-        self.TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
+        self.__TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
         # Configured Argon2id default configurations so that it will take 
         # at least 500ms/0.5s to hash a plaintext password.
-        self.PH = PasswordHasher(
+        self.__PH = PasswordHasher(
             time_cost=12,         # 12 count of iterations
             salt_len=64,          # 64 bytes salt
             hash_len=64,          # 64 bytes hash
@@ -173,100 +168,368 @@ class ConstantsConfigs:
         # https://www.twelve21.io/how-to-choose-the-right-parameters-for-argon2/
         # https://argon2-cffi.readthedocs.io/en/stable/parameters.html
 
+        # for Google Cloud API
+        self.__GOOGLE_PROJECT_ID = "coursefinity-339412"
+
         # For the Flask secret key when retrieving the secret key
         # from Google Secret Manager API
-        self.FLASK_SECRET_KEY_NAME = "flask-secret-key"
+        self.__FLASK_SECRET_KEY_NAME = "flask-secret-key"
 
         # For Google Secret Manager API
-        self.GOOGLE_SM_JSON_PATH = self.CONFIG_FOLDER_PATH.joinpath("google-sm.json")
-        if (not self.GOOGLE_SM_JSON_PATH.exists()):
+        self.__GOOGLE_SM_JSON_PATH = self.__CONFIG_FOLDER_PATH.joinpath("google-sm.json")
+        if (not self.__GOOGLE_SM_JSON_PATH.exists()):
             print("Error: Google Secret Manager Service Account JSON file not found.")
             sysExit(1)
 
         # Create an authorised Google Cloud Secret Manager API service instance.
-        self.SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(filename=self.GOOGLE_SM_JSON_PATH)
-
-        # for Google Cloud API
-        self.GOOGLE_PROJECT_ID = "coursefinity-339412"
+        self.__SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(filename=self.__GOOGLE_SM_JSON_PATH)
 
         # For ipinfo.io to get details of a IP address
         IPINFO_ACCESS_TOKEN = self.get_secret_payload(secretID="ipinfo-access-token")
-        self.IPINFO_HANDLER = ipinfo.getHandler(access_token=IPINFO_ACCESS_TOKEN)
+        self.__IPINFO_HANDLER = ipinfo.getHandler(access_token=IPINFO_ACCESS_TOKEN)
         del IPINFO_ACCESS_TOKEN
 
         # For Stripe API
-        self.STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
-        self.STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
+        self.__STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
+        self.__STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
 
         # For Vimeo API
-        self.VIMEO_CLIENT_ID = "9ece1a6fad946abaf1264307713aa7ede45f33a7"
-        self.VIMEO_CLIENT_SECRET = self.get_secret_payload(secretID="vimeo-secret")
-        self.VIMEO_ACCESS_TOKEN = self.get_secret_payload(secretID="vimeo-token")
+        self.__VIMEO_CLIENT_ID = "9ece1a6fad946abaf1264307713aa7ede45f33a7"
+        self.__VIMEO_CLIENT_SECRET = self.get_secret_payload(secretID="vimeo-secret")
+        self.__VIMEO_ACCESS_TOKEN = self.get_secret_payload(secretID="vimeo-token")
 
         # For Google Cloud Logging API
-        self.LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
-        self.LOGGING_NAME = "coursefinity-web-app"
+        self.__LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
+        self.__LOGGING_NAME = "coursefinity-web-app"
 
         # For Google GMAIL API
-        self.GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
+        self.__GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
 
         # For Google OAuth2 login
-        self.GOOGLE_CLIENT_ID = self.GOOGLE_CREDENTIALS["web"]["client_id"]
+        self.__GOOGLE_CLIENT_ID = self.GOOGLE_CREDENTIALS["web"]["client_id"]
 
         # For Google reCAPTCHA API
         RECAPTCHA_JSON = json.loads(self.get_secret_payload(secretID="google-recaptcha"))
-        self.RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
-        self.COURSEFINITY_SITE_KEY = "6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"
+        self.__RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(RECAPTCHA_JSON)
+        self.__COURSEFINITY_SITE_KEY = "6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"
         del RECAPTCHA_JSON
 
         # For Google Key Management Service API
-        self.LOCATION_ID = "asia-southeast1"
+        self.__LOCATION_ID = "asia-southeast1"
         GOOGLE_KMS_JSON = json.loads(self.get_secret_payload(secretID="google-kms"))
-        self.KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
+        self.__KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
         del GOOGLE_KMS_JSON
-        self.PEPPER_KEY_ID = "pepper-key"
-        self.SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
-        self.EC_SIGNING_KEY_ID = "signing-key"
-        self.RSA_ENCRYPTION_KEY_ID = "encrypt-decrypt-key"
+        self.__PEPPER_KEY_ID = "pepper-key"
+        self.__SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
+        self.__EC_SIGNING_KEY_ID = "signing-key"
+        self.__RSA_ENCRYPTION_KEY_ID = "encrypt-decrypt-key"
 
         # During development, we will use software protected keys
         # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
         # Lastly, cryptographic operations will be cheaper 
         # ($0.03 per 10k operations vs $0.03-$0.15 per 10k operations)
         # More details: https://cloud.google.com/kms/pricing
-        if (self.DEBUG_MODE):
-            self.APP_KEY_RING_ID = "dev-key-ring"
+        if (self.__DEBUG_MODE):
+            self.__APP_KEY_RING_ID = "dev-key-ring"
         else:
-            self.APP_KEY_RING_ID = "coursefinity"
+            self.__APP_KEY_RING_ID = "coursefinity"
 
         # For Google KMS asymmetric encryption and decryption
         # TODO: Update the version if there is a rotation of the asymmetric keys
-        self.SESSION_COOKIE_ENCRYPTION_VERSION = int(self.get_secret_payload(secretID="rsa-session-cookie-version"))
-        self.SIGNATURE_VERSION_ID = int(self.get_secret_payload(secretID="ec-signature-version"))
+        self.__SESSION_COOKIE_ENCRYPTION_VERSION = int(self.get_secret_payload(secretID="rsa-session-cookie-version"))
+        self.__SIGNATURE_VERSION_ID = int(self.get_secret_payload(secretID="ec-signature-version"))
 
         # For Google MySQL Cloud API
-        self.SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
+        self.__SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
         GOOGLE_SQL_JSON = json.loads(self.get_secret_payload(secretID="google-mysql"))
-        self.SQL_CLIENT = MySQLConnector(credentials=service_account.Credentials.from_service_account_info(GOOGLE_SQL_JSON))
+        self.__SQL_CLIENT = MySQLConnector(credentials=service_account.Credentials.from_service_account_info(GOOGLE_SQL_JSON))
         del GOOGLE_SQL_JSON
 
         # for SQL connection configuration
-        self.DATABASE_NAME = "coursefinity"
-        self.REMOTE_SQL_SERVER_IP = self.get_secret_payload(secretID="sql-ip-address")
+        self.__DATABASE_NAME = "coursefinity"
+        self.__REMOTE_SQL_SERVER_IP = self.get_secret_payload(secretID="sql-ip-address")
 
-        self.LOCAL_SQL_SERVER_CONFIG = {
+        self.__LOCAL_SQL_SERVER_CONFIG = {
             "host": "localhost",
             "password": environ.get("LOCAL_SQL_PASS")
         }
 
         # For Google Cloud Storage API
         GOOGLE_STORAGE_JSON = json.loads(self.get_secret_payload(secretID="google-storage"))
-        self.GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
-        self.PUBLIC_BUCKET_NAME = "coursefinity"
-        self.DEFAULT_CACHE_CONTROL = "public, max-age=31536000" # 1 year
+        self.__GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
+        self.__PUBLIC_BUCKET_NAME = "coursefinity"
+        self.__DEFAULT_CACHE_CONTROL = "public, max-age=31536000" # 1 year
         del GOOGLE_STORAGE_JSON
 
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
+
+    """------------------------ START OF DEFINING GETTERS ------------------------"""
+
+    @property
+    def DEBUG_MODE(self) -> bool:
+        return self.__DEBUG_MODE
+
+    @property
+    def GUEST_BLUEPRINTS(self) -> tuple:
+        return self.__GUEST_BLUEPRINTS
+
+    @property
+    def USER_BLUEPRINTS(self) -> tuple:
+        return self.__USER_BLUEPRINTS
+
+    @property
+    def ADMIN_BLUEPRINTS(self) -> tuple:
+        return self.__ADMIN_BLUEPRINTS
+
+    @property
+    def SUPER_ADMIN_BLUEPRINTS(self) -> tuple:
+        return self.__SUPER_ADMIN_BLUEPRINTS
+
+    @property
+    def TEACHER_BLUEPRINTS(self) -> tuple:
+        return self.__TEACHER_BLUEPRINTS
+
+    @property
+    def REQUEST_LIMIT(self) -> str:
+        return self.__REQUEST_LIMIT
+
+    @property
+    def MAX_LOGIN_ATTEMPTS(self) -> int:
+        return self.__MAX_LOGIN_ATTEMPTS
+
+    @property
+    def SESSION_NUM_OF_BYTES(self) -> int:
+        return self.__SESSION_NUM_OF_BYTES
+
+    @property
+    def SESSION_EXPIRY_INTERVALS(self) -> int:
+        return self.__SESSION_EXPIRY_INTERVALS
+
+    @property
+    def LOCKED_ACCOUNT_DURATION(self) -> int:
+        return self.__LOCKED_ACCOUNT_DURATION
+
+    @property
+    def DICEBEAR_OPTIONS(self) -> DOptions:
+        return self.__DICEBEAR_OPTIONS
+
+    @property
+    def ALLOWED_IMAGE_EXTENSIONS(self) -> tuple:
+        return self.__ALLOWED_IMAGE_EXTENSIONS
+
+    @property
+    def ROOT_FOLDER_PATH(self) -> pathlib.Path:
+        return self.__ROOT_FOLDER_PATH
+
+    @property
+    def CONFIG_FOLDER_PATH(self) -> pathlib.Path:
+        return self.__CONFIG_FOLDER_PATH
+
+    @property
+    def DATE_FORMAT(self) -> str:
+        return self.__DATE_FORMAT
+
+    @property
+    def BLACKLIST_FILEPATH(self) -> pathlib.Path:
+        return self.__BLACKLIST_FILEPATH
+
+    @property
+    def MIN_PASSWORD_LENGTH(self) -> int:
+        return self.__MIN_PASSWORD_LENGTH
+
+    @property
+    def MAX_PASSWORD_LENGTH(self) -> int:
+        return self.__MAX_PASSWORD_LENGTH
+
+    @property
+    def STRICT_PASSWORD_REGEX(self) -> re.Pattern[str]:
+        return self.__STRICT_PASSWORD_REGEX
+
+    @property
+    def TWO_REPEAT_CHAR_REGEX(self) -> re.Pattern[str]:
+        return self.__TWO_REPEAT_CHAR_REGEX
+
+    @property
+    def LOWERCASE_REGEX(self) -> re.Pattern[str]:
+        return self.__LOWERCASE_REGEX
+
+    @property
+    def UPPERCASE_REGEX(self) -> re.Pattern[str]:
+        return self.__UPPERCASE_REGEX
+
+    @property
+    def DIGIT_REGEX(self) -> re.Pattern[str]:
+        return self.__DIGIT_REGEX
+
+    @property
+    def SPECIAL_CHAR_REGEX(self) -> re.Pattern[str]:
+        return self.__SPECIAL_CHAR_REGEX
+
+    @property
+    def LETTER_REGEX(self) -> re.Pattern[str]:
+        return self.__LETTER_REGEX
+
+    @property
+    def LENGTH_REGEX(self) -> re.Pattern[str]:
+        return self.__LENGTH_REGEX
+
+    @property
+    def ALLOWED_CHAR_REGEX(self) -> re.Pattern[str]:
+        return self.__ALLOWED_CHAR_REGEX
+
+    @property
+    def LOGO_BYTES(self) -> bytes:
+        return self.__LOGO_BYTES
+
+    @property
+    def COMPILED_2FA_REGEX_DICT(self) -> dict[int, re.Pattern[str]]:
+        return self.__COMPILED_2FA_REGEX_DICT
+
+    @property
+    def TWO_FA_CODE_REGEX(self) -> re.Pattern[str]:
+        return self.__TWO_FA_CODE_REGEX
+
+    @property
+    def PH(self) -> PasswordHasher:
+        return self.__PH
+
+    @property
+    def FLASK_SECRET_KEY_NAME(self) -> str:
+        return self.__FLASK_SECRET_KEY_NAME
+
+    @property
+    def GOOGLE_SM_JSON_PATH(self) -> pathlib.Path:
+        return self.__GOOGLE_SM_JSON_PATH
+
+    @property
+    def SM_CLIENT(self) -> secretmanager.SecretManagerServiceClient:
+        return self.__SM_CLIENT
+
+    @property
+    def GOOGLE_PROJECT_ID(self) -> str:
+        return self.__GOOGLE_PROJECT_ID
+
+    @property
+    def IPINFO_HANDLER(self) -> ipinfo.Handler:
+        return self.__IPINFO_HANDLER
+
+    @property
+    def STRIPE_PUBLIC_KEY(self) -> str:
+        return self.__STRIPE_PUBLIC_KEY
+
+    @property
+    def STRIPE_SECRET_KEY(self) -> str:
+        return self.__STRIPE_SECRET_KEY
+
+    @property
+    def VIMEO_CLIENT_ID(self) -> str:
+        return self.__VIMEO_CLIENT_ID
+
+    @property
+    def VIMEO_CLIENT_SECRET(self) -> str:
+        return self.__VIMEO_CLIENT_SECRET
+
+    @property
+    def VIMEO_ACCESS_TOKEN(self) -> str:
+        return self.__VIMEO_ACCESS_TOKEN
+
+    @property
+    def LOGGING_CLIENT(self) -> g_logging.Client:
+        return self.__LOGGING_CLIENT
+
+    @property
+    def LOGGING_NAME(self) -> str:
+        return self.__LOGGING_NAME
+
+    @property
+    def GOOGLE_CREDENTIALS(self) -> dict:
+        return self.__GOOGLE_CREDENTIALS
+
+    @property
+    def GOOGLE_CLIENT_ID(self) -> str:
+        return self.__GOOGLE_CLIENT_ID
+
+    @property
+    def RECAPTCHA_CLIENT(self) -> recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient:
+        return self.__RECAPTCHA_CLIENT
+
+    @property
+    def RECAPTCHA_SITE_KEY(self) -> str:
+        return self.__RECAPTCHA_SITE_KEY
+
+    @property
+    def COURSEFINITY_SITE_KEY(self) -> str:
+        return self.__COURSEFINITY_SITE_KEY
+
+    @property
+    def LOCATION_ID(self) -> str:
+        return self.__LOCATION_ID
+
+    @property
+    def KMS_CLIENT(self) -> kms.KeyManagementServiceClient:
+        return self.__KMS_CLIENT
+
+    @property
+    def PEPPER_KEY_ID(self) -> str:
+        return self.__PEPPER_KEY_ID
+
+    @property
+    def SENSITIVE_DATA_KEY_ID(self) -> str:
+        return self.__SENSITIVE_DATA_KEY_ID
+
+    @property
+    def EC_SIGNING_KEY_ID(self) -> str:
+        return self.__EC_SIGNING_KEY_ID
+
+    @property
+    def RSA_ENCRYPTION_KEY_ID(self) -> str:
+        return self.__RSA_ENCRYPTION_KEY_ID
+
+    @property
+    def APP_KEY_RING_ID(self) -> str:
+        return self.__APP_KEY_RING_ID
+
+    @property
+    def SESSION_COOKIE_ENCRYPTION_VERSION(self) -> int:
+        return self.__SESSION_COOKIE_ENCRYPTION_VERSION
+
+    @property
+    def SIGNATURE_VERSION_ID(self) -> int:
+        return self.__SIGNATURE_VERSION_ID
+
+    @property
+    def SQL_INSTANCE_LOCATION(self) -> str:
+        return self.__SQL_INSTANCE_LOCATION
+
+    @property
+    def SQL_CLIENT(self) -> MySQLConnector:
+        return self.__SQL_CLIENT
+
+    @property
+    def DATABASE_NAME(self) -> str:
+        return self.__DATABASE_NAME
+
+    @property
+    def REMOTE_SQL_SERVER_IP(self) -> str:
+        return self.__REMOTE_SQL_SERVER_IP
+
+    @property
+    def LOCAL_SQL_SERVER_CONFIG(self) -> dict:
+        return self.__LOCAL_SQL_SERVER_CONFIG
+
+    @property
+    def GOOGLE_STORAGE_CLIENT(self) -> storage.Client:
+        return self.__GOOGLE_STORAGE_CLIENT
+
+    @property
+    def PUBLIC_BUCKET_NAME(self) -> str:
+        return self.__PUBLIC_BUCKET_NAME
+
+    @property
+    def DEFAULT_CACHE_CONTROL(self) -> str:
+        return self.__DEFAULT_CACHE_CONTROL
+
+    """------------------------ END OF DEFINING GETTERS ------------------------"""
 
 # Create an ConstantsConfigs object for other 
 # python files to import instead of the class

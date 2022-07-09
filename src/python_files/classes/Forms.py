@@ -61,7 +61,7 @@ class CreateResetPasswordForm(Form):
         ]
     )
 
-class AdminResetPasswordForm(Form):
+class AdminRecoverForm(Form):
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
 
 class twoFAForm(Form):

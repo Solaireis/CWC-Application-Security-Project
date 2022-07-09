@@ -8,6 +8,7 @@ from urllib.parse import quote_plus
 # import local python libraries
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
+from python_files.classes.Forms import *
 
 adminBP = Blueprint("adminBP", __name__, static_folder="static", template_folder="template")
 
@@ -52,4 +53,6 @@ def userManagement():
 
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
 
-    return render_template("users/admin/user_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr)
+    recoverUserForm = AdminRecoverForm(request.form)
+
+    return render_template("users/admin/user_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)

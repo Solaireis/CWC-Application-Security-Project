@@ -224,8 +224,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT UNSIGNED)
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
+            SET total_courses := (SELECT COUNT(*) FROM course WHERE c.teacher_id=teacherID);
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
@@ -233,10 +234,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 SELECT c.course_id, c.teacher_id, 
                 u.username, u.profile_image, c.course_name, c.course_description, 
                 c.course_image_path, c.course_price, c.course_category, c.date_created,
-                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating,
-                (
-                    SELECT COUNT(*) FROM course WHERE c.teacher_id=teacherID
-                ) AS total_teacher_courses
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_courses
                 FROM course AS c
                 INNER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
@@ -250,20 +248,19 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT UNSIGNED, IN search_term VARCHAR(255))
+        CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT, IN search_term VARCHAR(255))
         BEGIN
-            SET @page_offset := (page_number - 1) * 10;
             SET @search_query := CONCAT('%', search_term, '%');
+            SET @total_courses := (SELECT COUNT(*) FROM course WHERE c.course_name LIKE @search_query);
+
+            SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
                 SELECT c.course_id, c.teacher_id, 
                 u.username, u.profile_image, c.course_name, c.course_description, 
                 c.course_image_path, c.course_price, c.course_category, c.date_created, 
-                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating,
-                (
-                    SELECT COUNT(*) FROM course WHERE c.course_name LIKE @search_query
-                ) AS number_of_results
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_courses
                 FROM course AS c
                 INNER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
@@ -283,15 +280,20 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             u.id, r.role_name, u.username, 
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, u.cart_courses, 
-            u.purchased_courses, u.status
+            u.purchased_courses, u.status, t.token AS has_two_fa
             FROM user AS u
+            LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
             INNER JOIN role AS r ON u.role=r.role_id
             WHERE u.id=user_id;
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users` (IN page_number INT UNSIGNED)
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users` (IN page_number INT)
         BEGIN
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE r.role_name<>"Admin");
+
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
@@ -299,16 +301,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
                 u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status,
-                (
-                    SELECT COUNT(*) FROM user AS u
-                    INNER JOIN role AS r ON u.role=r.role_id
-                    WHERE r.role_name<>"Admin"
-                ) AS total_users
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
                 WHERE r.role_name<>'Admin'
-                GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -317,26 +314,25 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_username` (IN page_number INT UNSIGNED, IN username_input VARCHAR(255))
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_username` (IN page_number INT, IN username_input VARCHAR(255))
         BEGIN
             SET @page_offset := (page_number - 1) * 10;
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE username LIKE @search_query AND r.role_name<>"Admin");
+
             SET @count := 0;
             SET @search_query := CONCAT('%', username_input, '%');
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
                 u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status,
-                (
-                    SELECT COUNT(*) FROM user AS u
-                    INNER JOIN role AS r ON u.role=r.role_id
-                    WHERE username LIKE @search_query AND r.role_name<>"Admin"
-                ) AS total_users
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
                 WHERE username LIKE @search_query AND r.role_name<>'Admin'
-                GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -345,26 +341,25 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_uid` (IN page_number INT UNSIGNED, IN uid_input VARCHAR(32))
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_uid` (IN page_number INT, IN uid_input VARCHAR(32))
         BEGIN
+            SET @search_query := CONCAT('%', uid_input, '%');
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE id LIKE @search_query AND r.role_name<>"Admin");
+
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SET @search_query := CONCAT('%', uid_input, '%');
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
                 u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status,
-                (
-                    SELECT COUNT(*) FROM user AS u
-                    INNER JOIN role AS r ON u.role=r.role_id
-                    WHERE id LIKE @search_query AND r.role_name<>"Admin"
-                ) AS total_users
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
                 WHERE u.id LIKE @search_query AND r.role_name<>'Admin'
-                GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -373,23 +368,23 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_email` (IN page_number INT UNSIGNED, IN email_input VARCHAR(255))
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_email` (IN page_number INT, IN email_input VARCHAR(255))
         BEGIN
+            SET @search_query := CONCAT('%', email_input, '%');
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE email LIKE @search_query AND r.role_name<>"Admin");
+
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SET @search_query := CONCAT('%', email_input, '%');
             SELECT (@count := @count + 1) AS row_num, 
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
                 u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status,
-                (
-                    SELECT COUNT(*) FROM user AS u
-                    INNER JOIN role AS r ON u.role=r.role_id
-                    WHERE email LIKE @search_query AND r.role_name<>"Admin"
-                ) AS total_users
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user 
                 FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
                 WHERE u.email LIKE @search_query AND r.role_name<>'Admin'
                 GROUP BY u.id
