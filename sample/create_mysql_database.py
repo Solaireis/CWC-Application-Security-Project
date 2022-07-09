@@ -236,7 +236,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
-            SET total_courses := (SELECT COUNT(*) FROM course WHERE c.teacher_id=teacherID);
+            SET @total_course_num := (SELECT COUNT(*) FROM course WHERE teacher_id=teacherID);
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
@@ -244,7 +244,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 SELECT c.course_id, c.teacher_id, 
                 u.username, u.profile_image, c.course_name, c.course_description, 
                 c.course_image_path, c.course_price, c.course_category, c.date_created,
-                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_courses
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
                 INNER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
@@ -262,7 +262,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CREATE DEFINER=`{definer}` PROCEDURE `search_course_paginate`(IN page_number INT, IN search_term VARCHAR(255))
         BEGIN
             SET @search_query := CONCAT('%', search_term, '%');
-            SET @total_courses := (SELECT COUNT(*) FROM course WHERE c.course_name LIKE @search_query);
+            SET @total_course_num := (SELECT COUNT(*) FROM course WHERE course_name LIKE @search_query);
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -271,7 +271,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 SELECT c.course_id, c.teacher_id, 
                 u.username, u.profile_image, c.course_name, c.course_description, 
                 c.course_image_path, c.course_price, c.course_category, c.date_created, 
-                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_courses
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
                 INNER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
@@ -314,13 +314,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_username` (IN page_number INT, IN username_input VARCHAR(255))
         BEGIN
-            SET @page_offset := (page_number - 1) * 10;
+            SET @search_query := CONCAT('%', username_input, '%');
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
                                 WHERE username LIKE @search_query AND r.role_name<>"Admin");
 
+            SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SET @search_query := CONCAT('%', username_input, '%');
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 

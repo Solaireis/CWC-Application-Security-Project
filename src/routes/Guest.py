@@ -44,6 +44,63 @@ def before_first_request() -> None:
     # get Google oauth flow object
     current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
 
+@guestBP.route("/recover-account/<string:token>", methods=["GET","POST"])
+@limiter.limit("15 per minute")
+def recoverAccount(token:str):
+    # verify the token
+    data = EC_verify(data=token, getData=True)
+    if (not data.get("verified")):
+        # if the token is invalid
+        flash("Recovery account link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    # check if jwt exists in database
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+        flash("Recovery account link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    # get the userID from the token
+    jsonPayload = data["data"]["payload"]
+    userID = jsonPayload["userID"]
+
+    # check if the user exists in the database
+    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+        # if the user does not exist
+        flash("Recovery account link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    resetPasswordForm = CreateResetPasswordForm(request.form)
+    if (request.method == "POST" and resetPasswordForm.validate()):
+        # check if password input and confirm password are the same
+        passwordInput = resetPasswordForm.password.data
+        confirmPasswordInput = resetPasswordForm.cfmPassword.data
+        if (passwordInput != confirmPasswordInput):
+            flash("Entered passwords do not match!")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+
+        pwnedPassword = pwd_has_been_pwned(passwordInput)
+        if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
+            # If the haveibeenpwned's API is down, tell user to match all requirements
+            flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+
+        if (not pwnedPassword or not pwd_is_strong(passwordInput)):
+            flash("Password is not strong enough!", "Danger")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+
+        # update the password and reactivate the user
+        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+        sql_operation(table="user", mode="reactivate_user", userID=userID)
+        flash("Password has been reset successfully!", "Success")
+        return redirect(url_for("guestBP.login"))
+    else:
+        return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+
 @guestBP.route("/reset-password", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
 def resetPasswordRequest():
@@ -107,7 +164,7 @@ def resetPasswordRequest():
         # send the token to the user's email
         htmlBody = [
             "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
-            f"You can change the password on your account by clicking the button below.<br><a href='{url_for('guestBP.resetPassword', token=token, _external=True)}' style='background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;' target='_blank'>Click here to reset your password</a>"
+            f"You can change the password on your account by clicking the button below.<br><a href='{url_for('guestBP.resetPassword', token=token, _external=True)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
         ]
         send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
 
@@ -117,6 +174,7 @@ def resetPasswordRequest():
         return render_template("users/guest/request_password_reset.html", form=requestForm)
 
 @guestBP.route("/reset-password/<string:token>", methods=["GET", "POST"])
+@limiter.limit("15 per minute")
 def resetPassword(token:str):
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
@@ -235,11 +293,11 @@ def login():
                 sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
 
                 userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
-            except (IncorrectPwdError, EmailDoesNotExistError):
+            except (UserIsNotActiveError, EmailDoesNotExistError):
+                flash("Please check your entries and try again!", "Danger")
+            except (IncorrectPwdError):
                 try:
                     sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
-                    flash("Please check your entries and try again!", "Danger")
-                except (EmailDoesNotExistError):
                     flash("Please check your entries and try again!", "Danger")
                 except (AccountLockedError):
                     print("Account locked")
@@ -352,6 +410,7 @@ def login():
         return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/unlock-account/<string:token>")
+@limiter.limit("15 per minute")
 def unlockAccount(token:str):
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
@@ -387,6 +446,7 @@ def unlockAccount(token:str):
     return redirect(url_for("guestBP.login"))
 
 @guestBP.route("/verify-login", methods=["GET", "POST"])
+@limiter.limit("60 per minute")
 def enterGuardTOTP():
     """
     This page is only accessible to users who are logging but from a new IP address.
@@ -645,6 +705,7 @@ def signup():
         return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/send-verify-email")
+@limiter.limit("60 per minute")
 def sendVerifyEmail():
     if ("user" in session or "admin" in session):
         return redirect(url_for("generalBP.home"))
@@ -654,9 +715,9 @@ def sendVerifyEmail():
         abort(404)
 
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
-    if (userInfo and not userInfo[4]):
-        email = userInfo[3]
-        username = userInfo[2]
+    if (userInfo and not userInfo.emailVerified):
+        email = userInfo.email
+        username = userInfo.username
         try:
             send_verification_email(email=email, username=username, userID=userID)
             flash(f"An email has bent sent to you to verify your email!", "Success")
@@ -676,6 +737,7 @@ def sendVerifyEmail():
         abort(404)
 
 @guestBP.route("/verify-email/<string:token>")
+@limiter.limit("15 per minute")
 def verifyEmail(token:str):
     # verify the token
     data = EC_verify(data=token, getData=True)
@@ -735,6 +797,7 @@ def verifyEmail(token:str):
         return redirect(url_for("guestBP.login"))
 
 @guestBP.route("/enter-2fa", methods=["GET", "POST"])
+@limiter.limit("60 per minute")
 def enter2faTOTP():
     """
     This page is only accessible to users who have 2FA enabled and is trying to login.

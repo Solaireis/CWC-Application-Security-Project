@@ -261,6 +261,9 @@ class ConstantsConfigs:
         self.__DEFAULT_CACHE_CONTROL = "public, max-age=31536000" # 1 year
         del GOOGLE_STORAGE_JSON
 
+        # For the email CSS style
+        self.__EMAIL_BUTTON_STYLE = "background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;"
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -528,6 +531,10 @@ class ConstantsConfigs:
     @property
     def DEFAULT_CACHE_CONTROL(self) -> str:
         return self.__DEFAULT_CACHE_CONTROL
+
+    @property
+    def EMAIL_BUTTON_STYLE(self) -> str:
+        return self.__EMAIL_BUTTON_STYLE
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 

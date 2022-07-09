@@ -2,8 +2,8 @@
 Routes for admin users
 """
 # import flask libraries (Third-party libraries)
-from flask import Blueprint, render_template, redirect, url_for, session, request
-from urllib.parse import quote_plus
+from flask import Blueprint, render_template, redirect, url_for, session, request, current_app
+from urllib.parse import quote_plus, unquote_plus
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -15,44 +15,122 @@ adminBP = Blueprint("adminBP", __name__, static_folder="static", template_folder
 @adminBP.route("/admin-profile")
 def adminProfile():
     userInfo = sql_operation(table="user", mode="get_user_data", userID=session["admin"])
-    adminID = userInfo[0]
-    adminUsername = userInfo[2]
-    adminEmail = userInfo[3]
+    adminID = userInfo.uid
+    adminUsername = userInfo.username
+    adminEmail = userInfo.email
 
-    return render_template("users/admin/admin_profile.html", username=adminUsername, email=adminEmail, adminID=adminID, accType=userInfo[1])
+    return render_template("users/admin/admin_profile.html", username=adminUsername, email=adminEmail, adminID=adminID, accType=userInfo.role)
 
 @adminBP.route("/user-management", methods=["GET","POST"])
 def userManagement():
-    pageNum = request.args.get("p", default=1, type=int)
+    recoverUserForm = AdminRecoverForm(request.form)
+    # Form actions starts below
+    if (request.method == "POST"):
+        userID = request.form.get("uid", default=None, type=str)
+        formType = request.form.get("formType", default=None, type=str)
+        if (userID is None or formType is None):
+            flash("No account ID or form type was provided upon submission of form.", "Error")
+            return redirect(session["relative_url"])
 
+        userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+        if (userInfo is None):
+            flash("No user account was found with the provided ID.", "No Such User!")
+            return redirect(session["relative_url"])
+
+        if (userInfo.role == "Student"):
+            flash("An error occurred while processing your request.", "Sorry!")
+            return redirect(session["relative_url"])
+
+        if (formType == "recoverUser" and not userInfo.googleOAuth):
+            if (recoverUserForm.validate()):
+                newEmail = recoverUserForm.email.data 
+                try:
+                    # deactivate user's account to prevent the attacker from changing the email address again
+                    sql_operation(table="user", mode="deactivate_user", userID=userID)
+
+                    # change user's email address to the new one
+                    sql_operation(table="user", mode="admin_change_email", userID=userID, email=newEmail)
+                    
+                    flash(f"The user, {userID}, has its email changed to {newEmail} and the instructions to reset his/her password has bent sent to the new email.", f"User's Account Details Updated!")
+
+                    token = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1)
+
+                    htmlBody = [
+                        "Great news! Your account has been recovered by an administrator on our side.<br>",
+                        f"Your account email address has been changed to {newEmail} during the account recovery process.",
+                        "However, you still need to reset your password by clicking the link below.<br>",
+                        "Please click the link below to reset your password."
+                        f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
+                        "Note: This link will ONLY expire upon usage."
+                    ]
+                    send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))
+                except (SameAsOldEmailError):
+                    flash("The new email entered is the same as the old email...", "Error recovering user's account!")
+                except (EmailAlreadyInUseError):
+                    flash("The new email entered is already in use...", "Error recovering user's account!")
+            else:
+                flash("The email provided was invalid when recovering the user's account.", "Error recovering user's account!")
+
+        elif (formType == "deleteUser"):
+            sql_operation(table="user", mode="delete_user", userID=userID)
+            flash(f"The user, {userID}, has been deleted.", "User Deleted!")
+
+        elif (formType == "changeUsername"):
+            newUsername = request.form.get("newUsername", default=None, type=str)
+            if (newUsername is None):
+                flash("No new username was provided upon submission of form.", "Error")
+            else:
+                try:
+                    sql_operation(table="user", mode="change_username", userID=userID, username=newUsername)
+                    flash(f"The user, {userID}, has its username changed to {newUsername}.", "User's Account Details Updated!")
+                except (ReusedUsernameError):
+                    flash("The new username entered is already in use...", "Error changing user's username!")
+
+        elif (formType == "resetProfileImage" and userInfo.hasProfilePic and "https://storage.googleapis.com/coursefinity" in userInfo.profileImage):
+            sql_operation(table="user", mode="delete_profile_picture", userID=userID)
+            flash(f"The user, {userID}, has its profile picture reset.", "User's Account Details Updated!")
+
+        elif (formType == "banUser" and userInfo.status != "Banned"):
+            sql_operation(table="user", mode="ban_user", userID=userID)
+            flash(f"The user, {userID}, has been banned.", "User's Account Details Updated!")
+
+        elif (formType == "unbanUser" and userInfo.status == "Banned"):
+            sql_operation(table="user", mode="unban_user", userID=userID)
+            flash(f"The user, {userID}, has been unbanned.", "User's Account Details Updated!")
+
+        else:
+            flash("An error occurred while processing your request.", "Sorry!")
+
+        return redirect(session["relative_url"])
+
+    # Pagination starts below
+    pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
+    userInput = quote_plus(userInput) if (userInput is not None) else None
     if (userInput is not None):
         filterInput = request.args.get("filter", default="username", type=str)
         if (filterInput not in ("username", "uid", "email")):
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, user=userInput, filterType=filterInput)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, user=unquote_plus(userInput), filterType=filterInput)
     else:
         userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum)
 
     if (pageNum > maxPage):
         if (userInput is not None):
-            userInput = quote_plus(userInput)
-            filterInput = quote_plus(filterInput)
             return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
         else:
             return redirect(f"{url_for('adminBP.userManagement')}?p={maxPage}")
     elif (pageNum < 1):
         if (userInput is not None):
-            userInput = quote_plus(userInput)
-            filterInput = quote_plus(filterInput)
             return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p=1")
         else:
             return redirect(f"{url_for('adminBP.userManagement')}?p=1")
 
+    # Compute the buttons needed for pagination
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
 
-    recoverUserForm = AdminRecoverForm(request.form)
-
+    # save the current URL in the session for when the admin searches and an error occurs
+    session["relative_url"] = request.full_path
     return render_template("users/admin/user_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)

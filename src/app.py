@@ -189,14 +189,26 @@ def before_request() -> None:
         return render_template("maintenance.html", estimation="soon!")
 
     # check if 2fa_token key is in session
+    # remove if the user is no longer on the setup 2FA page anymore
     if ("2fa_token" in session):
         # remove if the endpoint is not the same as twoFactorAuthSetup
         # note that since before_request checks for every request,
         # meaning the css, js, and images are also checked when a user request the webpage
         # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
         # hence, adding allowing if the request endpoint is pointing to a static file
-        if (request.endpoint != "twoFactorAuthSetup" and request.endpoint != "static"):
+        if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "twoFactorAuthSetup"):
             session.pop("2fa_token", None)
+
+    # check if relative_url key is in session
+    # Remove if the admin is not on the userManagement page anymore
+    if ("relative_url" in session):
+        # remove if the endpoint is not the same as userManagement
+        # note that since before_request checks for every request,
+        # meaning the css, js, and images are also checked when a user request the webpage
+        # which will cause the relative_url key to be removed from the session as the endpoint is "static"
+        # hence, adding allowing if the request endpoint is pointing to a static file
+        if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "userManagement"):
+            session.pop("relative_url", None)
 
     if (request.endpoint != "static"):
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
@@ -205,8 +217,8 @@ def before_request() -> None:
             pass # allow the user to access the page
 
         elif("user" in session and requestBlueprint in CONSTANTS.TEACHER_BLUEPRINTS):
-            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-            if userInfo[1] != "Teacher":
+            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
+            if (userInfo.role != "Teacher"):
                 return abort(404) #allow the teacher to access the page
             pass
 

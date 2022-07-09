@@ -38,20 +38,16 @@ def twoFactorAuthSetup():
         userID = session["user"]
     elif ("admin" in session):
         userID = session["admin"]
-    imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
+    userInfo = get_image_path(userID, returnUserInfo=True)
 
     # check if user logged in via Google OAuth2
-    try:
-        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userInfo[0])
-    except (UserDoesNotExist):
-        abort(403) # if for whatever reason, a user does not exist, abort
-
-    if (loginViaGoogle):
+    if (userInfo.googleAuth == True):
         # if so, redirect to user profile as the authentication security is handled by Google themselves
+        flash(Markup("You had signed up with Google OAuth2 on CourseFinity.<br>Please <a href='https://support.google.com/accounts/answer/185839?hl=en' target='_blank' rel='noopener noreferrer'>setup 2FA for your Google account</a> instead!"))
         return redirect(url_for("userBP.userProfile"))
 
     # check if user has already setup 2fa
-    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])):
+    if (userInfo.hasTwoFA):
         return redirect(url_for("userBP.userProfile"))
 
     twoFactorAuthForm = twoFAForm(request.form)
@@ -63,10 +59,8 @@ def twoFactorAuthSetup():
         else:
             secretToken = RSA_decrypt(plaintext=session["2fa_token"])
 
-        imageSrcPath = get_image_path(userID)
-
         # generate a QR code for the user to scan
-        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo[2], issuer_name="CourseFinity")
+        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo.username, issuer_name="CourseFinity")
 
         # to save the image in the memory buffer
         # instead of saving the qrcode png as a file in the web server
@@ -81,7 +75,7 @@ def twoFactorAuthSetup():
         # get the image from the memory buffer and encode it into base64
         qrCodeEncodedBase64 = b64encode(stream.getvalue()).decode()
 
-        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=imageSrcPath, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo[1])
+        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=userInfo.profileImage, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo.role)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         # POST request code below
@@ -110,7 +104,7 @@ def twoFactorAuthSetup():
         # check if the TOTP is valid
         if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
             # update the user's 2FA status to True
-            sql_operation(table="2fa_token", mode="add_token", userID=userInfo[0], token=secretToken)
+            sql_operation(table="2fa_token", mode="add_token", userID=userInfo.uid, token=secretToken)
             flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
             return redirect(url_for("userBP.userProfile"))
         else:
@@ -152,7 +146,7 @@ def disableTwoFactorAuth():
 def updateUsername():
     if ("user" in session or "admin" in session):
         userID = session.get("user") or session.get("admin")
-        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
+        userInfo = get_image_path(userID, returnUserInfo=True)
 
         create_update_username_form = CreateChangeUsername(request.form)
         if (request.method == "POST") and (create_update_username_form.validate()):
@@ -169,9 +163,9 @@ def updateUsername():
             if (changed):
                 return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
             else:
-                return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+                return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
         else:
-            return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+            return render_template("users/loggedin/change_username.html", form=create_update_username_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -179,11 +173,10 @@ def updateUsername():
 def updatePassword():
     if ("user" in session or "admin" in session):
         userID = session.get("user") or session.get("admin")
-        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
+        userInfo = get_image_path(userID, returnUserInfo=True)
 
         # check if user logged in via Google OAuth2 (Only for user and not admins)
-        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
-        if (loginViaGoogle):
+        if (userInfo.googleOAuth):
             # if so, redirect to user profile as they cannot change their password
             return redirect(url_for("userBP.userProfile"))
 
@@ -195,7 +188,7 @@ def updatePassword():
 
             if (updatedPassword != confirmPassword):
                 flash("Passwords Do Not Match!")
-                return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+                return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
             else:
                 changed = False
                 try:
@@ -214,8 +207,8 @@ def updatePassword():
                     flash("Your password has been successfully changed.", "Account Details Updated!")
                     return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
                 else:
-                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+                    return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
         else:
-            return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+            return render_template("users/loggedin/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))

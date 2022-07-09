@@ -164,3 +164,8 @@ class UploadFailedError(Exception):
     """
     Raised if the uploading of files to Google Cloud Platform Storage API fails.
     """
+
+class UserIsNotActiveError(Exception):
+    """
+    Raised if the user tries to login but their account is not active.
+    """

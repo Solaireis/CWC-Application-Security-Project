@@ -132,5 +132,5 @@ class CreateCourse(Form):
     #thumbnail use HTML to validate size, type
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
     # courseType = RadioField('', choices=[('video','Video Lessons')])
-    #wtforms does not support opt groups, probs have a way but i quite braindead
+    # wtforms does not support opt groups, probs have a way but i quite braindead
     # courseTag = SelectField("Choose Your Course Category! ", [validators.DataRequired()])

@@ -22,14 +22,13 @@ def home():
     userPurchasedCourses = []
     accType = imageSrcPath = None
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo[-1]
-        accType = userInfo[1]
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo.purchasedCourses
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
     elif ("admin" in session):
         accType = "Admin"
 
-    # for course in threeHighlyRatedCourses:
-    #     print(course.courseID)
     return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
@@ -40,14 +39,15 @@ def teacherPage(teacherID:str):
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
     threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
-    teacherProfilePath = get_image_path(teacherID)
+    teacherProfilePath = get_image_path(userID=teacherID)
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo[-1]
-        accType = userInfo[1]
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo.purchasedCourses
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
 
     return render_template("users/general/teacher_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername,
@@ -59,7 +59,7 @@ def teacherPage(teacherID:str):
 def coursePage(courseID:str):
     print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if courses == False: #raise exception
+    if (not courses): #raise exception
         abort(404)
     #create variable to store these values
     courseDescription = Markup(
@@ -69,32 +69,30 @@ def coursePage(courseID:str):
         )
     )
     print("hi",courses)
-    teacherProfilePath = get_image_path(courses.teacherID)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID, )
-    teacherName = teacherRecords[2]
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
+    teacherName = teacherRecords.username
+    teacherProfilePath = teacherRecords.profileImage
 
     retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
     print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
-
         for tupleData in retrieveReviews:
             reviewUserID = tupleData[0]
             userImage = get_image_path(reviewUserID)
             reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=userImage))
 
-
-
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo[-1]
-        accType = userInfo[1]
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = userInfo.profileImage
+        userPurchasedCourses = userInfo.purchasedCourses
+        accType = userInfo.role
 
     return render_template(
         "users/general/course_page.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath, \
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
@@ -124,17 +122,14 @@ def search():
         if (page > maxPage):
             abort(404)
 
+        if ("user" in session or "admin" in session):
+            userInfo = get_image_path(session["user"], returnUserInfo=True)
+            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role)
 
-        accType = imageSrcPath = None
-        if ("user" in session):
-            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=userInfo[1])
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage)
 
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=accType)
+    if ("user" in session or "admin" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
-    accType = imageSrcPath = None
-    if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=imageSrcPath, accType=userInfo[1])
-
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=accType)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0)

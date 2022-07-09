@@ -27,20 +27,20 @@ userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="
 @userBP.route("/user-profile", methods=["GET","POST"])
 def userProfile():
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
 
-        username = userInfo[2]
-        email = userInfo[3]
-        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
+        username = userInfo.username
+        email = userInfo.email
+        loginViaGoogle = userInfo.googleOAuth
 
         twoFAEnabled = False
         if (not loginViaGoogle):
-            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
+            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo.uid)
 
         """
         Updates to teacher but page does not change, requires refresh
         """
-        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=imageSrcPath, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo[1])
+        return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=userInfo.profileImage, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -48,11 +48,11 @@ def userProfile():
 def updateEmail():
     if ("user" in session):
         userID = session["user"]
-        imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
-        oldEmail = userInfo[2]
+        userInfo = get_image_path(userID, returnUserInfo=True)
+        oldEmail = userInfo.email
 
         # check if user logged in via Google OAuth2
-        loginViaGoogle = True if (userInfo[5] is None) else False # check if the password is NoneType
+        loginViaGoogle = userInfo.googleOAuth
         if (loginViaGoogle):
             # if so, redirect to user profile as they cannot change their email
             return redirect(url_for("userBP.userProfile"))
@@ -74,7 +74,7 @@ def updateEmail():
                 flash("Sorry, please check your current password and try again!")
 
             if (not changed):
-                return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+                return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
             else:
                 print(f"old email:{oldEmail}, new email:{updatedEmail}")
                 flash(
@@ -83,7 +83,7 @@ def updateEmail():
                 )
                 return redirect(url_for("userBP.userProfile"))
         else:
-            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=imageSrcPath, accType=userInfo[1])
+            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -113,9 +113,9 @@ def deletePic():
         return redirect(url_for("adminBP.adminProfile"))
 
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if ("https://storage.googleapis.com/coursefinity" in imageSrcPath):
-            sql_operation(table="user", mode="delete_profile_picture", userID=userInfo[0])
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if ("https://storage.googleapis.com/coursefinity" in userInfo.profileImage):
+            sql_operation(table="user", mode="delete_profile_picture", userID=userInfo.uid)
             flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
         return redirect(url_for("userBP.userProfile"))
     else:
@@ -191,22 +191,19 @@ def purchaseView(courseID:str):
 
     courseVideoPath = None
 
-
-    teacherProfilePath = get_image_path(courses.teacherID)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
+    teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
     print(teacherRecords)
-    teacherName = teacherRecords[2]
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo[-1]
-        accType = userInfo[1]
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userPurchasedCourses = userInfo.uid
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
 
     return render_template("users/general/purchase_view.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath \
-        , courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):
@@ -229,9 +226,9 @@ def shoppingCart():
             return redirect(url_for("userBP.cart"))
 
         else:
-            imageSrcPath, userInfo = get_image_path(userID, returnUserInfo=True)
+            userInfo = get_image_path(userID, returnUserInfo=True)
             # print(userInfo)
-            cartCourseIDs = loads(userInfo[-2])
+            cartCourseIDs = userInfo.cartCourses
 
             courseList = []
             subtotal = 0
@@ -243,7 +240,7 @@ def shoppingCart():
                 courseList.append(course)
                 subtotal += course.coursePrice
 
-            return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=imageSrcPath, accType=userInfo[1])
+            return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
     else:
         return redirect(url_for("guestBP.login"))
@@ -297,9 +294,9 @@ def purchase(jwtToken:str):
 @userBP.route("/purchase-history")
 def purchaseHistory():
     if 'user' in session:
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
         print(userInfo)
-        purchasedCourseIDs = loads(userInfo[-2])
+        purchasedCourseIDs = userInfo.purchasedCourses
         courseList = []
 
         # TODO: Could have used Course.py's class instead of
@@ -310,7 +307,7 @@ def purchaseHistory():
             if course != False:
                 courseList.append(course)
 
-        return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=imageSrcPath, accType=userInfo[1])
+        return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for('guestBP.login'))
 

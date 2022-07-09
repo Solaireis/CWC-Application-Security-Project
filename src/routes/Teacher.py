@@ -28,8 +28,8 @@ def createCourse():
     if ("user" in session):
         if ("course-data" in session):
             courseData = session["course-data"]
-            imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-            if (userInfo[1] != "Teacher"):
+            userInfo = get_image_path(session["user"], returnUserInfo=True)
+            if (userInfo.role != "Teacher"):
                 abort(500)
 
             courseForm = CreateCourse(request.form)
@@ -43,7 +43,7 @@ def createCourse():
                 filename = secure_filename(file.filename)
                 if (filename == "" or not accepted_image_extension(filename)):
                     flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
+                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
 
                 filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
                 imageData = BytesIO(file.read())
@@ -54,12 +54,12 @@ def createCourse():
                     )
                 except (InvalidProfilePictureError):
                     flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
+                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
                 except (UploadFailedError):
                     flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
+                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
 
-                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo[0], courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
+                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo.role, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
                 stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
 
 
@@ -67,7 +67,7 @@ def createCourse():
                 flash("Course Created", "Successful Course Created!")
                 return redirect(url_for("userBP.userProfile"))
             else:
-                return render_template("users/teacher/create_course.html", imageSrcPath=imageSrcPath, form=courseForm, accType=userInfo[1], courseID=courseData[0], videoPath=courseData[1])
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
         else:
             flash("No Video Uploaded", "File Upload Error!")
             return redirect(url_for("teacherBP.videoUpload"))
@@ -77,17 +77,16 @@ def createCourse():
 @teacherBP.route("/course-video-list")
 def courseList():
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
         page = request.args.get("p", default=1, type=int)
-        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo[0], pageNum=page)
+        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
         maxPage = 0
         if len(courseList)!= 0:
             courseList, maxPage = courseList[0], courseList[1]         
             if (page > maxPage):
                 abort(404)
-        
-        return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=userInfo[1], pageNum=page, maxPage=maxPage, courseList=courseList)
 
+        return render_template("users/teacher/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, pageNum=page, maxPage=maxPage, courseList=courseList)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -104,7 +103,9 @@ def courseDelete():
 @teacherBP.route("/edit-course", methods=["GET", "POST"])
 def courseUpdate():
     if ("user" in session):
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
+        # Note: that this will return a UserInfo object
+        userInfo = get_image_path(session["user"], returnUserInfo=True) 
+        imageSrcPath = userInfo.profileImage
         #TODO: Make the update video details form
     else:
         return redirect(url_for("guestBP.login"))
@@ -113,8 +114,8 @@ def courseUpdate():
 def videoUpload():
     if ("user" in session):
         courseID = generate_id()
-        imageSrcPath, userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo[1] != "Teacher"):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if (userInfo.role != "Teacher"):
             abort(500)
 
         if (request.method == "POST"):
@@ -137,6 +138,6 @@ def videoUpload():
             session["course-data"] = (courseID, filePathToStore)
             return redirect(url_for("teacherBP.createCourse"))
         else:
-            return render_template("users/teacher/video_upload.html",imageSrcPath=imageSrcPath, accType=userInfo[1])
+            return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))

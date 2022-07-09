@@ -61,7 +61,7 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
 
-def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None) -> str:
+def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None, encodeTokenFlag:Optional[bool]=True) -> str:
     """
     Generate a limited usage token and add it to the MySQL database.
 
@@ -69,6 +69,8 @@ def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryIn
     - payload (Union[str, list, dict]): The payload of the token.
     - expiryInfo (JWTExpiryProperties, Optional): The expiry information of the token.
     - limit (int, Optional): The usage limit of the token.
+    - encodeTokenFlag (bool, Optional): Whether to encode the token or not.
+        - Default: True, will return a urlsafe base64 encoded token.
     """
     if (expiryInfo is None and limit is None):
         raise ValueError("Either expiryInfo OR limit must be specified.")
@@ -83,7 +85,7 @@ def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryIn
     tokenID = token_hex(32) # Generate a 32 bytes token ID  using the secrets module from Python standard library
                             # as recommended by OWASP to ensure higher entropy: 
                             # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
-    token = EC_sign(payload=payload, b64EncodeData=True, expiry=expiryInfo, tokenID=tokenID)
+    token = EC_sign(payload=payload, b64EncodeData=encodeTokenFlag, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
         table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
         expiryDate=expiryInfoToStore, limit=limit
@@ -111,10 +113,11 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
         limit=1
     )
     htmlBody = [
-        f"Welcome to CourseFinity!",
-        f"Please click the link below to verify your email address:<br>{url_for('guestBP.verifyEmail', token=token, _external=True)}"
+        f"Welcome to CourseFinity!<br>",
+        "Please click the link below to verify your email address:",
+        f"<a href={url_for('guestBP.verifyEmail', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
     ]
-    send_email(to=email, subject="Please verify your email!", body="<br><br>".join(htmlBody), name=username)
+    send_email(to=email, subject="Please verify your email!", body="<br>".join(htmlBody), name=username)
 
 def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     """
@@ -135,13 +138,14 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         limit=1
     )
     htmlBody = [
-        "Your account has been locked due to too many failed login attempts.",
-        f"Please click the link below to unlock your account:<br>{url_for('guestBP.unlockAccount', token=token, _external=True)}",
-        "Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+        "Your account has been locked due to too many failed login attempts.<br>",
+        "Please click the link below to unlock your account:",
+        f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>"
+        "<br>Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     ]
-    send_email(to=email, subject="Unlock your account!", body="<br><br>".join(htmlBody))
+    send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
-def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
+def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo]:
     """
     Returns the image path for the user.
 
@@ -156,20 +160,34 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, tuple]:
 
     Returns:
     - The image path (str) only if returnUserInfo is False
-    - The image path (str) and the user's record (tuple) if returnUserInfo is True
+    - The UserInfo object with the profile image path in the object if returnUserInfo is True
     """
     userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
 
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
-    if (userInfo[1] == "Admin"):
-        adminProfileImagePath = url_for("static", filename="images/user/default.png")
-        return adminProfileImagePath if (not returnUserInfo) else (adminProfileImagePath, userInfo)
+    if (userInfo.role == "Admin"):
+        userInfo.profileImage = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
+        return userInfo.profileImage if (not returnUserInfo) else userInfo
 
-    imageSrcPath = userInfo[6]
-    if (imageSrcPath is None):
-        imageSrcPath = get_dicebear_image(userInfo[2])
-    return imageSrcPath if (not returnUserInfo) else (imageSrcPath, userInfo)
+    imageSrcPath = UserInfo.profileImage
+    return imageSrcPath if (not returnUserInfo) else userInfo
+
+def format_user_info(userInfo:tuple, offset:int=0) -> UserInfo:
+    """
+    Format the user's information to be returned to the client.
+
+    Args:
+    - userInfo (tuple): The user's tuple matched from a database query.
+    - offset (int): The offset of the user's tuple.
+        - Used when there's extra attribute at the start of the user's tuple queried from the database.
+        - Default: 0, no offset.
+
+    Returns:
+    - UserInfo object with the formatted user information.
+    """
+    userProfile = get_dicebear_image(userInfo[2 + offset]) if (userInfo[6 + offset] is None) else userInfo[6 + offset]
+    return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset)
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
@@ -725,7 +743,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         passwordInput = kwargs["password"]
 
-        cur.execute("SELECT id, password, username, role, email_verified FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        cur.execute("SELECT id, password, username, role, email_verified, status FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         matched = cur.fetchone()
 
         if (matched is None):
@@ -736,6 +754,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         encryptedPasswordHash = matched[1]
         userID = matched[0]
         emailVerified = matched[4]
+        status = matched[5]
+
+        if (status != "Active"):
+            raise UserIsNotActiveError(f"User is not active but is currently \"{status}\"")
 
         if (encryptedPasswordHash is None):
             raise UserIsUsingOauth2Error("User is using Google OAuth2, please use Google OAuth2 to login!")
@@ -792,17 +814,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "get_user_data"):
         userID = kwargs["userID"]
-        cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
         matched = cur.fetchone()
-        if (matched is None):
-            return False
-
-        cur.execute("CALL get_role_name(%(matched)s)", {"matched":matched[1]})
-        roleMatched = cur.fetchone()
-        matched = list(matched)
-        matched[1] = roleMatched[0]
-
-        return tuple(matched)
+        return format_user_info(matched) if (matched is not None) else None
 
     elif (mode == "change_profile_picture"):
         userID = kwargs["userID"]
@@ -828,7 +842,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         # Delete old profile picture from Google Cloud Storage API
         cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
-        if (matched is not None):
+        if (matched is not None and matched[0] is not None):
             oldUrlToDelete = get_blob_name(url=matched[0])
             try:
                 delete_blob(destinationURL=oldUrlToDelete)
@@ -848,6 +862,42 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
 
         cur.execute("UPDATE user SET username=%(usernameInput)s WHERE id=%(userID)s", {"usernameInput": usernameInput, "userID": userID})
+        connection.commit()
+
+    elif (mode == "deactivate_user"):
+        userID = kwargs["userID"]
+        cur.execute("UPDATE user SET status='Inactive' WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "reactivate_user"):
+        userID = kwargs["userID"]
+        cur.execute("UPDATE user SET status='Active' WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "ban_user"):
+        userID = kwargs["userID"]
+        cur.execute("UPDATE user SET status='Banned' WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "unban_user"):
+        userID = kwargs["userID"]
+        cur.execute("UPDATE user SET status='Active' WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "admin_change_email"):
+        userID = kwargs["userID"]
+        emailInput = kwargs["email"]
+
+        # check if the email is already in use
+        cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        reusedEmail = cur.fetchone()
+        if (reusedEmail is not None):
+            if (reusedEmail[0] == userID):
+                raise SameAsOldEmailError(f"The email {emailInput} is the same as the old email!")
+            else:
+                raise EmailAlreadyInUseError(f"The email {emailInput} is already in use!")
+
+        cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID": userID})
         connection.commit()
 
     elif (mode == "change_email"):
@@ -923,16 +973,14 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "delete_user"):
         userID = kwargs["userID"]
-        cur.execute("DELETE FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("CALL delete_user(%(userID)s)", {"userID":userID})
         connection.commit()
 
     elif (mode == "update_to_teacher"):
         userID = kwargs["userID"]
 
-        cur.execute("SELECT role FROM user WHERE id=%(userID)s", {"userID":userID})
-        currentRoleID = cur.fetchone()[0]
-        cur.execute("CALL get_role_name(%(currentRoleID)s)", {"currentRoleID":currentRoleID})
-        currentRole = cur.fetchone()[0]
+        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
+        currentRole = cur.fetchone()[0][1]
 
         isTeacher = False if (currentRole != "Teacher") else True
         if (not isTeacher):
@@ -962,6 +1010,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         maxPage = 1
         if (len(matched) > 0):
+            
             maxPage = ceil(matched[0][-1] / 10)
 
         if (pageNum > maxPage):
@@ -969,8 +1018,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            userProfile = get_dicebear_image(data[3]) if (data[7] is None) else data[7]
-            courseArr.append(UserInfo(tupleData=data, userProfile=userProfile))
+            courseArr.append(format_user_info(data, offset=1))
 
         return courseArr, maxPage
 
