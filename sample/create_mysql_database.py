@@ -194,15 +194,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SELECT role_name FROM role WHERE role_id=roleID;
         END
-        """)
-
+    """)
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_role_id`(IN roleName VARCHAR(255))
         BEGIN
             SELECT role_id FROM role WHERE role_name=roleName;
         END
-        """)
-
+    """)
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_course_data`(IN courseID CHAR(32))
         BEGIN
@@ -220,7 +218,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             GROUP BY c.course_id;
         END
     """)
-
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
         BEGIN
@@ -228,8 +225,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             u.id, r.role_name, u.username, 
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, u.cart_courses, 
-            u.purchased_courses, u.status
+            u.purchased_courses, u.status, t.token AS has_two_fa
             FROM user AS u
+            LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
             INNER JOIN role AS r ON u.role=r.role_id
             WHERE u.id=user_id;
         END
@@ -284,20 +282,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             HAVING row_num > @page_offset
             ORDER BY row_num
             LIMIT 10;
-        END
-    """)
-    cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
-        BEGIN
-            SELECT
-            u.id, r.role_name, u.username, 
-            u.email, u.email_verified, u.password, 
-            u.profile_image, u.date_joined, u.cart_courses, 
-            u.purchased_courses, u.status, t.token AS has_two_fa
-            FROM user AS u
-            LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
-            INNER JOIN role AS r ON u.role=r.role_id
-            WHERE u.id=user_id;
         END
     """)
     cur.execute(f"""
