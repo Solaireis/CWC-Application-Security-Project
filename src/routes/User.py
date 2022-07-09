@@ -17,10 +17,8 @@ from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 
 # import python standard libraries
-from datetime import datetime
 from pathlib import Path
 from io import BytesIO
-from json import loads
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -32,11 +30,7 @@ def userProfile():
         username = userInfo.username
         email = userInfo.email
         loginViaGoogle = userInfo.googleOAuth
-
-        twoFAEnabled = False
-        if (not loginViaGoogle):
-            twoFAEnabled = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo.uid)
-
+        twoFAEnabled = userInfo.hasTwoFA
         """
         Updates to teacher but page does not change, requires refresh
         """
