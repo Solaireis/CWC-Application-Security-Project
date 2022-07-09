@@ -99,7 +99,7 @@ class ConstantsConfigs:
         self.SESSION_NUM_OF_BYTES = 512
         # For invalidating sessions after x mins of inactivity
         # Inactivity in this case: No requests to the web server for x mins
-        self.SESSION_EXPIRY_INTERVALS = 30 # 30 mins
+        self.SESSION_EXPIRY_INTERVALS = 60 # 60 mins/1 hr
 
         # Duration (in minutes) for locked accounts
         # before user can try to login again

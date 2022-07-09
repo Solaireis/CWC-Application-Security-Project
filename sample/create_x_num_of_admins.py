@@ -78,13 +78,15 @@ cur = con.cursor()
 
 # convert role name to role id
 ADMIN_ROLE_ID = None
-cur.execute("CALL get_role_id(%(Admin)s)", {"Admin":"Admin"})
-ADMIN_ROLE_ID = cur.fetchone()[0]
+cur.execute("CALL get_role_id('Admin')")
+ADMIN_ROLE_ID = cur.fetchone()
 
 if (ADMIN_ROLE_ID is None):
     print("Error: Role not found")
     con.close()
     sysExit(1)
+
+ADMIN_ROLE_ID = ADMIN_ROLE_ID[0]
 
 def main() -> None:
     while (1):
@@ -149,25 +151,21 @@ def main() -> None:
 
                     count += 1
 
-                existingAdminCount += count
                 print(f"\r{count} admin accounts created!")
             else:
                 print(f"\rMaximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
             print()
 
         elif (cmdOption == "2"):
-            # delete ip address data of all admins (due to foriegn key constraints)
+            # delete data of all admins
             cur.execute("SELECT id FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
             listOfAdmins = cur.fetchall()
             listOfAdmins = [adminID[0] for adminID in listOfAdmins]
             for adminID in listOfAdmins:
-                cur.execute("DELETE FROM session WHERE user_id = %(adminID)s", {"adminID": adminID})
-                cur.execute("DELETE FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID": adminID})
+                cur.execute("CALL delete_user(%(adminID)s)", {"adminID": adminID})
 
-            cur.execute("DELETE FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
             con.commit()
             print("All admin accounts deleted!\n")
-            existingAdminCount = 0
 
         elif (cmdOption == "x"):
             con.close()

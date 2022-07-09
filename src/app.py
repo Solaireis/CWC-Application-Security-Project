@@ -69,6 +69,11 @@ def update_secret_key() -> None:
 
     Used for setting and rotating the secret key for the session cookie.
     """
+    # Check if the web application is already in maintenance mode
+    isInMaintenanceMode = app.config["MAINTENANCE_MODE"]
+    if (not isInMaintenanceMode):
+        app.config["MAINTENANCE_MODE"] = True
+
     # Generate a new key using the secrets module from Python standard library
     # as recommended by OWASP to ensure higher entropy: 
     # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
@@ -79,6 +84,10 @@ def update_secret_key() -> None:
         destroyPastVer=True,
         destroyOptimise=True
     )
+
+    # if the web application is already in maintenance mode, don't set it to false to avoid potential issues
+    if (not isInMaintenanceMode):
+        app.config["MAINTENANCE_MODE"] = False
 
 app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
@@ -165,10 +174,26 @@ def before_request() -> None:
     Returns:
     - None
     """
+    if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
+        abort(403)
+
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
         print("Route Error: Either Does Not Exist or Cannot Access")
         abort(404)
+
+    if (app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
+        return render_template("maintenance.html", estimation="soon!")
+
+    # check if 2fa_token key is in session
+    if ("2fa_token" in session):
+        # remove if the endpoint is not the same as twoFactorAuthSetup
+        # note that since before_request checks for every request,
+        # meaning the css, js, and images are also checked when a user request the webpage
+        # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
+        # hence, adding allowing if the request endpoint is pointing to a static file
+        if (request.endpoint != "twoFactorAuthSetup" and request.endpoint != "static"):
+            session.pop("2fa_token", None)
 
     if (request.endpoint != "static"):
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
@@ -187,28 +212,12 @@ def before_request() -> None:
 
         else:
             # If the user is not allowed to access the page, abort 404
-            abort(404)
-
-    if (get_remote_address() in app.config["IP_ADDRESS_BLACKLIST"]):
-        abort(403)
-
-    if (app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
-        return render_template("maintenance.html", estimation="soon!")
-
-    # check if 2fa_token key is in session
-    if ("2fa_token" in session):
-        # remove if the endpoint is not the same as twoFactorAuthSetup
-        # note that since before_request checks for every request,
-        # meaning the css, js, and images are also checked when a user request the webpage
-        # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
-        # hence, adding allowing if the request endpoint is pointing to a static file
-        if (request.endpoint != "twoFactorAuthSetup" and request.endpoint != "static"):
-            session.pop("2fa_token", None)
+            return abort(404)
 
     # Validate the user's session for every request that is not to the static files
     if (request.endpoint != "static"):
         if (("user" in session) ^ ("admin" in session)):
-            # if either user or admin is in the session cookie value
+            # if either user or admin is in the session cookie value (but not both)
             userID = session.get("user") or session.get("admin")
             sessionID = session["sid"]
 

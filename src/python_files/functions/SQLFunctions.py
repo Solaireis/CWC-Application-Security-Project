@@ -950,7 +950,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         if (userInput is None):
             cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
-        elif (filterType == "username"):
+        elif (filterType == "uid"):
+            cur.execute("CALL paginate_users_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        elif (filterType == "email"):
+            cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        else:
+            # Paginate by username by default in the HTML, 
+            # but this is also a fallback if the user has tampered with the HTML value
             cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
         matched = cur.fetchall() or []
 
@@ -958,9 +964,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (len(matched) > 0):
             maxPage = ceil(matched[0][-1] / 10)
 
+        if (pageNum > maxPage):
+            return [], maxPage
+
         courseArr = []
         for data in matched:
-            userProfile = get_dicebear_image(data[2]) if (data[6] is None) else data[6]
+            userProfile = get_dicebear_image(data[3]) if (data[7] is None) else data[7]
             courseArr.append(UserInfo(tupleData=data, userProfile=userProfile))
 
         return courseArr, maxPage

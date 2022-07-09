@@ -67,6 +67,66 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
+def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
+    """
+    Returns an array of pagination button integers.
+
+    E.g. 
+    - current page is 5, max pages is 10, then the array will be:
+    [3, 4, 5, 6, 7]
+
+    - Current page is 1, max pages is 10, then the array will be:
+    [1, 2, 3, 4, 5]
+
+    - Current page is 10, max pages is 10, then the array will be:
+    [6, 7, 8, 9, 10]
+
+    - Current page is 1, max pages is 2, then the array will be:
+    [1, 2]
+
+    Args:
+    - pageNum (int): The current page number
+    - maxPages (int): The maximum number of pages
+
+    Returns:
+    - list: An array of pagination button integers
+    """
+    paginationList = []
+    if (pageNum > maxPage):
+        pageNum = maxPage
+
+    if (maxPage < 6):
+        # if the max pages is less than 6, 
+        # e.g. if the max pages is 2, 
+        # then the array will be: [1, 2]
+        for pageCount in range(1, maxPage+1):
+            paginationList.append(pageCount)
+        return paginationList
+
+    if (pageNum < 4): 
+        # if the user's current page number is less than 4, (i.e. 1-3)
+        # then the array will be: [1, 2, 3, 4, 5]
+        for pageCount in range(1, 6):
+            paginationList.append(pageCount)
+        return paginationList
+
+    # calculating the difference from the user's current page to max number of pages
+    currentFromMax = maxPage - pageNum 
+    if (currentFromMax <= 2): 
+        # if the difference is 2 or less
+        # e.g. max page is 10, current page is 8,
+        # then the array will be: [6, 7, 8, 9, 10]
+        for pageCount in range(maxPage-4, maxPage+1):
+            paginationList.append(pageCount)
+    else:
+        # if the difference is more than 2
+        # e.g. max page is 10, current page is 7,
+        # then the array will be: [5, 6, 7, 8, 9]
+        for pageCount in range(pageNum-2, pageNum+3):
+            paginationList.append(pageCount)
+
+    return paginationList
+
 def upload_file_from_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, 
     localFilePath:Path=None, 
