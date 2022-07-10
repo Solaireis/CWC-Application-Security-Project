@@ -33,14 +33,13 @@ app.logger.addHandler(CONSTANTS.GOOGLE_LOGGING_HANDLER)
 # flask extension that prevents cross site request forgery
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
-app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=1)
+app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=7)
 csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
 csp = {
     'script-src':[
         '\'self\'',
-        'https://code.jquery.com/jquery-3.6.0.min.js',
         'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js',
         'https://cdn.jsdelivr.net/npm/less@4',
         'https://www.google.com/recaptcha/enterprise.js',

@@ -33,3 +33,9 @@ h2{
 }
 
 .pagination a:hover:not(.active) {background-color: #ddd;}
+
+#explore {
+  text-align: center;
+  margin-bottom: 50px;
+  opacity: 0.5;
+}

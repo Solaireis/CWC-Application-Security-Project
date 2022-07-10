@@ -1,14 +1,10 @@
-$(document).ready(function(){
-    $("#editProfileButton").click(function(){
-        $("#imageForm").toggle();
+document.addEventListener("DOMContentLoaded", function() {
+    let editProfileButton = document.getElementById("editProfileButton");
+    let imageForm = document.getElementById("imageForm");
+    editProfileButton.addEventListener("click", function() {
+        imageForm.classList.toggle("d-none");
     });
-})
-// ;$(document).ready(function(){
-//     $("#editProfileButton").click(function(){
-//         $("#imageForm").toggle();
-//     });
-// });
-
+});
 // Dropzone.js for segmenting data payload to chunks of data
 // Useful resources:
 // https://stackoverflow.com/questions/46728205/dropzone-submit-button-on-upload/46732882
@@ -62,16 +58,15 @@ $(document).ready(function(){
 // };
 
 function readURL(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
 
-                reader.onload = function (e) {
-                    $('#thumbnail')
-                        .attr('src', e.target.result);
-                };
+        reader.onload = function (e) {
+            document.getElementById("thumbnail").setAttribute("src", e.target.result);
+        };
 
-                reader.readAsDataURL(input.files[0]);
-            };
+        reader.readAsDataURL(input.files[0]);
+    };
 };
 
 //Dropzone for lesson video
@@ -95,7 +90,7 @@ Dropzone.options.dropper = {
         let lessonVideoDropzone = this;
         // when the user uploads more than one video, this function will remove the old video and replace it with the new lesson video that was added by the user
         lesonVideoDropzone.on("addedfile", function() {
-            $(".dz-progress").hide();
+            document.querySelector(".dz-progress").classList.add("d-none");
             if (lesonVideoDropzone.files[1] == null) return;
            lesonVideoDropzone.removeFile(userProfileImageDropzone.files[0]);
         });
@@ -109,7 +104,7 @@ Dropzone.options.dropper = {
         // sending the chunks of data when user clicks on the upload button
         lesonVideoDropzone.on('sending', function(file, xhr, formData) {
             /* Append inputs to FormData */
-            $(".dz-progress").show();
+            document.querySelector(".dz-progress").classList.remove("d-none");
             formData.append("lessonVideo", document.getElementById('dropper').value);
         });
         

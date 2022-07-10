@@ -61,19 +61,21 @@
                             <!---Dicebear uses Links so cannot use url_for-->
                             <img src="{{ imageSrcPath }}" alt="User Profile Icon" id="user-icon-setting">
                             {% if "https://storage.googleapis.com/coursefinity" in imageSrcPath %}
-                            <form action="{{ url_for('userBP.deletePic') }}" method="POST">
-                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="submittedForm" value="resetUserIcon">
-                                <button type="submit" id="submitResetProfileIcon" hidden></button>
-                            </form>
-                            <label for="submitResetProfileIcon" class="btn btn-link text-danger">Delete Profile Icon</label>
+                                <form action="{{ url_for('userBP.deletePic') }}" method="POST">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="submittedForm" value="resetUserIcon">
+                                    <button type="submit" id="submitResetProfileIcon" hidden></button>
+                                </form>
+                                <label for="submitResetProfileIcon" class="btn btn-link text-danger">
+                                    Delete Profile Icon
+                                </label>
                             {% endif %}
                             <div class="mb-9">
                                 <button class="btn btn-primary" id="editProfileButton">Edit Profile Image</button>
-                                <div id="imageForm" style="display: none;">
+                                <div id="imageForm" class="d-none pt-2">
                                     <form action="{{ url_for('userBP.uploadPic') }}" method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                        <input type="file" id="myFile" name="profilePic"> 
+                                        <input type="file" id="myFile" name="profilePic" required> 
                                         <input class="btn btn-primary" id="editProfileButton" type="submit" value="Apply">
                                     </form>
                                     <!-- <form action="" method="POST" enctype="multipart/form-data" class="dropzone" id="dropper">
@@ -99,7 +101,7 @@
                                             <h6>Username:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueUsername" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip"
+                                            <h6 class="margin-btm" id="tooltipValueUsername" data-bs-toggle="tooltip"
                                             data-bs-placement="top" title="Copy to clipboard" class="profile_copy_text">
                                             {{ username}}
                                             </h6>
@@ -111,7 +113,7 @@
                                             <h6>Email:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueEmail" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip"
+                                            <h6 class="margin-btm" id="tooltipValueEmail"  data-bs-toggle="tooltip"
                                             data-bs-placement="top" title="Copy to clipboard"
                                             class="profile_copy_text">
                                             {{ email }}
@@ -229,10 +231,6 @@
         </script>
         {% endif %}
     {% endwith %}
-    <script nonce="{{ csp_nonce() }}">
-        document.getElementById("tooltipValueEmail").onclick = function() {copyToClipBoard('Email')};
-        document.getElementById("tooltipValueUsername").onclick = function() {copyToClipBoard('Username')};
-    </script>
     <!-- <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script> -->
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>

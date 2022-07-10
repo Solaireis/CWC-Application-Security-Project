@@ -15,7 +15,7 @@
     <h2>Found {{ noOfCourse }} courses related to {{ tagReadable }}</h2>
     {% if checker == False %}
     <div>
-        <h4 style="text-align:center;margin-bottom:50px;opacity:0.5;">No courses with that tag</h4>
+        <h4 id="explore">No courses with that tag</h4>
     </div>
     {% else %}
         {% for searchInformation in searchfound %}

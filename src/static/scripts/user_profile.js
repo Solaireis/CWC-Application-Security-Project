@@ -8,9 +8,11 @@ function cancelBio() {
     document.getElementById("editedTextarea").setAttribute("hidden", null);
 }
 
-$(document).ready(function(){
-    $("#editProfileButton").click(function(){
-        $("#imageForm").toggle();
+document.addEventListener("DOMContentLoaded", function() {
+    let editProfileButton = document.getElementById("editProfileButton");
+    let imageForm = document.getElementById("imageForm");
+    editProfileButton.addEventListener("click", function() {
+        imageForm.classList.toggle("d-none");
     });
 });
 
@@ -35,7 +37,7 @@ Dropzone.options.dropper = {
         
         // when the user uploads more than one image, this function will remove the old user profile image and replaces it with the new user profile image that was added by the user
         userProfileImageDropzone.on("addedfile", function() {
-            $(".dz-progress").hide();
+            document.querySelector(".dz-progress").classList.add("d-none");
             if (userProfileImageDropzone.files[1] == null) return;
             userProfileImageDropzone.removeFile(userProfileImageDropzone.files[0]);
         });
@@ -49,7 +51,7 @@ Dropzone.options.dropper = {
         // sending the chunks of data when user clicks on the upload button
         userProfileImageDropzone.on('sending', function(file, xhr, formData) {
             /* Append inputs to FormData */
-            $(".dz-progress").show();
+            document.querySelector(".dz-progress").classList.remove("d-none");
             formData.append("profileImage", document.getElementById('dropper').value);
         });
         

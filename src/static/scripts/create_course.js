@@ -15,7 +15,7 @@ Dropzone.options.courseThumbnail = {
         let myDropzone = this;
         
         myDropzone.on("addedfile", function() {
-            $(".dz-progress").hide();
+            document.querySelector(".dz-progress").classList.add("d-none");
             if (myDropzone.files[1] == null) return;
             myDropzone.removeFile(myDropzone.files[0]);
         });
@@ -34,20 +34,20 @@ Dropzone.options.courseThumbnail = {
 
         myDropzone.on('sending', function(file, xhr, formData) {
             /* Append inputs to FormData */
-            $(".dz-progress").show();
+            document.querySelector(".dz-progress").classList.remove("d-none");
             formData.append("courseThumbnail", document.getElementById('courseThumbnail').value);
         });
     }
 };
+
 function readURL(input) {
-            if (input.files && input.files[0]) {
-                var reader = new FileReader();
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
 
-                reader.onload = function (e) {
-                    $('#thumbnail')
-                        .attr('src', e.target.result);
-                };
+        reader.onload = function (e) {
+            document.getElementById("thumbnail").setAttribute("src", e.target.result);
+        };
 
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
