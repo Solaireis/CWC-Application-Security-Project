@@ -282,7 +282,7 @@ def login():
             try:
                 # returns the userID, boolean if user logged in from a new IP address, username, role
                 userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
-                isAdmin = True if (userInfo[3] == "Admin") else False
+                isAdmin = True if (userInfo[3] == "Admin" or userInfo[3] == "SuperAdmin") else False
                 # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
                 if (userInfo[1]):
