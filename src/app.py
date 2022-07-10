@@ -44,7 +44,10 @@ csp = {
         'https://cdn.jsdelivr.net/npm/less@4',
         'https://www.google.com/recaptcha/enterprise.js',
         'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js',
-        
+        'https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js',
+        'https://ajax.googleapis.com/ajax/libs/shaka-player/4.1.1/shaka-player.compiled.js',
+        'https://cdn.jsdelivr.net/npm/videojs-shaka@1.1.2/dist/videojs-shaka.min.js',
+
     ]
 }
 

@@ -16,6 +16,9 @@ from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
+from subprocess import run as subprocess_run
+from os import remove as os_remove
+from platform import system
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -1576,3 +1579,31 @@ def two_fa_token_is_valid(token:str) -> bool:
         CONSTANTS.COMPILED_2FA_REGEX_DICT[length] = re.compile(fr"^[A-Z2-7]{{{length}}}$")
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
+
+def get_course_video_path(courseID):
+    courseVideo = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+    
+    if courseVideo.with_suffix(".mp4").is_file():
+
+        if system() == "Windows":
+            executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-win-x64.exe')
+            subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
+        elif system() == "Darvin":  # Mac
+            executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-win-x64.exe')
+            subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
+        elif system() == "Linux":
+            try:
+                executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-osx-x64')
+                subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
+            except OSError:
+                executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-linux-arm64')
+                subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
+        else:
+            raise Exception("Only Windows, Mac, Linux OS Systems are used.")
+        
+        os_remove(f"{courseVideo}.mp4")
+
+    if courseVideo.joinpath(".mpd").is_file():
+        return url_for('static', filename=f"course_videos/{courseID}/{courseID}.mpd")
+    else:
+        return None

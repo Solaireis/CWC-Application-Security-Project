@@ -1,0 +1,42 @@
+{% macro video_styles() %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css" >
+<link rel="stylesheet" href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/video_js.css') }}">
+{% endmacro %}
+
+{% macro video_player() %}
+<video-js id="video-player" class="vjs-theme-forest vjs-matrix" poster="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp">
+    <p class="vjs-no-js">
+      To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+    </p>
+</video-js>
+{% endmacro %}
+
+{% macro video_scripts() %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/shaka-player/4.1.1/shaka-player.compiled.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/videojs-shaka@1.1.2/dist/videojs-shaka.min.js"></script>
+{% endmacro %}
+
+{% macro video_link(videoPath) %}
+<script nonce="{{ csp_nonce() }}">
+    var player = videojs('video-player', {
+    playbackRates: [0.5, 1, 1.5, 2],
+    aspectRatio: "16:9",
+    fluid: true,          //The video player
+    responsive: true,     //The video controls
+    autoplay: true,       //Or attempts to
+    controls: true,
+    preload: "auto",
+    techOrder: ['shaka'],
+  });
+
+  player.qualityPickerPlugin();
+
+  player.src([{
+    type: 'application/dash+xml',
+    src: '{{ videoPath }}'
+    //src: 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd'
+  }]);
+</script>
+{% endmacro %}

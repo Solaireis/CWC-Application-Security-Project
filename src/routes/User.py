@@ -304,12 +304,3 @@ def purchaseHistory():
         return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for('guestBP.login'))
-
-# blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
-@userBP.route("/static/course_videos/<path:filepath>")
-def blockAccess(filepath):
-    if "admin" in session:
-        path = Path(__file__).parent.parent.joinpath(f'static/course_videos/{filepath}')
-        return send_from_directory(path.parent, path.name)
-    else:
-        abort(403)
