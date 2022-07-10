@@ -71,7 +71,7 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
     Returns an array of pagination button integers.
 
-    E.g. 
+    E.g.
     - current page is 5, max pages is 10, then the array will be:
     [3, 4, 5, 6, 7]
 
@@ -96,14 +96,14 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
         pageNum = maxPage
 
     if (maxPage < 6):
-        # if the max pages is less than 6, 
-        # e.g. if the max pages is 2, 
+        # if the max pages is less than 6,
+        # e.g. if the max pages is 2,
         # then the array will be: [1, 2]
         for pageCount in range(1, maxPage+1):
             paginationList.append(pageCount)
         return paginationList
 
-    if (pageNum < 4): 
+    if (pageNum < 4):
         # if the user's current page number is less than 4, (i.e. 1-3)
         # then the array will be: [1, 2, 3, 4, 5]
         for pageCount in range(1, 6):
@@ -111,8 +111,8 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
         return paginationList
 
     # calculating the difference from the user's current page to max number of pages
-    currentFromMax = maxPage - pageNum 
-    if (currentFromMax <= 2): 
+    currentFromMax = maxPage - pageNum
+    if (currentFromMax <= 2):
         # if the difference is 2 or less
         # e.g. max page is 10, current page is 8,
         # then the array will be: [6, 7, 8, 9, 10]
@@ -128,8 +128,8 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     return paginationList
 
 def upload_file_from_path(
-    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, 
-    localFilePath:Path=None, 
+    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
+    localFilePath:Path=None,
     uploadDestination:str="",
     cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ) -> str:
@@ -174,8 +174,8 @@ def upload_file_from_path(
     return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
 
 def upload_from_stream(
-    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, 
-    fileObj:IOBase=None, 
+    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
+    fileObj:IOBase=None,
     uploadDestination:str="",
     cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ):
@@ -242,7 +242,7 @@ def delete_blob(bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, destinati
         raise FileNotFoundError("File not found!")
 
 def get_mysql_connection(
-    debug:bool=CONSTANTS.DEBUG_MODE, 
+    debug:bool=CONSTANTS.DEBUG_MODE,
     database:Optional[str]=CONSTANTS.DATABASE_NAME,
     user:str="root"
 ) -> pymysql.connections.Connection:
@@ -294,7 +294,7 @@ def get_dicebear_image(username:str) -> str:
 
 def send_change_password_alert_email(email:str="") -> None:
     """
-    Send an email to the user to alert them that 
+    Send an email to the user to alert them that
     their password has been compromised and should be changed.
 
     Then flashes a message to change their password.
@@ -308,7 +308,7 @@ def send_change_password_alert_email(email:str="") -> None:
     ]
     send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
     flash(
-        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('loggedInBP.updatePassword')}'>change your password</a> immediately!"), 
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('loggedInBP.updatePassword')}'>change your password</a> immediately!"),
         "Security Alert!"
     )
 
@@ -337,9 +337,9 @@ def get_google_flow() -> Flow:
             # for associating the user with their personal info on Google
             "openid",
             # for Google to send security alerts to the user's email
-            "https://www.googleapis.com/auth/gmail.send", 
+            "https://www.googleapis.com/auth/gmail.send",
             # for Google to read the user's emails as required for some OAuth2 logins
-            "https://www.googleapis.com/auth/gmail.readonly", 
+            "https://www.googleapis.com/auth/gmail.readonly",
         ],
         redirect_uri=url_for("guestBP.loginCallback", _external=True)
     )
@@ -404,7 +404,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     - riskScore (int): The risk score of the reCAPTCHA token.
     - threshold (float): The acceptable threshold.
         - Range: 0.0 to 1.0
-        - Defaults to 0.5 
+        - Defaults to 0.5
         - https://cloud.google.com/recaptcha-enterprise/docs/best-practices-oat
 
     Returns:
@@ -686,16 +686,16 @@ class JWTExpiryProperties:
     """
     Class to hold the JWT-like expiry properties feature.
 
-    Note: Although it is implemented for the purpose of digitally signing a payload 
-    and base64 encoding the payload with an active duration configured 
+    Note: Although it is implemented for the purpose of digitally signing a payload
+    and base64 encoding the payload with an active duration configured
     and base64 encoding the signature, it is not a JWT as it has a major difference.
 
     Instead of being in the standard format:
     - "header.payload.signature"
 
     It is in the format of:
-    - "payload.signature" as it is known that the web application will be 
-    using a standardised EC algorithm to sign and verify the payload. 
+    - "payload.signature" as it is known that the web application will be
+    using a standardised EC algorithm to sign and verify the payload.
     Hence, omitting the header data.
 
     In short:
@@ -704,14 +704,14 @@ class JWTExpiryProperties:
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f %z"
 
     def __init__(
-        self, 
-        activeDuration:Optional[int]=0, 
+        self,
+        activeDuration:Optional[int]=0,
         strDate:Optional[str]=None,
         datetimeObj:Optional[datetime]=None
     ) -> None:
         """
         Initializes the JWTExpiryProperties object
-        
+
         Args:
         - activeDuration (int, optional): the number of seconds the token is active.
         - strDate (str, optional): the date in the format of "YYYY-MM-DD HH:MM:SS".
@@ -745,7 +745,7 @@ class JWTExpiryProperties:
     def get_expiry_str_date(self) -> str:
         """
         Returns the expiry date in string type.
-        
+
         E.g. "2022-06-26 17:21:20.123456 +0800"
         """
         return self.expiryDate.strftime(CONSTANTS.DATE_FORMAT)
@@ -763,13 +763,13 @@ class JWTExpiryProperties:
         return self.get_expiry_str_date()
 
 def EC_sign(
-        payload:Union[str, dict]="", 
-        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:int=CONSTANTS.SIGNATURE_VERSION_ID, 
+        payload:Union[str, dict]="",
+        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:int=CONSTANTS.SIGNATURE_VERSION_ID,
         b64EncodeData:bool=False, expiry:JWTExpiryProperties=None, limit:int=None, tokenID:str=None
     ) -> Union[dict, str]:
     """
     Sign a message using the public key part of an asymmetric EC key.
-    
+
     Args:
     - payload (str|dict|list): the payload to sign
         - Preferred type: str
@@ -891,7 +891,7 @@ def EC_sign(
 def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict, bool]:
     """
     Verify the signature of an message signed with an asymmetric EC key.
-    
+
     Args:
     - data (dict|bytes|str): the data to verify
         - Note: If the data is instances of bytes or string, it will be treated as a base64 encoded data
@@ -1000,8 +1000,8 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
         ecKey.verify(signature, hash_, ec.ECDSA(utils.Prehashed(sha384_)))
         verified = True
     except (InvalidSignature):
-        # If the signature is invalid or 
-        # the payload has been tampered with, 
+        # If the signature is invalid or
+        # the payload has been tampered with,
         # return false
         verified = False
 
@@ -1024,7 +1024,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
         return verified
 
 def RSA_encrypt(
-    plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, 
+    plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID,
     keyID:str=CONSTANTS.RSA_ENCRYPTION_KEY_ID, versionID:int=CONSTANTS.SESSION_COOKIE_ENCRYPTION_VERSION
 ) -> dict:
     """
@@ -1092,7 +1092,7 @@ def RSA_decrypt(cipherData:dict=None) -> str:
     - The decrypted ciphertext (str)
 
     Raises:
-    - RSACiphertextIsNotValidFormatError: If the ciphertext is not 
+    - RSACiphertextIsNotValidFormatError: If the ciphertext is not
     - DecryptionError: If the decryption failed
     - CRC32ChecksumError: If the CRC32C checksum does not match
     """
@@ -1143,7 +1143,7 @@ def RSA_decrypt(cipherData:dict=None) -> str:
 def compress_and_resize_image(
     imageData:IOBase=None, imagePath:Path=None,
     dimensions:tuple=None, quality:int=75, optimise:bool=True,
-    uploadToGoogleStorage:bool=True, bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME, 
+    uploadToGoogleStorage:bool=True, bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME,
     folderPath:Optional[str]=None, cacheControl:Optional[str]=None
 )-> str:
     """
@@ -1170,10 +1170,10 @@ def compress_and_resize_image(
         - If not provided, the image will be saved to the root folder of the bucket
     - cacheControl (str, Optional): The cache control header to set on the uploaded file.
         - E.g. "public, max-age=60" for a 1 minute cache
-        - Default: None to use Google's default cache control of "public, max-age=3600" 
+        - Default: None to use Google's default cache control of "public, max-age=3600"
 
     Returns:
-    - The path to the compressed image (pathlib.Path) 
+    - The path to the compressed image (pathlib.Path)
     or the Google Storage public URL of the compressed image (str)
 
     Raises:
@@ -1313,7 +1313,7 @@ def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, 
                 - version 2: active
                 - version 3: destroyed
                 - new version: active
-            - Example 2: destroyOptimise should be True as there will be only 2 iterations 
+            - Example 2: destroyOptimise should be True as there will be only 2 iterations
                       of the loop when destorying the past version instead of 3
                 - version 1: destroyed
                 - version 2: destroyed
@@ -1425,7 +1425,7 @@ def get_gmail_client() -> Resource:
     Initialise Google API by trying to authenticate with token.json
     On success, will not ask for credentials again.
     Otherwise, will ask to authenticate with Google.
-    
+
     Returns:
     - Google API resource object
     """
@@ -1504,7 +1504,7 @@ def pwd_has_been_pwned(password:str) -> bool:
     Returns:
     - True if the password is in the database, False otherwise.
     """
-    # hash the password (plaintext) using sha1 to check 
+    # hash the password (plaintext) using sha1 to check
     # against haveibeenpwned's database
     # but will not be stored in the MySQL database
     passwordHash = sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()
@@ -1529,7 +1529,7 @@ def pwd_has_been_pwned(password:str) -> bool:
                 logMessage=f"Failed to retrieve data from api.pwnedpasswords.com. Error code: {response.status_code}",
                 severity="NOTICE"
             )
-            # if the api is unavailable, will rely on the 
+            # if the api is unavailable, will rely on the
             # checking of the password strength very strictly
             # i.e. must meet all the minimum requirements
             # if user is signing up or changing password
@@ -1579,7 +1579,7 @@ def two_fa_token_is_valid(token:str) -> bool:
 
 def get_course_video_path(courseID):
     courseVideo = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
-    
+
     if courseVideo.with_suffix(".mp4").is_file():
         # TODO: This code is actually vulnerable, try NOT to use subprocess_run
         if system() == "Windows":
@@ -1600,7 +1600,7 @@ def get_course_video_path(courseID):
 
         Path(f"{courseVideo}.mp4").unlink(missing_ok=True)
 
-    if courseVideo.joinpath(".mpd").is_file():
+    if courseVideo.with_suffix(".mpd").is_file()::
         return url_for('static', filename=f"course_videos/{courseID}/{courseID}.mpd")
     else:
         return None
