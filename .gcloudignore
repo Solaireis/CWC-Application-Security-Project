@@ -1,0 +1,33 @@
+# Ignore everything in the config_files folder except google-sm.json
+# for now unless Workload Identity Federation is implemented.
+src/config_files/*
+!src/config_files/google-sm.json
+
+# Ignore all pycache folders and files.
+*.pyc
+**/__pycache__/*
+**/__pycache__
+__pycache__
+
+# Ignore all markdown files
+*.md
+
+# Ignore Mac DS_Store files
+.DS_Store
+**/.DS_Store
+
+# Ignore test codes and folders
+test/**
+test
+*test*.*
+*Test*.*
+*test*.*/**
+*Test*.*/**
+
+# Ignore other folders and files.
+.gitignore
+.dccache
+res/**
+res
+sample/**
+sample

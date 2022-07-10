@@ -14,8 +14,11 @@ python_packages/*
 *test*.*/**
 *Test*.*/**
 
+# Ignore everything in the config_files folder except the README.md
+src/config_files/*
+!src/config_files/README.md
+
 # Ignore other files
-ip_blacklist.txt
 *.bin
 .dccache
 
