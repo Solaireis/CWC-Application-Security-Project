@@ -1381,15 +1381,9 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     Sincerely,<br>
     <strong>CourseFinity Support Team</strong>
 </p>
-<img src="cid:logo" alt="CourseFinity Logo" style="border-radius: 5px; width: min(250px, 40%);">
+<img src="https://storage.googleapis.com/coursefinity/web-assets/common/filled_logo.png" alt="CourseFinity Logo" style="border-radius: 5px; width: min(250px, 40%);">
 """
     htmlMessage.attach(MIMEText(mainBody, _subtype="html"))
-
-    # attach the logo image
-    logoImage = MIMEImage(CONSTANTS.LOGO_BYTES, "png")
-    logoImage.add_header("Content-ID", "<logo>")
-    logoImage.add_header("Content-Disposition", "inline", filename="coursefinity_logo.png")
-    htmlMessage.attach(logoImage)
 
     htmlMessage["To"] = to
     htmlMessage["From"] = sender

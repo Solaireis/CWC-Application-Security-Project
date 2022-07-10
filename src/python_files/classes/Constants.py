@@ -1,9 +1,8 @@
 # import python standard libraries
-from ast import pattern
 import pathlib, json, re
 from os import environ
 from sys import exit as sysExit
-from typing import Any, Union
+from typing import Union
 
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
@@ -20,7 +19,8 @@ import google.api_core.exceptions as GoogleErrors
 from google.cloud import secretmanager, kms
 
 # For Google CLoud Logging API (Third-party libraries)
-from google.cloud import logging as g_logging
+from google.cloud import logging as gcp_logging
+from google.cloud.logging.handlers import CloudLoggingHandler
 
 # For Google Cloud SQL API (Third-party libraries)
 from google.oauth2 import service_account
@@ -144,9 +144,6 @@ class ConstantsConfigs:
         self.__LENGTH_REGEX = re.compile(r"^.{8,}$")
         self.__ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
-        # For email coursefinity logo image
-        self.__LOGO_BYTES = requests.get("https://storage.googleapis.com/coursefinity/web-assets/common/filled_logo.png").content
-
         # For 2FA setup key regex to validate if the setup is a valid base32 setup key
         self.__COMPILED_2FA_REGEX_DICT = {
             32: re.compile(r"^[A-Z2-7]{32}$")
@@ -199,8 +196,9 @@ class ConstantsConfigs:
         self.__VIMEO_ACCESS_TOKEN = self.get_secret_payload(secretID="vimeo-token")
 
         # For Google Cloud Logging API
-        self.__LOGGING_CLIENT = g_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
+        self.__LOGGING_CLIENT = gcp_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
         self.__LOGGING_NAME = "coursefinity-web-app"
+        self.__GOOGLE_LOGGING_HANDLER = CloudLoggingHandler(self.__LOGGING_CLIENT, name=self.__LOGGING_NAME)
 
         # For Google GMAIL API
         self.__GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
@@ -381,10 +379,6 @@ class ConstantsConfigs:
         return self.__ALLOWED_CHAR_REGEX
 
     @property
-    def LOGO_BYTES(self) -> bytes:
-        return self.__LOGO_BYTES
-
-    @property
     def COMPILED_2FA_REGEX_DICT(self) -> dict[int, re.Pattern[str]]:
         return self.__COMPILED_2FA_REGEX_DICT
 
@@ -437,8 +431,12 @@ class ConstantsConfigs:
         return self.__VIMEO_ACCESS_TOKEN
 
     @property
-    def LOGGING_CLIENT(self) -> g_logging.Client:
+    def LOGGING_CLIENT(self) -> gcp_logging.Client:
         return self.__LOGGING_CLIENT
+
+    @property
+    def GOOGLE_LOGGING_HANDLER(self) -> CloudLoggingHandler:
+        return self.__GOOGLE_LOGGING_HANDLER
 
     @property
     def LOGGING_NAME(self) -> str:

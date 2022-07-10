@@ -37,12 +37,18 @@ def userManagement():
             flash("No user account was found with the provided ID.", "No Such User!")
             return redirect(session["relative_url"])
 
-        if (userInfo.role == "Student"):
+        if (userInfo.role == "Admin" or userInfo.role == "SuperAdmin"):
             flash("An error occurred while processing your request.", "Sorry!")
             return redirect(session["relative_url"])
 
         if (formType == "recoverUser" and not userInfo.googleOAuth):
-            if (recoverUserForm.validate()):
+            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
+            if (isRecovering):
+                flash(
+                    Markup("The user's account is already in the process of being recovered.<br>However, if you wish to revoke the recovery process, please do that instead of recovering the user's account again."), 
+                    "Recovering User's Account Request Rejected"
+                )
+            elif (recoverUserForm.validate()):
                 newEmail = recoverUserForm.email.data 
                 try:
                     # deactivate user's account to prevent the attacker from changing the email address again
@@ -53,13 +59,14 @@ def userManagement():
                     
                     flash(f"The user, {userID}, has its email changed to {newEmail} and the instructions to reset his/her password has bent sent to the new email.", f"User's Account Details Updated!")
 
-                    token = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1)
+                    token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
+                    sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
 
                     htmlBody = [
                         "Great news! Your account has been recovered by an administrator on our side.<br>",
                         f"Your account email address has been changed to {newEmail} during the account recovery process.",
                         "However, you still need to reset your password by clicking the link below.<br>",
-                        "Please click the link below to reset your password."
+                        "Please click the link below to reset your password.",
                         f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
                         "Note: This link will ONLY expire upon usage."
                     ]
@@ -70,6 +77,14 @@ def userManagement():
                     flash("The new email entered is already in use...", "Error recovering user's account!")
             else:
                 flash("The email provided was invalid when recovering the user's account.", "Error recovering user's account!")
+
+        elif (formType == "revokeRecoveryProcess" and not userInfo.googleOAuth):
+            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
+            if (isRecovering):
+                sql_operation(table="recovery_token", mode="revoke_token", userID=userID)
+                flash(f"The user's account recovery process has been revoked and the account has been reactivated for the user.", "Recovery Process Revoked!")
+            else:
+                flash("The user's account is not in the process of being recovered.", "Error Revoking Recovery Process!")
 
         elif (formType == "deleteUser"):
             sql_operation(table="user", mode="delete_user", userID=userID)

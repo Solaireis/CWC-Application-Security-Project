@@ -1,6 +1,6 @@
 // Form elements
 let flashMsg = document.getElementById("flashMsg");
-let signupForm = document.getElementById("passForm");
+let passForm = document.getElementById("passForm");
 let passInput = document.getElementById("password");
 let cfmPass = document.getElementById("cfmPassword");
 let passError = document.getElementById("passwordError");
@@ -25,7 +25,7 @@ const lowercaseRegex = /[a-z]+/;
 const uppercaseRegex = /[A-Z]+/;
 const numberRegex = /[\d]+/;
 
-signupForm.addEventListener("submit", function(e) {
+passForm.addEventListener("submit", function(e) {
     e.preventDefault();
     var failed = false;
     var progressPercent = parseInt(strengthIndicator.style.width);
@@ -50,7 +50,7 @@ signupForm.addEventListener("submit", function(e) {
         return;
     }
 
-    signupForm.submit();
+    passForm.submit();
 });
 
 passInput.addEventListener("input", function(e) {

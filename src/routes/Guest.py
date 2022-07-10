@@ -88,7 +88,7 @@ def recoverAccount(token:str):
             flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
-        if (not pwnedPassword or not pwd_is_strong(passwordInput)):
+        if (pwnedPassword or not pwd_is_strong(passwordInput)):
             flash("Password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
@@ -236,7 +236,7 @@ def resetPassword(token:str):
             flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
-        if (not pwnedPassword or not pwd_is_strong(passwordInput)):
+        if (pwnedPassword or not pwd_is_strong(passwordInput)):
             flash("Password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
@@ -403,6 +403,7 @@ def login():
                 session["is_admin"] = isAdmin
                 return redirect(url_for("guestBP.enter2faTOTP"))
             else:
+                sleep(2) # Artificial delay to prevent attacks such as enumeration attacks, etc.
                 return render_template("users/guest/login.html", form=loginForm)
         else:
             return render_template("users/guest/login.html", form = loginForm)
@@ -662,7 +663,7 @@ def signup():
                 flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
                 return render_template("users/guest/signup.html", form=signupForm)
 
-            if (not pwnedPassword or not pwd_is_strong(passwordInput)):
+            if (pwnedPassword or not pwd_is_strong(passwordInput)):
                 flash("Password is too weak, please enter a stronger password!")
                 return render_template("users/guest/signup.html", form=signupForm)
 

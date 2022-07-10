@@ -74,7 +74,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     mydb = NormalFunctions.get_mysql_connection(debug=debug)
     cur = mydb.cursor()
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS role (
+    cur.execute("""CREATE TABLE role (
         role_id INTEGER UNSIGNED PRIMARY KEY AUTO_INCREMENT,
         role_name VARCHAR(255) NOT NULL UNIQUE,
         guest_bp BOOL NOT NULL DEFAULT 0,
@@ -86,7 +86,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_bp BOOL NOT NULL DEFAULT 0
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS user (
+    cur.execute("""CREATE TABLE user (
         id VARCHAR(32) PRIMARY KEY, 
         role INTEGER UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
@@ -102,7 +102,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CONSTRAINT status_check CHECK (status IN ('Active', 'Inactive', 'Banned')) 
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS course (
+    cur.execute("""CREATE TABLE course (
         course_id CHAR(32) PRIMARY KEY, 
         teacher_id VARCHAR(32) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
@@ -115,7 +115,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS user_ip_addresses (
+    cur.execute("""CREATE TABLE user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
         ip_address VARCHAR(32) NOT NULL, -- in hex format, length of 8 for IPv4, length of 32 for IPv6
         last_accessed DATETIME NOT NULL,
@@ -125,27 +125,35 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS limited_use_jwt (
+    cur.execute("""CREATE TABLE limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
         token_limit TINYINT, -- Min: -128, Max: 127
         expiry_date DATETIME,
         CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS twofa_token (
+    cur.execute("""CREATE TABLE recovery_token ( 
+        user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
+        token_id CHAR(64) NOT NULL,
+        old_user_email VARCHAR(255) NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(id),
+        FOREIGN KEY (token_id) REFERENCES limited_use_jwt(id)
+    )""")
+
+    cur.execute("""CREATE TABLE twofa_token (
         user_id VARCHAR(32) PRIMARY KEY,
         token VARBINARY(1024) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS login_attempts (
+    cur.execute("""CREATE TABLE login_attempts (
         user_id VARCHAR(32) PRIMARY KEY,
         attempts INTEGER UNSIGNED NOT NULL,
         reset_date DATETIME NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS session (
+    cur.execute("""CREATE TABLE session (
         session_id CHAR(64) PRIMARY KEY,
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
@@ -153,7 +161,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS review (
+    cur.execute("""CREATE TABLE review (
         user_id VARCHAR(32),
         course_id CHAR(32),
         course_rating INTEGER UNSIGNED,
@@ -185,7 +193,16 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
             DELETE FROM review WHERE user_id = user_id_input;
+            DELETE FROM recovery_token WHERE user_id = user_id_input;
             DELETE FROM user WHERE id = user_id_input;
+        END
+    """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `delete_recovery_token`(IN user_id_input VARCHAR(32))
+        BEGIN
+            SET @user_recovery_token := (SELECT token_id FROM recovery_token WHERE user_id=user_id_input);
+            DELETE FROM recovery_token WHERE user_id = user_id_input;
+            DELETE FROM limited_use_jwt WHERE id = @user_recover_token;
         END
     """)
     """Functions to get Data"""
@@ -415,7 +432,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("INSERT INTO role (role_name) VALUES ('Admin')")
 
-    cur.execute("INSERT INTO role (role_name) VALUES ('Super Admin')")
+    cur.execute("INSERT INTO role (role_name) VALUES ('SuperAdmin')")
 
     cur.execute("INSERT INTO role (role_name) VALUES ('Guest')")
 

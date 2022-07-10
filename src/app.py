@@ -1,10 +1,13 @@
-# import third party libraries
+# import third-party libraries
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # import flask libraries (Third-party libraries)
 from flask import Flask
 from flask_talisman import Talisman
 from flask_seasurf import SeaSurf
+
+# import Google Cloud Logging API (third-party library)
+from google.cloud import logging as gcp_logging
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
@@ -14,11 +17,18 @@ from python_files.classes.Constants import CONSTANTS
 from pathlib import Path
 from os import environ
 from datetime import timedelta
+import logging
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
 # general Flask configurations
 app = Flask(__name__)
+
+# Integrate Google CLoud Logging to the Flask app
+# TODO: Check if this is the correct way to do this
+gcp_logging.handlers.setup_logging(CONSTANTS.GOOGLE_LOGGING_HANDLER)
+logging.getLogger().setLevel(logging.INFO)
+app.logger.addHandler(CONSTANTS.GOOGLE_LOGGING_HANDLER)
 
 # flask extension that prevents cross site request forgery
 app.config["CSRF_COOKIE_SECURE"] = True
@@ -88,7 +98,7 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
-app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv")
+app.config["ALLOWED_VIDEO_EXTENSIONS"] = ("mp4", "mov", "avi", "3gpp", "flv", "mpeg4", "flv", "webm", "mpegs", "wmv")
 
 # add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS

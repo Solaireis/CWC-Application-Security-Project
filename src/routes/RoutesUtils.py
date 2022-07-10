@@ -88,28 +88,6 @@ def before_request() -> None:
         if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "userManagement"):
             session.pop("relative_url", None)
 
-    if (request.endpoint != "static"):
-        requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
-        print("Request Endpoint:", request.endpoint)
-        if ("user" in session and requestBlueprint in current_app.config["CONSTANTS"].USER_BLUEPRINTS):
-            pass # allow the user to access the page
-
-        elif("user" in session and requestBlueprint in current_app.config["CONSTANTS"].TEACHER_BLUEPRINTS):
-            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-            if (userInfo.role != "Teacher"):
-                return abort(404) #allow the teacher to access the page
-            pass
-
-        elif("admin" in session and requestBlueprint in current_app.config["CONSTANTS"].ADMIN_BLUEPRINTS):
-            pass #allow the admin to access the page
-
-        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in current_app.config["CONSTANTS"].GUEST_BLUEPRINTS):
-            pass # allow the guest user to access the page
-
-        else:
-            # If the user is not allowed to access the page, abort 404
-            return abort(404)
-
     # Validate the user's session for every request that is not to the static files
     if (request.endpoint != "static"):
         if (("user" in session) ^ ("admin" in session)):
@@ -121,29 +99,53 @@ def before_request() -> None:
                 # if user session is invalid as the user does not exist anymore
                 sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                 session.clear()
-                return
 
-            if (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
+            elif (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
                 # if session exists
                 if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address(), userAgent=request.user_agent.string)):
                     # if user session is expired or the userID does not match with the sessionID
                     sql_operation(table="session", mode="delete_session", sessionID=sessionID)
                     session.clear()
-                    return
-
-                # update session expiry time
-                sql_operation(table="session", mode="update_session", sessionID=sessionID)
-                return
+                else:
+                    # update session expiry time
+                    sql_operation(table="session", mode="update_session", sessionID=sessionID)
             else:
                 # if session does not exist in the db
                 session.clear()
-                return
 
     if ("user" in session and "admin" in session):
         # both user and admin are in session cookie value
         # clear the session as it should not be possible to have both session
         session.clear()
-        return
+
+    if (request.endpoint != "static"):
+        requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
+        print("Request Endpoint:", request.endpoint)
+        if ("user" in session and requestBlueprint in current_app.config["CONSTANTS"].USER_BLUEPRINTS):
+            pass # allow the user to access the page
+
+        elif("user" in session and requestBlueprint in current_app.config["CONSTANTS"].TEACHER_BLUEPRINTS):
+            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
+            if (userInfo.role != "Teacher"):
+                return abort(404) # allow the teacher to access the page
+            pass
+
+        elif ("admin" in session):
+            isSuperAdmin = sql_operation(table="user", mode="check_if_superadmin", userID=session["admin"])
+            if (not isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].ADMIN_BLUEPRINTS):
+                pass # allow the admin to access the page
+            elif (isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].SUPER_ADMIN_BLUEPRINTS):
+                pass # allow the superadmin to access the page
+            else:
+                # if the admin is not allowed to access the page, abort 404
+                return abort(404)
+
+        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in current_app.config["CONSTANTS"].GUEST_BLUEPRINTS):
+            pass # allow the guest user to access the page
+
+        else:
+            # If the user is not allowed to access the page, abort 404
+            return abort(404)
 
 @current_app.after_request # called after each request to the application
 def after_request(response:wrappers.Response) -> wrappers.Response:

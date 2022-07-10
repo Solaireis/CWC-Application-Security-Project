@@ -12,7 +12,7 @@ from secrets import token_hex
 from math import ceil
 
 # import Flask web application configs
-from flask import url_for, current_app
+from flask import url_for, current_app, abort
 
 # import third party libraries
 from argon2.exceptions import VerifyMismatchError
@@ -61,7 +61,11 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
 
-def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None, encodeTokenFlag:Optional[bool]=True) -> str:
+def generate_limited_usage_jwt_token(
+    payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, 
+    limit:Optional[int]=None, encodeTokenFlag:Optional[bool]=True,
+    getTokenIDFlag:Optional[bool]=False
+) -> Union[str, tuple]:
     """
     Generate a limited usage token and add it to the MySQL database.
 
@@ -69,8 +73,10 @@ def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryIn
     - payload (Union[str, list, dict]): The payload of the token.
     - expiryInfo (JWTExpiryProperties, Optional): The expiry information of the token.
     - limit (int, Optional): The usage limit of the token.
-    - encodeTokenFlag (bool, Optional): Whether to encode the token or not.
+    - encodeTokenFlag (bool, Optional): Whether to encode the token or not from this function.
         - Default: True, will return a urlsafe base64 encoded token.
+    - getTokenIDFlag (bool, Optional): Whether to get the token ID or not from this function.
+        - Default: False, will not get the token ID.
     """
     if (expiryInfo is None and limit is None):
         raise ValueError("Either expiryInfo OR limit must be specified.")
@@ -90,7 +96,7 @@ def generate_limited_usage_jwt_token(payload:Union[str, list, dict]="", expiryIn
         table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
         expiryDate=expiryInfoToStore, limit=limit
     )
-    return token
+    return token if (not getTokenIDFlag) else (token, tokenID)
 
 def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
     """
@@ -235,6 +241,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "role"):
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "recovery_token"):
+                returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -258,39 +266,72 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 logMessage=f"Error caught: {e}",
                 severity="ERROR"
             )
+            abort(500)
 
     return returnValue
 
+def recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the recovery_token_sql_operation function!")
+
+    cur = connection.cursor()
+    if (mode == "add_token"):
+        tokenID = kwargs["tokenID"]
+        userID = kwargs["userID"]
+        oldUserEmail = kwargs["oldUserEmail"]
+
+        cur.execute(
+            "INSERT INTO recovery_token (token_id, user_id, old_user_email) VALUES (%(tokenID)s, %(userID)s, %(oldUserEmail)s)",
+            {"tokenID": tokenID, "userID": userID, "oldUserEmail": oldUserEmail}
+        )
+        connection.commit()
+
+    elif (mode == "check_if_recovering"):
+        userID = kwargs["userID"]
+
+        cur.execute(
+            "SELECT * FROM recovery_token WHERE user_id = %(userID)s", 
+            {"userID": userID}
+        )
+        return (cur.fetchone() is not None)
+
+    elif (mode == "revoke_token"):
+        userID = kwargs["userID"]
+
+        cur.execute("SELECT old_user_email FROM recovery_token WHERE user_id = %(userID)s", {"userID": userID})
+        oldUserEmail = cur.fetchone()[0]
+
+        cur.execute("CALL delete_recovery_token(%(userID)s)", {"userID": userID})
+        connection.commit()
+
+        cur.execute("UPDATE user SET email = %(oldUserEmail)s, status='Active' WHERE id = %(userID)s", {"oldUserEmail": oldUserEmail, "userID": userID})
+        connection.commit()
+
+    else:
+        raise ValueError("Invalid mode in the recovery_token_sql_operation function!")
+
 def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
-    """
-    Connects to the database and returns the connection object
+    if (mode is None):
+        raise ValueError("You must specify a mode in the limited_use_jwt_sql_operation function!")
 
-    Args:
-    - connection: The connection to the database
-    - mode: The mode to use ("insert", "edit", "login", etc.)
-    - kwargs: The keywords to pass into the respective sql operation functions
-
-    Returns the returned value from the SQL operation.
-    """
+    cur = connection.cursor()
     if (mode == "add_jwt"):
         tokenID = kwargs["tokenID"]
         expiryDate = kwargs.get("expiryDate")
         limit = kwargs.get("limit")
-        cursor = connection.cursor()
-        cursor.execute(
+        cur.execute(
             "INSERT INTO limited_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
             {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
         )
         connection.commit()
     elif (mode == "decrement_limit_after_use"):
         tokenID = kwargs["tokenID"]
-        cursor = connection.cursor()
-        cursor.execute(
+        cur.execute(
             "UPDATE limited_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit > 0",
             {"tokenID": tokenID}
         )
         connection.commit()
-        cursor.execute(
+        cur.execute(
             "DELETE FROM limited_use_jwt WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit <= 0",
             {"tokenID": tokenID}
         )
@@ -298,12 +339,11 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
     elif (mode == "jwt_is_valid"):
         tokenID = kwargs["tokenID"]
         print("token", tokenID)
-        cursor = connection.cursor()
-        cursor.execute(
+        cur.execute(
             "SELECT token_limit FROM limited_use_jwt WHERE id = %(tokenID)s",
             {"tokenID": tokenID}
         )
-        matched = cursor.fetchone()
+        matched = cur.fetchone()
         if (matched is None):
             return False
 
@@ -320,18 +360,16 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
     elif (mode == "delete_expired_jwt"):
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM limited_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
+        cur.execute("DELETE FROM limited_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
         connection.commit()
     else:
-        raise ValueError("Invalid mode")
+        raise ValueError("Invalid mode in the limited_use_jwt_sql_operation function!")
 
 def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):
         raise ValueError("You must specify a mode in the user_ip_addresses_sql_operation function!")
 
     cur = connection.cursor()
-
     if (mode == "add_ip_address"):
         userID = kwargs["userID"]
         ipAddress = kwargs["ipAddress"]
@@ -581,17 +619,17 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     if (mode == "verify_userID_existence"):
         userID = kwargs["userID"]
-        if (userID is None):
-            raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
+
+    elif (mode == "check_if_superadmin"):
+        userID = kwargs["userID"]
+        cur.execute("SELECT r.role_name FROM role AS r INNER JOIN user AS u ON r.role_id=u.role WHERE u.id=%(userID)s", {"userID":userID})
+        return (cur.fetchone()[0] == "SuperAdmin")
 
     elif (mode == "email_verified"):
         userID = kwargs["userID"]
         getEmail = kwargs.get("email") or False
-        if (userID is None):
-            raise ValueError("You must specify a userID when verifying the userID!")
-
         cur.execute("SELECT email_verified, email FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is None):
@@ -604,8 +642,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "update_email_to_verified"):
         userID = kwargs["userID"]
-        if (userID is None):
-            raise ValueError("You must specify a userID when verifying the userID!")
         cur.execute("UPDATE user SET email_verified = TRUE WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
@@ -1010,7 +1046,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         maxPage = 1
         if (len(matched) > 0):
-            
             maxPage = ceil(matched[0][-1] / 10)
 
         if (pageNum > maxPage):
@@ -1018,7 +1053,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            courseArr.append(format_user_info(data, offset=1))
+            userInfo = format_user_info(data, offset=1)
+            isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
+            courseArr.append((userInfo, isInRecovery))
 
         return courseArr, maxPage
 
