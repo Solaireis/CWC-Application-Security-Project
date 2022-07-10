@@ -49,7 +49,6 @@ from google_auth_oauthlib.flow import Flow
 
 # For Google Gmail API (Third-party libraries)
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from googleapiclient.errors import HttpError
 from google.oauth2.credentials import Credentials
