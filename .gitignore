@@ -22,9 +22,8 @@ src/config_files/*
 *.bin
 .dccache
 
-# Ignore uploaded files for user profiles and thumbnails
-src/static/images/user/*.webp
-src/static/images/courses/thumbnails/*.webp
+# Ignore uploaded files for course videos
+src/static/course_videos/**
 
 # Ignore all .json files (just in case as there are google gmail api tokens in there)
 *.json
