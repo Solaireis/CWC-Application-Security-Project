@@ -10,7 +10,7 @@ from six import ensure_binary
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
-from hashlib import md5, sha1, sha384
+from hashlib import sha1, sha384
 from pathlib import Path
 from urllib.parse import unquote
 from datetime import datetime, timedelta
@@ -22,7 +22,6 @@ from platform import system
 # import local python libraries
 if (__name__ == "__main__"):
     from sys import path as sys_path
-    import pathlib
     sys_path.append(str(Path(__file__).parent.parent.parent.absolute()))
     from python_files.classes.Constants import CONSTANTS
     from python_files.classes.Errors import *
