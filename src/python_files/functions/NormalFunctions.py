@@ -1600,7 +1600,7 @@ def get_course_video_path(courseID):
 
         Path(f"{courseVideo}.mp4").unlink(missing_ok=True)
 
-    if courseVideo.with_suffix(".mpd").is_file()::
+    if courseVideo.with_suffix(".mpd").is_file():
         return url_for('static', filename=f"course_videos/{courseID}/{courseID}.mpd")
     else:
         return None
