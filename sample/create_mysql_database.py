@@ -34,7 +34,7 @@ def deactivate_stripe_courses(debug:bool=False):
         cur = mydb.cursor()
         cur.execute("SELECT course_id FROM course")
         courses = cur.fetchall()
-    except pymysql.err.ProgrammingError:
+    except (pymysql.err.ProgrammingError, pymysql.err.OperationalError):
         print('Database does not yet exist')
         return
 
