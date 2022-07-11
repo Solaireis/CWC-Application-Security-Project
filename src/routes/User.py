@@ -152,9 +152,9 @@ def uploadPic():
     else:
         return redirect(url_for("guestBP.login"))
 
-@userBP.route("/course-review/<string:courseID>") #writing of review
+@userBP.route("/course-review/<string:courseID>", methods=["GET","POST"]) #writing of review
 def courseReview(courseID:str):
-
+    reviewForm = CreateReview(request.form)
     #get course data 
     course=sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
@@ -168,15 +168,17 @@ def courseReview(courseID:str):
 
         #i think there exist a better way to secure this
         for items in purchases:
-            if (items.courseID==courseID):
+            print(items)
+            if (items==courseID):
                 purchased = True
+                break
 
         if purchased:
                 print("user has purchased this course")
-                return render_template("users/loggedin/purchase_review.html", course=course, userID=userID)
+                return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID)
         else:
             print("user has not purchased this course")
-            return render_template("users/loggedin/purchase_review.html", course=course, userID=userID)
+            abort(404)
 
     else:
         return redirect(url_for("guestBP.login"))

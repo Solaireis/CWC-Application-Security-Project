@@ -1,5 +1,5 @@
 # import third party libraries
-from wtforms import Form, validators, ValidationError, StringField, SelectField, TextAreaField, EmailField, HiddenField, IntegerField, PasswordField
+from wtforms import Form, validators, ValidationError, StringField, SelectField, TextAreaField, EmailField, HiddenField, IntegerField, PasswordField,RadioField
 
 # import local python libraries
 from .Constants import CONSTANTS
@@ -132,5 +132,16 @@ class CreateCourse(Form):
     #thumbnail use HTML to validate size, type
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
     # courseType = RadioField('', choices=[('video','Video Lessons')])
-    # wtforms does not support opt groups, probs have a way but i quite braindead
+    # wtforms does not support opt groups, probs have a way but i quite braindead 
+    # Noob
     # courseTag = SelectField("Choose Your Course Category! ", [validators.DataRequired()])
+
+class CreateReview(Form):
+    '''
+    Review Description
+    Ratings
+    '''
+
+    reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
+    reviewRating = RadioField("Rating: ", [validators.DataRequired(), validators.NumberRange(min=1, max=5)])
+    reviewTitle = TextAreaField("Title: ", [validators.DataRequired(), validators.Length(min=1, max=100)])
