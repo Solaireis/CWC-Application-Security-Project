@@ -143,5 +143,4 @@ class CreateReview(Form):
     '''
 
     reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-    reviewRating = RadioField("Rating: ", [validators.DataRequired(), validators.NumberRange(min=1, max=5)])
     reviewTitle = TextAreaField("Title: ", [validators.DataRequired(), validators.Length(min=1, max=100)])
