@@ -162,20 +162,33 @@ def courseReview(courseID:str):
     if ("user" in session):
         print("user is logged in")
         userID=session["user"]
-        purchases=sql_operation(table="user", mode="get_user_purchases", userID=userID)
-    
-        purchased = False
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        print(userInfo)
+        purchasedCourseIDs = userInfo.purchasedCourses
+        print(purchasedCourseIDs)
 
-        #i think there exist a better way to secure this
-        for items in purchases:
-            print(items)
-            if (items==courseID):
+        for purchases in purchasedCourseIDs:
+            if (purchases==courseID):
                 purchased = True
                 break
 
         if purchased:
                 print("user has purchased this course")
-                return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID)
+                if (request.method == "POST"):
+                    if (reviewForm.validate()):
+                        review = reviewForm.reviewDescription.data
+                        print("review:",review)
+                        rating= request.form.get("rate")
+                        print("rating:",rating)
+                        sql_operation(table="review", mode="add_review", courseID=courseID, userID=userID, courseReview=review, courseRating=rating)
+                        print("review updated")
+                        flash("Your review has been successfully added.", "Review Added!")
+                        #redirect back to coursepage
+                        return redirect(url_for("courseBP.coursePage", courseID=courseID))
+                    else:
+                        flash("Please fill out all fields.", "Failed to Add Review!")
+                        return redirect(url_for("userBP.courseReview", courseID=courseID))
+                return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
         else:
             print("user has not purchased this course")
             abort(404)
@@ -183,10 +196,6 @@ def courseReview(courseID:str):
     else:
         return redirect(url_for("guestBP.login"))
 
-
-@userBP.route("/submit-review", methods=["GET","POST"])
-def submitReview():
-    pass
 
 
 @userBP.route("/purchase-view/<string:courseID>")

@@ -1400,11 +1400,11 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         review_list = cur.fetchall()
         return review_list
 
-    elif mode == "insert":
+    elif mode == "add_review":
         userID = kwargs["userID"]
+        courseID = kwargs["courseID"]
         courseRating = kwargs["courseRating"]
         courseReview = kwargs["courseReview"]
-        #reviewDates = kwargs.get("reviewDates")
         cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, %(reviewDate)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
 

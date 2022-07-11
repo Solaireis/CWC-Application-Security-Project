@@ -14,7 +14,7 @@
 	</nav>
 	<div class="box">
 		<div>
-			<form action="" method="POST">
+			<form action="{{ url_for('userBP.courseReview', courseID=course.courseID) }}" method="POST">
 				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 				<div class="row">
 					<div class="col-sm-6">
@@ -38,14 +38,12 @@
 					</div>
 				</div>
 				<div>
-					{{ render_field(form.reviewTitle, class="form-control") }}
-					<br>
 					{{ render_field(form.reviewDescription, class="form-control", rows="10") }}
-					<br>
-					{{ render_field(form.reviewRating, class="form-control") }}
 				</div>
 				<div>
+		
 					<button type="submit" class="btn btn-primary mb-2" class="float-end">Submit</button>
+					
 				</div>
 			</form>
 		</div>
