@@ -1405,7 +1405,8 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         courseRating = kwargs["courseRating"]
         courseReview = kwargs["courseReview"]
-        cur.execute("INSERT INTO review VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, %(reviewDate)s)", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
+        print(userID, courseID, courseRating, courseReview)
+        cur.execute("INSERT INTO review (user_id, course_id, course_rating, course_review, review_date) VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
 
     elif mode == "retrieve_all":

@@ -2,6 +2,7 @@
 Routes for logged in normal users (Students or Teachers)
 """
 # import third party libraries
+from sqlalchemy import false
 from werkzeug.utils import secure_filename
 import markdown
 
@@ -173,25 +174,38 @@ def courseReview(courseID:str):
                 break
 
         if purchased:
-                print("user has purchased this course")
-                if (request.method == "POST"):
-                    if (reviewForm.validate()):
-                        review = reviewForm.reviewDescription.data
-                        print("review:",review)
-                        rating= request.form.get("rate")
-                        print("rating:",rating)
-                        sql_operation(table="review", mode="add_review", courseID=courseID, userID=userID, courseReview=review, courseRating=rating)
-                        print("review updated")
-                        flash("Your review has been successfully added.", "Review Added!")
-                        #redirect back to coursepage
-                        return redirect(url_for("courseBP.coursePage", courseID=courseID))
-                    else:
-                        flash("Please fill out all fields.", "Failed to Add Review!")
-                        return redirect(url_for("userBP.courseReview", courseID=courseID))
-                return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
+                print("user has purchased this course")         
         else:
             print("user has not purchased this course")
             abort(404)
+        review = False
+
+        reviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
+        for review in reviews:
+            print(review)
+            if (review[0]==userID and review[1]==courseID):
+                review = True
+                break
+        if review:
+            print("user has already reviewed this course")
+            abort(404)
+        else:
+            print("user has not reviewed this course")
+        
+        if (request.method == "POST"):
+                    print("post request")
+                    print("form validated")
+                    review = reviewForm.reviewDescription.data
+                    print("review:",review)
+                    rating= request.form.get("rate")
+                    print("rating:",rating)
+                    sql_operation(table="review", mode="add_review", courseID=courseID, userID=userID, courseReview=review, courseRating=rating)
+                    print("review updated")
+                    flash("Your review has been successfully added.", "Review Added!")
+                    #redirect back to coursepage
+                    return redirect(url_for("courseBP.coursePage", courseID=courseID))
+        else:
+            return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
 
     else:
         return redirect(url_for("guestBP.login"))
