@@ -45,7 +45,7 @@
         </div>
         <div class="col-lg-4">
             </button>
-            <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ courses.courseImagePath) }}" alt="Video Thumbnail" class="img-thumbnail" >
+            <img src="{{  courses.courseImagePath }}" alt="Video Thumbnail" class="img-thumbnail" >
             <p>Uploaded by: 
                 <div>            
                     <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
@@ -71,6 +71,8 @@
             <p>Number of reviews: </p>
             <p>Course Price: ${{courses.coursePrice}}</p>
             <p>Course Type: <span>{{ courses.courseCategory }}</span></p>
+            
+            <hr>
             <div>
                 <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -78,7 +80,7 @@
                     <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                 </form>
             </div>
-            <hr>
+            
             
         </div>
         <div class="col-lg-8">
