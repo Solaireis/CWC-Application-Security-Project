@@ -82,10 +82,7 @@ class CourseInfo:
         self.__coursePrice = tupleInfo[7]
         self.__courseCategory = tupleInfo[8]
         self.__dateCreated = tupleInfo[9]
-        if (tupleInfo[10] == None):
-            self.__averageRating = 0
-        else:
-            self.__averageRating = int(tupleInfo[10])
+        self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
 
     @property
     def courseID(self) -> str:

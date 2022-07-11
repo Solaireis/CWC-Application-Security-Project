@@ -47,10 +47,8 @@
                 <div class="col-md-4">
                     {% if (course.courseImagePath == None) %}
                         <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% elif 'https' in course.courseImagePath %}
-                        <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                     {% else %}
-                        <img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.courseImagePath) }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                        <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                     {% endif %}
                 </div>
                 <div class="col-md-8">
