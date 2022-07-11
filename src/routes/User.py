@@ -2,7 +2,6 @@
 Routes for logged in normal users (Students or Teachers)
 """
 # import third party libraries
-from sqlalchemy import false
 from werkzeug.utils import secure_filename
 import markdown
 
