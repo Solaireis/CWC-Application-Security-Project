@@ -145,7 +145,7 @@ app.register_blueprint(teacherBP)
 
 """------------------------------------- START OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
-# Note: Not using lambdas for the jobs as on Google Cloud Logging as 
+# Note: Not using lambdas for the jobs as on Google Cloud Logging,
 # it is hard to tell what jobs have been executed
 # E.g. Running job "<lambda> (trigger: cron[hour='23', minute='57', second='0'], 
 # next run at: 2022-07-11 23:57:00 +08)" (scheduled at 2022-07-10 23:57:00+08:00)

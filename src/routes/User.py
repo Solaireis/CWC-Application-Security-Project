@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, send_from_directory
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -168,48 +168,47 @@ def courseReview(courseID:str):
         print(purchasedCourseIDs)
 
         for purchases in purchasedCourseIDs:
-            if (purchases==courseID):
+            if (purchases == courseID):
                 purchased = True
                 break
 
-        if purchased:
-                print("user has purchased this course")         
-        else:
+        if (not purchased):
             print("user has not purchased this course")
             abort(404)
+        print("user has purchased this course")         
         review = False
 
         reviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
         for review in reviews:
-            print(review)
-            if (review[0]==userID and review[1]==courseID):
+            # print(review) # commented it out to prevent massive prints
+            if (review[0] == userID and review[1] == courseID):
                 review = True
                 break
-        if review:
+
+        if (review):
             print("user has already reviewed this course")
             abort(404)
-        else:
-            print("user has not reviewed this course")
-        
+        print("user has not reviewed this course")
+
         if (request.method == "POST"):
-                    print("post request")
-                    print("form validated")
-                    review = reviewForm.reviewDescription.data
-                    print("review:",review)
-                    rating= request.form.get("rate")
-                    print("rating:",rating)
-                    sql_operation(table="review", mode="add_review", courseID=courseID, userID=userID, courseReview=review, courseRating=rating)
-                    print("review updated")
-                    flash("Your review has been successfully added.", "Review Added!")
-                    #redirect back to coursepage
-                    return redirect(url_for("courseBP.coursePage", courseID=courseID))
+            print("post request")
+            print("form validated")
+            review = reviewForm.reviewDescription.data
+            print("review:",review)
+            rating= request.form.get("rate")
+            print("rating:",rating)
+            sql_operation(
+                table="review", mode="add_review", courseID=courseID, userID=userID,
+                courseReview=review, courseRating=rating
+            )
+            print("review updated")
+            flash("Your review has been successfully added.", "Review Added!")
+            #redirect back to coursepage
+            return redirect(url_for("courseBP.coursePage", courseID=courseID))
         else:
             return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
-
     else:
         return redirect(url_for("guestBP.login"))
-
-
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
@@ -218,7 +217,7 @@ def purchaseView(courseID:str):
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     print(courses)
     #courseName = courses[0][1]
-    if courses == False: #raise 404 error
+    if (not courses): #raise 404 error
         abort(404)
 
     # TODO: Could have used Course.py's class instead of
@@ -232,7 +231,6 @@ def purchaseView(courseID:str):
     )
 
     courseVideoPath = None
-
     teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
     print(teacherRecords)
 
@@ -283,7 +281,6 @@ def shoppingCart():
                 subtotal += course.coursePrice
 
             return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
     else:
         return redirect(url_for("guestBP.login"))
 
