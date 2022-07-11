@@ -143,6 +143,63 @@ app.register_blueprint(teacherBP)
 
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 
+"""------------------------------------- START OF WEB APP SCHEDULED JOBS -------------------------------------"""
+
+# Note: Not using lambdas for the jobs as on Google Cloud Logging as 
+# it is hard to tell what jobs have been executed
+# E.g. Running job "<lambda> (trigger: cron[hour='23', minute='57', second='0'], 
+# next run at: 2022-07-11 23:57:00 +08)" (scheduled at 2022-07-10 23:57:00+08:00)
+
+def remove_unverified_users_for_more_than_30_days() -> None:
+    """
+    Remove unverified users from the database
+
+    >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+    """
+    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+
+def remove_expired_jwt() -> None:
+    """
+    Remove expired jwt from the database
+
+    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    """
+    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+
+def remove_expired_sessions() -> None:
+    """
+    Remove expired sessions from the database
+
+    >>> sql_operation(table="session", mode="delete_expired_sessions")
+    """
+    return sql_operation(table="session", mode="delete_expired_sessions")
+
+def reset_expired_login_attempts() -> None:
+    """
+    Reset expired login attempts for users
+
+    >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+    """
+    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+
+def remove_last_accessed_more_than_10_days() -> None:
+    """
+    Remove last accessed more than 10 days from the database
+
+    >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+    """
+    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+
+def re_encrypt_data_in_db() -> None:
+    """
+    Re-encrypt data in the database
+
+    >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
+    """
+    return sql_operation(table="user", mode="re-encrypt_data_in_database")
+
+"""------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
+
 if (__name__ == "__main__"):
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
 
@@ -150,32 +207,32 @@ if (__name__ == "__main__"):
     # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
     # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
-        lambda: sql_operation(table="user", mode="remove_unverified_users_more_than_30_days"),
+        remove_unverified_users_for_more_than_30_days,
         trigger="cron", hour=23, minute=56, second=0, id="removeUnverifiedUsers"
     )
     # Free up the database of expired JWT
     scheduler.add_job(
-        lambda: sql_operation(table="limited_use_jwt", mode="delete_expired_jwt"),
+        remove_expired_jwt,
         trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
     )
     # Free up the database of expired sessions
     scheduler.add_job(
-        lambda: sql_operation(table="session", mode="delete_expired_sessions"), 
+        remove_expired_sessions,
         trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions"
     )
     # Free up database of expired login attempts
     scheduler.add_job(
-        lambda: sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date"), 
+        reset_expired_login_attempts, 
         trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts"
     )
     # Remove user's IP address from the database if the the user has not logged in from that IP address for more than 10 days
     scheduler.add_job(
-        lambda: sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days"),
+        remove_last_accessed_more_than_10_days,
         trigger="interval", hours=1, id="removeUnusedIPAddresses"
     )
     # Re-encrypt all the encrypted data in the database due to the monthly key rotations
     scheduler.add_job(
-        lambda: sql_operation(table="user", mode="re-encrypt_data_in_database"),
+        re_encrypt_data_in_db,
         trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
     )
     # For key rotation of the secret key for digitally signing the session cookie
