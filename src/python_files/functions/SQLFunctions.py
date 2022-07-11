@@ -1216,6 +1216,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
         connection.commit()
 
+    #TODO: Make a HTML / Route for users to view all courses by a teacher from the teacher name in course page
     elif (mode == "get_all_courses_by_teacher"):
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
