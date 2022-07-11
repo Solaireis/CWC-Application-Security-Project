@@ -71,9 +71,15 @@
             <p>Number of reviews: </p>
             <p>Course Price: ${{courses.coursePrice}}</p>
             <p>Course Type: <span>{{ courses.courseCategory }}</span></p>
-            <button type="button" class="btn btn-success">Add to Cart</button>
-
+            <div>
+                <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                    <input name="courseID" type="hidden" value="{{ courses.courseID }}">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+                </form>
+            </div>
             <hr>
+            
         </div>
         <div class="col-lg-8">
             <h1>Reviews</h1>
