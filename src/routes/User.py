@@ -155,13 +155,37 @@ def uploadPic():
 @userBP.route("/course-review/<string:courseID>") #writing of review
 def courseReview(courseID:str):
 
+    #get course data 
     course=sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
+    #get user data
     if ("user" in session):
-        pass
+        print("user is logged in")
+        userID=session["user"]
+        purchases=sql_operation(table="user", mode="get_user_purchases", userID=userID)
+    
+        purchased = False
 
-    return render_template("users/general/course_page_review.html",
-        course=course)
+        #i think there exist a better way to secure this
+        for items in purchases:
+            if (items.courseID==courseID):
+                purchased = True
+
+        if purchased:
+                print("user has purchased this course")
+                return render_template("users/loggedin/purchase_review.html", course=course, userID=userID)
+        else:
+            print("user has not purchased this course")
+            return render_template("users/loggedin/purchase_review.html", course=course, userID=userID)
+
+    else:
+        return redirect(url_for("guestBP.login"))
+
+
+@userBP.route("/submit-review", methods=["GET","POST"])
+def submitReview():
+    pass
+
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
