@@ -79,8 +79,9 @@ def coursePage(courseID:str):
     if retrieveReviews: #if there are reviews
         for tupleData in retrieveReviews:
             reviewUserID = tupleData[0]
-            userImage = get_image_path(reviewUserID)
-            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=userImage))
+            reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
+            imageSrcPath = reviewInfo.profileImage
+            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
