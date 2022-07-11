@@ -127,10 +127,10 @@ def search():
             userInfo = get_image_path(session["user"], returnUserInfo=True)
             return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role)
 
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage)
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None)
 
     if ("user" in session or "admin" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=None)

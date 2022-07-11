@@ -59,7 +59,7 @@ def createCourse():
                     flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
                     return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
 
-                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo.role, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
+                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
                 stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
 
 
@@ -86,7 +86,7 @@ def courseList():
             if (page > maxPage):
                 abort(404)
 
-        return render_template("users/teacher/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, pageNum=page, maxPage=maxPage, courseList=courseList)
+        return render_template("users/teacher/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -102,11 +102,35 @@ def courseDelete():
 
 @teacherBP.route("/edit-course", methods=["GET", "POST"])
 def courseUpdate():
+    #TODO: Form is working, gonna make edits soon
     if ("user" in session):
-        # Note: that this will return a UserInfo object
+        courseID = request.args.get("cid", default="test", type=str)
+        courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+        if (not courseFound):
+            abort(404)
         userInfo = get_image_path(session["user"], returnUserInfo=True) 
-        imageSrcPath = userInfo.profileImage
-        #TODO: Make the update video details form
+        courseForm = CreateCourse(request.form)
+        updated = ''
+        if (request.method == "POST"):
+            #TODO : Update profile picture, course tag
+            if (courseForm.courseTitle.data != courseFound.courseName):
+                sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
+                updated += "Course Title, "
+            if (courseForm.courseDescription.data != courseFound.courseDescription):
+                sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
+                updated += "Course Description, "
+            if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
+                sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
+                updated += "Course Price, "
+            
+            flash(f"Fields Updated : {updated}", "Successful Update")
+            return redirect(url_for("teacherBP.courseList"))
+        else:
+            #TODO: Set course tag input, and video path
+            courseForm.courseTitle.data = courseFound.courseName
+            courseForm.courseDescription.data = courseFound.courseDescription
+            courseForm.coursePrice.data = float(courseFound.coursePrice)
+            return render_template("users/teacher/course_video_edit.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, form=courseForm)
     else:
         return redirect(url_for("guestBP.login"))
 

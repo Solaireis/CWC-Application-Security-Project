@@ -227,7 +227,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             c.course_image_path, c.course_price, c.course_category, c.date_created, 
             ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
             FROM course AS c
-            INNER JOIN review AS r
+            LEFT JOIN review AS r
             ON c.course_id = r.course_id
             INNER JOIN user AS u
             ON c.teacher_id=u.id
@@ -249,6 +249,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             WHERE u.id=user_id;
         END
     """)
+    
     """Pagination Functions"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
@@ -263,7 +264,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 c.course_image_path, c.course_price, c.course_category, c.date_created,
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
-                INNER JOIN review AS r ON c.course_id=r.course_id
+                LEFT JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.teacher_id=teacherID
                 GROUP BY c.course_id
@@ -290,7 +291,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 c.course_image_path, c.course_price, c.course_category, c.date_created, 
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
-                INNER JOIN review AS r ON c.course_id=r.course_id
+                LEFT JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.course_name LIKE @search_query
                 GROUP BY c.course_id

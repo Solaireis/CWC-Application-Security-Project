@@ -1145,12 +1145,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         course_price = kwargs["coursePrice"]
         course_category = kwargs["courseCategory"]
         video_path = kwargs["videoPath"]
-        course_total_rating = 0
-        course_rating_count = 0
 
         cur.execute(
-            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, %(course_total_rating)s, %(course_rating_count)s, SGT_NOW(), %(video_path)s)",
-            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "course_total_rating":course_total_rating, "course_rating_count":course_rating_count, "video_path":video_path}
+            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, SGT_NOW(), %(video_path)s)",
+            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "video_path":video_path}
         )
         connection.commit()
 
@@ -1226,7 +1224,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         resultsList = cur.fetchall()
         if (len(resultsList) == 0):
             return []
-        maxPage = ceil(foundResults[1][-1] / 10)
+        maxPage = ceil(resultsList[0][-1] / 10)
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
@@ -1362,7 +1360,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         foundResults = cur.fetchall()
         if (len(foundResults) == 0):
             return []
-        maxPage = ceil(foundResults[1][-1] / 10)
+        maxPage = ceil(foundResults[0][-1] / 10)
         teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
             cur.execute("SELECT username, profile_image FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1376,7 +1374,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         
 
     else:
-        raise ValueError("Invalid mode in the session_sql_operation function!")
+        raise ValueError("Invalid mode in the course_sql_operation function!")
 
 def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
