@@ -105,23 +105,24 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Data Structure and Algorithms Demo Course {i}"
     course_description = (f""" This is a demo course for Data Structure and Algorithms.
-    It is a course for students who are interested in learning about Data Structure and Algorithms.
-    In this course you will learn about the following topics:
-    1. Arrays
-    2. Linked Lists
-    3. Stack and Queue
-    4. Trees
-    5. Graphs
-    6. Binary Search Tree
-    7. Red Black Binary Tree
-    8. Binary Heap
-    9. Hash Table
-    10. Advance sorting
-    11. Searching
-    12. Pattern Defeating QuickSort
 
-    Thanks for watching the demo course!
-        """)
+It is a course for students who are interested in learning about Data Structure and Algorithms.
+
+In this course you will learn about the following topics:
+1. Arrays
+2. Linked Lists
+3. Stack and Queue
+4. Trees
+5. Graphs
+6. Binary Search Tree
+7. Red Black Binary Tree
+8. Binary Heap
+9. Hash Table
+10. Advance sorting
+11. Searching
+12. Pattern Defeating QuickSort
+
+Thanks for watching the demo course!""")
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
     course_category = "Other Academics"
@@ -218,13 +219,9 @@ while (1):
         res = cur.fetchone()
         if (res is None):
 
-            courseReview = """
-
-            Daniel is actually a very helpful person.
-            he has shared many tips and tricks to teaching me
-            how to do better at data structure and algorithms
-
-            """
+            courseReview = """Daniel is actually a very helpful person.
+he has shared many tips and tricks to teaching me
+how to do better at data structure and algorithms"""
             userID = STUDENT_ID
             cur.execute(f"SELECT * FROM course")
             res = cur.fetchall()
@@ -242,12 +239,7 @@ while (1):
 
             #Adding second review to review
             print("Adding second review to review")
-            courseReview = """
-
-            Daniel explained to me Pattern Defeating quicksort in such a simple way.
-            Thank you!
-
-            """
+            courseReview = "Daniel explained to me Pattern Defeating quicksort in such a simple way. Thank you!"
             userID = STUDENT_ID2
             cur.execute(f"SELECT * FROM course")
             res = cur.fetchall()
