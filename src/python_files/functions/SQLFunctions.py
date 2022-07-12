@@ -1369,12 +1369,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
                 return courseInfoList
 
-    elif (mode == "search"):
+    elif (mode == "search") or (mode == "explore"):
+        courseTag = kwargs.get("courseCategory")
         searchInput = kwargs.get("searchInput")
         pageNum = kwargs.get("pageNum")
         resultsList = []
 
-        cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
+        if (mode == "search"):
+            cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
+        else:
+            cur.execute("CALL explore_course_paginate(%(pageNum)s, %(courseTag)s)", {"pageNum":pageNum,"courseTag":courseTag})
         foundResults = cur.fetchall()
         if (len(foundResults) == 0):
             return []

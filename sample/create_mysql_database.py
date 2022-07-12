@@ -304,6 +304,32 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `explore_course_paginate`(IN page_number INT, IN course_tag VARCHAR(255))
+        BEGIN
+            SET @total_course_num := (SELECT COUNT(*) FROM course WHERE course_category=course_tag);
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num,
+            course_info.* FROM (
+                SELECT c.course_id, c.teacher_id, 
+                u.username, u.profile_image, c.course_name, c.course_description, 
+                c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
+                FROM course AS c
+                LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
+                INNER JOIN user AS u ON c.teacher_id=u.id
+                WHERE c.course_category=course_tag
+                GROUP BY c.course_id
+                ORDER BY c.date_created DESC -- show most recent courses first
+            ) AS course_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users` (IN page_number INT)
         BEGIN

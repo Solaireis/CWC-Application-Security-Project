@@ -11,7 +11,11 @@
 
 {% block content %}
 <div class="container">
+    {% if tagSearch %}
+    <h2 class="display-5" class="overflow-auto">All courses tagged with "{{ searchInput }}"</h2>
+    {% else %}
     <h2 class="display-5" class="overflow-auto">You Searched For "{{ searchInput }}"</h2>
+    {% endif %}
     {% if (foundResultsLen < 1) %}
         <div class="row">
             <div class="col">

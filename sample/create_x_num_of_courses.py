@@ -124,7 +124,7 @@ In this course you will learn about the following topics:
 Thanks for watching the demo course!""")
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
-    course_category = "Other Academics"
+    course_category = "Other_Academics"
 
     #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
     video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path

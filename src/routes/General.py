@@ -118,6 +118,27 @@ def coursePage(courseID:str):
         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
+# @generalBP.route("/explore/<string:courseCategory>")
+# def exploreCategory(courseCategory:str):
+#     page = request.args.get("p", default=1, type=int)
+#     listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
+#     if (listInfo):
+#         foundResults, maxPage = listInfo[0], listInfo[1]
+#         if (page > maxPage):
+#             abort(404)
+
+#         if ("user" in session or "admin" in session):
+#             userInfo = get_image_path(session["user"], returnUserInfo=True)
+#             return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role)
+
+#         return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None)
+
+#     if ("user" in session or "admin" in session):
+#         userInfo = get_image_path(session["user"], returnUserInfo=True)
+#         return render_template("users/general/search.html", searchInput=courseCategory, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+
+#     return render_template("users/general/search.html", searchInput=courseCategory, foundResults=None, foundResultsLen=0, accType=None)
+
 @generalBP.route("/search")
 def search():
     """
@@ -138,6 +159,26 @@ def search():
         abort(413)
 
     page = request.args.get("p", default=1, type=int)
+    courseCategory = request.args.get("ct", default="test", type=str)
+    if (courseCategory):
+        listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
+        if (listInfo):
+            foundResults, maxPage = listInfo[0], listInfo[1]
+            if (page > maxPage):
+                abort(404)
+
+            if ("user" in session or "admin" in session):
+                userInfo = get_image_path(session["user"], returnUserInfo=True)
+                return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role, tagSearch=True)
+
+            return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None, tagSearch=True)
+
+        if ("user" in session or "admin" in session):
+            userInfo = get_image_path(session["user"], returnUserInfo=True)
+            return render_template("users/general/search.html", searchInput=courseCategory, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role, tagSearch=True)
+
+        return render_template("users/general/search.html", searchInput=courseCategory, foundResults=None, foundResultsLen=0, accType=None, tagSearch=True)
+
     listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
     if (listInfo):
         foundResults, maxPage = listInfo[0], listInfo[1]
