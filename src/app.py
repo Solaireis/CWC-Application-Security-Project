@@ -25,10 +25,14 @@ import logging
 app = Flask(__name__)
 
 # Integrate Google CLoud Logging to the Flask app
-# TODO: Check if this is the correct way to do this
 gcp_logging.handlers.setup_logging(CONSTANTS.GOOGLE_LOGGING_HANDLER)
 logging.getLogger().setLevel(logging.INFO)
 app.logger.addHandler(CONSTANTS.GOOGLE_LOGGING_HANDLER)
+
+# Add gunicorn logger to the Flask app (when in production)
+if (not CONSTANTS.DEBUG_MODE):
+    gunicornLogger = logging.getLogger("gunicorn.error")
+    app.logger.addHandler(gunicornLogger)
 
 # flask extension that prevents cross site request forgery
 app.config["CSRF_COOKIE_SECURE"] = True
