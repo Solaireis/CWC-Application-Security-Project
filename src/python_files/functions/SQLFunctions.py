@@ -1431,5 +1431,13 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
 
+    
+    elif mode == "retrieve_admin":
+        cur.execute("SELECT * FROM role WHERE role_name = 'admin'")
+        role_list = cur.fetchall()
+        return role_list if (role_list is not None) else []
+        
+
     else:
         raise ValueError("Invalid mode in the role_sql_operation function!")
+    
