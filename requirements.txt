@@ -29,4 +29,3 @@ flask-seasurf>=1.1.1
 ipinfo>=4.2.1
 markdown>=3.3.7
 stripe>=3.4.0
-PyVimeo>=1.1.0

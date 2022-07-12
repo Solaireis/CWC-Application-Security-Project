@@ -1,3 +1,6 @@
+"""
+Run this file to download all dependencies with integrity checks.
+"""
 # import third party libraries
 import requests
 
@@ -19,14 +22,13 @@ headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
 }
 
-rootDir = Path(__file__).absolute().parent.parent.parent.parent
+rootDir = Path(__file__).absolute().parent.parent
 dirname = rootDir.joinpath("requirements.txt")
 packagedir = rootDir.joinpath("python_packages")
 packagedir.mkdir(parents=True, exist_ok=True)
 
 with open(dirname) as f:
     dependencies = f.readlines()
-
 
 for lib in dependencies:
     maximum = False

@@ -424,13 +424,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
     if (mode is None):
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
 
-    """
-    Set buffered = True
-
-    The reason is that without a buffered cursor, the results are "lazily" loaded, meaning that "fetchone" actually only fetches one row from the full result set of the query. When you will use the same cursor again, it will complain that you still have n-1 results (where n is the result set amount) waiting to be fetched. However, when you use a buffered cursor the connector fetches ALL rows behind the scenes and you just take one from the connector so the mysql db won't complain.
-    """
     cur = connection.cursor()
-
     if (mode == "add_token"):
         token = kwargs["token"]
         userID = kwargs["userID"]

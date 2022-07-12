@@ -106,8 +106,7 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     if (pageNum < 4):
         # if the user's current page number is less than 4, (i.e. 1-3)
         # then the array will be: [1, 2, 3, 4, 5]
-        for pageCount in range(1, 6):
-            paginationList.append(pageCount)
+        paginationList.extend([1, 2, 3, 4, 5])
         return paginationList
 
     # calculating the difference from the user's current page to max number of pages

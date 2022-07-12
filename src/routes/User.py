@@ -12,7 +12,6 @@ from flask import render_template, request, redirect, url_for, session, flash, a
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
-from python_files.functions.VimeoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
 

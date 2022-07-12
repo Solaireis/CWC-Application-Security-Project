@@ -189,11 +189,6 @@ class ConstantsConfigs:
         self.__STRIPE_PUBLIC_KEY = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
         self.__STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
 
-        # For Vimeo API
-        self.__VIMEO_CLIENT_ID = "9ece1a6fad946abaf1264307713aa7ede45f33a7"
-        self.__VIMEO_CLIENT_SECRET = self.get_secret_payload(secretID="vimeo-secret")
-        self.__VIMEO_ACCESS_TOKEN = self.get_secret_payload(secretID="vimeo-token")
-
         # For Google Cloud Logging API
         self.__LOGGING_CLIENT = gcp_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
         self.__LOGGING_NAME = "coursefinity-web-app"
@@ -416,18 +411,6 @@ class ConstantsConfigs:
     @property
     def STRIPE_SECRET_KEY(self) -> str:
         return self.__STRIPE_SECRET_KEY
-
-    @property
-    def VIMEO_CLIENT_ID(self) -> str:
-        return self.__VIMEO_CLIENT_ID
-
-    @property
-    def VIMEO_CLIENT_SECRET(self) -> str:
-        return self.__VIMEO_CLIENT_SECRET
-
-    @property
-    def VIMEO_ACCESS_TOKEN(self) -> str:
-        return self.__VIMEO_ACCESS_TOKEN
 
     @property
     def LOGGING_CLIENT(self) -> gcp_logging.Client:
