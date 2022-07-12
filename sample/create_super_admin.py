@@ -44,7 +44,7 @@ def print_menu(adminCount:int=0) -> None:
     MENU = f"""----------- Menu (Debug Mode) -------------
 
 > Note: This is only for DEBUG purposes.
-> Admin Count: {adminCount}
+> Super Admin Count: {adminCount}
 
 1. Create a super admin
 2. Delete super admin
