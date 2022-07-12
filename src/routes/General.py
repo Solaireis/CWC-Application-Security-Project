@@ -57,7 +57,7 @@ def teacherPage(teacherID:str):
 
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
-    print(courseID)
+    # print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courses): #raise exception
         abort(404)
@@ -68,13 +68,13 @@ def coursePage(courseID:str):
             extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
         )
     )
-    print("hi",courses)
+    # print("hi",courses)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
     teacherName = teacherRecords.username
     teacherProfilePath = teacherRecords.profileImage
 
     retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
-    print("the reviews", retrieveReviews)
+    # print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
         for tupleData in retrieveReviews:

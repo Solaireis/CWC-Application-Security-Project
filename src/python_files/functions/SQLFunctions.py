@@ -176,7 +176,7 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo
         userInfo.profileImage = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
         return userInfo.profileImage if (not returnUserInfo) else userInfo
 
-    imageSrcPath = UserInfo.profileImage
+    imageSrcPath = userInfo.profileImage
     return imageSrcPath if (not returnUserInfo) else userInfo
 
 def format_user_info(userInfo:tuple, offset:int=0) -> UserInfo:
@@ -1255,7 +1255,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
                     FROM course AS c
-                    INNER JOIN review AS r
+                    LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
@@ -1272,7 +1272,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
                     FROM course AS c
-                    INNER JOIN review AS r
+                    LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
@@ -1292,7 +1292,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
                     FROM course AS c
-                    INNER JOIN review AS r
+                    LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
@@ -1309,7 +1309,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
                     FROM course AS c
-                    INNER JOIN review AS r
+                    LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id

@@ -6,14 +6,19 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block content %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
+{% endblock %}
+{% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
+
+{% block content %}
 <div class="container-lg">
     <div class="row">
         
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="">{{ courses.teacherUsername }}</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('generalBP.teacherPage', teacherID=courses.teacherID) }}">{{ courses.teacherUsername }}</a></li>
                 <li class="breadcrumb-item active"><a href="">All Courses</a></li>
                 <li class="breadcrumb-item active" aria-current="page"> {{ courses.courseName }}</li>
             </ol>
@@ -45,7 +50,7 @@
         </div>
         <div class="col-lg-4">
             </button>
-            <img src="{{  courses.courseImagePath }}" alt="Video Thumbnail" class="img-thumbnail" >
+            <img src="{{ courses.courseImagePath }}" alt="Video Thumbnail" class="img-thumbnail" >
             <p>Uploaded by: 
                 <div>            
                     <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
@@ -112,9 +117,4 @@
 
     
 {% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
-{% endblock %}
-
     

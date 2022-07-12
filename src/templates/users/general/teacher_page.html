@@ -14,13 +14,15 @@
 
 {% block content %}
 <div class="container">
-    <h1>Welcome to {{ teacherUsername }}'s page!</h1>
     <div class="container row">
-        <div class="col card w-90 mb-3 border bg-light flex-row">
+        <div class="col card w-90 mb-3 border bg-light">
             <div class="row">
                 <div id="pfp" class="col-md-3">
 					<img src="{{ teacherProfilePath }}" alt="{{ teacherUsername }}'s Profile Icon" id="user-icon-setting">
                 </div>
+				<div class="col-md-9">
+					<h1>Welcome to {{ teacherUsername }}'s page!</h1>
+				</div>
             </div>
         </div>
     </div>
@@ -41,20 +43,20 @@
 				{% for course in threeHighlyRatedCourses %}
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
-							{% if (course.course_image_path == None) %}
+							{% if (course.courseImagePath == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
-								<h4 class="card-title">{{ course.course_name }}</h4>
-								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
-								<p class="card-text">{{ course.course_description }}</p>
-								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
-								{% if (course.rating_count > 0) %}
+								<h4 class="card-title">{{ course.courseName }}</h4>
+								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
+								<p class="card-text">{{ course.courseDescription }}</p>
+								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+								{% if (course.averageRating > 0) %}
 								<div class="ratings">
-									{% with remainingStars = 5 - course.average_rating %}
-										{% for _ in range(course.average_rating) %}
+									{% with remainingStars = 5 - course.averageRating %}
+										{% for _ in range(course.averageRating) %}
 											<span class="fas fa-star"></span>
 										{% endfor %}
 										{% for _ in range(remainingStars) %}
@@ -75,12 +77,12 @@
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
 									{% if (course.course_id in userPurchasedCourses) %}
-										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.courseID) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}
-										<form action="{{ url_for('userBP.cart') }}" method="POST">
-											<input name="courseID" type="hidden" value="{{ course.course_id }}">
+										<form action="{{ url_for('userBP.addToCart', courseID=course.courseID) }}" method="POST">
+											<input name="courseID" type="hidden" value="{{ course.courseID }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>
 									{% endif %}
@@ -109,20 +111,20 @@
 				{% for course in latestThreeCourses %}
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
-							{% if (course.course_image_path == None) %}
+							{% if (course.courseImagePath == None) %}
 								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
-								<img src="{{ url_for('static', filename='images/course_thumbnails/' ~ course.course_image_path) }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
-								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.course_id) }}">{{ course.course_name }}</a></h4>
-								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacher_id) }}"><small class="text-muted">By {{ course.teacher_name }}</small></a>
-								<p class="card-text">{{ course.course_description }}</p>
-								<p class="card-text fw-bold">Price: {{ course.course_price }}</p>
-								{% if (course.rating_count > 0) %}
+								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
+								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUserame }}</small></a>
+								<p class="card-text">{{ course.courseDescription }}</p>
+								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+								{% if (course.averageRating > 0) %}
 								<div class="ratings">
-									{% with remainingStars = 5 - course.average_rating %}
-										{% for _ in range(course.average_rating) %}
+									{% with remainingStars = 5 - course.averageRating %}
+										{% for _ in range(course.averageRating) %}
 											<span class="fas fa-star"></span>
 										{% endfor %}
 										{% for _ in range(remainingStars) %}
@@ -142,13 +144,13 @@
 								{% elif (accType == "Admin") %}
 									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
 								{% else %}
-									{% if (course.course_id in userPurchasedCourses) %}
-										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.course_id) }}" class="btn btn-success float-end">
+									{% if (course.courseID in userPurchasedCourses) %}
+										<a action="{{ url_for('userBP.purchaseDetails', courseID=course.courseID) }}" class="btn btn-success float-end">
 											<i class="fas fa-shopping-bag"></i> View Purchase
 										</a>
 									{% else %}
-										<form action="{{ url_for('userBP.cart') }}" method="POST">
-											<input name="courseID" type="hidden" value="{{ course.course_id }}">
+										<form action="{{ url_for('userBP.addToCart', courseID=course.courseID) }}" method="POST">
+											<input name="courseID" type="hidden" value="{{ course.courseID }}">
 											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
 										</form>
 									{% endif %}

@@ -227,7 +227,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             c.course_image_path, c.course_price, c.course_category, c.date_created, 
             ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
             FROM course AS c
-            LEFT JOIN review AS r
+            LEFT OUTER JOIN review AS r
             ON c.course_id = r.course_id
             INNER JOIN user AS u
             ON c.teacher_id=u.id
@@ -264,7 +264,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 c.course_image_path, c.course_price, c.course_category, c.date_created,
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
-                LEFT JOIN review AS r ON c.course_id=r.course_id
+                LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.teacher_id=teacherID
                 GROUP BY c.course_id
@@ -291,7 +291,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 c.course_image_path, c.course_price, c.course_category, c.date_created, 
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
-                LEFT JOIN review AS r ON c.course_id=r.course_id
+                LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.course_name LIKE @search_query
                 GROUP BY c.course_id
