@@ -47,7 +47,7 @@
   - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
     - 156 bits of security
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
-- Encrypting the sensitive data in the database using Google's Symmetric Encryption Algorithm
+- Encrypting the sensitive data in the database using Google Cloud Platform KMS symmetric encryption service
   - Using Google Cloud Platform KMS (Key Management Service) API
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
   - Each user has a unique symmetric key for encryption and decryption
@@ -122,6 +122,11 @@
   - HttpOnly:
     - Prevent client-side scripts from accessing the cookie
       - Prevent cookie theft
+- Different method for logging in as an Admin
+  - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
+  - More secure as the admin does not use the same method of logging as normal users of the web application.
+  - The admin routes are also IP address protected via a whitelist for extra security
+    - In the database, there is a table of whitelisted IP addresses that are also encrypted using Google Cloud Platform KMS symmetric encryption service which uses AES256-GCM
 
 ---
 

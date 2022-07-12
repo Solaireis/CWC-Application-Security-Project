@@ -113,6 +113,11 @@ def before_request() -> None:
                 # if session does not exist in the db
                 session.clear()
 
+    # If the admin still has the session cookie but is not in a whitelisted IP address
+    if ("admin" in session and not sql_operation(table="whitelisted_ip_addresses", mode="check_if_whitelisted", ipAddress=get_remote_address())):
+        session.clear()
+        abort(403)
+
     if ("user" in session and "admin" in session):
         # both user and admin are in session cookie value
         # clear the session as it should not be possible to have both session

@@ -1,11 +1,11 @@
 # import third party libraries
 import pymysql
+from email_validator import validate_email, EmailNotValidError
 
 # import python standard libraries
 from sys import exit as sysExit
-import re, pathlib, sys, json
+import re, pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
-from socket import inet_aton, inet_pton, AF_INET6
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -46,18 +46,28 @@ def print_menu(adminCount:int=0) -> None:
 > Note: This is only for DEBUG purposes.
 > Admin Count: {adminCount}
 
-1. Create Super admins
-2. Delete all admins
+1. Create a super admin
+2. Delete super admin
 X. Close program
 
 -------------------------------------------"""
     print(MENU)
 
+def enter_email() -> str:
+    """Validates email input and returns the validated email address."""
+    while (1):
+        emailInput = input("Enter Email: ")
+        try:
+            return validate_email(emailInput).email
+        except (EmailNotValidError) as e:
+            print(f"Invalid email Error: {e}", end="\n\n")
+            continue
+
 """----------------------------------- END OF DEFINING FUNCTIONS -----------------------------------"""
 
 AVAILABLE_OPTIONS = ("1", "2", "x")
 NUMBER_REGEX = re.compile(r"^\d+$")
-MAX_NUMBER_OF_ADMINS = 1 # try not to increase the limit too much
+MAX_NUMBER_OF_SUPER_ADMINS = 1 # ONLY ONE SUPER ADMIN
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
@@ -77,21 +87,21 @@ except (pymysql.ProgrammingError):
 cur = con.cursor()
 
 # convert role name to role id
-ADMIN_ROLE_ID = None
+SUPER_ADMIN_ROLE_ID = None
 cur.execute("CALL get_role_id('SuperAdmin')")
-ADMIN_ROLE_ID = cur.fetchone()
+SUPER_ADMIN_ROLE_ID = cur.fetchone()
 
-if (ADMIN_ROLE_ID is None):
+if (SUPER_ADMIN_ROLE_ID is None):
     print("Error: Role not found")
     con.close()
     sysExit(1)
 
-ADMIN_ROLE_ID = ADMIN_ROLE_ID[0]
+SUPER_ADMIN_ROLE_ID = SUPER_ADMIN_ROLE_ID[0]
 
 def main() -> None:
     while (1):
         # count number of existing admin accounts
-        cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
+        cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": SUPER_ADMIN_ROLE_ID})
         existingAdminCount = cur.fetchone()[0]
         print_menu(adminCount=existingAdminCount)
 
@@ -100,65 +110,55 @@ def main() -> None:
             print("Invalid input", end="\n\n")
             continue
         elif (cmdOption == "1"):
-            noOfAdmin = 0
-            while (1):
-                print()
-                print("Note: The maximum number of admins in the database is 1!")
-                noOfAdmin = "1"
-                if (not re.fullmatch(NUMBER_REGEX, noOfAdmin)):
-                    print("Please enter a number!", end="\n\n")
-                    continue
-                else:
-                    try:
-                        noOfAdmin = int(noOfAdmin)
-                        differences = MAX_NUMBER_OF_ADMINS - existingAdminCount
-                        if (noOfAdmin > differences):
-                            noOfAdmin = differences
-                    except (ZeroDivisionError):
-                        noOfAdmin = 0
-                    print(f"\nCreating super admin...", end="")
-                    break
-
-            if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
-                count = 0
+            if (existingAdminCount < MAX_NUMBER_OF_SUPER_ADMINS):
                 profilePic = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
-                for i in range(existingAdminCount, noOfAdmin + existingAdminCount):
-                    adminID = NormalFunctions.generate_id()
-                    username = f"rootAdmin-{i}"
-                    email = f"rootadmin{i}@coursefinity.com"
-                    # for debug purposes only (in real world use, use a more secure password)
-                    password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("Admin123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
+                adminID = NormalFunctions.generate_id()
+                username = f"root-admin"
+                emailInput = ""
 
+                while (1):
+                    emailInput = enter_email()
+
+                     # check for duplicates
+                    cur.execute("SELECT * FROM user WHERE email = %(email)s", {"email": emailInput})
+                    if (cur.fetchone() is not None):
+                        print("Error: Email already exists!", end="\n\n")
+                        continue
+
+                    # confirm prompt
+                    while (1):
+                        print(f"\nAre you sure that you want to use the email, {emailInput}?")
+                        confirmPrompt = input("Confirm (Y/n/x to go back to menu): ").lower().strip()
+                        if (confirmPrompt not in ("y", "n", "x", "")):
+                            print("Invalid input", end="\n\n")
+                            continue
+                        break
+                    # "x" to stop adding admins and break out of the enter email loop
+                    if (confirmPrompt == "x"):
+                        emailInput = "x"
+                        break
+                    confirmPrompt = True if (confirmPrompt != "n") else False
+                    if (confirmPrompt):
+                        break # break out of while (1) loop if user confirms the input
+
+                # "x" to stop adding admins and break out of the for loop
+                if (emailInput != "x"):
                     cur.execute(
-                        "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())", \
-                        {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": profilePic}
+                        "INSERT INTO user (id, role, username, email, email_verified, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(profilePic)s, SGT_NOW())", \
+                        {"id": adminID, "role": SUPER_ADMIN_ROLE_ID, "username": username, "email": emailInput, "profilePic": profilePic}
                     )
                     con.commit()
 
-                    ipAddress = "127.0.0.1"
-                    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-
-                    # Convert the IP address to binary format
-                    try:
-                        ipAddress = inet_aton(ipAddress).hex()
-                        isIpv4 = True
-                    except (OSError):
-                        isIpv4 = False
-                        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
-
-                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"adminID": adminID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
-                    con.commit()
-
-                    count += 1
-
-                print(f"\r{count} admin accounts created!")
+                    print(f"\n1 super admin account created!")
+                else:
+                    print("\nAborted creation of super admin account!")
             else:
-                print(f"\rMaximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
+                print(f"\nMaximum number of {MAX_NUMBER_OF_SUPER_ADMINS} admin accounts already exists!")
             print()
 
         elif (cmdOption == "2"):
             # delete data of all admins
-            cur.execute("SELECT id FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
+            cur.execute("SELECT id FROM user WHERE role = %(roleID)s", {"roleID": SUPER_ADMIN_ROLE_ID})
             listOfAdmins = cur.fetchall()
             listOfAdmins = [adminID[0] for adminID in listOfAdmins]
             for adminID in listOfAdmins:

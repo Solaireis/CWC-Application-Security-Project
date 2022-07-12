@@ -243,6 +243,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "recovery_token"):
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "whitelisted_ip_addresses"):
+                returnValue = whitelisted_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -269,6 +271,23 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             abort(500)
 
     return returnValue
+
+def whitelisted_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the whitelisted_ip_addresses_sql_operation function")
+
+    cur = connection.cursor()
+    if (mode == "check_if_whitelisted"):
+        reqIpAddress = kwargs["ipAddress"]
+        cur.execute("SELECT ip_address FROM whitelisted_ip_addresses")
+        resultArr = cur.fetchall()
+        for ipAddress in resultArr:
+            if (symmetric_decrypt(ciphertext=ipAddress[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID) == reqIpAddress):
+                return True
+        return False
+
+    else:
+        raise ValueError("Invalid mode in the whitelisted_ip_addresses_sql_operation function!")
 
 def recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -324,6 +343,7 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
             {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
         )
         connection.commit()
+
     elif (mode == "decrement_limit_after_use"):
         tokenID = kwargs["tokenID"]
         cur.execute(
@@ -336,6 +356,7 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
             {"tokenID": tokenID}
         )
         connection.commit()
+
     elif (mode == "jwt_is_valid"):
         tokenID = kwargs["tokenID"]
         print("token", tokenID)
@@ -357,11 +378,13 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
         if (limit is None or limit > 0):
             return True
         return False
+
     elif (mode == "delete_expired_jwt"):
         # to free up the database if the user did not use the token at all
         # to avoid pilling up the database table with redundant data
         cur.execute("DELETE FROM limited_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
         connection.commit()
+
     else:
         raise ValueError("Invalid mode in the limited_use_jwt_sql_operation function!")
 
@@ -658,9 +681,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                         ), 
                         keyID=CONSTANTS.PEPPER_KEY_ID
                     )
-                except (DecryptionError):
+                except (DecryptionError) as e:
                     write_log_entry(
-                        logMessage="Re-encryption of password hash has failed...",
+                        logMessage=f"Re-encryption of password hash has failed... Error: {e}",
                         severity="ALERT"
                     )
                     return
@@ -773,7 +796,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         passwordInput = kwargs["password"]
 
-        cur.execute("SELECT id, password, username, role, email_verified, status FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
+        cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status 
+            FROM user AS u INNER JOIN role AS r ON u.role = r.role_id
+            WHERE u.email=%(emailInput)s AND r.role_name NOT IN ('Admin', 'SuperAdmin');""", {"emailInput":emailInput})
         matched = cur.fetchone()
 
         if (matched is None):

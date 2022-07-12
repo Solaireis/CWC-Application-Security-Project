@@ -1,11 +1,11 @@
 # import third party libraries
 import pymysql
+from email_validator import validate_email, EmailNotValidError
 
 # import python standard libraries
 from sys import exit as sysExit
-import re, pathlib, sys, json
+import re, pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
-from socket import inet_aton, inet_pton, AF_INET6
 
 # import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
@@ -46,12 +46,25 @@ def print_menu(adminCount:int=0) -> None:
 > Note: This is only for DEBUG purposes.
 > Admin Count: {adminCount}
 
-1. Create X number of admins
-2. Delete all admins
+1. Create X number of admins (Login not supported)
+2. Create X number of admins (Login supported)
+3. Delete all admins
 X. Close program
 
 -------------------------------------------"""
     print(MENU)
+
+def enter_email() -> str:
+    """Validates email input and returns the validated email address."""
+    while (1):
+        emailInput = input("Enter Email (x to cancel): ").strip().lower()
+        if (emailInput == "x"):
+            return "x"
+        try:
+            return validate_email(emailInput).email
+        except (EmailNotValidError) as e:
+            print(f"Invalid email Error: {e}", end="\n\n")
+            continue
 
 """----------------------------------- END OF DEFINING FUNCTIONS -----------------------------------"""
 
@@ -99,7 +112,7 @@ def main() -> None:
         if (cmdOption not in AVAILABLE_OPTIONS):
             print("Invalid input", end="\n\n")
             continue
-        elif (cmdOption == "1"):
+        elif (cmdOption == "1" or cmdOption == "2"):
             noOfAdmin = 0
             while (1):
                 print()
@@ -116,7 +129,7 @@ def main() -> None:
                             noOfAdmin = differences
                     except (ZeroDivisionError):
                         noOfAdmin = 0
-                    print(f"\nCreating {noOfAdmin} admins...", end="")
+                    print(f"\nCreating {noOfAdmin} admins...")
                     break
 
             if (existingAdminCount < MAX_NUMBER_OF_ADMINS):
@@ -125,38 +138,54 @@ def main() -> None:
                 for i in range(existingAdminCount, noOfAdmin + existingAdminCount):
                     adminID = NormalFunctions.generate_id()
                     username = f"Admin-{i}"
-                    email = f"admin{i}@coursefinity.com"
-                    # for debug purposes only (in real world use, use a more secure password)
-                    password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("Admin123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
+                    emailInput = ""
+                    if (cmdOption == "1"):
+                        emailInput = f"admin{i}@coursefinity.com"
+                    else:
+                        while (1):
+                            emailInput = enter_email()
+                            if (emailInput == "x"):
+                                break
+
+                            # check for duplicates
+                            cur.execute("SELECT * FROM user WHERE email = %(email)s", {"email": emailInput})
+                            if (cur.fetchone() is not None):
+                                print("Error: Email already exists!", end="\n\n")
+                                continue
+
+                            # confirm prompt
+                            while (1):
+                                print(f"\nAre you sure that you want to use the email, {emailInput}?")
+                                confirmPrompt = input("Confirm (Y/n/x to go back to menu): ").lower().strip()
+                                if (confirmPrompt not in ("y", "n", "x", "")):
+                                    print("Invalid input", end="\n\n")
+                                    continue
+                                break
+                            # "x" to stop adding admins and break out of the enter email loop
+                            if (confirmPrompt == "x"):
+                                emailInput = confirmPrompt
+                                break
+                            confirmPrompt = True if (confirmPrompt != "n") else False
+                            if (confirmPrompt):
+                                break # break out of while (1) loop if user confirms the input
+
+                        # "x" to stop adding admins and break out of the for loop
+                        if (emailInput == "x"):
+                            break
 
                     cur.execute(
-                        "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())", \
-                        {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": profilePic}
+                        "INSERT INTO user (id, role, username, email, email_verified, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(profilePic)s, SGT_NOW())", \
+                        {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": emailInput, "profilePic": profilePic}
                     )
                     con.commit()
-
-                    ipAddress = "127.0.0.1"
-                    ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
-
-                    # Convert the IP address to binary format
-                    try:
-                        ipAddress = inet_aton(ipAddress).hex()
-                        isIpv4 = True
-                    except (OSError):
-                        isIpv4 = False
-                        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
-
-                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(adminID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"adminID": adminID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
-                    con.commit()
-
                     count += 1
 
-                print(f"\r{count} admin accounts created!")
+                print(f"\n{count} admin accounts created!")
             else:
-                print(f"\rMaximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
+                print(f"\nMaximum number of {MAX_NUMBER_OF_ADMINS} admin accounts already exists!")
             print()
 
-        elif (cmdOption == "2"):
+        elif (cmdOption == "3"):
             # delete data of all admins
             cur.execute("SELECT id FROM user WHERE role = %(roleID)s", {"roleID": ADMIN_ROLE_ID})
             listOfAdmins = cur.fetchall()
