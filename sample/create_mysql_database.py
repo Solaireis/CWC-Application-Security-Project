@@ -97,9 +97,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         date_joined DATETIME NOT NULL,
         cart_courses JSON DEFAULT NULL, -- can be null for admin user
         purchased_courses JSON DEFAULT NULL, -- can be null for admin user
-        status VARCHAR(255) NOT NULL DEFAULT 'Active', -- can be 'Active', 'Inactive', 'Banned'
-        FOREIGN KEY (role) REFERENCES role(role_id),
-        CONSTRAINT status_check CHECK (status IN ('Active', 'Inactive', 'Banned')) 
+        status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned')) DEFAULT 'Active',
+        FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
 
     cur.execute("""CREATE TABLE course (
@@ -129,7 +128,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         id CHAR(64) PRIMARY KEY,
         token_limit TINYINT, -- Min: -128, Max: 127
         expiry_date DATETIME,
-        CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both
+        CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both cannot be null
     )""")
 
     cur.execute("""CREATE TABLE recovery_token ( 
@@ -488,6 +487,7 @@ if (__name__ == "__main__"):
     except pymysql.err.ProgrammingError:
         pass
 
+    mysql_init_tables(debug=debugFlag)
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised database, \"coursefinity\"!")
