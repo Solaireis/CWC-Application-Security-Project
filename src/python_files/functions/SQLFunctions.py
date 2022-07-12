@@ -396,7 +396,6 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     if (mode == "add_ip_address"):
         userID = kwargs["userID"]
         ipAddress = kwargs["ipAddress"]
-        ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
         # Convert the IP address to binary format
         try:
@@ -406,7 +405,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
             isIpv4 = False
             ipAddress = inet_pton(AF_INET6, ipAddress).hex()
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed, is_ipv4) VALUES (%(userID)s, INET6_ATON(%(ipAddress)s), %(ipDetails)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails, "isIpv4":isIpv4})
+        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "isIpv4":isIpv4})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
@@ -420,7 +419,6 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     elif (mode == "add_ip_address_only_if_unique"):
         userID = kwargs["userID"]
         ipAddress = kwargs["ipAddress"]
-        ipDetails = kwargs.get("ipDetails") or json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
         # Convert the IP address to binary format
         try:
@@ -433,7 +431,7 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
         cur.execute("SELECT * FROM user_ip_addresses WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s AND is_ipv4=0", {"userID":userID, "ipAddress":ipAddress})
 
         if (cur.fetchone() is None):
-            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, ip_address_details, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, %(ipDetails)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "ipDetails":ipDetails, "isIpv4":isIpv4})
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "isIpv4":isIpv4})
             connection.commit()
 
     elif (mode == "remove_last_accessed_more_than_10_days"):

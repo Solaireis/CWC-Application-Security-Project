@@ -134,7 +134,6 @@ def main() -> None:
                 con.commit()
 
                 ipAddress = "127.0.0.1"
-                ipDetails = json.dumps(CONSTANTS.IPINFO_HANDLER.getDetails(ipAddress).all)
 
                 # Convert the IP address to binary format
                 try:
@@ -144,7 +143,7 @@ def main() -> None:
                     isIpv4 = False
                     ipAddress = inet_pton(AF_INET6, ipAddress).hex()
 
-                cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, ip_address_details, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(ipDetails)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "ipDetails": ipDetails, "isIpv4": isIpv4})
+                cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "isIpv4": isIpv4})
                 con.commit()
 
                 count += 1

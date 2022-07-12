@@ -506,12 +506,11 @@ def enterGuardTOTP():
 
         userID = session["temp_uid"]
         isAdmin = session["is_admin"]
-        ipDetails = session["ip_details"]
         passwordCompromised = session["password_compromised"]
         userEmail = session["user_email"]
         session.clear()
 
-        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address(), ipDetails=ipDetails)
+        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address())
         session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
         # check if password has been compromised

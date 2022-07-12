@@ -118,7 +118,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) NOT NULL,
         ip_address VARCHAR(32) NOT NULL, -- in hex format, length of 8 for IPv4, length of 32 for IPv6
         last_accessed DATETIME NOT NULL,
-        ip_address_details JSON NOT NULL,
         is_ipv4 BOOL NOT NULL DEFAULT TRUE,
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
