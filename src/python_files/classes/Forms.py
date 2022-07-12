@@ -122,19 +122,15 @@ class TicketAction(Form):
     ticketAction = HiddenField("I shake you warmly by the hand!",[validators.DataRequired()], default = "")
 
 class CreateCourse(Form):
-    '''
-    zoomconditions
-    videocondiction
-    tags = StringField("")
-    zoomschedule'''
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
     courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-    #thumbnail use HTML to validate size, type
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
-    # courseType = RadioField('', choices=[('video','Video Lessons')])
-    # wtforms does not support opt groups, probs have a way but i quite braindead 
-    # Noob
-    # courseTag = SelectField("Choose Your Course Category! ", [validators.DataRequired()])
+
+
+class CreateCourseEdit(Form):
+    courseTitle = StringField("Course Title: ", [validators.Length(min=3, max=100)])
+    courseDescription = TextAreaField("Description: ", [validators.Length(min=1, max=5000)])
+    coursePrice = IntegerField("Price for Course (USD$): ", [validators.NumberRange(min=0, max=500)])
 
 class CreateReview(Form):
     '''

@@ -54,16 +54,19 @@
                         <div class="row text-white col-md-12">
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseTitle, class="form-control", placeholder="Course Title") }}
+                                <i>Current Course Title: {{ courseName }}</i>
                             </div>
                             <!-- Title -->
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseDescription, class="form-control", placeholder="Give a brief summary of the course...") }}
+                                <i>Current Course Description: {{ courseDescription }}</i>
                             </div>
 
                             <div class="col-12 text-white">
                                 <div class="col-md-6">
                                     <label for="formFile" class="form-label">Upload Lesson Thumbnail Here!</label>
-                                    <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" required id="formFile" type='file'/>
+                                    <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" id="formFile" type='file'/>
+                                    <i>Current Image Being Displayed</i>
                                 </div>
                             </div>
 
@@ -109,10 +112,12 @@
                                         <option value="Other Academics">Other Academics</option>
                                     </optgroup>
                                 </select>
+                                <i style="color:white;">Current Course Tag: {{ courseTag }}</i>
                             </div>
                             <!-- coursePrice -->
                             <div class="col-md-6 text-white">
                                 {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}
+                                <i>Current Course Price: {{ coursePrice }}</i>
                             </div>
                         </div>
 

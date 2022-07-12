@@ -108,28 +108,53 @@ def courseUpdate():
         if (not courseFound):
             abort(404)
         userInfo = get_image_path(session["user"], returnUserInfo=True) 
-        courseForm = CreateCourse(request.form)
+        courseForm = CreateCourseEdit(request.form)
         updated = ''
         if (request.method == "POST"):
             #TODO : Update profile picture, course tag
-            if (courseForm.courseTitle.data != courseFound.courseName):
-                sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
-                updated += "Course Title, "
-            if (courseForm.courseDescription.data != courseFound.courseDescription):
-                sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
-                updated += "Course Description, "
-            if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
-                sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
-                updated += "Course Price, "
+            if (courseForm.courseTitle.data):
+                if (courseForm.courseTitle.data != courseFound.courseName):
+                    sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
+                    updated += "Course Title, "
+            if (courseForm.courseDescription.data):
+                if (courseForm.courseDescription.data != courseFound.courseDescription):
+                    sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
+                    updated += "Course Description, "
+            if (courseForm.coursePrice.data):
+                if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
+                    sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
+                    updated += "Course Price, "
+            courseTagInput = request.form.get("courseTag")
+            if (courseTagInput != courseFound.courseCategory):
+                sql_operation(table="course", mode="update_course_category", courseID=courseID, course_category=courseTagInput)
+                updated += "Course Tag, "
+
+            file = request.files.get("courseThumbnail")
+            filename = secure_filename(file.filename)
+            if (filename != ""):
+                filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
+                imageData = BytesIO(file.read())
+                try:
+                    imageUrlToStore = compress_and_resize_image(
+                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
+                        folderPath=f"course-thumbnails"
+                    )
+                except (InvalidProfilePictureError):
+                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                    return redirect("teacherBP.courseList")
+                except (UploadFailedError):
+                    flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
+                    return redirect("teacherBP.courseList")
+                
+                sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
+                updated += "Course Thumbnail, "
             
-            flash(f"Fields Updated : {updated}", "Successful Update")
+            if (len(updated) > 0):
+                flash(f"Fields Updated : {updated}", "Successful Update")
             return redirect(url_for("teacherBP.courseList"))
         else:
-            #TODO: Set course tag input, and video path
-            courseForm.courseTitle.data = courseFound.courseName
-            courseForm.courseDescription.data = courseFound.courseDescription
-            courseForm.coursePrice.data = float(courseFound.coursePrice)
-            return render_template("users/teacher/course_video_edit.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, form=courseForm)
+            
+            return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
     else:
         return redirect(url_for("guestBP.login"))
 
