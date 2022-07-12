@@ -5,7 +5,7 @@ Routes for the general public and CourseFinity users (Guests, Students, Teachers
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, Blueprint, Markup
+from flask import render_template, request, session, abort, Blueprint, Markup, redirect
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -51,9 +51,30 @@ def teacherPage(teacherID:str):
 
     return render_template("users/general/teacher_page.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername,
-        teacherProfilePath=teacherProfilePath,
+        teacherProfilePath=teacherProfilePath, teacherID=teacherID,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
+
+@generalBP.route("/all-courses/<string:teacherID>")
+def allCourses(teacherID:str):
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = userInfo.profileImage
+        accType = userInfo.role
+        if (accType == "Teacher") and (userInfo.uid == teacherID):
+            return redirect(url_for('teacherBP.courseList'))
+
+    page = request.args.get("p", default=1, type=int)
+    allCourses = sql_operation(table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID)
+    maxPage = 0
+    if len(allCourses)!= 0:
+        courseList, maxPage = allCourses[0], allCourses[1]         
+        if (page > maxPage):
+            abort(404)
+    
+    return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID)
+
 
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):

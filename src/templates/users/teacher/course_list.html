@@ -1,9 +1,22 @@
-{% extends "user_base.html" %}
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
+{% endif %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/course_list.css') }}">
 {% endblock %}
 
-{% block title %}Video Management | CourseFinity{% endblock %}
+
+{% block title %}
+{% if accType == "Teacher" %}
+    List Of Courses | CourseFinity
+{% else %}
+    Video Management | CourseFinity
+{% endif %}
+{% endblock %}
 
 {% block content %}
 {% from "includes/_formHelper.html" import render_field %}
@@ -32,11 +45,18 @@
 {% endwith %}
 
 <div class="container">
+{% if accType == "Teacher" %}
+<h4 class="display-5">Courses Made</h4>
+{% else %}
+<h4 class="display-5">Courses Found</h4>
+{% endif %}
 {% if courseListLen < 1 %}
     <div class="row">
         <div class="col">
             <h4 class="display-5">No Courses Uploaded</h4>
+            {% if accType == "Teacher" %}
             <a class="btn btn-primary" href="{{ url_for('teacherBP.createCourse') }}">Upload a Course!</a>
+            {% endif %}
             <!-- Add button to redirect  -->
         </div>
     </div>
@@ -53,8 +73,12 @@
                 </div>
                 <div class="col-md-8">
                     <div class="card-body">
-                        <h5 class="card-title">{{ course.courseName }}</h5>
+                        <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
                         <p class="card-text">{{ course.courseDescription }}</p>
+                        {% if accType != "Teacher" %}
+                        <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
+                        <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+                        {% endif %}
                         <p class="card-text">
                             <small class="text-muted">
                                 {% if (course.averageRating > 0) %}
@@ -73,6 +97,7 @@
                                 {% endif %}
                             </small>
                         </p>
+                        {% if accType == "Teacher" %}
                         <span><a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">Edit Course</a></span>
                         <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
                             data-bs-target="#deleteCourse">Delete Course</a></span>
@@ -101,8 +126,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Edit button redirects to a form, where the user can change the details -->
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -110,18 +134,34 @@
     {% endfor %}
     <div class="center">
         <div class="pagination">
-            {% if currentPage != 1 %}
-                <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
-            {% endif %}
-            {% for i in range(1,maxPage+1) %}
-                {% if i == currentPage %}
-                    <a class="active" href="">{{ i }}</a>
-                {% else %}
-                    <a href="{{ url_for('teacherBP.courseList') }}?p={{i}}">{{ i }}</a>
+            {% if accType == "Teacher" %}
+                {% if currentPage != 1 %}
+                    <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage - 1}}">&laquo;</a>
                 {% endif %}
-            {% endfor %}
-            {% if currentPage != maxPage %}
-                <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage + 1}}">&raquo;</a>
+                {% for i in range(1,maxPage+1) %}
+                    {% if i == currentPage %}
+                        <a class="active" href="">{{ i }}</a>
+                    {% else %}
+                        <a href="{{ url_for('teacherBP.courseList') }}?p={{i}}">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if currentPage != maxPage %}
+                    <a href="{{ url_for('teacherBP.courseList')}}?p={{currentPage + 1}}">&raquo;</a>
+                {% endif %}
+            {% else %}
+                {% if currentPage != 1 %}
+                    <a href="{{ url_for('generalBP.allCourses', teacherID=teacherID)}}?p={{currentPage - 1}}">&laquo;</a>
+                {% endif %}
+                {% for i in range(1,maxPage+1) %}
+                    {% if i == currentPage %}
+                        <a class="active" href="">{{ i }}</a>
+                    {% else %}
+                        <a href="{{ url_for('generalBP.allCourses', teacherID=teacherID) }}?p={{i}}">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if currentPage != maxPage %}
+                    <a href="{{ url_for('generalBP.allCourses', teacherID=teacherID)}}?p={{currentPage + 1}}">&raquo;</a>
+                {% endif %}
             {% endif %}
         </div>
     </div>

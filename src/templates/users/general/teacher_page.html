@@ -22,6 +22,7 @@
                 </div>
 				<div class="col-md-9">
 					<h1>Welcome to {{ teacherUsername }}'s page!</h1>
+					<a href="{{ url_for('generalBP.allCourses', teacherID=teacherID) }}">View all Courses</a>
 				</div>
             </div>
         </div>
@@ -49,7 +50,7 @@
 								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
 							<div class="card-body">
-								<h4 class="card-title">{{ course.courseName }}</h4>
+								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
 								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
 								<p class="card-text">{{ course.courseDescription }}</p>
 								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
