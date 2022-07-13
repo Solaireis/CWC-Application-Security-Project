@@ -115,14 +115,17 @@ def courseUpdate():
             if (courseForm.courseTitle.data):
                 if (courseForm.courseTitle.data != courseFound.courseName):
                     sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
+                    stripe_product_update(courseID=courseID, courseName=courseForm.courseTitle.data)
                     updated += "Course Title, "
             if (courseForm.courseDescription.data):
                 if (courseForm.courseDescription.data != courseFound.courseDescription):
                     sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
+                    stripe_product_update(courseID=courseID, courseDescription=courseForm.courseDescription.data)
                     updated += "Course Description, "
             if (courseForm.coursePrice.data):
                 if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
                     sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
+                    stripe_product_update(courseID=courseID, coursePrice=courseForm.coursePrice.data)
                     updated += "Course Price, "
             courseTagInput = request.form.get("courseTag")
             if (courseTagInput != courseFound.courseCategory):
@@ -147,6 +150,7 @@ def courseUpdate():
                     return redirect("teacherBP.courseList")
                 
                 sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
+                stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
                 updated += "Course Thumbnail, "
             
             if (len(updated) > 0):
