@@ -4,7 +4,7 @@ from stripe.error import InvalidRequestError
 
 # import python standard libraries
 from random import randint, choice as rand_choice
-import pathlib, sys, json, re
+import pathlib, sys, re
 from importlib.util import spec_from_file_location, module_from_spec
 from socket import inet_aton, inet_pton, AF_INET6
 
