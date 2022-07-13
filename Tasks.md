@@ -60,8 +60,8 @@
 - Integrated Cloudflare to the custom domain, [coursefinity.social](https://coursefinity.social/)
   - Configured Cloudflare to redirect HTTP requests to use HTTPS
   - Enabled HTTP Strict Transport Security (HSTS) on Cloudflare
-    - More secure than redirecting HTTP requests to HTTPS
-    - Prevents man-in-the-middle attacks
+    - More secure than redirecting HTTP requests to HTTPS as the browser will know to automatically use HTTPS
+      - Prevents man-in-the-middle attacks
     - More info on [OWASP cheatsheet series](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html)
 
 ---
