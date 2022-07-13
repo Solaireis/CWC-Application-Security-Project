@@ -28,7 +28,7 @@ packagedir = rootDir.joinpath("python_packages")
 packagedir.mkdir(parents=True, exist_ok=True)
 
 with open(dirname) as f:
-    dependencies = f.readlines()
+    dependencies = [x.strip() for x in f.readlines() if (x.strip() and not x.startswith("#"))]
 
 for lib in dependencies:
     maximum = False
