@@ -59,6 +59,10 @@
     - 192 bits of security
 - Integrated Cloudflare to the custom domain, [coursefinity.social](https://coursefinity.social/)
   - Configured Cloudflare to redirect HTTP requests to use HTTPS
+  - Enabled HTTP Strict Transport Security (HSTS) on Cloudflare
+    - More secure than redirecting HTTP requests to HTTPS
+    - Prevents man-in-the-middle attacks
+    - More info on [OWASP cheatsheet series](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html)
 
 ---
 
@@ -98,13 +102,13 @@
     - Changing password
     - Resetting password
   - If haveibeenpwned's API is unavailable, the password must match ALL the minimum password complexity policy criteria as a fallback
-- Maximum of 6 failed login attempts per account (will reset after 30 mins)
+- Maximum of 6 failed login attempts per account (will reset after 1 hour)
   - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
     - An email will be sent to the user's email with a one-time link to unlock the account
     - Link uses a digitally signed token to prevent tampering
 - Session Management Implementation:
   - Session identifier of 32 bytes (Unlikely to be guessed)
-  - Session timeout after 30 mins of inactivity (If there were no request to the web server for 30 mins)
+  - Session timeout after 1 hour of inactivity (If there were no request to the web server for 1 hour)
   - Checks the session identifier in the database and compare with the session identifier in the cookie
   - Checks the user's digital fingerprint against the digital fingerprint in the database
     - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
