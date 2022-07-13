@@ -66,10 +66,10 @@ for lib in dependencies:
                         break
                 elif (platformType == "Linux"):
                     if ("linux" in url) and ("64" in url):
-        
                         break
                 else:
-                    if ("win" in url) and ("64" in url):
+                    # for Windows 64-bit machines
+                    if ("amd" in url and "64" in url):
                         break
     except:
         file = datafile["releases"][version][0]
