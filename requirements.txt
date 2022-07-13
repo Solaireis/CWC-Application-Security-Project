@@ -25,6 +25,9 @@ markdown>=3.3.7
 # web app's payment gateway
 stripe>=3.4.0
 
+# .mpd player support
+python-ffmpeg-video-streaming>=0.1.15
+
 # For Google Cloud Platform APIs
 google-api-python-client>=2.51.0
 
