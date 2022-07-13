@@ -727,10 +727,12 @@ class JWTExpiryProperties:
 
         elif (strDate is None and activeDuration == 0 and datetimeObj is not None):
             # check if datetimeObj is an instance of datetime class
-            assert isinstance(datetimeObj, datetime)
+            if (not isinstance(datetimeObj, datetime)):
+                raise TypeError("datetimeObj must be an instance of datetime class")
 
             # check if datetimeObj is timezone aware
-            assert datetimeObj.tzinfo is not None
+            if (datetimeObj.tzinfo is None):
+                raise ValueError("datetimeObj must be timezone aware")
 
             # Once all the checks are done, set the expiryDate
             self.expiryDate = datetimeObj
