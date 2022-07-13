@@ -21,14 +21,14 @@ dicebear>=0.4.17
 Pillow>=9.0.0
 markdown>=3.3.7
 
-# Stripe API for the 
+# Stripe API for the
 # web app's payment gateway
 stripe>=3.4.0
 
 # For Google Cloud Platform APIs
 google-api-python-client>=2.51.0
 
-# For cryptography operations 
+# For cryptography operations
 # and Google CLoud Platform KMS
 argon2-cffi>=21.3.0
 cryptography>=37.0.2
@@ -51,7 +51,7 @@ ipinfo>=4.2.1
 PyMySQL>=1.0.2
 cloud-sql-python-connector>=0.6.2
 
-# Other Google Cloud Platform APIs 
+# Other Google Cloud Platform APIs
 # used in the Flask web app
 google-cloud-secret-manager>=2.11.1
 google-cloud-logging>=3.1.2
