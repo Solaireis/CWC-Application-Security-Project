@@ -52,6 +52,41 @@ def stripe_product_create(
         print(error)
         print(f"Course: {courseID} already exists in Stripe database.")
 
+def stripe_product_update(**kwargs) -> None:
+    courseID = kwargs.get('courseID')
+    courseName = kwargs.get('courseName')
+    courseDescription = kwargs.get('courseDescription')
+    coursePrice = kwargs.get('coursePrice')
+    courseImagePath = kwargs.get('courseImagePath')
+
+    try:
+        if (courseName):
+            stripe.Product.modify(
+                courseID,
+                name = courseName,
+            )
+        if (courseDescription):
+            stripe.Product.modify(
+                courseID,
+                description = courseDescription,
+            )
+        if (coursePrice):
+            stripe.Product.modify(
+                courseID,
+                default_price_data = {
+                    "currency" : "USD",
+                    "unit_amount_decimal" : coursePrice
+                },
+            )
+        if (courseImagePath):
+            stripe.Product.modify(
+                courseID,
+                images = [courseImagePath],
+            )
+    
+    except:
+        print("There was an Error in updating")
+
 def stripe_product_deactivate(courseID:str):
     try:
         stripe.Product.modify(courseID, active = False)
