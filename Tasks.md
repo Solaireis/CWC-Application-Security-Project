@@ -57,6 +57,8 @@
   - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
     - Using Google Cloud Platform KMS (Key Management Service) API
     - 192 bits of security
+- Integrated Cloudflare to the custom domain, [coursefinity.social](https://coursefinity.social/)
+  - Configured Cloudflare to redirect HTTP requests to use HTTPS
 
 ---
 
@@ -183,6 +185,7 @@
 
 #### Implemented:
 - Added [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) on the signup page
+- Configured Cloudflare to protect against DDoS attacks
 
 ---
 

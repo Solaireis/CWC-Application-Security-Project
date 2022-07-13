@@ -83,9 +83,11 @@ def courseList():
         if len(courseList)!= 0:
             courseList, maxPage = courseList[0], courseList[1]         
             if (page > maxPage):
-                abort(404)
+                return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
+            # Compute the buttons needed for pagination
+            paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-        return render_template("users/teacher/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList)
+        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True)
     else:
         return redirect(url_for("guestBP.login"))
 

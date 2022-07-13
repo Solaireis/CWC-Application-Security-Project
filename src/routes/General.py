@@ -8,6 +8,7 @@ import markdown
 from flask import render_template, request, session, abort, Blueprint, Markup, redirect
 
 # import local python libraries
+from python_files.functions.NormalFunctions import get_pagination_arr
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Reviews import Reviews
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
@@ -62,18 +63,21 @@ def allCourses(teacherID:str):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         imageSrcPath = userInfo.profileImage
         accType = userInfo.role
-        if (accType == "Teacher") and (userInfo.uid == teacherID):
-            return redirect(url_for('teacherBP.courseList'))
+        if (accType == "Teacher" and userInfo.uid == teacherID):
+            return redirect(url_for("teacherBP.courseList"))
 
     page = request.args.get("p", default=1, type=int)
     allCourses = sql_operation(table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID)
     maxPage = 0
-    if len(allCourses)!= 0:
+    if (len(allCourses) != 0):
         courseList, maxPage = allCourses[0], allCourses[1]         
         if (page > maxPage):
-            abort(404)
-    
-    return render_template("users/teacher/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID)
+            return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" + str(maxPage))
+
+        # Compute the buttons needed for pagination
+        paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+
+    return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False)
 
 
 @generalBP.route("/course/<string:courseID>")
@@ -154,45 +158,57 @@ def search():
     
     TODO: Must handle all sorts of situation such as manually tampering with the url
     """
-    searchInput = request.args.get("q", default="Courses", type=str)
+    searchInput = request.args.get("q", default=None, type=str)
+    courseCategory = request.args.get("ct", default=None, type=str)
+
+    if (searchInput is None and courseCategory is None):
+        # No get parameters
+        searchInput = "Courses"
+        tagSearch = False
+    elif (searchInput is not None and courseCategory is not None):
+        # Both get parameters
+        searchInput = courseCategory
+        tagSearch = True
+    elif (searchInput is None and courseCategory is not None):
+        # Only courseCategory get parameter
+        searchInput = courseCategory
+        tagSearch = True
+    else:
+        # Only searchInput get parameter
+        searchInput = searchInput
+        tagSearch = False
+
+    # Reduce the length of the query if > 100 characters
+    # to prevent buffer overflow attacks
     if (len(searchInput) > 100):
-        abort(413)
+        searchInput = searchInput[:100]
 
     page = request.args.get("p", default=1, type=int)
-    courseCategory = request.args.get("ct", default="test", type=str)
     if (courseCategory):
         listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
-        if (listInfo):
-            foundResults, maxPage = listInfo[0], listInfo[1]
-            if (page > maxPage):
-                abort(404)
+    else:
+        listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
 
-            if ("user" in session or "admin" in session):
-                userInfo = get_image_path(session["user"], returnUserInfo=True)
-                return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role, tagSearch=True)
-
-            return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None, tagSearch=True)
-
-        if ("user" in session or "admin" in session):
-            userInfo = get_image_path(session["user"], returnUserInfo=True)
-            return render_template("users/general/search.html", searchInput=courseCategory, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role, tagSearch=True)
-
-        return render_template("users/general/search.html", searchInput=courseCategory, foundResults=None, foundResultsLen=0, accType=None, tagSearch=True)
-
-    listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
     if (listInfo):
         foundResults, maxPage = listInfo[0], listInfo[1]
         if (page > maxPage):
-            abort(404)
+            # TODO: Protect against injections
+            if (courseCategory):
+                return redirect(url_for('generalBP.search') + "?ct=" + searchInput + "&p=" + str(maxPage))
+            else:
+                return redirect(url_for('generalBP.search') + "?q=" + searchInput + "&p=" + str(maxPage))
+
+        # Compute the buttons needed for pagination
+        paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
         if ("user" in session or "admin" in session):
             userInfo = get_image_path(session["user"], returnUserInfo=True)
-            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role)
+            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role, paginationArr=paginationArr, tagSearch=tagSearch)
 
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None)
+        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None, paginationArr=paginationArr, tagSearch=tagSearch)
 
     if ("user" in session or "admin" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role, tagSearch=tagSearch)
 
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=None)
+    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=None, tagSearch=tagSearch)

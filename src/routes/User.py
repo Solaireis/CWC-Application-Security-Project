@@ -289,7 +289,7 @@ def checkout():
         userID = session["user"]
 
         cartCourseIDs = sql_operation(table='user', mode = 'get_user_cart', userID = userID)
-        email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID)[3]
+        email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID).email
         print(cartCourseIDs)
         print(email)
 
