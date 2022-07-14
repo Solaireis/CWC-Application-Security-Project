@@ -49,7 +49,7 @@ csp = {
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
         "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js blob:",
         "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
         "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
     ]
@@ -103,13 +103,11 @@ app.jinja_env.lstrip_blocks = True
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # for image uploads file path
-app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
+app.config["ALLOWED_IMAGE_EXTENSIONS"] = (".png", ".jpg", ".jpeg")
 
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
-# app.config["ALLOWED_VIDEO_EXTENSIONS"] = ("mp4", "mov", "avi", "3gpp", "flv", "mpeg4", "flv", "webm", "mpegs", "wmv")
-app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4", ".mov", ".wmv", ".avi," ".webm")
-
+app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".3g2", ".3gpp", ".3gp", ".asf", ".avchd", ".avi", ".flv", ".m4a", ".mkv", ".mov", ".mp4", ".mts", ".webm", ".wmv")
 # add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS
 
@@ -148,6 +146,9 @@ app.register_blueprint(userBP)
 
 from routes.Teacher import teacherBP
 app.register_blueprint(teacherBP)
+
+from routes.Files import filesBP
+app.register_blueprint(filesBP)
 
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 

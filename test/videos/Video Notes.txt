@@ -1,0 +1,25 @@
+ffmpeg groups the following extensions together:
+- mkv, webm
+- mov, mp4, m4a, 3gp, 3g2, mj2
+
+These files are considered seperate, for reasons unknown.
+- wmv, asf
+- avchd, mts
+- avi
+- flv (Not detected as video on Windows, though can be run)
+
+Addendum 1:
+- mp4 as py (Success)
+- gif (Converted, failed to play)
+- avi as exe (Success)
+- py as mp4 (Failed)
+
+It appears ffmpeg does not identify the file by its extension.
+
+This means exe files with valid video extensions are unlikely to parsed.
+
+
+Addendum 2:
+- jfif as mp4 (Failed resolution checking phase)
+
+Image files acting as video files appear to 'confuse' ffmpeg.
