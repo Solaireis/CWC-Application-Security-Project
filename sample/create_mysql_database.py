@@ -508,8 +508,74 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {'ip_address': ip})
 
     mydb.commit()
-    mydb.close()
+    
+    # #Draft cuz the granting privileges is broken
+    
+    
+    # cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
+    # cur.execute("CREATE ROLE 'Admin' , 'SuperAdmin' , 'Teachers', 'Student', 'Guest';")
 
+    # #Admin Privileges
+    # cur.execute("GRANT SELECT ON role TO 'Admin';")
+    # cur.execute("GRANT SELECT ON Recovery_token TO 'Admin';")
+    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'Admin';")
+    # cur.execute("GRANT SELECT ON user TO 'Admin';")
+    # cur.execute("GRANT SELECT ON course TO 'Admin';")
+    # cur.execute("GRANT SELECT ON session TO 'Admin';")
+    # cur.execute("GRANT SELECT ON twofa_token TO 'Admin';")
+    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'Admin';")
+    # cur.execute("GRANT SELECT ON login_attempts TO 'Admin';")
+    # cur.execute("GRANT SELECT ON review TO 'Admin';")
+
+    # #SuperAdmin Privileges
+    # cur.execute("GRANT ALL ON role TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON Recovery_token TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON user TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON course TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON session TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON twofa_token TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON login_attempts TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON review TO 'SuperAdmin';")
+
+    # #Student Privileges 
+    # cur.execute("GRANT SELECT ON role TO 'student';")
+    # cur.execute("GRANT SELECT ON Recovery_token TO 'student';")
+    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'student';")
+    # cur.execute("GRANT SELECT ON user TO 'student';")
+    # cur.execute("GRANT SELECT ON course TO 'student';")
+    # cur.execute("GRANT SELECT ON session TO 'student';")
+    # cur.execute("GRANT SELECT ON twofa_token TO 'student';")
+    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'student';")
+    # cur.execute("GRANT SELECT ON login_attempts TO 'student';")
+    # cur.execute("GRANT SELECT ON review TO 'student';")
+
+    # #Teacher Privileges
+    # cur.execute("GRANT SELECT ON role TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON Recovery_token TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON user TO 'Teacher;")
+    # cur.execute("GRANT SELECT ON course TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON session TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON twofa_token TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON login_attempts TO 'Teacher';")
+    # cur.execute("GRANT SELECT ON review TO 'Teacher';")
+
+    # #Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
+    # cur.execute("GRANT SELECT ON role TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON Recovery_token TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON user TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON course TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON session TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON twofa_token TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON login_attempts TO 'SuperAdmin';")
+    # cur.execute("GRANT SELECT ON review TO 'SuperAdmin';")
+    
+    mydb.close()
 if (__name__ == "__main__"):
     while (1):
         debugPrompt = input("Debug mode? (Y/n): ").lower().strip()
@@ -535,3 +601,4 @@ if (__name__ == "__main__"):
         print("\nError caught!")
         print("More details:")
         print(e)
+
