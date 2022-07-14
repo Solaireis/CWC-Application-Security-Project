@@ -14,13 +14,14 @@
 
 {% macro video_scripts() %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/shaka-player/4.1.1/shaka-player.compiled.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/videojs-shaka@1.1.2/dist/videojs-shaka.min.js"></script>
+<script src="https://cdn.dashjs.org/v4.4.0/dash.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js"></script>
 {% endmacro %}
 
 {% macro video_link(videoPath) %}
 <script nonce="{{ csp_nonce() }}">
-    var player = videojs('video-player', {
+
+  var player = videojs('video-player', {
     playbackRates: [0.5, 1, 1.5, 2],
     aspectRatio: "16:9",
     fluid: true,          //The video player
@@ -28,15 +29,19 @@
     autoplay: true,       //Or attempts to
     controls: true,
     preload: "auto",
-    techOrder: ['shaka'],
   });
 
-  player.qualityPickerPlugin();
+  player.ready(function() {
+    player.src({
+      type: 'application/dash+xml',
+      //type: 'application/x-mpegurl',
+      //type: 'application/vnd.apple.mpegurl',
+      src: '{{ videoPath }}'
+      //src: 'https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s-fmp4/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8'
+      //src: 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd'
+    });
+});
 
-  player.src([{
-    type: 'application/dash+xml',
-    src: '{{ videoPath }}'
-    //src: 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd'
-  }]);
+
 </script>
 {% endmacro %}

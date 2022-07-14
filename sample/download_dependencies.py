@@ -28,7 +28,7 @@ packagedir = rootDir.joinpath("python_packages")
 packagedir.mkdir(parents=True, exist_ok=True)
 
 with open(dirname) as f:
-    dependencies = f.readlines()
+    dependencies = [x.strip() for x in f.readlines() if (x.strip() and not x.startswith("#"))]
 
 for lib in dependencies:
     maximum = False
@@ -66,10 +66,10 @@ for lib in dependencies:
                         break
                 elif (platformType == "Linux"):
                     if ("linux" in url) and ("64" in url):
-        
                         break
                 else:
-                    if ("win" in url) and ("64" in url):
+                    # for Windows 64-bit machines
+                    if ("amd" in url and "64" in url):
                         break
     except:
         file = datafile["releases"][version][0]

@@ -16,8 +16,7 @@ from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
-from subprocess import run as subprocess_run
-from platform import system
+from subprocess import run as subprocess_run, PIPE
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -36,6 +35,7 @@ else:
 import PIL, pymysql
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
+from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
 
 # import Flask libraries
 from flask import url_for, flash, Markup
@@ -727,10 +727,12 @@ class JWTExpiryProperties:
 
         elif (strDate is None and activeDuration == 0 and datetimeObj is not None):
             # check if datetimeObj is an instance of datetime class
-            assert isinstance(datetimeObj, datetime)
+            if (not isinstance(datetimeObj, datetime)):
+                raise TypeError("datetimeObj must be an instance of datetime class")
 
             # check if datetimeObj is timezone aware
-            assert datetimeObj.tzinfo is not None
+            if (datetimeObj.tzinfo is None):
+                raise ValueError("datetimeObj must be timezone aware")
 
             # Once all the checks are done, set the expiryDate
             self.expiryDate = datetimeObj
@@ -1576,30 +1578,52 @@ def two_fa_token_is_valid(token:str) -> bool:
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
+#TODO: Functionality with other file types
+def convert_to_mpd(courseID):
+    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+
+    if not videoPath.with_suffix(".mp4").is_file():
+        raise Exception(f"Video file with courseID '{courseID}' does not have a .mp4 to convert to .mpd")
+
+    video = ffmpeg_input(f'{videoPath}.mp4')
+    dash = video.dash(Formats.h264())
+
+    # For CLI Testing
+    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath.with_suffix(".mp4")}"')
+
+    dimensions = subprocess_run(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath.with_suffix(".mp4")}"', stdout=PIPE)
+    try:
+        dimensions = json.loads(dimensions.stdout.decode('utf-8'))['streams'][0]
+    except KeyError:
+        return False
+        #TODO: Logging
+
+    _1080p = Representation(Size(dimensions['width'], dimensions['height']), Bitrate(4096 * 1024, 320 * 1024))
+    dash.representations(_1080p)
+
+    try:
+        dash.output(videoPath.with_suffix('.mpd'))
+    except RuntimeError:
+        return False
+        #TODO: Log
+
+    Path(f"{videoPath}.mp4").unlink(missing_ok=True)
+
+    return True
+
+
 def get_course_video_path(courseID):
-    courseVideo = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+    from python_files.functions.SQLFunctions import sql_operation
+    matched = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if not matched:
+        #TODO: Log
+        return None
 
-    if courseVideo.with_suffix(".mp4").is_file():
-        # TODO: This code is actually vulnerable, try NOT to use subprocess_run
-        if system() == "Windows":
-            executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-win-x64.exe')
-            subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
-        elif system() == "Darvin":  # Mac
-            executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-win-x64.exe')
-            subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
-        elif system() == "Linux":
-            try:
-                executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-osx-x64')
-                subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
-            except OSError:
-                executable = Path(__file__).parent.parent.parent.joinpath('static/executables/packager-linux-arm64')
-                subprocess_run(f"\"{executable}\" in=\"{courseVideo}.mp4\",stream=audio,out=\"{courseVideo}_audio.mp4\" in=\"{courseVideo}.mp4\",stream=video,out=\"{courseVideo}_video.mp4\" --mpd_output \"{courseVideo}.mpd\"")
-        else:
-            raise Exception("Only Windows, Mac, Linux OS Systems are used.")
-
-        Path(f"{courseVideo}.mp4").unlink(missing_ok=True)
-
-    if courseVideo.with_suffix(".mpd").is_file():
-        return url_for('static', filename=f"course_videos/{courseID}/{courseID}.mpd")
+    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+    if not videoPath.with_suffix(".mpd").is_file() and videoPath.with_suffix(".mp4").is_file():
+        convert_to_mpd(courseID)
+        
+    if videoPath.with_suffix(".mpd").is_file():
+        return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
     else:
         return None

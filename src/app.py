@@ -10,8 +10,9 @@ from flask_seasurf import SeaSurf
 from google.cloud import logging as gcp_logging
 
 # import local python libraries
-from python_files.functions.SQLFunctions import sql_operation
 from python_files.classes.Constants import CONSTANTS
+from python_files.functions.NormalFunctions import get_IP_address_blacklist
+from python_files.functions.SQLFunctions import sql_operation
 
 # import python standard libraries
 from pathlib import Path
@@ -42,27 +43,29 @@ csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
 csp = {
-    'script-src':[
-        '\'self\'',
-        'https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js',
-        'https://cdn.jsdelivr.net/npm/less@4',
-        'https://www.google.com/recaptcha/enterprise.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js',
-        'https://ajax.googleapis.com/ajax/libs/shaka-player/4.1.1/shaka-player.compiled.js',
-        'https://cdn.jsdelivr.net/npm/videojs-shaka@1.1.2/dist/videojs-shaka.min.js',
-
+    "script-src":[
+        "'self'",
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
+        "https://cdn.jsdelivr.net/npm/less@4",
+        "https://www.google.com/recaptcha/enterprise.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js",
+        "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
+        "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
     ]
 }
-
 permissions_policy = {
     "geolocation": "()",
     "microphone": "()"
 }
-
 # nonce="{{ csp_nonce() }}"
 # xss_protection is already defaulted True
-talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'], permissions_policy=permissions_policy, x_xss_protection=True)
+talisman = Talisman(app,
+    content_security_policy=csp,
+    content_security_policy_nonce_in=["script-src"],
+    permissions_policy=permissions_policy,
+    x_xss_protection=True
+)
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = CONSTANTS.DEBUG_MODE
@@ -81,7 +84,7 @@ app.config["SESSION_PERMANENT"] = False
 # Browsers will not allow JavaScript access to cookies marked as “HTTP only” for security.
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 # https://flask.palletsprojects.com/en/2.1.x/security/#security-cookie
-# Lax prevents sending cookies with CSRF-prone requests 
+# Lax prevents sending cookies with CSRF-prone requests
 # from external sites, such as submitting a form
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # The name of the session cookie
@@ -110,7 +113,7 @@ app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4", ".mov", ".wmv", ".avi," ".webm
 # add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS
 
-# import utility functions into the flask app and get neccessary functions 
+# import utility functions into the flask app and get neccessary functions
 # such as update_secret_key() for rotation of the secret key
 with app.app_context():
     from routes.RoutesUtils import update_secret_key
@@ -152,7 +155,7 @@ app.register_blueprint(teacherBP)
 
 # Note: Not using lambdas for the jobs as on Google Cloud Logging,
 # it is hard to tell what jobs have been executed
-# E.g. Running job "<lambda> (trigger: cron[hour='23', minute='57', second='0'], 
+# E.g. Running job "<lambda> (trigger: cron[hour='23', minute='57', second='0'],
 # next run at: 2022-07-11 23:57:00 +08)" (scheduled at 2022-07-10 23:57:00+08:00)
 
 def remove_unverified_users_for_more_than_30_days() -> None:
@@ -203,6 +206,14 @@ def re_encrypt_data_in_db() -> None:
     """
     return sql_operation(table="user", mode="re-encrypt_data_in_database")
 
+def update_ip_blacklist_from_github() -> None:
+    """
+    Update IP blacklist from the database from ipsum GitHub repository
+
+    >>> app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+    """
+    app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+
 """------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
 if (__name__ == "__main__"):
@@ -227,7 +238,7 @@ if (__name__ == "__main__"):
     )
     # Free up database of expired login attempts
     scheduler.add_job(
-        reset_expired_login_attempts, 
+        reset_expired_login_attempts,
         trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts"
     )
     # Remove user's IP address from the database if the the user has not logged in from that IP address for more than 10 days
@@ -245,11 +256,18 @@ if (__name__ == "__main__"):
         update_secret_key,
         trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
     )
+    # For updating the IP address blacklist from ipsum GitHub repo everday at 12:00 P.M.
+    scheduler.add_job(
+        update_ip_blacklist_from_github,
+        trigger="cron", hour=12, minute=0, second=0, id="updateIPAddressBlacklistFromGithub"
+    )
+
+    # Start all the scheduled jobs
     scheduler.start()
 
     if (app.config["DEBUG_FLAG"]):
         SSL_CONTEXT = (
-            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"), 
+            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
             CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
         )
     else:

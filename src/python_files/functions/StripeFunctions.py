@@ -93,6 +93,10 @@ def stripe_product_deactivate(courseID:str):
     except InvalidRequestError as error:
         print(error)
 
+#TODO: THIS
+def stripe_product_edit(courseName=None, courseDescription = None, coursePrice = None, courseImagePath = None):
+    pass
+
 def stripe_product_check(courseID:str) -> Optional[str]:
     """
     Checks if a product exists on Stripe based on Course ID.

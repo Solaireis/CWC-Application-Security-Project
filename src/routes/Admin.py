@@ -157,11 +157,9 @@ def userManagement():
 # blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
 @adminBP.route("/static/course_videos/<string:courseID>.mp4")
 def blockAccess(courseID):
-    if "admin" in session:
-        videoPath = get_course_video_path(courseID)
-        if videoPath is not None:
-            return render_template("users/admin/raw_video.html", videoPath = videoPath)
-        else:
-            abort(404)
+    videoPath = get_course_video_path(courseID)
+    print(videoPath)
+    if videoPath is not None:
+        return render_template("users/admin/raw_video.html", videoPath = videoPath)
     else:
-        abort(403)
+        abort(404)

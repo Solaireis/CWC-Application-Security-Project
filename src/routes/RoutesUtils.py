@@ -1,5 +1,5 @@
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, current_app
+from flask import render_template, request, session, abort, current_app, redirect
 from flask import wrappers
 from flask_limiter.util import get_remote_address
 
@@ -9,6 +9,7 @@ from python_files.functions.NormalFunctions import get_IP_address_blacklist, upl
 
 # import python standard libraries
 from secrets import token_bytes
+import re
 
 def update_secret_key() -> None:
     """
@@ -57,6 +58,18 @@ def before_request() -> None:
     """
     if (get_remote_address() in current_app.config["IP_ADDRESS_BLACKLIST"]):
         abort(403)
+
+    # Redirect user to coursefinity.social domain if they are not on it
+    # Reason: Firebase have their own set of default domain names (that cannot be disabled) 
+    # which are not protected by Cloudflare.
+    if (re.fullmatch(current_app.config["CONSTANTS"].FIREBASE_DOMAIN_REGEX, request.url) is not None):
+        return redirect(
+            re.sub(
+                current_app.config["CONSTANTS"].FIREBASE_DOMAIN_REGEX, 
+                r"https://coursefinity.social\2", 
+                request.url
+            )
+        )
 
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):

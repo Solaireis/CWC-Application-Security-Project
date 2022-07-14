@@ -77,6 +77,9 @@ class ConstantsConfigs:
         # Debug flag
         self.__DEBUG_MODE = True 
 
+        # For redirecting user to the custom domain on firebase
+        self.__FIREBASE_DOMAIN_REGEX = re.compile(r"^(https://coursefinity-339412\.web\.app|https://coursefinity-339412\.firebaseapp\.com)(\/.*)?$")
+
         # Blueprints endpoint routes
         self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
         self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
@@ -263,6 +266,10 @@ class ConstantsConfigs:
     @property
     def DEBUG_MODE(self) -> bool:
         return self.__DEBUG_MODE
+
+    @property
+    def FIREBASE_DOMAIN_REGEX(self) -> re.Pattern[str]:
+        return self.__FIREBASE_DOMAIN_REGEX
 
     @property
     def GUEST_BLUEPRINTS(self) -> tuple:
