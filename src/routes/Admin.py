@@ -150,16 +150,15 @@ def userManagement():
     session["relative_url"] = request.full_path
     return render_template("users/admin/user_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
 
-#TODO: https://ottverse.com/shaka-packager-for-mpeg-dash-packaging-live-and-vod
-#TODO: https://shaka-project.github.io/shaka-packager/html/tutorials/widevine.html
-#TODO: https://shaka-player-demo.appspot.com/docs/api/tutorial-drm-config.html
-
 # blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
 @adminBP.route("/static/course_videos/<string:courseID>.mp4")
-def blockAccess(courseID):
+def rawVideo(courseID):
+    #TODO: Video status
+    convert_to_mpd(courseID, '.mp4')
     videoPath = get_course_video_path(courseID)
     print(videoPath)
     if videoPath is not None:
         return render_template("users/admin/raw_video.html", videoPath = videoPath)
     else:
         abort(404)
+

@@ -18,6 +18,7 @@ from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
 from subprocess import run as subprocess_run, PIPE
+from flask import current_app
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -1636,22 +1637,29 @@ def two_fa_token_is_valid(token:str) -> bool:
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
 #TODO: Functionality with other file types
-def convert_to_mpd(courseID):
-    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+def convert_to_mpd(courseID, extension):
+    if extension not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]:
+        raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 
-    if not videoPath.with_suffix(".mp4").is_file():
-        raise Exception(f"Video file with courseID '{courseID}' does not have a .mp4 to convert to .mpd")
 
-    video = ffmpeg_input(f'{videoPath}.mp4')
+    videoFolderPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
+    originalVideoPath = str(videoFolderPath.with_suffix(extension))
+    convertedVideoPath = str(videoFolderPath.with_suffix(".mpd"))
+
+    video = ffmpeg_input(originalVideoPath)
     dash = video.dash(Formats.h264())
 
     # For CLI Testing
-    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath.with_suffix(".mp4")}"')
+    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoFolderPath.with_suffix(".mp4")}"')
 
-    dimensions = subprocess_run(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath.with_suffix(".mp4")}"', stdout=PIPE)
+    # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
+    dimensions = subprocess_run(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{originalVideoPath}"', stdout=PIPE, stderr = PIPE)    
     try:
         dimensions = json.loads(dimensions.stdout.decode('utf-8'))['streams'][0]
+        print(dimensions)
     except KeyError:
+        error = dimensions.stderr.decode('utf-8')
+        print(error)
         return False
         #TODO: Logging
 
@@ -1659,28 +1667,27 @@ def convert_to_mpd(courseID):
     dash.representations(_1080p)
 
     try:
-        dash.output(videoPath.with_suffix('.mpd'))
+        dash.output(convertedVideoPath)
     except RuntimeError:
         return False
         #TODO: Log
 
-    Path(f"{videoPath}.mp4").unlink(missing_ok=True)
+    Path(originalVideoPath).unlink(missing_ok=True)
 
     return True
 
 
 def get_course_video_path(courseID):
+
     from python_files.functions.SQLFunctions import sql_operation
     matched = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if not matched:
         #TODO: Log
         return None
 
-    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
-    if not videoPath.with_suffix(".mpd").is_file() and videoPath.with_suffix(".mp4").is_file():
-        convert_to_mpd(courseID)
-        
-    if videoPath.with_suffix(".mpd").is_file():
+    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}').with_suffix(".mpd")
+
+    if videoPath.is_file():
         return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
     else:
         return None

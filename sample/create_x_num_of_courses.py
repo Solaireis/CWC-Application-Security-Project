@@ -99,7 +99,10 @@ else:
 course_id_list = []
 
 for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
-    course_id = NormalFunctions.generate_id()
+    if i == 1:
+        course_id = "077d2d721fa64093a6d673902ab4b830" # For easier testing, first course is a preset value
+    else:
+        course_id = NormalFunctions.generate_id()
     course_id_list.append(course_id)
     teacher_id = "30a749defdd843ecae5da3b26b6d6b9b"
     course_name = f"Data Structure and Algorithms Demo Course {i}"
