@@ -172,17 +172,20 @@
                                 {% if userPurchased != True %}
                                     {% if accType=="Guest" %}
                                     <form action="/login" method="GET">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                                     </form>
                                     {% elif accType=="Admin" %}
                                     <button type="button" class="btn btn-success course_buy_button float-end">Admin cannot add to cart!</button>
                                     {% else %}
                                     <form action="/add_to_cart/{{ course.get_courseID() }}" method="POST">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-success course_buy_button float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                                     </form>
                                     {% endif %}
                                 {% else %}
                                     <form action="/purchaseview/{{ course.get_courseID() }}" method="POST">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-success course_buy_button float-end"><i class="fas fa-shopping-bag"></i> View Purchase</button>
                                     </form>
                                 {% endif %}
@@ -210,6 +213,7 @@
                                         <div class="card-body">
                                             {% if review.get_userID() == session.get("userSession") %}
                                             <form action="/course/deletereview/{{ course.get_courseID() }}" method="POST">
+                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                                 <button type="submit" class="btn mb-2 float-end"><i class="fas fa-trash float-end text-danger"></i></button>
                                             </form>
                                             {% endif %}

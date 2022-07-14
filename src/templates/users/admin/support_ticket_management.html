@@ -185,6 +185,7 @@
 
                             <div class="col-md-6">
                                 <form method="post" id="search-form">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     {% set renderedFilters = renderedFilters %}
                                     {{ ticketSearch.checkedFilters(value = renderedFilters) }}
                                     <div class="input-group margin-btm">
@@ -201,6 +202,7 @@
                         <div class="row">
 
                             <form method="post" id="action-form">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 {{ ticketAction.ticketID() }}
                                 {{ ticketAction.ticketAction() }}
                             </form>

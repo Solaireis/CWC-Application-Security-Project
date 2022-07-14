@@ -36,10 +36,12 @@
                                 <button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
                             {% elif searchInformation["Bought"] == True %}
                                 <form action="/purchaseview/{{ courseID }}" method="POST">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-success float-end"><i class="fas fa-shopping-bag"></i> View Purchase</button>
                                 </form>
                             {% else %}
                                 <form action="/add_to_cart/{{ course.get_courseID() }}" method="POST">
+                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                                 </form>
                             {% endif %}

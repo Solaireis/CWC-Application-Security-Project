@@ -334,6 +334,7 @@
                     <div class="row">
                         <div class="col-md-12">
                             <form action="{{ url_for('adminBP.userManagement') }}" method="GET" class="row">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                 <div class="col-12 input-group">
                                     <input class="form-control mr-2" type="search" placeholder="Search for user (using username or UID or email)..." name="user" aria-label="Search" value="{{ request.args.get('user', default='') }}" required>
                                     <select name="filter" class="form-select" aria-label="Search Filters">

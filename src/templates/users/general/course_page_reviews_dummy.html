@@ -38,6 +38,7 @@
                                 <div class="col-10">
                                     <div class="card-body">
                                         <form action="/course/deletereview/{{ course.get_courseID() }}" method="POST">
+                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn mb-2 float-end"><i class="fas fa-trash float-end text-danger"></i></button>
                                         </form>
                                         <h5 class="card-title">{{ review.get_title() }}</h5>
