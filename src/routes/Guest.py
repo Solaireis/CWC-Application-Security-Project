@@ -278,11 +278,10 @@ def login():
             requestIPAddress = get_remote_address()
             emailInput = loginForm.email.data
             passwordInput = loginForm.password.data
-            userInfo = isAdmin = successfulLogin = userHasTwoFA = False
+            userInfo = successfulLogin = userHasTwoFA = False
             try:
                 # returns the userID, boolean if user logged in from a new IP address, username, role
                 userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
-                isAdmin = True if (userInfo[3] == "Admin" or userInfo[3] == "SuperAdmin") else False
                 # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
                 if (userInfo[1]):
@@ -368,7 +367,6 @@ def login():
                 session["temp_uid"] = userInfo[0]
                 session["username"] = userInfo[2]
                 session["token"] = RSA_encrypt(generatedTOTPSecretToken)
-                session["is_admin"] = isAdmin
                 flash("An email has been sent to you with your special access code!", "Success")
                 return redirect(url_for("guestBP.enterGuardTOTP"))
 
@@ -385,10 +383,7 @@ def login():
 
             if (successfulLogin and not userHasTwoFA):
                 session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
-                if (not isAdmin):
-                    session["user"] = userInfo[0]
-                else:
-                    session["admin"] = userInfo[0]
+                session["user"] = userInfo[0]
 
                 if (passwordCompromised):
                     send_change_password_alert_email(email=emailInput)
@@ -400,7 +395,6 @@ def login():
                 session["user_email"] = emailInput
                 session["password_compromised"] = passwordCompromised
                 session["temp_uid"] = userInfo[0]
-                session["is_admin"] = isAdmin
                 return redirect(url_for("guestBP.enter2faTOTP"))
             else:
                 sleep(2) # Artificial delay to prevent attacks such as enumeration attacks, etc.
@@ -461,8 +455,7 @@ def enterGuardTOTP():
         "password_compromised" not in session or 
         "temp_uid" not in session or
         "username" not in session or
-        "token" not in session or
-        "is_admin" not in session
+        "token" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -505,7 +498,6 @@ def enterGuardTOTP():
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
         userID = session["temp_uid"]
-        isAdmin = session["is_admin"]
         passwordCompromised = session["password_compromised"]
         userEmail = session["user_email"]
         session.clear()
@@ -518,10 +510,7 @@ def enterGuardTOTP():
         if (passwordCompromised):
             send_change_password_alert_email(email=userEmail)
 
-        if (isAdmin):
-            session["admin"] = userID
-        else:
-            session["user"] = userID
+        session["user"] = userID
         return redirect(url_for("generalBP.home"))
 
     # post request with invalid form values
@@ -831,12 +820,7 @@ def enter2faTOTP():
             return redirect(url_for("guestBP.login"))
 
         if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
-            isAdmin = session["is_admin"]
-            if (isAdmin):
-                session["admin"] = userID
-            else:
-                session["user"] = userID
-
+            session["user"] = userID
             session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
             # check if password has been compromised
