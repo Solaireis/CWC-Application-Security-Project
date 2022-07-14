@@ -199,6 +199,7 @@ class ConstantsConfigs:
 
         # For Google GMAIL API
         self.__GOOGLE_CREDENTIALS = json.loads(self.get_secret_payload(secretID="google-credentials"))
+        self.__GOOGLE_TOKEN_NAME = "google-token"
 
         # For Google OAuth2 login
         self.__GOOGLE_CLIENT_ID = self.GOOGLE_CREDENTIALS["web"]["client_id"]
@@ -434,6 +435,10 @@ class ConstantsConfigs:
     @property
     def GOOGLE_CREDENTIALS(self) -> dict:
         return self.__GOOGLE_CREDENTIALS
+
+    @property
+    def GOOGLE_TOKEN_NAME(self) -> str:
+        return self.__GOOGLE_TOKEN_NAME
 
     @property
     def GOOGLE_CLIENT_ID(self) -> str:

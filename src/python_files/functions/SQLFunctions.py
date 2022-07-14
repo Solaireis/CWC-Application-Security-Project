@@ -8,7 +8,6 @@ from typing import Union, Optional
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from hashlib import sha512
-from secrets import token_hex
 from math import ceil
 
 # import Flask web application configs
@@ -25,7 +24,7 @@ from python_files.classes.User import UserInfo
 from python_files.classes.Errors import *
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_email, write_log_entry, get_mysql_connection, delete_blob
+                             send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
 def get_blob_name(url:str="") -> str:
@@ -54,9 +53,7 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
     # minimum requirement for a session ID length is 16 bytes as stated in OWASP's Session Management Cheatsheet,
     # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
-    sessionID = token_hex(32) # Generate a 32 bytes session ID  using the secrets module from Python standard library
-                              # as recommended by OWASP to ensure higher entropy: 
-                              # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
+    sessionID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
 
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
@@ -88,9 +85,7 @@ def generate_limited_usage_jwt_token(
     if (expiryInfo is not None):
         expiryInfoToStore = expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
 
-    tokenID = token_hex(32) # Generate a 32 bytes token ID  using the secrets module from Python standard library
-                            # as recommended by OWASP to ensure higher entropy: 
-                            # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
+    tokenID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
     token = EC_sign(payload=payload, b64EncodeData=encodeTokenFlag, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
         table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,

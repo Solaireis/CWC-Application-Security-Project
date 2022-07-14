@@ -1,27 +1,9 @@
 # import python standard libraries
-from secrets import token_bytes
-from sys import modules
-import pathlib
+import pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
-from six import ensure_binary
-from typing import Union
 
-# import third party libraries
-from google_crc32c import Checksum as g_crc32c
+# import third-party libraries
 from google.api_core.exceptions import FailedPrecondition
-
-def crc32c(data:Union[bytes, str]) -> int:
-    """
-    Calculates the CRC32C checksum of the provided data
-    
-    Args:
-    - data (str|bytes): the bytes of the data which the checksum should be calculated
-        - If the data is in string format, it will be encoded to bytes
-    
-    Returns:
-    - An int representing the CRC32C checksum of the provided bytes
-    """
-    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
 def shutdown() -> None:
     """
@@ -31,27 +13,33 @@ def shutdown() -> None:
     print("Shutting down...")
     input("Please press ENTER to exit...")
 
-# Define constants
+# import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
+PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files", "functions")
 
-# import Constants_Init.py local python module using absolute path
-CONSTANTS_INIT_PY_FILE = FILE_PATH.parent.joinpath("src", "python_files", "Constants.py")
-spec = spec_from_file_location("Constants_Init", str(CONSTANTS_INIT_PY_FILE))
-Constants_Init = module_from_spec(spec)
-modules[spec.name] = Constants_Init
-spec.loader.exec_module(Constants_Init)
+# add to sys path so that Constants.py can be imported by NormalFunctions.py
+sys.path.append(str(PYTHON_FILES_PATH.parent))
+
+# import NormalFunctions.py local python module using absolute path
+NORMAL_PY_FILE = PYTHON_FILES_PATH.joinpath("NormalFunctions.py")
+spec = spec_from_file_location("NormalFunctions", str(NORMAL_PY_FILE))
+NormalFunctions = module_from_spec(spec)
+sys.modules[spec.name] = NormalFunctions
+spec.loader.exec_module(NormalFunctions)
+
+CONSTANTS = NormalFunctions.CONSTANTS
 
 # Create an authorised Google Cloud Secret Manager API service instance.
-SM_CLIENT = Constants_Init.CONSTANTS.SM_CLIENT
+SM_CLIENT = CONSTANTS.SM_CLIENT
 
 MENU = """
--------------------- Flask Secret Key Menu --------------------
+-------------------------- Flask Secret Key Menu --------------------------
 
-1. Generate a new secret key
-2. View the secret key from Google Cloud Secret Manager API
+1. Generate a new secret key using GCP KMS API (Using RNG in a Cloud HSM)
+2. View the secret key from GCP Secret Manager API
 X. Shutdown test program
 
----------------------------------------------------------------"""
+---------------------------------------------------------------------------"""
 COMMAND = ("1", "2", "x")
 
 def main() -> None:
@@ -82,13 +70,15 @@ def main() -> None:
             # generate a new key using the secrets module from Python standard library
             # as recommended by OWASP to ensure higher entropy: 
             # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
-            secretKey = token_bytes(Constants_Init.CONSTANTS.SESSION_NUM_OF_BYTES) 
+            secretKey = NormalFunctions.generate_secure_random_bytes(
+                nBytes=CONSTANTS.SESSION_NUM_OF_BYTES, generateFromHSM=True
+            ) 
 
             # construct the secret path to the secret key ID
-            secretPath = SM_CLIENT.secret_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME)
+            secretPath = SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.FLASK_SECRET_KEY_NAME)
 
             # calculate the payload crc32c checksum
-            crc32cChecksum = crc32c(secretKey)
+            crc32cChecksum = NormalFunctions.crc32c(secretKey)
 
             # since it's in bytes, we don't need to encode the data payload to bytes
             # before sending it to Google Secret Management API.
@@ -114,7 +104,7 @@ def main() -> None:
                 latestVer = int(response.name.split("/")[-1])
 
                 for version in range(latestVer - 1, 0, -1):
-                    secretVersionPath = SM_CLIENT.secret_version_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME, version)
+                    secretVersionPath = SM_CLIENT.secret_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.FLASK_SECRET_KEY_NAME, version)
                     try:
                         SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                     except (FailedPrecondition):
@@ -126,10 +116,7 @@ def main() -> None:
 
         elif (prompt == "2"):
             # construct the resource name of the secret version
-            secretName = SM_CLIENT.secret_version_path(Constants_Init.CONSTANTS.GOOGLE_PROJECT_ID, Constants_Init.CONSTANTS.FLASK_SECRET_KEY_NAME, "latest")
-
-            # get the secret version
-            response = SM_CLIENT.access_secret_version(request={"name": secretName})
+            secretPayload = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
             # print the secret payload (Not ideal but for demo)
             while (1):
@@ -140,7 +127,7 @@ def main() -> None:
                 else:
                     displayInHex = True if (displayInHex != "n") else False
                     break
-            secretPayload = response.payload.data
+
             if (displayInHex):
                 secretPayload = secretPayload.hex()
             print(f"Generated secret key that is stored at Google Secret Manager API:\n{secretPayload}")

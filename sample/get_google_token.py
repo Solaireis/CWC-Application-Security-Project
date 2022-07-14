@@ -1,68 +1,36 @@
 # import third party libraries
-from google.cloud import secretmanager
-import google.api_core.exceptions as GoogleErrors
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
-from google_crc32c import Checksum as g_crc32c
 from google.api_core.exceptions import FailedPrecondition
 
 # import python standard libraries
 from sys import exit as sysExit
-import pathlib, json
-from typing import Union
-from six import ensure_binary
+import pathlib, sys, json
+from importlib.util import spec_from_file_location, module_from_spec
 
-# Define constants
+# import local python libraries
 FILE_PATH = pathlib.Path(__file__).parent.absolute()
-SM_FILE_PATH = FILE_PATH.parent.joinpath("src", "config_files", "google-sm.json")
-GOOGLE_TOKEN_SECRET_NAME = "google-token"
-PROJECT_ID = "coursefinity-339412"
-SM_CLIENT = secretmanager.SecretManagerServiceClient.from_service_account_json(SM_FILE_PATH)
+PYTHON_FILES_PATH = FILE_PATH.parent.joinpath("src", "python_files", "functions")
+
+# add to sys path so that Constants.py can be imported by NormalFunctions.py
+sys.path.append(str(PYTHON_FILES_PATH.parent))
+
+# import NormalFunctions.py local python module using absolute path
+NORMAL_PY_FILE = PYTHON_FILES_PATH.joinpath("NormalFunctions.py")
+spec = spec_from_file_location("NormalFunctions", str(NORMAL_PY_FILE))
+NormalFunctions = module_from_spec(spec)
+sys.modules[spec.name] = NormalFunctions
+spec.loader.exec_module(NormalFunctions)
+
+CONSTANTS = NormalFunctions.CONSTANTS
 
 # If modifying these scopes, delete the file token.json.
 # Scopes details: https://developers.google.com/gmail/api/auth/scopes
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
-
-def get_secret_payload(secretID:str="", versionID:str="latest") -> str:
-    """
-    Get the secret payload from Google Cloud Secret Manager API.
-    
-    Args:
-    - secretID (str): The ID of the secret.
-    - versionID (str): The version ID of the secret.
-    
-    Returns:
-    - secretPayload (str): the secret payload
-    """
-    # construct the resource name of the secret version
-    secretName = SM_CLIENT.secret_version_path(PROJECT_ID, secretID, versionID)
-
-    # get the secret version
-    try:
-        response = SM_CLIENT.access_secret_version(request={"name": secretName})
-    except (GoogleErrors.NotFound) as e:
-        # secret version not found
-        print("Error caught:")
-        print(e, end="\n\n")
-        return
-
-    # return the secret payload
-    return response.payload.data.decode("utf-8")
-
-try:
-    GOOGLE_CREDENTIALS = json.loads(get_secret_payload(secretID="google-credentials"))
-except (FailedPrecondition):
-    print("Error: Google credentials not found.")
-    sysExit(1)
-
-try:
-    GOOGLE_TOKEN = json.loads(get_secret_payload(secretID=GOOGLE_TOKEN_SECRET_NAME))
-except (FailedPrecondition):
-    GOOGLE_TOKEN = None
 
 def shutdown() -> None:
     """
@@ -72,35 +40,23 @@ def shutdown() -> None:
     print("Shutting down...")
     input("Please press ENTER to exit...")
 
-def crc32c(data:Union[bytes, str]) -> int:
-    """
-    Calculates the CRC32C checksum of the provided data
-    
-    Args:
-    - data (str|bytes): the bytes of the data which the checksum should be calculated
-        - If the data is in string format, it will be encoded to bytes
-    
-    Returns:
-    - An int representing the CRC32C checksum of the provided bytes
-    """
-    return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
-
-def create_token(quiet:bool=False) -> None:
+def create_token() -> None:
     """
     Will try to initialise Google API by trying to authenticate with token.json
-    stored inside the config_files folder (inside the src folder).
-    
+    stored in Google Cloud Platform Secret Manager API.
+
     On success, will not ask for credentials again.
     Otherwise, will ask to authenticate with Google.
-    
-    Args:
-    - quiet: If True, will not print any messages.
-    
-    Returns:
-    - None
     """
     generatedNewToken = False
     creds = None
+
+    GOOGLE_TOKEN = json.loads(
+        CONSTANTS.get_secret_payload(
+            secretID=CONSTANTS.GOOGLE_TOKEN_NAME
+        )
+    )
+    GOOGLE_CREDENTIALS = CONSTANTS.GOOGLE_CREDENTIALS
 
     # The file google-token.json stores the user's access and refresh tokens,
     # and is stored in Google Secret Manager API.
@@ -110,34 +66,37 @@ def create_token(quiet:bool=False) -> None:
         try:
             creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
         except (RefreshError):
-            print("Token is no longer valid as there is an refresh error!\n")
+            print("Token is no longer valid as there is a refresh error!\n")
     else:
         print("No token found.\n")
 
     # If there are no (valid) credentials available, let the user log in.
     if (creds is None or not creds.valid):
         if (creds and creds.expired and creds.refresh_token):
+            print("Token is valid but might expire soon, refreshing token instead...", end="")
             creds.refresh(Request())
+            print("\rRefreshed token!\n")
         else:
+            print("Token is expired or invalid!\n")
             flow = InstalledAppFlow.from_client_config(GOOGLE_CREDENTIALS, SCOPES)
             creds = flow.run_local_server(port=0)
 
-        print(f"Adding new secret version to secret ID, {GOOGLE_TOKEN_SECRET_NAME}...", end="")
+        print(f"Adding new secret version to the secret ID, {CONSTANTS.GOOGLE_TOKEN_NAME}...", end="")
         generatedNewToken = True
 
         # Save the credentials for the next run to Google Secret Manager API
         # construct the secret path to the secret key ID
-        secretPath = SM_CLIENT.secret_path(PROJECT_ID, GOOGLE_TOKEN_SECRET_NAME)
+        secretPath = CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.GOOGLE_TOKEN_NAME)
 
         # encode the credentials token to bytes
         secretData = creds.to_json().encode("utf-8")
 
         # calculate the credentials token payload crc32c checksum
-        crc32cPayload = crc32c(secretData)
+        crc32cPayload = NormalFunctions.crc32c(secretData)
 
         # Now add the secret version and send to Google Secret Management API
-        response = SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData, "data_crc32c": crc32cPayload})
-        print(f"\rNew secret version, {GOOGLE_TOKEN_SECRET_NAME}, created:", response.name, "\n")
+        response = CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData, "data_crc32c": crc32cPayload})
+        print(f"\rNew secret version, {CONSTANTS.GOOGLE_TOKEN_NAME}, created:", response.name, "\n")
 
         while (1):
             destroyAllPastVer = input("Do you want to DESTROY all past versions? (Y/n): ").lower().strip()
@@ -156,9 +115,13 @@ def create_token(quiet:bool=False) -> None:
             latestVer = int(response.name.split("/")[-1])
 
             for version in range(latestVer - 1, 0, -1):
-                secretVersionPath = SM_CLIENT.secret_version_path(PROJECT_ID, GOOGLE_TOKEN_SECRET_NAME, version)
+                secretVersionPath = CONSTANTS.SM_CLIENT.secret_version_path(
+                    CONSTANTS.GOOGLE_PROJECT_ID, 
+                    CONSTANTS.GOOGLE_TOKEN_NAME, 
+                    version
+                )
                 try:
-                    SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
+                    CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                 except (FailedPrecondition):
                     # key is already destroyed
                     break # assuming that all the previous has been destroyed
@@ -168,17 +131,12 @@ def create_token(quiet:bool=False) -> None:
 
     try:
         # Build the Gmail service from the credentials
-        service = build("gmail", "v1", credentials=creds)
-
-        if (not quiet):
+        with build("gmail", "v1", credentials=creds) as service:
             print(f"Status OK! {'Generated' if (generatedNewToken) else 'Loaded'} token.json is valid.")
-
-        service.close() # close the gmail api service object
     except (HttpError) as error:
-        if (not quiet):
-            print(f"\nAn error has occurred:\n{error}")
-            print()
-            sysExit(1)
+        print(f"\nAn error has occurred:\n{error}")
+        print()
+        sysExit(1)
 
 while (1):
     try:

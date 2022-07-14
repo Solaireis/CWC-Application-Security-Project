@@ -5,10 +5,9 @@ from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import get_IP_address_blacklist, upload_new_secret_version
+from python_files.functions.NormalFunctions import get_IP_address_blacklist, upload_new_secret_version, generate_secure_random_bytes
 
 # import python standard libraries
-from secrets import token_bytes
 import re
 
 def update_secret_key() -> None:
@@ -26,7 +25,9 @@ def update_secret_key() -> None:
     # Generate a new key using the secrets module from Python standard library
     # as recommended by OWASP to ensure higher entropy: 
     # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
-    current_app.config["SECRET_KEY"] = token_bytes(current_app.config["CONSTANTS"].SESSION_NUM_OF_BYTES)
+    current_app.config["SECRET_KEY"] = generate_secure_random_bytes(
+        nBytes=current_app.config["CONSTANTS"].SESSION_NUM_OF_BYTES, generateFromHSM=True
+    )
     upload_new_secret_version(
         secretID=current_app.config["CONSTANTS"].FLASK_SECRET_KEY_NAME,
         secret=current_app.config["SECRET_KEY"],

@@ -9,9 +9,10 @@
 ### Cryptographic Failures
 
 #### Implemented:
-- Using Python's [secrets module](https://docs.python.org/3/library/secrets.html#module-secrets) to generate an ID for sensitive actions such as for JWT tokens.
+- Using Python's [secrets module](https://docs.python.org/3/library/secrets.html#module-secrets) to generate an ID for sensitive actions such as for secret tokens.
   - Recommended by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation) to ensure higher entropy
-- Secure Flask Secret Key using `secrets.token_bytes(512)` (4096 bits)
+- Secure Flask Secret Key using Google Cloud Platform KMS API RNG in the Cloud HSM (4096 bits)
+  - Ensures high entropy
   - Unlikely to be guessed ($2^{4096}$ possible keys)
   - Prevent session cookie from being tampered with
   - Automatically rotated at the end of each month

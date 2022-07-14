@@ -4,7 +4,7 @@ from randomuser import RandomUser
 
 # import python standard libraries
 from sys import exit as sysExit
-import re, pathlib, sys, json
+import re, pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
 from socket import inet_aton, inet_pton, AF_INET6
 

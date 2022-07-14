@@ -16,6 +16,7 @@ from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
+from secrets import token_bytes, token_hex
 from subprocess import run as subprocess_run, PIPE
 
 # import local python libraries
@@ -125,6 +126,29 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
             paginationList.append(pageCount)
 
     return paginationList
+
+def download_to_path(
+    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
+    blobName:str="",
+    downloadPath:Path=None,
+) -> None:
+    """
+    Downloads a file from Google Cloud Storage to a local path.
+
+    Args:
+    - bucketName (str): The name of the bucket to download from
+    - blobName (str): The name of the blob to download
+        - e.g. "user-profiles/default.png"
+    - downloadPath (pathlib.Path): The path to download the file to
+        - Defaults to a temp folder created in the running python script directory
+    """
+    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+
+    blob = bucket.blob(blobName)
+    if (downloadPath is None):
+        downloadPath = Path(__file__).parent.absolute().joinpath("temp")
+        downloadPath.mkdir(parents=True, exist_ok=True)
+    blob.download_to_filename(downloadPath)
 
 def upload_file_from_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
@@ -469,6 +493,39 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, s
         logger.log_text(logMessage, severity=severity)
     else:
         raise ValueError("logMessage must be a str or dict")
+
+def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False) -> Union[bytes, str]:
+    """
+    Generate a random byte/hex string of length nBytes that is cryptographicy secure.
+
+    Args:
+    - nBytes (int): The length of the byte string to generate.
+        - Defaults to 512
+    - generateFromHSM (bool): Whether to generate random bytes from 
+                              Google Cloud Platform KMS API's random number generated in the HSM.
+        - Benefits for using Google Cloud Platform KMS API's random number generator:
+            - The random number generator is generated in the HSM
+            - Higher entropy than generating by your own
+        - Defaults to False to use the secrets library to generate random bytes.
+            - Recommended by OWASP to use secrets library to ensure higher entropy
+            - More details: https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
+    - returnHex (bool): Whether to return the random bytes as a hex string.
+
+    Returns:
+    - A random byte string of length nBytes if returnHex is False.
+    - A random hex string of length nBytes if returnHex is True.
+    """
+    if (not generateFromHSM):
+        return token_hex(nBytes) if (returnHex) else token_bytes(nBytes)
+
+    # Construct the location name
+    locationName = CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
+
+    # Call the Google Cloud Platform API to generate a random byte string.
+    randomBytesResponse = CONSTANTS.KMS_CLIENT.generate_random_bytes(
+        request={"location": locationName, "length_bytes": nBytes, "protection_level": kms.ProtectionLevel.HSM}
+    )
+    return randomBytesResponse.data.hex() if (returnHex) else randomBytesResponse.data
 
 def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     """
@@ -1435,7 +1492,7 @@ def get_gmail_client() -> Resource:
     SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
     # get the token.json file from Google Cloud Secret Manager API
-    GOOGLE_TOKEN = json.loads(CONSTANTS.get_secret_payload(secretID="google-token"))
+    GOOGLE_TOKEN = json.loads(CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
 
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 
