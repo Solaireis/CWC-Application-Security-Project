@@ -104,7 +104,8 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
-app.config["ALLOWED_VIDEO_EXTENSIONS"] = ("mp4", "mov", "avi", "3gpp", "flv", "mpeg4", "flv", "webm", "mpegs", "wmv")
+# app.config["ALLOWED_VIDEO_EXTENSIONS"] = ("mp4", "mov", "avi", "3gpp", "flv", "mpeg4", "flv", "webm", "mpegs", "wmv")
+app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".mp4", ".mov", ".wmv", ".avi," ".webm")
 
 # add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS

@@ -38,7 +38,8 @@
 		</div>
 		<form action="" method="POST" class="body" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <input accept=".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv" name="courseVideo" class="form-control" id="upload" type='file' />
+            <!-- <input accept=".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv" name="courseVideo" class="form-control" id="upload" type='file' /> -->
+            <input accept=".mp4, .mov, .wmv, .avi, .webm" name="courseVideo" class="form-control" id="upload" type='file' />
 			<label for="upload">
 				<i class="fa fa-file-text-o fa-3x"></i>
 				<p>
