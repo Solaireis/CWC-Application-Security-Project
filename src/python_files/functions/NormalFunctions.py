@@ -100,7 +100,7 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
         # if the max pages is less than 6,
         # e.g. if the max pages is 2,
         # then the array will be: [1, 2]
-        return [pageCount for pageCount in range(1, maxPage+1)]
+        return list(range(1, maxPage+1))
 
     if (pageNum < 4):
         # if the user's current page number is less than 4, (i.e. 1-3)
@@ -113,12 +113,12 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
         # if the difference is 2 or less
         # e.g. max page is 10, current page is 8,
         # then the array will be: [6, 7, 8, 9, 10]
-        return [pageCount for pageCount in range(maxPage-4, maxPage+1)]
+        return list(range(maxPage-4, maxPage+1))
     else:
         # if the difference is more than 2
         # e.g. max page is 10, current page is 7,
         # then the array will be: [5, 6, 7, 8, 9]
-        return [pageCount for pageCount in range(pageNum-2, pageNum+3)]
+        return list(range(pageNum-2, pageNum+3))
 
 def download_to_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
