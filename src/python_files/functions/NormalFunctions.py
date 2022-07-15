@@ -348,7 +348,7 @@ def accepted_image_extension(filename:str) -> bool:
     """
     # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
     # e.g. "profile.test.png" -> ["profile.test", "png"]
-    return ("." in filename and filename.rsplit(".", 1)[1].lower() in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
+    return (Path(filename).suffix in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
 
 def get_google_flow() -> Flow:
     """
