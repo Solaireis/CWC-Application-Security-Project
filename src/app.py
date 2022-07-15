@@ -103,11 +103,11 @@ app.jinja_env.lstrip_blocks = True
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # for image uploads file path
-app.config["ALLOWED_IMAGE_EXTENSIONS"] = (".png", ".jpg", ".jpeg")
+app.config["ALLOWED_IMAGE_EXTENSIONS"] = ("png", "jpg", "jpeg")
 
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
-app.config["ALLOWED_VIDEO_EXTENSIONS"] = (".3g2", ".3gpp", ".3gp", ".asf", ".avchd", ".avi", ".flv", ".m4a", ".mkv", ".mov", ".mp4", ".mts", ".webm", ".wmv")
+app.config["ALLOWED_VIDEO_EXTENSIONS"] = ("3g2", "3gpp", "3gp", "asf", "avchd", "avi", "flv", "m4a", "mkv", "mov", "mp4", "mts", "webm", "wmv")
 # add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS
 
