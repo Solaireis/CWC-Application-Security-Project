@@ -1041,6 +1041,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "paginate_users"):
         pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
         userInput = kwargs.get("user")
         filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
@@ -1232,6 +1234,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_all_courses_by_teacher"):
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
         # Not using offset as it will get noticeably slower with more courses
         cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
@@ -1249,7 +1253,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             courseList.append(
                 CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
             )
-        
 
         return (courseList, maxPage)
 
@@ -1368,6 +1371,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseTag = kwargs.get("courseCategory")
         searchInput = kwargs.get("searchInput")
         pageNum = kwargs.get("pageNum")
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
         resultsList = []
 
         if (mode == "search"):
