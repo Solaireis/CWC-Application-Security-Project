@@ -40,7 +40,7 @@ def createCourse():
 
                 file = request.files.get("courseThumbnail")
                 filename = secure_filename(file.filename)
-                if (filename == "" or not accepted_image_extension(filename)):
+                if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
                     flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
                     return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
 

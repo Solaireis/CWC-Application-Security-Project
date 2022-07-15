@@ -105,8 +105,9 @@ class ConstantsConfigs:
         # Configurations for dicebear api for user profile image options
         self.__DICEBEAR_OPTIONS = DOptions(size=250)
 
-        # Configurations on the allowed image extensions
-        self.__ALLOWED_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg")
+        # Configurations on the allowed extensions for files such as images
+        self.__ALLOWED_IMAGE_EXTENSIONS = (".png", ".jfif", ".jpg", ".jpeg")
+        self.__ALLOWED_VIDEO_EXTENSIONS = (".3g2", ".3gpp", ".3gp", ".asf", ".avchd", ".avi", ".flv", ".m4a", ".mkv", ".mov", ".mp4", ".mts", ".webm", ".wmv")
 
         # path to the root directory of the project
         self.__ROOT_FOLDER_PATH = pathlib.Path(__file__).parent.parent.parent.absolute()
@@ -333,6 +334,10 @@ class ConstantsConfigs:
     @property
     def ALLOWED_IMAGE_EXTENSIONS(self) -> tuple:
         return self.__ALLOWED_IMAGE_EXTENSIONS
+
+    @property
+    def ALLOWED_VIDEO_EXTENSIONS(self) -> tuple:
+        return self.__ALLOWED_VIDEO_EXTENSIONS
 
     @property
     def ROOT_FOLDER_PATH(self) -> pathlib.Path:

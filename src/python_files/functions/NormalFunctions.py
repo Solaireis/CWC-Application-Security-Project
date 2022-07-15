@@ -342,15 +342,39 @@ def send_change_password_alert_email(email:str="") -> None:
         "Security Alert!"
     )
 
-def accepted_image_extension(filename:str) -> bool:
+def accepted_file_extension(filename:Union[str, Path]=None, typeOfFile:str="image") -> bool:
     """
-    Returns True if the image extension is accepted.
+    Checks if the file extension is accepted according to the
+    tuple of accepted file extensions defined in Constants.py.
+
+    Args:
+    - filename (str|pathlib.Path): The filename to check.
+    - typeOfFile (str, optional): The type of file to check.
+        - Defaults to "image"
+        - Accepted values: "image", "video"
+
+    Returns:
+    - True if the image extension is accepted, False otherwise.
     """
-    # if "." is in the filename and right split once and check if the extension is in the tuple of accepted extensions
-    # e.g. "profile.test.png" -> ["profile.test", "png"]
-    if not isinstance(filename, Path):
-        filename = Path(filename)
-    return (filename.suffix in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
+    if (filename is None):
+        raise ValueError("filename cannot be None!")
+
+    fileExtension = ""
+    if (isinstance(filename, str)):
+        if ("." not in filename):
+            return False
+        fileExtension = filename.rsplit(".", 1)[1].lower()
+    elif (isinstance(filename, Path)):
+        fileExtension = filename.suffix
+    else:
+        raise ValueError("filename must be a string or a pathlib.Path object!")
+
+    if (typeOfFile == "image"):
+        return (fileExtension in CONSTANTS.ALLOWED_IMAGE_EXTENSIONS)
+    elif (typeOfFile == "video"):
+        return (fileExtension in CONSTANTS.ALLOWED_VIDEO_EXTENSIONS)
+    else:
+        raise ValueError("typeOfFile must be either 'image' or 'video'...")
 
 def get_google_flow() -> Flow:
     """

@@ -127,7 +127,7 @@ def uploadPic():
 
         file = request.files["profilePic"]
         filename = secure_filename(file.filename)
-        if (filename == "" or not accepted_image_extension(filename)):
+        if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
             flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
             return redirect(url_for("userBP.userProfile"))
 
