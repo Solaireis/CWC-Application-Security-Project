@@ -56,9 +56,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     Returns:
     - The connection to the database (mysql connection object)
     """
-    # if not in debug mode, % is used as a wildcard to
-    # allow any whitelisted IP or authorised proxies to connect to GCP MySQL server
-    hostName = "localhost" if (debug) else "%" 
+    # Restrict connections to be made from localhost if in debug mode
+    # else if not in debug mode, restrict to our custom domain, "coursefinity.social"
+    hostName = "localhost" if (debug) else "coursefinity.social" 
 
     definer = f"root`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None)
