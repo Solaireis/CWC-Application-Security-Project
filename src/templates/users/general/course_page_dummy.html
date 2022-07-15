@@ -172,7 +172,6 @@
                                 {% if userPurchased != True %}
                                     {% if accType=="Guest" %}
                                     <form action="/login" method="GET">
-                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                                     </form>
                                     {% elif accType=="Admin" %}

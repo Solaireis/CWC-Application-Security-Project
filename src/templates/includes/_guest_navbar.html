@@ -120,7 +120,6 @@
 				</li>
             </ul>
 			<form action="{{ url_for('generalBP.search') }}" method="GET" class="d-flex ms-auto me-auto search_form">
-				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 				<div class="input-group">
 					<input class="form-control border-0 mr-2" type="search" maxlength="100" placeholder="Search" name="q" aria-label="Search" required>
 					<button class="btn btn-secondary border-0" type="submit"><i class="fas fa-search"></i></button>
