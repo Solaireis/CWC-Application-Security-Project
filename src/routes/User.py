@@ -221,11 +221,12 @@ def purchaseView(courseID:str):
 
     # TODO: Could have used Course.py's class instead of
     # TODO: manually retrieving the data from the tuple
+    # TODO: Prevent iframes from being loaded in the course description
     #create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
             courses.courseDescription,
-            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()], 
         )
     )
 
