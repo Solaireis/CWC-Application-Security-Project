@@ -1233,10 +1233,15 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
         # Not using offset as it will get noticeably slower with more courses
+        cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":1})
+        try:
+            maxPage = cur.fetchone()[-1]
+            if (pageNum > maxPage):
+                return (False , maxPage)
+        except:
+            return []
         cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
-        if (len(resultsList) == 0):
-            return []
         maxPage = ceil(resultsList[0][-1] / 10)
 
         # Get the teacher's profile image from the first tuple

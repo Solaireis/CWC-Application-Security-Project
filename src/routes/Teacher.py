@@ -78,16 +78,16 @@ def courseList():
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         page = request.args.get("p", default=1, type=int)
+        maxPage, paginationArr = 0, []
         courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
-        maxPage = 0
-        if len(courseList)!= 0:
-            courseList, maxPage = courseList[0], courseList[1]         
-            if (page > maxPage):
-                return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
+        if (not courseList[0]):   
+            return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
+        if (len(courseList) != 0) :
+            courseList, maxPage = courseList[0], courseList[1]      
             # Compute the buttons needed for pagination
             paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
-
-        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True)
+    
+        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
     else:
         return redirect(url_for("guestBP.login"))
 

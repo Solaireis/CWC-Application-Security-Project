@@ -58,12 +58,13 @@ def teacherPage(teacherID:str):
 
 @generalBP.route("/all-courses/<string:teacherID>")
 def allCourses(teacherID:str):
-    accType = imageSrcPath = None
+    accType = imageSrcPath = userID = None
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         imageSrcPath = userInfo.profileImage
         accType = userInfo.role
-        if (accType == "Teacher" and userInfo.uid == teacherID):
+        userID = userInfo.uid
+        if (accType == "Teacher" and userID == teacherID):
             return redirect(url_for("teacherBP.courseList"))
 
     page = request.args.get("p", default=1, type=int)
@@ -77,7 +78,7 @@ def allCourses(teacherID:str):
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False)
+    return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False, paginationArr=paginationArr, userID=userID)
 
 
 @generalBP.route("/course/<string:courseID>")

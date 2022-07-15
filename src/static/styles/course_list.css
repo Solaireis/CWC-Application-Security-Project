@@ -1,11 +1,8 @@
-
+/* 
 .center {
 text-align: center;
 }
 
-.pagination {
-display: inline-block;
-}
 
 .pagination a {
 color: black;
@@ -23,4 +20,4 @@ color: white;
 border: 1px solid #009DF8;
 }
 
-.pagination a:hover:not(.active) {background-color: #ddd;}
+.pagination a:hover:not(.active) {background-color: #ddd;} */

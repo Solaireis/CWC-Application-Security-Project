@@ -75,7 +75,7 @@
                     <div class="card-body">
                         <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
                         <p class="card-text">{{ course.courseDescription }}</p>
-                        {% if accType != "Teacher" %}
+                        {% if accType != "Teacher" or userID != teacherID %}
                         <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
                         <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
                         {% endif %}
@@ -92,12 +92,12 @@
                                         {% endfor %}
                                     {% endwith %}
                                 </div>
-                                {% else %}
+                                {% else  %}
                                 <p class="card-text text-danger">No ratings yet...</p>
                                 {% endif %}
                             </small>
                         </p>
-                        {% if accType == "Teacher" %}
+                        {% if accType == "Teacher" and userID == teacherID %}
                         <span><a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">Edit Course</a></span>
                         <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
                             data-bs-target="#deleteCourse">Delete Course</a></span>
@@ -132,11 +132,11 @@
             </div>
         </div>
     {% endfor %}
-    <nav aria-label="Page navigation" class="center">
+    <nav aria-label="Page navigation" class="d-flex justify-content-center">
         <ul class="pagination">
-            {% with urlPath = url_for("generalBP.allCourses", teacherID=teacherID) + "?p="" %}
+            {% with urlPath = url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" %}
                 {% if isOwnself %}
-                    {% set urlPath = url_for("teacherBP.courseList") + "?p="" %}
+                    {% set urlPath = url_for("teacherBP.courseList") + "?p=" %}
                 {% endif %}
                 {% if currentPage != 1 %}
                     <li class="page-item">
