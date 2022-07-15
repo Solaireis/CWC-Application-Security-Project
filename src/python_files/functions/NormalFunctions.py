@@ -140,15 +140,21 @@ def download_to_path(
     - bucketName (str): The name of the bucket to download from
     - blobName (str): The name of the blob to download
         - e.g. "user-profiles/default.png"
-    - downloadPath (pathlib.Path): The path to download the file to
+    - downloadPath (pathlib.Path): The folder path to download the file to
         - Defaults to a temp folder created in the running python script directory
     """
     bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
 
     blob = bucket.blob(blobName)
+    if (isinstance(downloadPath, str)):
+        print("Warning: downloadPath is a string, will be converted to a pathlib.Path object.")
+        downloadPath = Path(downloadPath)
+
     if (downloadPath is None):
         downloadPath = Path(__file__).parent.absolute().joinpath("temp")
-        downloadPath.mkdir(parents=True, exist_ok=True)
+    downloadPath.mkdir(parents=True, exist_ok=True)
+
+    downloadPath = downloadPath.joinpath(blobName.rsplit("/", 1)[-1])
     blob.download_to_filename(downloadPath)
 
 def upload_file_from_path(
