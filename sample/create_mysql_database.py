@@ -511,7 +511,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     
     # #Draft cuz the granting privileges is broken
     
-    
+    #create the users first
     # cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
     # cur.execute("CREATE ROLE 'Admin' , 'SuperAdmin' , 'Teachers', 'Student', 'Guest';")
 

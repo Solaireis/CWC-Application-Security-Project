@@ -260,6 +260,20 @@ class ConstantsConfigs:
         # For the email CSS style
         self.__EMAIL_BUTTON_STYLE = "background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;"
 
+        #coursefinity user secret password
+        self.__COURSEFINITY_USER_SECRET_PASSWORD = self.get_secret_payload(secretID="coursefinity-user-password")
+
+        #coursefinity admin user secret password
+        self.__COURSEFINITY_ADMIN_SECRET_PASSWORD = self.get_secret_payload(secretID="coursefinity-admin-password")
+
+        #coursefinity super admin user secret password
+        self.__COURSEFINITY_SUPER_ADMIN_SECRET_PASSWORD = self.get_secret_payload(secretID="coursefinity-superadmin-password")
+
+        #coursefinity guest user secret password
+        self.__COURSEFINITY_GUEST_SECRET_PASSWORD = self.get_secret_payload(secretID="coursefinity-guest-password")
+
+
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -527,6 +541,23 @@ class ConstantsConfigs:
     @property
     def EMAIL_BUTTON_STYLE(self) -> str:
         return self.__EMAIL_BUTTON_STYLE
+
+    @property
+    def coursefinity_user_password(self) -> str:
+        return self.__COURSEFINITY_USER_SECRET_PASSWORD
+    
+    @property
+    def coursefinity_admin_password(self) -> str:
+        return self.__COURSEFINITY_ADMIN_SECRET_PASSWORD
+    
+    @property
+    def coursefinity_superadmin_password(self) -> str:
+        return self.__COURSEFINITY_SUPER_ADMIN_SECRET_PASSWORD
+
+    @property
+    def coursefinity_guest_password(self) -> str:
+        return self.__COURSEFINITY_GUEST_SECRET_PASSWORD
+
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 
