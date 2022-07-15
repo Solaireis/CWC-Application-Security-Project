@@ -17,11 +17,6 @@ def update_secret_key() -> None:
 
     Used for setting and rotating the secret key for the session cookie.
     """
-    # Check if the web application is already in maintenance mode
-    isInMaintenanceMode = current_app.config["MAINTENANCE_MODE"]
-    if (not isInMaintenanceMode):
-        current_app.config["MAINTENANCE_MODE"] = True
-
     # Generate a new key using the secrets module from Python standard library
     # as recommended by OWASP to ensure higher entropy: 
     # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
@@ -34,10 +29,6 @@ def update_secret_key() -> None:
         destroyPastVer=True,
         destroyOptimise=True
     )
-
-    # if the web application is already in maintenance mode, don't set it to false to avoid potential issues
-    if (not isInMaintenanceMode):
-        current_app.config["MAINTENANCE_MODE"] = False
 
 @current_app.before_first_request
 def before_first_request() -> None:

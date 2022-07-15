@@ -164,49 +164,49 @@ def remove_unverified_users_for_more_than_30_days() -> None:
     """
     Remove unverified users from the database
 
-    >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+    >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days", user="root")
     """
-    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days", user="root")
 
 def remove_expired_jwt() -> None:
     """
     Remove expired jwt from the database
 
-    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt", user="root")
     """
-    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt", user="root")
 
 def remove_expired_sessions() -> None:
     """
     Remove expired sessions from the database
 
-    >>> sql_operation(table="session", mode="delete_expired_sessions")
+    >>> sql_operation(table="session", mode="delete_expired_sessions", user="root")
     """
-    return sql_operation(table="session", mode="delete_expired_sessions")
+    return sql_operation(table="session", mode="delete_expired_sessions", user="root")
 
 def reset_expired_login_attempts() -> None:
     """
     Reset expired login attempts for users
 
-    >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+    >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date", user="root")
     """
-    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date", user="root")
 
 def remove_last_accessed_more_than_10_days() -> None:
     """
     Remove last accessed more than 10 days from the database
 
-    >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+    >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days", user="root")
     """
-    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days", user="root")
 
 def re_encrypt_data_in_db() -> None:
     """
     Re-encrypt data in the database
 
-    >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
+    >>> sql_operation(table="user", mode="re-encrypt_data_in_database", user="root")
     """
-    return sql_operation(table="user", mode="re-encrypt_data_in_database")
+    return sql_operation(table="user", mode="re-encrypt_data_in_database", user="root")
 
 def update_ip_blacklist_from_github() -> None:
     """
@@ -215,6 +215,18 @@ def update_ip_blacklist_from_github() -> None:
     >>> app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
     """
     app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
+
+def check_for_new_flask_secret_key() -> None:
+    """
+    Check for new flask secret key and if there is a new key in 
+    Google Cloud Platform Secret Manager, 
+    update the secret key in the web application to the new key.
+    """
+    retrievedKeyFromGCPSecretManager = CONSTANTS.get_secret_payload(
+        secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+    )
+    if (retrievedKeyFromGCPSecretManager != app.config["SECRET_KEY"]):
+        app.config["SECRET_KEY"] = retrievedKeyFromGCPSecretManager
 
 """------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
@@ -257,6 +269,11 @@ if (__name__ == "__main__"):
     scheduler.add_job(
         update_secret_key,
         trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
+    )
+    # For checking if the Flask secret key has been manually changed every 30 minutes
+    scheduler.add_job(
+        check_for_new_flask_secret_key,
+        trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
     )
     # For updating the IP address blacklist from ipsum GitHub repo everday at 12:00 P.M.
     scheduler.add_job(

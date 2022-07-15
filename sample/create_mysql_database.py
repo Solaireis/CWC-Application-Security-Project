@@ -56,11 +56,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     Returns:
     - The connection to the database (mysql connection object)
     """
-    if (debug):
-        definer = "root`@`localhost"
-    else:
-        definer = f"root`@`{CONSTANTS.REMOTE_SQL_SERVER_IP}"
+    # if not in debug mode, % is used as a wildcard to
+    # allow any whitelisted IP or authorised proxies to connect to GCP MySQL server
+    hostName = "localhost" if (debug) else "%" 
 
+    definer = f"root`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None)
     cur = mydb.cursor()
 
@@ -508,74 +508,41 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {'ip_address': ip})
 
     mydb.commit()
-    
-    # #Draft cuz the granting privileges is broken
-    
-    #create the users first
-    # cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
-    # cur.execute("CREATE ROLE 'Admin' , 'SuperAdmin' , 'Teachers', 'Student', 'Guest';")
 
-    # #Admin Privileges
-    # cur.execute("GRANT SELECT ON role TO 'Admin';")
-    # cur.execute("GRANT SELECT ON Recovery_token TO 'Admin';")
-    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'Admin';")
-    # cur.execute("GRANT SELECT ON user TO 'Admin';")
-    # cur.execute("GRANT SELECT ON course TO 'Admin';")
-    # cur.execute("GRANT SELECT ON session TO 'Admin';")
-    # cur.execute("GRANT SELECT ON twofa_token TO 'Admin';")
-    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'Admin';")
-    # cur.execute("GRANT SELECT ON login_attempts TO 'Admin';")
-    # cur.execute("GRANT SELECT ON review TO 'Admin';")
+    # get users' info for user creation for the database
+    passTable = {
+        "super-admin": CONSTANTS.get_secret_payload(secretID="sql-super-admin-password"),
+        "admin": CONSTANTS.get_secret_payload(secretID="sql-admin-password"),
+        "user": CONSTANTS.get_secret_payload(secretID="sql-user-password"),
+        "guest": CONSTANTS.get_secret_payload(secretID="sql-guest-password")
+    }
+    superAdminName = f"'super-admin'@'{hostName}'"
+    adminName = f"'admin'@'{hostName}'"
+    userName = f"'user'@'{hostName}'"
+    guestName = f"'guest'@'{hostName}'"
 
-    # #SuperAdmin Privileges
-    # cur.execute("GRANT ALL ON role TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON Recovery_token TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON user TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON course TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON session TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON twofa_token TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON login_attempts TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON review TO 'SuperAdmin';")
+    # drop the user if it exists
+    cur.execute(f"DROP USER IF EXISTS {superAdminName}")
+    cur.execute(f"DROP USER IF EXISTS {adminName}")
+    cur.execute(f"DROP USER IF EXISTS {userName}")
+    cur.execute(f"DROP USER IF EXISTS {guestName}")
 
-    # #Student Privileges 
-    # cur.execute("GRANT SELECT ON role TO 'student';")
-    # cur.execute("GRANT SELECT ON Recovery_token TO 'student';")
-    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'student';")
-    # cur.execute("GRANT SELECT ON user TO 'student';")
-    # cur.execute("GRANT SELECT ON course TO 'student';")
-    # cur.execute("GRANT SELECT ON session TO 'student';")
-    # cur.execute("GRANT SELECT ON twofa_token TO 'student';")
-    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'student';")
-    # cur.execute("GRANT SELECT ON login_attempts TO 'student';")
-    # cur.execute("GRANT SELECT ON review TO 'student';")
+    # create the users
+    cur.execute(f"CREATE USER {superAdminName} IDENTIFIED BY '{passTable['super-admin']}'")
+    cur.execute(f"CREATE USER {adminName} IDENTIFIED BY '{passTable['admin']}'")
+    cur.execute(f"CREATE USER {userName} IDENTIFIED BY '{passTable['user']}'")
+    cur.execute(f"CREATE USER {guestName} IDENTIFIED BY '{passTable['guest']}'")
 
-    # #Teacher Privileges
-    # cur.execute("GRANT SELECT ON role TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON Recovery_token TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON user TO 'Teacher;")
-    # cur.execute("GRANT SELECT ON course TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON session TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON twofa_token TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON login_attempts TO 'Teacher';")
-    # cur.execute("GRANT SELECT ON review TO 'Teacher';")
+    # grant privileges to users
+    # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
+    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
+    cur.execute(f"GRANT EXECUTE, SELECT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
+    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
+    cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
 
-    # #Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
-    # cur.execute("GRANT SELECT ON role TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON Recovery_token TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON limited_use_jwt TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON user TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON course TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON session TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON twofa_token TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON user_ip_addresses TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON login_attempts TO 'SuperAdmin';")
-    # cur.execute("GRANT SELECT ON review TO 'SuperAdmin';")
-    
+    mydb.commit()
     mydb.close()
+
 if (__name__ == "__main__"):
     while (1):
         debugPrompt = input("Debug mode? (Y/n): ").lower().strip()

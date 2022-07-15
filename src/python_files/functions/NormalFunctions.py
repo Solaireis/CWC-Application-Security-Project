@@ -19,6 +19,7 @@ from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
 from subprocess import run as subprocess_run, PIPE
 from flask import current_app
+from os import environ
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -281,24 +282,36 @@ def get_mysql_connection(
         - Defaults to "root"
 
     Returns:
-    A MySQL connection.
+    - A MySQL connection.
     """
+    password = ""
+    if (debug and user == "root"):
+        password = environ.get("LOCAL_SQL_PASS")
+    elif (not debug and user == "root"):
+        password = CONSTANTS.get_secret_payload(secretID="sql-root-password")
+    elif (user == "super-admin"):
+        password = CONSTANTS.get_secret_payload(secretID="sql-super-admin-password")
+    elif (user == "admin"):
+        password = CONSTANTS.get_secret_payload(secretID="sql-admin-password")
+    elif (user == "user"):
+        password = CONSTANTS.get_secret_payload(secretID="sql-user-password")
+    else:
+        password = CONSTANTS.get_secret_payload(secretID="sql-guest-password")
+
     if (debug):
-        LOCAL_SQL_CONFIG_COPY = CONSTANTS.LOCAL_SQL_SERVER_CONFIG.copy()
+        LOCAL_SQL_CONFIG = {"host": "localhost", "user": user, "password": password}
         if (database is not None):
-            LOCAL_SQL_CONFIG_COPY["database"] = database
-        LOCAL_SQL_CONFIG_COPY["user"] = user
-        connection = pymysql.connect(**LOCAL_SQL_CONFIG_COPY)
-        return connection
+            LOCAL_SQL_CONFIG["database"] = database
+        connection = pymysql.connect(**LOCAL_SQL_CONFIG)
     else:
         connection: pymysql.connections.Connection = CONSTANTS.SQL_CLIENT.connect(
             instance_connection_string=CONSTANTS.SQL_INSTANCE_LOCATION,
             driver="pymysql",
             user=user,
-            password=CONSTANTS.get_secret_payload(secretID="sql-root-password"),
+            password=password,
             database=database
         )
-        return connection
+    return connection
 
 def get_dicebear_image(username:str) -> str:
     """

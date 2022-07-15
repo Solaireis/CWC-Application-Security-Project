@@ -14,7 +14,7 @@ adminBP = Blueprint("adminBP", __name__, static_folder="static", template_folder
 
 @adminBP.route("/admin-profile")
 def adminProfile():
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=session["admin"])
+    userInfo = sql_operation(table="user", mode="get_user_data", user="admin", userID=session["admin"])
     adminID = userInfo.uid
     adminUsername = userInfo.username
     adminEmail = userInfo.email
@@ -32,7 +32,7 @@ def userManagement():
             flash("No account ID or form type was provided upon submission of form.", "Error")
             return redirect(session["relative_url"])
 
-        userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+        userInfo = sql_operation(table="user", mode="get_user_data", user="admin", userID=userID)
         if (userInfo is None):
             flash("No user account was found with the provided ID.", "No Such User!")
             return redirect(session["relative_url"])
@@ -42,7 +42,7 @@ def userManagement():
             return redirect(session["relative_url"])
 
         if (formType == "recoverUser" and not userInfo.googleOAuth):
-            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
+            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", user="admin", userID=userID)
             if (isRecovering):
                 flash(
                     Markup("The user's account is already in the process of being recovered.<br>However, if you wish to revoke the recovery process, please do that instead of recovering the user's account again."), 
@@ -52,15 +52,15 @@ def userManagement():
                 newEmail = recoverUserForm.email.data 
                 try:
                     # deactivate user's account to prevent the attacker from changing the email address again
-                    sql_operation(table="user", mode="deactivate_user", userID=userID)
+                    sql_operation(table="user", mode="deactivate_user", user="admin", userID=userID)
 
                     # change user's email address to the new one
-                    sql_operation(table="user", mode="admin_change_email", userID=userID, email=newEmail)
+                    sql_operation(table="user", mode="admin_change_email", user="admin", userID=userID, email=newEmail)
                     
                     flash(f"The user, {userID}, has its email changed to {newEmail} and the instructions to reset his/her password has bent sent to the new email.", f"User's Account Details Updated!")
 
                     token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
-                    sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
+                    sql_operation(table="recovery_token", mode="add_token", user="admin", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
 
                     htmlBody = [
                         "Great news! Your account has been recovered by an administrator on our side.<br>",
@@ -79,15 +79,15 @@ def userManagement():
                 flash("The email provided was invalid when recovering the user's account.", "Error recovering user's account!")
 
         elif (formType == "revokeRecoveryProcess" and not userInfo.googleOAuth):
-            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
+            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", user="admin", userID=userID)
             if (isRecovering):
-                sql_operation(table="recovery_token", mode="revoke_token", userID=userID)
+                sql_operation(table="recovery_token", mode="revoke_token", user="admin", userID=userID)
                 flash(f"The user's account recovery process has been revoked and the account has been reactivated for the user.", "Recovery Process Revoked!")
             else:
                 flash("The user's account is not in the process of being recovered.", "Error Revoking Recovery Process!")
 
         elif (formType == "deleteUser"):
-            sql_operation(table="user", mode="delete_user", userID=userID)
+            sql_operation(table="user", mode="delete_user", user="admin", userID=userID)
             flash(f"The user, {userID}, has been deleted.", "User Deleted!")
 
         elif (formType == "changeUsername"):
@@ -96,21 +96,21 @@ def userManagement():
                 flash("No new username was provided upon submission of form.", "Error")
             else:
                 try:
-                    sql_operation(table="user", mode="change_username", userID=userID, username=newUsername)
+                    sql_operation(table="user", mode="change_username", user="admin", userID=userID, username=newUsername)
                     flash(f"The user, {userID}, has its username changed to {newUsername}.", "User's Account Details Updated!")
                 except (ReusedUsernameError):
                     flash("The new username entered is already in use...", "Error changing user's username!")
 
         elif (formType == "resetProfileImage" and userInfo.hasProfilePic and "https://storage.googleapis.com/coursefinity" in userInfo.profileImage):
-            sql_operation(table="user", mode="delete_profile_picture", userID=userID)
+            sql_operation(table="user", mode="delete_profile_picture", user="admin", userID=userID)
             flash(f"The user, {userID}, has its profile picture reset.", "User's Account Details Updated!")
 
         elif (formType == "banUser" and userInfo.status != "Banned"):
-            sql_operation(table="user", mode="ban_user", userID=userID)
+            sql_operation(table="user", mode="ban_user", user="admin", userID=userID)
             flash(f"The user, {userID}, has been banned.", "User's Account Details Updated!")
 
         elif (formType == "unbanUser" and userInfo.status == "Banned"):
-            sql_operation(table="user", mode="unban_user", userID=userID)
+            sql_operation(table="user", mode="unban_user", user="admin", userID=userID)
             flash(f"The user, {userID}, has been unbanned.", "User's Account Details Updated!")
 
         else:
@@ -128,9 +128,9 @@ def userManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, user=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
     else:
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum)
 
     if (pageNum > maxPage):
         if (userInput is not None):

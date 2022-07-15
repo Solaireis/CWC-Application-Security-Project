@@ -59,7 +59,7 @@ def recoverAccount(token:str):
     if (tokenID is None):
         abort(404)
 
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", user="guest", tokenID=tokenID)):
         flash("Recovery account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -68,7 +68,7 @@ def recoverAccount(token:str):
     userID = jsonPayload["userID"]
 
     # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+    if (not sql_operation(table="user", mode="verify_userID_existence", user="guest", userID=userID)):
         # if the user does not exist
         flash("Recovery account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
@@ -93,9 +93,9 @@ def recoverAccount(token:str):
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
         # update the password and reactivate the user
-        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
-        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
-        sql_operation(table="user", mode="reactivate_user", userID=userID)
+        sql_operation(table="user", mode="reset_password", user="user", userID=userID, newPassword=passwordInput)
+        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", user="user", tokenID=tokenID)
+        sql_operation(table="user", mode="reactivate_user", user="user", userID=userID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
@@ -130,7 +130,7 @@ def resetPasswordRequest():
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
         emailInput = requestForm.email.data
-        userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
+        userInfo = sql_operation(table="user", mode="find_user_for_reset_password", user="guest", email=emailInput)
         if (userInfo is None):
             # if the user does not exist
             sleep(1.5)
@@ -156,7 +156,7 @@ def resetPasswordRequest():
         tokenID = generate_id(sixteenBytesTimes=2)
         token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo, limit=1, tokenID=tokenID)
         sql_operation(
-            table="limited_use_jwt", mode="add_jwt", jwtToken=token, 
+            table="limited_use_jwt", mode="add_jwt", user="user", jwtToken=token, 
             expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None),
             limit=1, tokenID=tokenID
         )
@@ -191,7 +191,7 @@ def resetPassword(token:str):
     if (tokenID is None):
         abort(404)
 
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", user="guest", tokenID=tokenID)):
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -200,7 +200,7 @@ def resetPassword(token:str):
     userID = jsonPayload["userID"]
 
     # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+    if (not sql_operation(table="user", mode="verify_userID_existence", user="guest", userID=userID)):
         # if the user does not exist
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
@@ -209,7 +209,7 @@ def resetPassword(token:str):
 
     # check if user has enabled 2FA
     try:
-        twoFAToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
+        twoFAToken = sql_operation(table="2fa_token", mode="get_token", user="guest", userID=userID)
     except (No2FATokenError):
         twoFAToken = None
     twoFAEnabled = True if (twoFAToken is not None) else False
@@ -241,8 +241,8 @@ def resetPassword(token:str):
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
         # update the password
-        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
-        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+        sql_operation(table="user", mode="reset_password", user="user", userID=userID, newPassword=passwordInput)
+        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", user="user", tokenID=tokenID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
@@ -281,7 +281,7 @@ def login():
             userInfo = successfulLogin = userHasTwoFA = False
             try:
                 # returns the userID, boolean if user logged in from a new IP address, username, role
-                userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
+                userInfo = sql_operation(table="user", mode="login", user="user", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
                 # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
                 if (userInfo[1]):
@@ -289,14 +289,14 @@ def login():
                     raise LoginFromNewIpAddressError("Login from a new IP address!")
 
                 successfulLogin = True
-                sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
+                sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", user="user", userID=userInfo[0])
 
-                userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
+                userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", user="guest", userID=userInfo[0])
             except (UserIsNotActiveError, EmailDoesNotExistError):
                 flash("Please check your entries and try again!", "Danger")
             except (IncorrectPwdError):
                 try:
-                    sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
+                    sql_operation(table="login_attempts", mode="add_attempt", user="user", email=emailInput)
                     flash("Please check your entries and try again!", "Danger")
                 except (AccountLockedError):
                     print("Account locked")
@@ -421,7 +421,7 @@ def unlockAccount(token:str):
     tokenID = data["header"].get("token_id")
     if (tokenID is None):
         abort(404)
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", user="guest", tokenID=tokenID)):
         flash("Unlock account url is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -430,13 +430,13 @@ def unlockAccount(token:str):
     userID = jsonPayload["userID"]
 
     # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+    if (not sql_operation(table="user", mode="verify_userID_existence", user="guest", userID=userID)):
         # if the user does not exist
         flash("Unlock account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userID)
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+    sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", user="user", userID=userID)
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", user="user", tokenID=tokenID)
     flash("Your account has been unlocked! Try logging in now!", "Success")
     return redirect(url_for("guestBP.login"))
 
@@ -578,7 +578,7 @@ def loginCallback():
     profilePicture = idInfo["picture"]
 
     # add to db if user does not exist and retrieve the role of the user
-    returnedValue = sql_operation(table="user", mode="login_google_oauth2", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
+    returnedValue = sql_operation(table="user", mode="login_google_oauth2", user="user", userID=userID, username=username, email=email, googleProfilePic=profilePicture)
     if (returnedValue is None):
         # if user does not exist yet
         returnedID = None
@@ -658,7 +658,7 @@ def signup():
             passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
             ipAddress = get_remote_address()
 
-            returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
+            returnedVal = sql_operation(table="user", mode="signup", user="user", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 
             if (isinstance(returnedVal, tuple)):
                 emailDupe = returnedVal[0]
@@ -703,7 +703,7 @@ def sendVerifyEmail():
     if (userID is None):
         abort(404)
 
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", user="guest", userID=userID)
     if (userInfo and not userInfo.emailVerified):
         email = userInfo.email
         username = userInfo.username
@@ -739,7 +739,7 @@ def verifyEmail(token:str):
     tokenID = data["header"].get("token_id")
     if (tokenID is None):
         abort(404)
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", user="guest", tokenID=tokenID)):
         if ("user" in session):
             flash("Verify email url is invalid or has expired!", "Warning!")
             return redirect(url_for("userBP.userProfile"))
@@ -758,7 +758,7 @@ def verifyEmail(token:str):
         return redirect(url_for("generalBP.home"))
 
     # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+    if (not sql_operation(table="user", mode="verify_userID_existence", user="guest", userID=userID)):
         # if the user does not exist
         flash("Reset password link is invalid or has expired!", "Danger")
         if ("user" in session):
@@ -766,7 +766,7 @@ def verifyEmail(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if email has been verified
-    if (sql_operation(table="user", mode="email_verified", userID=userID)):
+    if (sql_operation(table="user", mode="email_verified", user="guest", userID=userID)):
         # if the email has been verified
         if ("user" in session):
             flash("Your email has already been verified!", "Sorry!")
@@ -776,8 +776,8 @@ def verifyEmail(token:str):
             return redirect(url_for("guestBP.login"))
 
     # update the email verified column to true
-    sql_operation(table="user", mode="update_email_to_verified", userID=userID)
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+    sql_operation(table="user", mode="update_email_to_verified", user="user", userID=userID)
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", user="user", tokenID=tokenID)
     if ("user" in session):
         flash("Your email has been verified!", "Email Verified!")
         return redirect(url_for("generalBP.home"))
@@ -814,7 +814,7 @@ def enter2faTOTP():
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
         userID = session["temp_uid"]
         try:
-            getSecretToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
+            getSecretToken = sql_operation(table="2fa_token", mode="get_token", user="guest", userID=userID)
         except (No2FATokenError):
             # if for whatever reasons, the user has no 2FA token (which shouldn't happen), redirect to login
             return redirect(url_for("guestBP.login"))

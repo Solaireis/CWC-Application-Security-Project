@@ -13,7 +13,7 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-dashboard/admin-management", methods=["GET","POST"])
 def adminManagement():
-    admins= sql_operation(table="role", mode="retrieve_admin")
+    admins= sql_operation(table="role", mode="retrieve_admin", user="super-admin")
     
 
     # # Pagination starts below
@@ -51,10 +51,10 @@ def adminManagement():
 
 @superAdminBP.route("/admin-dashboard/rbac", methods=["GET","POST"])
 def roleManagement():
-    roles = sql_operation(table="role", mode="retrieve_all")
+    roles = sql_operation(table="role", mode="retrieve_all", user="super-admin")
     roleList = []
     for roleID in roles:
         roleList.append(RoleInfo(roleID))
-        
+
     return 
 
