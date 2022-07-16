@@ -64,7 +64,7 @@ def get_result(responses:list) -> list:
 def main() -> None:
     urlArr = ["https://localhost:8080/login"] * 50
 
-    if platform.system() == "Windows":
+    if (platform.system() == "Windows"):
         # A temporary fix for ProactorBasePipeTransport issues 
         # on Windows OS Machines caused by aiohttp
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
