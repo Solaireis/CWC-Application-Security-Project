@@ -285,10 +285,13 @@ if (__name__ == "__main__"):
     scheduler.start()
 
     if (app.config["DEBUG_FLAG"]):
+        hostName = None
         SSL_CONTEXT = (
             CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
             CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
         )
     else:
+        hostName = "0.0.0.0"
         SSL_CONTEXT = None
-    app.run(debug=app.config["DEBUG_FLAG"], port=environ.get("PORT", 8080), ssl_context=SSL_CONTEXT)
+
+    app.run(debug=app.config["DEBUG_FLAG"], host=hostName, port=environ.get("PORT", 8080), ssl_context=SSL_CONTEXT)
