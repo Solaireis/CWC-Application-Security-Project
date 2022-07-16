@@ -535,8 +535,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     # grant privileges to users
     # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
+    # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
+    # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
     cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
+    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
     cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
     cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
 
