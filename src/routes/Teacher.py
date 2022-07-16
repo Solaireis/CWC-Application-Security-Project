@@ -42,6 +42,28 @@ def courseList():
     else:
         return redirect(url_for("guestBP.login"))
 
+@teacherBP.route("/draft-course-video-list")
+def draftCourseList():
+    if ("user" in session):
+        #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        page = request.args.get("p", default=1, type=int)
+        maxPage, paginationArr = 0, []
+        courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
+        try:
+            if (not courseList[0]):   
+                return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
+            if (len(courseList) != 0) :
+                courseList, maxPage = courseList[0], courseList[1]      
+                # Compute the buttons needed for pagination
+                paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+        except:
+            courseList = []
+    
+        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
+    else:
+        return redirect(url_for("guestBP.login"))
+
 """ Start Of Course Creation """
 
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
@@ -66,12 +88,14 @@ def videoUpload():
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
 
-            # TODO: It is a insecure design to save the file and not delete if the teacher user did not finalise the course creation process
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
             file.save(Path(filePath).joinpath(filename))
 
             #TODO : Finish Drafting
-            # url_for('static', filename='images/courses/placeholder.webp') [Used for pfp]
+            """
+            Create a row inside the database to store the video info.
+            Display this row in the teachers course list 
+            """
             # sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName="UNSET", courseDescription="UNSET", courseImagePath="UNSET", courseCategory="UNSET", coursePrice=123, videoPath=filePathToStore)
             session["course-data"] = (courseID, filePathToStore)
             return redirect(url_for("teacherBP.createCourse"))

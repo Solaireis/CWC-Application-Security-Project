@@ -101,7 +101,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
 
-    #FOR DRAFTING : draft BOOL NOT NULL DEFAULT TRUE,
     cur.execute("""CREATE TABLE course (
         course_id CHAR(32) PRIMARY KEY, 
         teacher_id VARCHAR(32) NOT NULL,
@@ -113,6 +112,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
+    )""")
+
+    #FOR DRAFTING A COURSE
+    cur.execute("""CREATE TABLE draft_course (
+        course_id CHAR(32) PRIMARY KEY,
+        teacher_id VARCHAR(32) NOT NULL,
+        video_path VARCHAR(255) NOT NULL,
     )""")
 
     cur.execute("""CREATE TABLE user_ip_addresses (
@@ -268,6 +274,29 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
+                INNER JOIN user AS u ON c.teacher_id=u.id
+                WHERE c.teacher_id=teacherID
+                GROUP BY c.course_id
+                ORDER BY c.date_created DESC -- show most recent courses first
+            ) AS teacher_course_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
+    #For Drafting
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_draft_courses`(IN teacherID VARCHAR(32), IN page_number INT)
+        BEGIN
+            SET @total_course_num := (SELECT COUNT(*) FROM draft_course WHERE teacher_id=teacherID);
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+            teacher_course_info.* FROM (
+                SELECT c.course_id, c.teacher_id, 
+                u.username, u.profile_image, @total_course_num
+                FROM course AS c
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.teacher_id=teacherID
                 GROUP BY c.course_id
