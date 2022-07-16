@@ -5,7 +5,8 @@ Routes for logged in users (Students or Teachers or Admins)
 import pyotp, qrcode
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, Markup, abort, Blueprint, current_app
+from flask import render_template, request, redirect, url_for, session, flash, \
+                  Markup, abort, Blueprint, current_app, send_file
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
@@ -28,6 +29,35 @@ def logout():
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("generalBP.home"))
+
+# blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
+@loggedInBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
+def rawVideo(courseID:str, videoName:str):
+    # TODO: Work on the video access control
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if (userInfo.role == "Teacher" and sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
+            pass # allow access to the video for the teacher user if they own the course
+        elif (userInfo.role == "Teacher" and "course-data" in session and session["course-data"][0] == courseID):
+            pass # allow access to the video if the teacher user is in the midst of creating the course
+        else:
+            abort(404)
+
+    # Allow the teacher to see the video if the teacher is in the midst of creating the course
+    if ("course-data" in session):
+        return send_file(current_app.root_path + session["course-data"][1], as_attachment=False, max_age=31536000)
+
+    videoPath = get_course_video_path(courseID, videoName)
+    print("Formatted path:", videoPath)
+    if (videoPath is None):
+        abort(404)
+
+    if (not convert_to_mpd(current_app.root_path + videoPath)):
+        abort(500)
+
+    # TODO: work on partial content request instead of sending the whole video file
+    # TODO: Fix video player as it isn't loading/playing anymore
+    return render_template("users/admin/raw_video.html", videoPath=videoPath)
 
 @loggedInBP.route("/setup-2fa", methods=["GET", "POST"])
 def twoFactorAuthSetup():

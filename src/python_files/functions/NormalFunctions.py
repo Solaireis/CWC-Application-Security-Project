@@ -5,13 +5,12 @@ flask web application's app variable from app.py.
 This is to prevent circular imports.
 """
 # import python standard libraries
-import requests as req, uuid, re, json
+import requests as req, uuid, re, json, pathlib
 from six import ensure_binary
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import time, sleep
 from hashlib import sha1, sha384
-from pathlib import Path
 from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -24,7 +23,7 @@ from os import environ
 # import local python libraries
 if (__name__ == "__main__"):
     from sys import path as sys_path
-    sys_path.append(str(Path(__file__).parent.parent.parent.absolute()))
+    sys_path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
     from python_files.classes.Constants import CONSTANTS
     from python_files.classes.Errors import *
 elif (__package__ is None or __package__ == ""):
@@ -124,7 +123,7 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
 def download_to_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
     blobName:str="",
-    downloadPath:Path=None,
+    downloadPath:pathlib.Path=None,
 ) -> None:
     """
     Downloads a file from Google Cloud Storage to a local path.
@@ -141,10 +140,10 @@ def download_to_path(
     blob = bucket.blob(blobName)
     if (isinstance(downloadPath, str)):
         print("Warning: downloadPath is a string, will be converted to a pathlib.Path object.")
-        downloadPath = Path(downloadPath)
+        downloadPath = pathlib.Path(downloadPath)
 
     if (downloadPath is None):
-        downloadPath = Path(__file__).parent.absolute().joinpath("temp")
+        downloadPath = pathlib.Path(__file__).parent.absolute().joinpath("temp")
     downloadPath.mkdir(parents=True, exist_ok=True)
 
     downloadPath = downloadPath.joinpath(blobName.rsplit("/", 1)[-1])
@@ -152,7 +151,7 @@ def download_to_path(
 
 def upload_file_from_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
-    localFilePath:Path=None,
+    localFilePath:pathlib.Path=None,
     uploadDestination:str="",
     cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ) -> str:
@@ -347,7 +346,7 @@ def send_change_password_alert_email(email:str="") -> None:
         "Security Alert!"
     )
 
-def accepted_file_extension(filename:Union[str, Path]=None, typeOfFile:str="image") -> bool:
+def accepted_file_extension(filename:Union[str, pathlib.Path]=None, typeOfFile:str="image") -> bool:
     """
     Checks if the file extension is accepted according to the
     tuple of accepted file extensions defined in Constants.py.
@@ -368,8 +367,8 @@ def accepted_file_extension(filename:Union[str, Path]=None, typeOfFile:str="imag
     if (isinstance(filename, str)):
         if ("." not in filename):
             return False
-        fileExtension = filename.rsplit(".", 1)[1].lower()
-    elif (isinstance(filename, Path)):
+        fileExtension = "." + filename.rsplit(".", 1)[1].lower()
+    elif (isinstance(filename, pathlib.Path)):
         fileExtension = filename.suffix
     else:
         raise ValueError("filename must be a string or a pathlib.Path object!")
@@ -1237,7 +1236,7 @@ def RSA_decrypt(cipherData:dict=None) -> str:
     return response.plaintext.decode("utf-8")
 
 def compress_and_resize_image(
-    imageData:IOBase=None, imagePath:Path=None,
+    imageData:IOBase=None, imagePath:pathlib.Path=None,
     dimensions:tuple=None, quality:int=75, optimise:bool=True,
     uploadToGoogleStorage:bool=True, bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME,
     folderPath:Optional[str]=None, cacheControl:Optional[str]=None
@@ -1673,58 +1672,52 @@ def two_fa_token_is_valid(token:str) -> bool:
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
-#TODO: Functionality with other file types
-def convert_to_mpd(courseID, extension):
-    if extension not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]:
+def convert_to_mpd(courseVideoPath:str) -> bool:
+    """
+    Converts the video to MPD format.
+
+    Args:
+    - courseVideoPath (str): The path to the video to convert.
+        - e.g. "static/course_videos/testID/testVideo.mp4"
+
+    Returns:
+    - True if the conversion was successful, False otherwise.
+    """
+    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath(courseVideoPath)
+    if (videoPath.suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
         raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 
+    # Create a folder to store the converted video files
+    convertedVideoFolderPath = videoPath.parent.joinpath("converted")
+    convertedVideoFolderPath.mkdir(parents=True, exist_ok=True)
+    convertedVideoPath = str(convertedVideoFolderPath.joinpath(videoPath.with_suffix(".mpd").name))
 
-    videoFolderPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}')
-    originalVideoPath = str(videoFolderPath.with_suffix(extension))
-    convertedVideoPath = str(videoFolderPath.with_suffix(".mpd"))
-
-    video = ffmpeg_input(originalVideoPath)
+    video = ffmpeg_input(str(videoPath))
     dash = video.dash(Formats.h264())
 
     # For CLI Testing
-    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoFolderPath.with_suffix(".mp4")}"')
+    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
 
     # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
-    dimensions = subprocess_run(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{originalVideoPath}"', stdout=PIPE, stderr = PIPE)    
+    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE)    
     try:
-        dimensions = json.loads(dimensions.stdout.decode('utf-8'))['streams'][0]
+        dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
         print(dimensions)
     except KeyError:
-        error = dimensions.stderr.decode('utf-8')
+        error = dimensions.stderr.decode("utf-8")
         print(error)
         return False
         #TODO: Logging
 
-    _1080p = Representation(Size(dimensions['width'], dimensions['height']), Bitrate(4096 * 1024, 320 * 1024))
+    _1080p = Representation(Size(dimensions["width"], dimensions["height"]), Bitrate(4096 * 1024, 320 * 1024))
     dash.representations(_1080p)
 
     try:
         dash.output(convertedVideoPath)
-    except RuntimeError:
+    except (RuntimeError):
         return False
         #TODO: Log
 
-    Path(originalVideoPath).unlink(missing_ok=True)
-
+    # Commented it out as I'm not sure why you would want to delete the original video
+    # videoPath.unlink(missing_ok=True) 
     return True
-
-
-def get_course_video_path(courseID):
-
-    from python_files.functions.SQLFunctions import sql_operation
-    matched = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if not matched:
-        #TODO: Log
-        return None
-
-    videoPath = Path(__file__).parent.parent.parent.joinpath(f'static/course_videos/{courseID}/{courseID}').with_suffix(".mpd")
-
-    if videoPath.is_file():
-        return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
-    else:
-        return None

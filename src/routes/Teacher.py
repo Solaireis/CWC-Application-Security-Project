@@ -131,7 +131,7 @@ def courseUpdate():
                     updated += "Course Price, "
             courseTagInput = request.form.get("courseTag")
             if (courseTagInput != courseFound.courseCategory):
-                sql_operation(table="course", mode="update_course_category", courseID=courseID, course_category=courseTagInput)
+                sql_operation(table="course", mode="update_course_category", courseID=courseID, courseCategory=courseTagInput)
                 updated += "Course Tag, "
 
             file = request.files.get("courseThumbnail")
@@ -186,6 +186,7 @@ def videoUpload():
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
 
+            # TODO: It is a insecure design to save the file and not delete if the teacher user did not finalise the course creation process
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
             file.save(Path(filePath).joinpath(filename))
 

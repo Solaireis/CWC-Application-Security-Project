@@ -27,6 +27,33 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
+def get_course_video_path(courseID:str, videoName:str) -> Union[str, None]:
+    """
+    Gets the path to the course video by querying the database.
+
+    Args:
+    - courseID: The course ID of the video.
+    - videoName: The filename of the video.
+
+    Returns:
+    - The path to the course video if it exists in the database, None otherwise.
+    """
+    # Will retrieve a google storage link to the course video
+    # e.g. https://storage.googleapis.com/<bucketName>/<blobName>
+    matched = sql_operation(table="course", mode="get_video_path", courseID=courseID)
+    if (matched is None):
+        #TODO: Log
+        return None
+
+    databaseVideoFilename = matched.rsplit("/", 1)[1]
+    if (databaseVideoFilename == videoName):
+        return url_for(
+            "static", 
+            filename="/".join(["course_videos", courseID, databaseVideoFilename])
+        )
+    else:
+        return None
+
 def get_blob_name(url:str="") -> str:
     """
     Get the blob name from the Google Storage API URL.
@@ -1153,27 +1180,39 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     cur = connection.cursor()
 
     if (mode == "insert"):
-        course_id = kwargs["courseID"]
-        teacher_id = kwargs["teacherID"]
-        course_name = kwargs["courseName"]
-        course_description = kwargs.get("courseDescription")
-        course_image_path = kwargs.get("courseImagePath")
-        course_price = kwargs["coursePrice"]
-        course_category = kwargs["courseCategory"]
-        video_path = kwargs["videoPath"]
+        courseID = kwargs["courseID"]
+        teacherID = kwargs["teacherID"]
+        courseName = kwargs["courseName"]
+        courseDescription = kwargs.get("courseDescription")
+        courseImagePath = kwargs.get("courseImagePath")
+        coursePrice = kwargs["coursePrice"]
+        courseCategory = kwargs["courseCategory"]
+        videoPath = kwargs["videoPath"]
 
         cur.execute(
-            "INSERT INTO course VALUES (%(course_id)s, %(teacher_id)s, %(course_name)s, %(course_description)s, %(course_image_path)s, %(course_price)s, %(course_category)s, SGT_NOW(), %(video_path)s)",
-            {"course_id":course_id, "teacher_id":teacher_id, "course_name":course_name, "course_description":course_description, "course_image_path":course_image_path, "course_price":course_price, "course_category":course_category, "video_path":video_path}
+            "INSERT INTO course VALUES (%(courseID)s, %(teacherID)s, %(courseName)s, %(courseDescription)s, %(courseImagePath)s, %(coursePrice)s, %(courseCategory)s, SGT_NOW(), %(videoPath)s)",
+            {"courseID":courseID, "teacherID":teacherID, "courseName":courseName, "courseDescription":courseDescription, "courseImagePath":courseImagePath, "coursePrice":coursePrice, "courseCategory":courseCategory, "videoPath":videoPath}
         )
         connection.commit()
 
-    elif (mode == "get_course_data"):
-        course_id = kwargs["courseID"]
-        print('Course_ID:', course_id)
-        cur.execute("CALL get_course_data(%(course_id)s)", {"course_id":course_id})
+    elif (mode == "check_if_course_owned_by_teacher"):
+        courseID = kwargs["courseID"]
+        teacherID = kwargs["teacherID"]
+        cur.execute("SELECT * FROM course WHERE course_id=%(courseID)s AND teacher_id=%(teacherID)s", {"courseID":courseID, "teacherID":teacherID})
+        return (cur.fetchone() is not None)
+
+    elif (mode == "get_video_path"):
+        courseID = kwargs["courseID"]
+        cur.execute("SELECT video_path FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
-        print('Matched:', matched)
+        return matched[0] if (matched is not None) else None
+
+    elif (mode == "get_course_data"):
+        courseID = kwargs["courseID"]
+        print("Course ID:", courseID)
+        cur.execute("CALL get_course_data(%(courseID)s)", {"courseID":courseID})
+        matched = cur.fetchone()
+        print("Matched:", matched)
         if (matched is None):
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
@@ -1181,34 +1220,34 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     # Added just in case want to do updating
     elif (mode == "update_course_title"):
-        course_id = kwargs["courseID"]
-        course_title = kwargs["courseTitle"]
-        cur.execute("UPDATE course SET course_name=%(course_name)s WHERE course_id=%(courseID)s", {"course_name":course_title, "courseID":course_id})
+        courseID = kwargs["courseID"]
+        courseTitle = kwargs["courseTitle"]
+        cur.execute("UPDATE course SET course_name=%(courseTitle)s WHERE course_id=%(courseID)s", {"courseTitle":courseTitle, "courseID":courseID})
         connection.commit()
 
     elif (mode == "update_course_description"):
-        course_id = kwargs["courseID"]
-        course_description = kwargs["courseDescription"]
-        cur.execute("UPDATE course SET course_description=%(course_description)s WHERE course_id=%(courseID)s", {"course_description":course_description, "courseID":course_id})
+        courseID = kwargs["courseID"]
+        courseDescription = kwargs["courseDescription"]
+        cur.execute("UPDATE course SET course_description=%(courseDescription)s WHERE course_id=%(courseID)s", {"courseDescription":courseDescription, "courseID":courseID})
         connection.commit()
 
     elif (mode == "update_course_category"):
-        course_id = kwargs["courseID"]
-        course_category = kwargs["course_category"]
-        cur.execute("UPDATE course SET course_category=%(course_category)s WHERE course_id=%(courseID)s", {"course_category":course_category, "courseID":course_id})
+        courseID = kwargs["courseID"]
+        courseCategory = kwargs["courseCategory"]
+        cur.execute("UPDATE course SET course_category=%(courseCategory)s WHERE course_id=%(courseID)s", {"courseCategory":courseCategory, "courseID":courseID})
         connection.commit()
 
     elif (mode == "update_course_price"):
-        course_id = kwargs["courseID"]
-        course_price = kwargs.get("coursePrice")
-        cur.execute("UPDATE course SET course_price=%(course_price)s WHERE course_id=%(courseID)s", {"course_price":course_price, "courseID":course_id})
+        courseID = kwargs["courseID"]
+        coursePrice = kwargs.get("coursePrice")
+        cur.execute("UPDATE course SET course_price=%(coursePrice)s WHERE course_id=%(courseID)s", {"coursePrice":coursePrice, "courseID":courseID})
         connection.commit()
 
     elif (mode == "update_course_thumbnail"):
-        course_id = kwargs["courseID"]
+        courseID = kwargs["courseID"]
 
         # Delete old thumbnail from Google Cloud Storage API
-        cur.execute("SELECT course_image_path FROM course WHERE course_id=%(courseID)s", {"courseID":course_id})
+        cur.execute("SELECT course_image_path FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
         if (matched is not None):
             oldUrlToDelete = get_blob_name(url=matched[0])
@@ -1217,19 +1256,19 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             except (FileNotFoundError):
                 pass
 
-        course_image_path = kwargs["courseImagePath"]
-        cur.execute("UPDATE course SET course_image_path=%(course_image_path)s WHERE course_id=%(courseID)s", {"course_image_path":course_image_path, "courseID":course_id})
+        courseImagePath = kwargs["courseImagePath"]
+        cur.execute("UPDATE course SET course_image_path=%(courseImagePath)s WHERE course_id=%(courseID)s", {"courseImagePath":courseImagePath, "courseID":courseID})
         connection.commit()
 
     elif (mode == "update_course_video"):
-        course_id = kwargs["courseID"]
-        video_path = kwargs["videoPath"]
-        cur.execute("UPDATE course SET video_path=%(video_path)s WHERE course_id=%(courseID)s", {"video_path":video_path, "courseID":course_id})
+        courseID = kwargs["courseID"]
+        videoPath = kwargs["videoPath"]
+        cur.execute("UPDATE course SET video_path=%(videoPath)s WHERE course_id=%(courseID)s", {"videoPath":videoPath, "courseID":courseID})
         connection.commit()
 
     elif (mode == "delete"):
-        course_id = kwargs["courseID"]
-        cur.execute("DELETE FROM course WHERE course_id=%(course_id)s", {"course_id":course_id})
+        courseID = kwargs["courseID"]
+        cur.execute("DELETE FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         connection.commit()
 
     #TODO: Make a HTML / Route for users to view all courses by a teacher from the teacher name in course page
