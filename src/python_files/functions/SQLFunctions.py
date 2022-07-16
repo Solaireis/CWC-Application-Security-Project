@@ -1182,12 +1182,13 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     if (mode == "insert"):
         courseID = kwargs["courseID"]
         teacherID = kwargs["teacherID"]
-        courseName = kwargs["courseName"]
-        courseDescription = kwargs.get("courseDescription")
+        courseName = kwargs.get("courseName", "Draft Course")
+        courseDescription = kwargs.get("courseDescription", "Draft Description")
         courseImagePath = kwargs.get("courseImagePath")
-        coursePrice = kwargs["coursePrice"]
-        courseCategory = kwargs["courseCategory"]
+        coursePrice = kwargs.get("coursePrice", 0)
+        courseCategory = kwargs.get("courseCategory", "UNSET")
         videoPath = kwargs["videoPath"]
+        draft = kwargs.get("draft", True)
 
         cur.execute(
             "INSERT INTO course VALUES (%(courseID)s, %(teacherID)s, %(courseName)s, %(courseDescription)s, %(courseImagePath)s, %(coursePrice)s, %(courseCategory)s, SGT_NOW(), %(videoPath)s)",
@@ -1264,6 +1265,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         videoPath = kwargs["videoPath"]
         cur.execute("UPDATE course SET video_path=%(videoPath)s WHERE course_id=%(courseID)s", {"videoPath":videoPath, "courseID":courseID})
+        connection.commit()
+
+    elif (mode == "update_course_draft"):
+        courseID = kwargs["courseID"]
+        draft = kwargs["draft"]
+        cur.execute("UPDATE course SET draft=%(draft)s WHERE course_id=%(courseID)s", {"draft":draft, "courseID":courseID})
         connection.commit()
 
     elif (mode == "delete"):

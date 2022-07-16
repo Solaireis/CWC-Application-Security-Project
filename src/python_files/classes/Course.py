@@ -83,6 +83,7 @@ class CourseInfo:
         self.__courseCategory = tupleInfo[8]
         self.__dateCreated = tupleInfo[9]
         self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
+        # self.__draftStatus = tupleInfo[11]
 
     @property
     def courseID(self) -> str:
@@ -117,6 +118,9 @@ class CourseInfo:
     @property
     def averageRating(self) -> int:
         return self.__averageRating
+    # @property
+    # def draftStatus(self) -> bool:
+    #     return self.__draftStatus
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""

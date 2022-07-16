@@ -101,6 +101,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
 
+    #FOR DRAFTING : draft BOOL NOT NULL DEFAULT TRUE,
     cur.execute("""CREATE TABLE course (
         course_id CHAR(32) PRIMARY KEY, 
         teacher_id VARCHAR(32) NOT NULL,
