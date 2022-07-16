@@ -1,6 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/video_upload.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 {% endblock %}
 
 {% block title %}Upload Video | CourseFinity{% endblock %}
@@ -36,9 +37,19 @@
 		<div class="header">
 			<p><i class="fa fa-cloud-upload fa-2x"></i><span><span>up</span>load</span></p>			
 		</div>
-		<form action="" method="POST" class="body" enctype="multipart/form-data">
+
+        <form action="" method="POST" class="dropzone body" id="dropper" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-            <!-- <input accept=".mp4, .mov, .avi, .3gpp, .flv, .mpeg4, .flv, .webm, .mpegs, .wmv" name="courseVideo" class="form-control" id="upload" type='file' /> -->
+            <div class="dz-default dz-message">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <br>
+                <span>Click here or drop an image here</span>
+            </div>
+            <button type="submit" class="btn btn-primary float-end">Upload</button>
+        </form>
+
+		<!-- <form action="" method="POST" class="dropzone body" id="dropper" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input accept=".mp4, .mov, .wmv, .avi, .webm" name="courseVideo" class="form-control" id="upload" type='file' />
 			<label for="upload">
 				<i class="fa fa-file-text-o fa-3x"></i>
@@ -49,13 +60,15 @@
 			</label>
             <div id="file-upload-filename"></div>
             <button type="submit" class="btn btn-primary float-end">Upload</button>
-		</form>
+		</form> -->
 	</div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
 <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/video_upload.js')}}"></script>
 {% with messages = get_flashed_messages() %}
     {% if messages %}
