@@ -69,7 +69,6 @@ def draftCourseList():
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     if ("user" in session):
-        courseID = generate_id()
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         if (userInfo.role != "Teacher"):
             abort(404)
@@ -84,6 +83,7 @@ def videoUpload():
 
             print(f"This is the filename for the inputted file : {filename}")
 
+            courseID = generate_id()
             filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)

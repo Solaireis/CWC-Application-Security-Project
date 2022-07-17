@@ -6,7 +6,7 @@ import pyotp, qrcode
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, \
-                  Markup, abort, Blueprint, current_app, send_file
+                  Markup, abort, Blueprint, current_app, send_from_directory
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
@@ -45,7 +45,13 @@ def rawVideo(courseID:str, videoName:str):
 
     # Allow the teacher to see the video if the teacher is in the midst of creating the course
     if ("course-data" in session):
-        return send_file(current_app.root_path + session["course-data"][1], as_attachment=False, max_age=31536000)
+        filePathArr = session["course-data"][1].rsplit("/", 2)[-2:]
+        return send_from_directory(
+            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])), 
+            filePathArr[1], 
+            as_attachment=False, 
+            max_age=31536000 # TODO: Check and configure the max age cache
+        )
 
     videoPath = get_course_video_path(courseID, videoName)
     print("Formatted path:", videoPath)
