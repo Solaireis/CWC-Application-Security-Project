@@ -253,16 +253,18 @@
 - Server Side Template Injection
   - Avoid using render_template_string(template)
     - render_template() is safer because users are unable to modify the template
-- Code Injection
+- Code / Command Injection
   - Avoid using eval()
+  - Avoid using exec()
+  - shell = False in subprocess_run()
 - Cross Site Scripting
   - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
   - In Jinja, everything is escaped by default except for values explicitly marked with the |safe filter.
     - If required use Markup()
-  - Using url_for() in href tags instead of passing in variables 
-  - Implemented CSP, but only for scripts
+  - Implemented CSP, but only for scripts & frames
     - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
     - script src in csp shows all the scripts allowed to be taken from external sources
+    - frame src in csp shows all the iframes allowed to be run
 
 ---
 
@@ -277,5 +279,4 @@
 #### Implemented:
 - Implemented MySQL
 - Comparing Hashes of Packages, before pip installing them
-
 ---
