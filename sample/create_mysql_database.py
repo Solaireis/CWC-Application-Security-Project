@@ -167,6 +167,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
+    cur.execute("""CREATE TABLE backup_codes (
+        user_id VARCHAR(32) PRIMARY KEY, 
+        backup_codes_json VARBINARY(1024), -- Holds at most 8 64 bits hexadecimal (e.g. 'e7b1-4215-89b6-655e') codes that are encrypted as a whole
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+
     cur.execute("""CREATE TABLE login_attempts (
         user_id VARCHAR(32) PRIMARY KEY,
         attempts INTEGER UNSIGNED NOT NULL,
@@ -218,6 +224,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM course WHERE teacher_id = user_id_input;
             DELETE FROM user_ip_addresses WHERE user_id = user_id_input;
             DELETE FROM twofa_token WHERE user_id = user_id_input;
+            DELETE FROM backup_codes WHERE user_id = user_id_input;
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
             DELETE FROM review WHERE user_id = user_id_input;
@@ -598,7 +605,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"GRANT EXECUTE, SELECT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
     cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
     cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
-    
 
     # Grant the privileges
     # Admin Privileges
@@ -693,6 +699,7 @@ if (__name__ == "__main__"):
     except pymysql.err.ProgrammingError:
         pass
 
+    mysql_init_tables(debug=debugFlag)
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised database, \"coursefinity\"!")

@@ -101,6 +101,47 @@ def recoverAccount(token:str):
     else:
         return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
+@guestBP.route("/login/disable-2fa", methods=["GET","POST"])
+@limiter.limit("60 per minute")
+def recoverAccountMFA():
+    recoverForm = RecoverAccountMFAForm(request.form)
+    if (request.method == "POST" and recoverForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/recover_account.html", form=recoverForm)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot.")
+            return render_template("users/guest/recover_account.html", form=recoverForm)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/recover_account.html", form=recoverForm)
+
+        emailInput = recoverForm.email.data
+        backupCodeInput = recoverForm.backupCode.data
+
+        userID = sql_operation(table="user", mode="fetch_user_id_from_email", email=emailInput)
+        if (userID is None):
+            flash("Backup code is invalid!", "Danger")
+            return render_template("users/guest/recover_account.html", form=recoverForm)
+
+        if (not sql_operation(table="backup_codes", mode="check_backup_code_validity", backupCode=backupCodeInput, userID=userID)):
+            flash("Backup code is invalid!", "Danger")
+            return render_template("users/guest/recover_account.html", form=recoverForm)
+
+        sql_operation(table="2fa_token", mode="delete_token", userID=userID)
+        flash("2FA has been disabled successfully!", "Success")
+        return redirect(url_for("guestBP.login"))
+    else:
+        return render_template("users/guest/request_password_reset.html", form=recoverForm)
+
 @guestBP.route("/reset-password", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
 def resetPasswordRequest():

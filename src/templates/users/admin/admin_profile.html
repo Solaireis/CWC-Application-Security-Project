@@ -88,23 +88,6 @@
                                     <td class="p-3"><h6>Password:</h6></td>
                                     <td class="p-3"><h6><a href="{{ url_for('loggedInBP.updatePassword') }}">Change Password</a></h6></td>
                                 </tr>
-                                <tr>
-                                    <td class="p-3">
-                                        <h6>Two Factor Authentication:</h6>
-                                    </td>
-                                    <td class="p-3">
-                                        {% if twoFAEnabled %}
-                                        <h6 class="text-success">Enabled</h6>
-                                        <form action="{{ url_for('loggedInBP.disableTwoFactorAuth') }}" method="POST">
-                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
-                                        </form>
-                                        {% else %}
-                                        <h6 class="text-danger">Please Enable 2FA!</h6>
-                                        <a href="{{ url_for('loggedInBP.twoFactorAuthSetup') }}">Enable 2FA</a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
                             </table>
                         </div>
                     </div>

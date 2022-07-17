@@ -272,6 +272,8 @@ def sql_operation(table:str=None, mode:str=None, user:Optional[str]="user", **kw
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "whitelisted_ip_addresses"):
                 returnValue = whitelisted_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "backup_codes"):
+                returnValue = backup_codes_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -298,6 +300,69 @@ def sql_operation(table:str=None, mode:str=None, user:Optional[str]="user", **kw
             abort(500)
 
     return returnValue
+
+def backup_codes_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, list, str, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the backup_codes_sql_operation function")
+
+    cur = connection.cursor()
+    if (mode == "get_backup_codes"):
+        cur.execute(
+            "SELECT backup_codes_json FROM backup_codes WHERE user_id = %(userID)s",
+            {"userID": kwargs["userID"]}
+        )
+        matched = cur.fetchone()
+        return json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)) \
+               if (matched is not None) else []
+
+    elif (mode == "delete_codes"):
+        cur.execute(
+            "DELETE FROM backup_codes WHERE user_id = %(userID)s",
+            {"userID": kwargs["userID"]}
+        )
+        return
+
+    elif (mode == "generate_codes"):
+        userID = kwargs["userID"]
+
+        # Delete all existing backup codes for the user if exists
+        cur.execute(
+            "DELETE FROM backup_codes WHERE user_id = %(userID)s",
+            {"userID": userID}
+        )
+
+        # Generate new backup codes
+        backupCodes = []
+        for _ in range(8):
+            backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=True, returnHex=True)
+            formattedBackupCode = "-".join([backupCode[:4], backupCode[4:8], backupCode[8:12], backupCode[12:16]])
+            backupCodes.append(formattedBackupCode)
+
+        encrypteBackupCodesdArr = symmetric_encrypt(plaintext=json.dumps(backupCodes), keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
+        cur.execute(
+            "INSERT INTO backup_codes (user_id, backup_codes_json) VALUES (%(userID)s, %(backupCode)s)",
+            {"userID": userID, "backupCode": encrypteBackupCodesdArr}
+        )
+        connection.commit()
+        return backupCodes
+
+    elif (mode == "check_backup_code_validity"):
+        cur.execute(
+            "SELECT backup_codes_json FROM backup_codes WHERE user_id = %(userID)s",
+            {"userID": kwargs["userID"]}
+        )
+        matched = cur.fetchone()
+        if (matched is None):
+            return False
+
+        backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
+        if (kwargs["backupCode"] in backupCodes):
+            return True
+        else:
+            return False
+
+    else:
+        raise ValueError("Invalid mode in backup_codes_sql_operation function!")
 
 def whitelisted_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -669,6 +734,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT r.role_name FROM role AS r INNER JOIN user AS u ON r.role_id=u.role WHERE u.id=%(userID)s", {"userID":userID})
         return (cur.fetchone()[0] == "SuperAdmin")
 
+    elif (mode == "fetch_user_id_from_email"):
+        email = kwargs["email"]
+        cur.execute("SELECT id FROM user WHERE email=%(email)s", {"email":email})
+        matched = cur.fetchone()
+        return matched[0] if (matched is not None) else None
+
     elif (mode == "email_verified"):
         userID = kwargs["userID"]
         getEmail = kwargs.get("email") or False
@@ -766,7 +837,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         roleID = cur.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(),%(cart_courses)s, %(purchased_courses)s)",
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(),%(cart_courses)s, %(purchased_courses)s, 'Active')",
             {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None,"cart_courses":"[]", "purchased_courses":"[]"}
         )
         connection.commit()

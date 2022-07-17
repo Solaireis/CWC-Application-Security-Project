@@ -56,6 +56,13 @@
                         <button data-action="enter_two_fA" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-colour text-white float-end">Submit</button>
                     </div>
                 </form>
+                <hr class="mt-4 text-white">
+                {% if "Enter 2FA TOTP" in title %}
+                    <div class="col-12">
+                        <p class="text-center mb-0 text-white">Unable to submit code?</p>
+                        <p class="text-center mb-0"><a class="text-white fw-bold" href="{{ url_for('guestBP.recoverAccountMFA') }}">Recover your account</a></p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
