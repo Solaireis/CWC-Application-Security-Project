@@ -43,6 +43,10 @@ csrf = SeaSurf(app)
 
 # flask extension that helps set policies for the web app
 csp = {
+    "frame-src":[
+        "'self'",
+        "https://www.google.com/recaptcha/",
+    ],
     "script-src":[
         "'self'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
