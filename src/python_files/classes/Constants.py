@@ -80,6 +80,7 @@ class ConstantsConfigs:
         self.__FIREBASE_DOMAIN_REGEX = re.compile(r"^(https://coursefinity-339412\.web\.app|https://coursefinity-339412\.firebaseapp\.com)(\/.*)?$")
 
         # Blueprints endpoint routes
+        #TODO:Integrate this with the admin console
         self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
         self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
         self.__ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
