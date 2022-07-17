@@ -189,7 +189,7 @@ def courseReview(courseID:str):
             abort(404)
         print("user has not reviewed this course")
 
-        if (request.method == "POST"):
+        if (request.method == "POST" and reviewForm.validate()):
             print("post request")
             print("form validated")
             review = reviewForm.reviewDescription.data

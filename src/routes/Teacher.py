@@ -179,7 +179,7 @@ def courseUpdate():
             abort(404)
         userInfo = get_image_path(session["user"], returnUserInfo=True) 
         courseForm = CreateCourseEdit(request.form)
-        updated = ''
+        updated = ""
         if (request.method == "POST" and courseForm.validate()):
             #TODO : Update profile picture, course tag
             if (courseForm.courseTitle.data):

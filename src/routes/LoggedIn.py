@@ -185,7 +185,7 @@ def updateUsername():
         userInfo = get_image_path(userID, returnUserInfo=True)
 
         create_update_username_form = CreateChangeUsername(request.form)
-        if (request.method == "POST") and (create_update_username_form.validate()):
+        if (request.method == "POST" and create_update_username_form.validate()):
             updatedUsername = create_update_username_form.updateUsername.data
 
             changed = False
@@ -217,7 +217,7 @@ def updatePassword():
             return redirect(url_for("userBP.userProfile"))
 
         create_update_password_form = CreateChangePasswordForm(request.form)
-        if (request.method == "POST") and (create_update_password_form.validate()):
+        if (request.method == "POST" and create_update_password_form.validate()):
             currentPassword = create_update_password_form.currentPassword.data
             updatedPassword = create_update_password_form.password.data
             confirmPassword = create_update_password_form.cfmPassword.data
