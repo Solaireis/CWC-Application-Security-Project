@@ -584,13 +584,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"CREATE USER {adminName} IDENTIFIED BY '{passTable['admin']}'")
     cur.execute(f"CREATE USER {userName} IDENTIFIED BY '{passTable['user']}'")
     cur.execute(f"CREATE USER {guestName} IDENTIFIED BY '{passTable['guest']}'")
+    cur.execute(f"CREATE USER {teacherName} IDENTIFIED BY '{passTable['teacher']}'")
 
     # grant privileges to users
     # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
     # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
     # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
-
-    # Draft cuz the granting privileges is broken
 
     #TODO: Give proper CRUD to the roles
     cur.execute("DROP ROLE IF EXISTS 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
