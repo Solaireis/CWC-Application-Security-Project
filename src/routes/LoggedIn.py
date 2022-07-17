@@ -30,14 +30,15 @@ def rawVideo(courseID:str, videoName:str):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         if (userInfo.role == "Teacher" and sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
             pass # allow access to the video for the teacher user if they own the course
-        elif (userInfo.role == "Teacher" and "course-data" in session and session["course-data"][0] == courseID):
+        elif (userInfo.role == "Teacher" and sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)):
             pass # allow access to the video if the teacher user is in the midst of creating the course
         else:
             abort(404)
 
+    courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
     # Allow the teacher to see the video if the teacher is in the midst of creating the course
-    if ("course-data" in session):
-        filePathArr = session["course-data"][1].rsplit("/", 2)[-2:]
+    if (courseTuple):
+        filePathArr = courseTuple[2].rsplit("/", 2)[-2:]
         return send_from_directory(
             str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])), 
             filePathArr[1], 

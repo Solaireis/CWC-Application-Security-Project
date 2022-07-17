@@ -108,6 +108,8 @@ def coursePage(courseID:str):
             reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
             imageSrcPath = reviewInfo.profileImage
             reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
+            
+    #TODO: Pagnination required.
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
