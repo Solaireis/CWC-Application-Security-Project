@@ -56,7 +56,7 @@ class CourseInfo:
         c.avg_rating, number_of_results
     )
     """
-    def __init__(self, tupleInfo:tuple="", profilePic:str="", truncateData:bool=False):
+    def __init__(self, tupleInfo:tuple="", profilePic:str="", truncateData:bool=False, draftStatus:bool=False):
         """
         Constructor for course info object.
     
@@ -75,14 +75,15 @@ class CourseInfo:
         self.__teacherID = tupleInfo[1]
         self.__teacherUsername = tupleInfo[2]
         self.__teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]
-        self.__courseName = tupleInfo[4]
-        self.__courseDescription = tupleInfo[5] if (not truncateData) \
-                                              else tupleInfo[5][:300].strip() + "..."
-        self.__courseImagePath = tupleInfo[6]
-        self.__coursePrice = tupleInfo[7]
-        self.__courseCategory = tupleInfo[8]
-        self.__dateCreated = tupleInfo[9]
-        self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
+        if (not draftStatus):
+            self.__courseName = tupleInfo[4]
+            self.__courseDescription = tupleInfo[5] if (not truncateData) \
+                                                else tupleInfo[5][:300].strip() + "..."
+            self.__courseImagePath = tupleInfo[6]
+            self.__coursePrice = tupleInfo[7]
+            self.__courseCategory = tupleInfo[8]
+            self.__dateCreated = tupleInfo[9]
+            self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
 
     @property
     def courseID(self) -> str:
@@ -117,6 +118,7 @@ class CourseInfo:
     @property
     def averageRating(self) -> int:
         return self.__averageRating
+
 
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""

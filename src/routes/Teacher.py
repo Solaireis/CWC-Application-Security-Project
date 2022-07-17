@@ -21,6 +21,89 @@ from io import BytesIO
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
+@teacherBP.route("/course-video-list")
+def courseList():
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        page = request.args.get("p", default=1, type=int)
+        maxPage, paginationArr = 0, []
+        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
+        try:
+            if (not courseList[0]):   
+                return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
+            if (len(courseList) != 0) :
+                courseList, maxPage = courseList[0], courseList[1]      
+                # Compute the buttons needed for pagination
+                paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+        except:
+            courseList = []
+    
+        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@teacherBP.route("/draft-course-video-list")
+def draftCourseList():
+    if ("user" in session):
+        #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        page = request.args.get("p", default=1, type=int)
+        maxPage, paginationArr = 0, []
+        courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
+        try:
+            if (not courseList[0]):   
+                return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
+            if (len(courseList) != 0) :
+                courseList, maxPage = courseList[0], courseList[1]      
+                # Compute the buttons needed for pagination
+                paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+        except:
+            courseList = []
+    
+        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
+    else:
+        return redirect(url_for("guestBP.login"))
+
+""" Start Of Course Creation """
+
+@teacherBP.route("/upload-video", methods=["GET", "POST"])
+def videoUpload():
+    if ("user" in session):
+        courseID = generate_id()
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if (userInfo.role != "Teacher"):
+            abort(404)
+
+        if (request.method == "POST"):
+            if (request.files["courseVideo"].filename == ""):
+                flash("Please Upload a Video", "File Upload Error!")
+                return redirect(url_for("teacherBP.videoUpload"))
+
+            file = request.files.get("courseVideo")
+            filename = secure_filename(file.filename)
+
+            print(f"This is the filename for the inputted file : {filename}")
+
+            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+            print(f"This is the folder for the inputted file: {filePath}")
+            filePath.mkdir(parents=True, exist_ok=True)
+
+            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
+            file.save(Path(filePath).joinpath(filename))
+
+            #TODO : Finish Drafting
+            """
+            Create a row inside the database to store the video info.
+            Display this row in the teachers course list 
+            """
+            # sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName="UNSET", courseDescription="UNSET", courseImagePath="UNSET", courseCategory="UNSET", coursePrice=123, videoPath=filePathToStore)
+            session["course-data"] = (courseID, filePathToStore)
+            return redirect(url_for("teacherBP.createCourse"))
+        else:
+            return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    else:
+        return redirect(url_for("guestBP.login"))
+
 #TODO: Hash Video data, implement dropzone to encrpyt video data
 @teacherBP.route("/create-course", methods=["GET","POST"])
 def createCourse():
@@ -73,24 +156,9 @@ def createCourse():
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/course-video-list")
-def courseList():
-    if ("user" in session):
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        page = request.args.get("p", default=1, type=int)
-        maxPage, paginationArr = 0, []
-        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
-        if (not courseList[0]):   
-            return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
-        if (len(courseList) != 0) :
-            courseList, maxPage = courseList[0], courseList[1]      
-            # Compute the buttons needed for pagination
-            paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
-    
-        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
-    else:
-        return redirect(url_for("guestBP.login"))
+""" End Of Course Creation """
 
+""" Start Of Course Management """
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     if ("user" in session):
@@ -164,35 +232,4 @@ def courseUpdate():
     else:
         return redirect(url_for("guestBP.login"))
 
-@teacherBP.route("/upload-video", methods=["GET", "POST"])
-def videoUpload():
-    if ("user" in session):
-        courseID = generate_id()
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo.role != "Teacher"):
-            abort(500)
-
-        if (request.method == "POST"):
-            if (request.files["courseVideo"].filename == ""):
-                flash("Please Upload a Video", "File Upload Error!")
-                return redirect(url_for("teacherBP.videoUpload"))
-
-            file = request.files.get("courseVideo")
-            filename = secure_filename(file.filename)
-
-            print(f"This is the filename for the inputted file : {filename}")
-
-            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-            print(f"This is the folder for the inputted file: {filePath}")
-            filePath.mkdir(parents=True, exist_ok=True)
-
-            # TODO: It is a insecure design to save the file and not delete if the teacher user did not finalise the course creation process
-            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
-            file.save(Path(filePath).joinpath(filename))
-
-            session["course-data"] = (courseID, filePathToStore)
-            return redirect(url_for("teacherBP.createCourse"))
-        else:
-            return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-    else:
-        return redirect(url_for("guestBP.login"))
+""" End Of Course Management """

@@ -1183,8 +1183,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         teacherID = kwargs["teacherID"]
         courseName = kwargs["courseName"]
-        courseDescription = kwargs.get("courseDescription")
-        courseImagePath = kwargs.get("courseImagePath")
+        courseDescription = kwargs["courseDescription"]
+        courseImagePath = kwargs["courseImagePath"]
         coursePrice = kwargs["coursePrice"]
         courseCategory = kwargs["courseCategory"]
         videoPath = kwargs["videoPath"]
@@ -1266,12 +1266,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("UPDATE course SET video_path=%(videoPath)s WHERE course_id=%(courseID)s", {"videoPath":videoPath, "courseID":courseID})
         connection.commit()
 
+    elif (mode == "delete_from_draft"):
+        courseID = kwargs["courseID"]
+        cur.execute("DELETE FROM draft_course WHERE course_id=%(courseID)s", {"courseID":courseID})
+        connection.commit()
+
     elif (mode == "delete"):
         courseID = kwargs["courseID"]
         cur.execute("DELETE FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         connection.commit()
 
-    #TODO: Make a HTML / Route for users to view all courses by a teacher from the teacher name in course page
     elif (mode == "get_all_courses_by_teacher"):
         teacherID = kwargs["teacherID"]
         pageNum = kwargs["pageNum"]
@@ -1298,6 +1302,34 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             foundResultsTuple = tupleInfo[1:]
             courseList.append(
                 CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
+            )
+
+        return (courseList, maxPage)
+
+    elif (mode == "get_all_draft_courses"):
+        teacherID = kwargs["teacherID"]
+        pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
+        # Not using offset as it will get noticeably slower with more courses
+        cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":1})
+        try:
+            maxPage = cur.fetchone()[-1]
+            if (pageNum > maxPage):
+                return (False , maxPage)
+        except:
+            return []
+        cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
+        resultsList = cur.fetchall()
+        maxPage = ceil(resultsList[0][-1] / 10)
+        teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
+                                                               else resultsList[0][3]
+
+        courseList = []
+        for tupleInfo in resultsList:
+            foundResultsTuple = tupleInfo[1:]
+            courseList.append(
+                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True, draftStatus=True)
             )
 
         return (courseList, maxPage)
