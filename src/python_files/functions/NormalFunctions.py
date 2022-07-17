@@ -896,8 +896,10 @@ class JWTExpiryProperties:
 
 def EC_sign(
         payload:Union[str, dict]="",
-        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:int=CONSTANTS.SIGNATURE_VERSION_ID,
-        b64EncodeData:bool=False, expiry:JWTExpiryProperties=None, limit:int=None, tokenID:str=None
+        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:Optional[int]=None, 
+        purpose:Optional[str]="sensitive-actions",
+        b64EncodeData:Optional[bool]=False, 
+        expiry:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None, tokenID:Optional[str]=None
     ) -> Union[dict, str]:
     """
     Sign a message using the public key part of an asymmetric EC key.
@@ -908,20 +910,23 @@ def EC_sign(
             - You could use json.dumps(dict|list) before hand to convert the payload to a string.
         - Will convert the payload to a str by json.dumps() if payload is a dict or list.
             - Will raise a ValueError if the payload couldn't be converted to a string using json.dumps()
-    - keyRingID: The ID of the key ring.
+    - keyRingID (str): The ID of the key ring.
         - Defaults to EC_SIGNING_KEY_ID defined in Constants.py
-    - keyID: The ID of the key.
+    - keyID (str): The ID of the key.
         - Defaults to "signing-key"
-    - versionID: The version of the key.
-        - Defaults to SIGNATURE_VERSION_ID defined in NormalFunctions.py
-    - b64EncodeData: Whether to base64 encode the data or not.
+    - versionID (int, Optional): The version of the key.
+        - Defaults to the lastest version of the key defined in Google Cloud Platform Secret Manager API.
+    - purpose (str, Optional): The purpose of the signing.
+        - Defaults to "sensitive-actions"
+        - Must be defined correctly if versionID is not defined
+    - b64EncodeData (bool, Optional): Whether to base64 encode the data or not.
         - Set this to True if you want to use the base64 encoded data for JWT.
         - Defaults to False
-    - expiry: The expiry properties of the token (using JWTExpiryProperties class).
+    - expiry (JWTExpiryProperties, Optional): The expiry properties of the token.
         - Defaults to None
-    - limit: The maximum number of allowed usage of the token.
+    - limit (int, Optional): The maximum number of allowed usage of the token.
         - Defaults to None for unlimited usage
-    - tokenID: The ID of the token.
+    - tokenID (str, Optional): The ID of the token.
         - Used for JWT with usage limit or expiry date.
 
     Returns:
@@ -944,6 +949,13 @@ def EC_sign(
     - If b64EncodeData is True, the return a base64 encoded string type.
         - header.payload.signature
     """
+    # Get the version defined in Google Cloud Platfrom Secret Manager API if versionID is not defined
+    if (versionID is None):
+        if (purpose == "sensitive-actions"):
+            versionID = int(CONSTANTS.get_secret_payload(secretID=CONSTANTS.SIGNATURE_VERSION_NAME))
+        else:
+            raise ValueError(f"versionID must be defined as there is no such purpose, {purpose}, in the web application.")
+
     # Construct the key version name
     keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
@@ -1020,16 +1032,16 @@ def EC_sign(
     else:
         return {"header":header, "data": data, "signature": response.signature}
 
-def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict, bool]:
+def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> Union[dict, bool]:
     """
     Verify the signature of an message signed with an asymmetric EC key.
 
     Args:
     - data (dict|bytes|str): the data to verify
         - Note: If the data is instances of bytes or string, it will be treated as a base64 encoded data
-    - getData: Whether to return the data or not.
+    - getData (bool, Optional): Whether to return the data or not.
         - Set this to True if the data is in base64 encoded format.
-        - Generally True for JWT.
+        - Generally, set this to True for JWT.
 
     Returns:
     - bool (true if verified and false otherwise)
@@ -1157,7 +1169,8 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:bool=False) -> Union[dict
 
 def RSA_encrypt(
     plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID,
-    keyID:str=CONSTANTS.RSA_ENCRYPTION_KEY_ID, versionID:int=CONSTANTS.SESSION_COOKIE_ENCRYPTION_VERSION
+    keyID:str=CONSTANTS.RSA_ENCRYPTION_KEY_ID, versionID:Optional[int]=None,
+    purpose:Optional[str]="session"
 ) -> dict:
     """
     Encrypts the plaintext using Google KMS (RSA/asymmetric encryption)
@@ -1166,10 +1179,13 @@ def RSA_encrypt(
     - plaintext (str): The plaintext to encrypt
     - keyRingID (str): The ID of the key ring to use.
         - Defaults to APP_KEY_RING_ID defined in Constants.py
-    - keyID (str): The ID of the key to use for decryption.
+    - keyID (str): The ID of the key to use for encryption.
         - Defaults to RSA_ENCRYPTION_KEY_ID defined in Constants.py
-    - versionID (int): The version ID of the key to use for decryption.
+    - versionID (int, Optional): The version ID of the key to use for encryption.
         - Defaults to the defined SESSION_COOKIE_ENCRYPTION_VERSION variable
+    - purpose (str, Optional): The purpose of the key to use for encryption.
+        - Defaults to "session"
+        - Must be defined correctly if versionID is not defined
 
     Returns:
     - A dictionary containing the following keys:
@@ -1182,6 +1198,13 @@ def RSA_encrypt(
             "ciphertext": the encrypted plaintext in bytes
         }
     """
+    # Get the version defined in Google Cloud Platfrom Secret Manager API if versionID is not defined
+    if (versionID is None):
+        if (purpose == "session"):
+            versionID = int(CONSTANTS.get_secret_payload(secretID=CONSTANTS.SESSION_COOKIE_ENCRYPTION_NAME))
+        else:
+            raise ValueError(f"versionID must be defined as there is no such purpose, {purpose}, in the web application.")
+
     # Build the key version name.
     keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 

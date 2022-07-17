@@ -231,9 +231,8 @@ class ConstantsConfigs:
             self.__APP_KEY_RING_ID = "coursefinity"
 
         # For Google KMS asymmetric encryption and decryption
-        # TODO: Update the version if there is a rotation of the asymmetric keys
-        self.__SESSION_COOKIE_ENCRYPTION_VERSION = int(self.get_secret_payload(secretID="rsa-session-cookie-version"))
-        self.__SIGNATURE_VERSION_ID = int(self.get_secret_payload(secretID="ec-signature-version"))
+        self.__SESSION_COOKIE_ENCRYPTION_NAME = "rsa-session-cookie-version"
+        self.__SIGNATURE_VERSION_NAME = "ec-signature-version"
 
         # For Google MySQL Cloud API
         self.__SQL_INSTANCE_LOCATION = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
@@ -484,12 +483,12 @@ class ConstantsConfigs:
         return self.__APP_KEY_RING_ID
 
     @property
-    def SESSION_COOKIE_ENCRYPTION_VERSION(self) -> int:
-        return self.__SESSION_COOKIE_ENCRYPTION_VERSION
+    def SIGNATURE_VERSION_NAME(self) -> str:
+        return self.__SIGNATURE_VERSION_NAME
 
     @property
-    def SIGNATURE_VERSION_ID(self) -> int:
-        return self.__SIGNATURE_VERSION_ID
+    def SESSION_COOKIE_ENCRYPTION_NAME(self) -> str:
+        return self.__SESSION_COOKIE_ENCRYPTION_NAME
 
     @property
     def SQL_INSTANCE_LOCATION(self) -> str:
