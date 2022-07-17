@@ -563,7 +563,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         "super-admin": CONSTANTS.get_secret_payload(secretID="sql-super-admin-password"),
         "admin": CONSTANTS.get_secret_payload(secretID="sql-admin-password"),
         "user": CONSTANTS.get_secret_payload(secretID="sql-user-password"),
-        "guest": CONSTANTS.get_secret_payload(secretID="sql-guest-password")
+        "guest": CONSTANTS.get_secret_payload(secretID="sql-guest-password"),
+        "teacher": CONSTANTS.get_secret_payload(secretID="sql-teacher-password"),
     }
     superAdminName = f"'super-admin'@'{hostName}'"
     adminName = f"'admin'@'{hostName}'"
@@ -605,7 +606,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
     cur.execute(f"GRANT 'Admin' TO {adminName} ;")
     cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName} ;")
-    cur.execute(f"GRANT 'Teachers' TO  {userName} ;")
+    cur.execute(f"GRANT 'Teachers' TO  {teacherName} ;")
+    cur.execute(f"GRANT 'Student' TO {userName} ;")
     cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
 
     # #Admin Privileges
