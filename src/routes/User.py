@@ -119,7 +119,7 @@ def twoFactorAuthSetup():
     # post request but form inputs are not valid
     return redirect(url_for("userBP.twoFactorAuthSetup"))
 
-@userBP.route("/2fa/recovery-codes", methods=["GET", "POST"])
+@userBP.route("/2fa/backup-codes", methods=["GET", "POST"])
 def showBackupCodes():
     userID = session["user"]
     # check if user logged in via Google OAuth2
