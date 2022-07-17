@@ -144,7 +144,7 @@ def createCourse(courseID:str):
 
             sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseTuple[2])
             stripe_product_create(courseID=courseID, courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
-            sql_operation(table="course", mode="delete_draft", courseID=courseID)
+            sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
 
             flash("Course Created", "Successful Course Created!")
             return redirect(url_for("userBP.userProfile"))
