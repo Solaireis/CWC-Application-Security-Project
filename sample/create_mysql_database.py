@@ -124,11 +124,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
 
-    #FOR DRAFTING A COURSE
+    # FOR DRAFTING A COURSE
     cur.execute("""CREATE TABLE draft_course (
         course_id CHAR(32) PRIMARY KEY,
         teacher_id VARCHAR(32) NOT NULL,
         video_path VARCHAR(255) NOT NULL,
+        FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
     cur.execute("""CREATE TABLE user_ip_addresses (
@@ -199,8 +200,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("""CREATE TABLE whitelisted_ip_addresses (
         ip_address VARBINARY(512) PRIMARY KEY, -- in encrypted form, for access of admin login portal
         date_added DATETIME NOT NULL
-    )
-    """)
+    )""")
     # end of table creation
     mydb.commit()
 
