@@ -1,0 +1,75 @@
+{% extends "guest_base.html" %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
+{% endblock %}
+{% block title %}Backup Codes | CourseFinity{% endblock %}
+
+{% block content %}
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
+</svg>
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col">
+            <div class="bg-dark p-4 rounded">
+                <h4 class="text-white">Two-factor backup codes</h4>
+                <div class="col-12">
+                    <p class="text-white">
+                        Backup codes can be used to access your account in the event you lose access to your device and cannot receive two-factor authentication codes.
+                    </p>
+                </div>
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                    <div>
+                        Put these in a safe spot. If you lose your device and don’t have the recovery codes, you will lose access to your account.
+                    </div>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for backupCode in backupCodes %}
+                        <li class="list-group-item">{{ backupCode }}</li>
+                    {% endfor %}
+                </ul>
+                <div class="col-12">
+                    <form action="" method="POST">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="generate_codes">
+                        <button class="btn btn-primary btn-block" type="submit">Generate New Codes</button>
+                    </form>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-primary btn-block" id="downloadCodes">
+                        <i class="fas fa-download"></i> Download Codes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script nonce="{{ csp_nonce() }}">
+        let downloadCodes = document.getElementById("downloadCodes");
+        const backupCodes = document.querySelectorAll("li.list-group-item");
+
+        downloadCodes.addEventListener("click", function() {
+            // Construct a string to hold the backup codes.
+            var backupCodesText = "";
+            for (var i = 0; i < backupCodes.length; i++) {
+                backupCodesText += backupCodes[i].innerText + "\n";
+            }
+
+            // Create a link to download the backup codes (client-side).
+            var backupCodesBlob = new Blob([backupCodesText], {type: "text/plain;charset=utf-8"});
+            var backupCodesURL = URL.createObjectURL(backupCodesBlob);
+            var backupCodesLink = document.createElement("a");
+            backupCodesLink.href = backupCodesURL;
+            backupCodesLink.download = "backup_codes.txt";
+            backupCodesLink.click();
+        });
+    </script>
+{% endblock %}

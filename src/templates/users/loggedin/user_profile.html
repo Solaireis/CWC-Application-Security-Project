@@ -150,14 +150,15 @@
                                         </td>
                                         <td>
                                             {% if twoFAEnabled %}
-                                            <h6 class="text-success">Enabled</h6>
-                                            <form action="{{ url_for('loggedInBP.disableTwoFactorAuth') }}" method="POST">
-                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
-                                            </form>
+                                                <h6 class="text-success">Enabled</h6>
+                                                <form action="{{ url_for('userBP.disableTwoFactorAuth') }}" method="POST">
+                                                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-link text-danger p-0">Disable 2FA</button>
+                                                </form>
+                                                <a href="{{ url_for('userBP.showBackupCodes') }}">View Backup Codes</a>
                                             {% else %}
-                                            <h6 class="text-danger">Not Enabled</h6>
-                                            <a href="{{ url_for('loggedInBP.twoFactorAuthSetup') }}">Enable 2FA</a>
+                                                <h6 class="text-danger">Not Enabled</h6>
+                                                <a href="{{ url_for('userBP.twoFactorAuthSetup') }}">Enable 2FA</a>
                                             {% endif %}
                                         </td>
                                     </tr>

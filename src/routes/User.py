@@ -3,7 +3,8 @@ Routes for logged in normal users (Students or Teachers)
 """
 # import third party libraries
 from werkzeug.utils import secure_filename
-import markdown
+from flask_limiter.util import get_remote_address
+import markdown, pyotp, qrcode
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
@@ -18,6 +19,7 @@ from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, Ancho
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
+from base64 import b64encode
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -36,6 +38,140 @@ def userProfile():
         return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=userInfo.profileImage, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))
+
+@userBP.route("/setup-2fa", methods=["GET", "POST"])
+def twoFactorAuthSetup():
+    userID = session["user"]
+    userInfo = get_image_path(userID, returnUserInfo=True)
+
+    # check if user logged in via Google OAuth2
+    if (userInfo.googleOAuth == True):
+        # if so, redirect to user profile as the authentication security is handled by Google themselves
+        flash(Markup("You had signed up with Google OAuth2 on CourseFinity.<br>Please <a href='https://support.google.com/accounts/answer/185839?hl=en' target='_blank' rel='noopener noreferrer'>setup 2FA for your Google account</a> instead!"))
+        return redirect(url_for("userBP.userProfile"))
+
+    # check if user has already setup 2fa
+    if (userInfo.hasTwoFA):
+        return redirect(url_for("userBP.userProfile"))
+
+    twoFactorAuthForm = twoFAForm(request.form)
+    if (request.method == "GET"):
+        # for google authenticator setup key (20 byte)
+        if ("2fa_token" not in session):
+            secretToken = pyotp.random_base32() # MUST be kept secret
+            session["2fa_token"] = RSA_encrypt(plaintext=secretToken)
+        else:
+            secretToken = RSA_decrypt(plaintext=session["2fa_token"])
+
+        # generate a QR code for the user to scan
+        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo.username, issuer_name="CourseFinity")
+
+        # to save the image in the memory buffer
+        # instead of saving the qrcode png as a file in the web server
+        stream = BytesIO()
+
+        # create a qrcode object
+        qrCodeData = qrcode.make(totp, box_size=15)
+
+        # save the qrcode image in the memory buffer
+        qrCodeData.save(stream)
+
+        # get the image from the memory buffer and encode it into base64
+        qrCodeEncodedBase64 = b64encode(stream.getvalue()).decode()
+
+        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=userInfo.profileImage, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo.role)
+
+    if (request.method == "POST" and twoFactorAuthForm.validate()):
+        # POST request code below
+        if ("2fa_token" not in session):
+            return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+        twoFATOTP = twoFactorAuthForm.twoFATOTP.data
+        secretToken = request.form.get("secretToken")
+        if (secretToken is None or secretToken != RSA_decrypt(cipherData=session["2fa_token"])):
+            flash("Please check your entry and try again!")
+            return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+        # if the secret token and the session token is equal but
+        # the secret token is not base32, then the user has tampered with the session
+        # and the html 2FA secretToken hidden form value
+        if (not two_fa_token_is_valid(secretToken)):
+            session.pop("2fa_token", None)
+            flash("Invalid 2FA setup key, please try again!", "Danger")
+            write_log_entry(
+                logLocation="coursefinity-web-app",
+                logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.",
+                severity="ALERT"
+            )
+            return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+        # check if the TOTP is valid
+        if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
+            # update the user's 2FA status to True
+            sql_operation(table="2fa_token", mode="add_token", userID=userInfo.uid, token=secretToken)
+            sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
+            flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
+            return redirect(url_for("userBP.userProfile"))
+        else:
+            flash("Please check your entry and try again!")
+            return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+    # post request but form inputs are not valid
+    return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+@userBP.route("/2fa/recovery-codes", methods=["GET", "POST"])
+def showBackupCodes():
+    userID = session["user"]
+    # check if user logged in via Google OAuth2
+    try:
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userID)
+    except (UserDoesNotExist):
+        abort(403) # if for whatever reason, a user does not exist, abort
+
+    if (loginViaGoogle):
+        # if so, redirect to user profile as the authentication security is handled by Google themselves
+        return redirect(url_for("userBP.userProfile"))
+
+    if (not sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+        return redirect(url_for("userBP.twoFactorAuthSetup"))
+
+    backUpCodes = []
+    if (request.method == "POST"):
+        action = request.form.get("action", default=None, type=str)
+        if (action != "generate_codes"):
+            return redirect(url_for("userBP.showBackupCodes"))
+        backUpCodes = sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
+
+    if (request.method == "GET"):
+        backUpCodes = sql_operation(table="backup_codes", mode="get_backup_codes", userID=userID)
+        if (len(backUpCodes) < 1):
+            backUpCodes = sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
+
+    userID = session["user"]
+    userInfo = get_image_path(userID, returnUserInfo=True)
+    return render_template("users/loggedin/recovery_codes.html", backupCodes=backUpCodes, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+
+@userBP.post("/disable-2fa")
+def disableTwoFactorAuth():
+    userID = session["user"]
+    # check if user logged in via Google OAuth2
+    try:
+        loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userID)
+    except (UserDoesNotExist):
+        abort(403) # if for whatever reason, a user does not exist, abort
+
+    if (loginViaGoogle):
+        # if so, redirect to user profile as the authentication security is handled by Google themselves
+        return redirect(url_for("userBP.userProfile"))
+
+    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+        sql_operation(table="2fa_token", mode="delete_token", userID=userID)
+        sql_operation(table="backup_codes", mode="delete_codes", userID=userID)
+        flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
+    else:
+        flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
+
+    return redirect(url_for("userBP.userProfile"))
 
 @userBP.route("/change-email", methods=["GET","POST"])
 def updateEmail():
