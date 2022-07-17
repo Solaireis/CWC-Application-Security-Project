@@ -85,6 +85,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         teacher_bp BOOL NOT NULL DEFAULT 0,
         user_bp BOOL NOT NULL DEFAULT 0
     )""")
+    cur.execute("CREATE INDEX role_role_name_idx ON role(role_name)")
 
     cur.execute("""CREATE TABLE user (
         id VARCHAR(32) PRIMARY KEY, 
@@ -100,6 +101,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned')) DEFAULT 'Active',
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
+    cur.execute("CREATE INDEX user_role_idx ON user(role)")
+    cur.execute("CREATE INDEX user_username_idx ON user(username)")
+    cur.execute("CREATE INDEX user_email_idx ON user(email)")
+    cur.execute("CREATE INDEX user_email_verified_idx ON user(email_verified)")
+    cur.execute("CREATE INDEX user_date_joined_idx ON user(date_joined)")
+    cur.execute("CREATE INDEX user_status_idx ON user(status)")
 
     cur.execute("""CREATE TABLE course (
         course_id CHAR(32) PRIMARY KEY, 
@@ -113,6 +120,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         video_path VARCHAR(255) NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX course_course_name_idx ON course(course_name)")
+    cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
+    cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
 
     #FOR DRAFTING A COURSE
     cur.execute("""CREATE TABLE draft_course (
@@ -129,6 +139,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX ip_address_idx ON user_ip_addresses(ip_address)")
+    cur.execute("CREATE INDEX last_accessed_idx ON user_ip_addresses(last_accessed)")
+    cur.execute("CREATE INDEX is_ipv4_idx ON user_ip_addresses(is_ipv4)")
 
     cur.execute("""CREATE TABLE limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
@@ -136,6 +149,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         expiry_date DATETIME,
         CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both cannot be null
     )""")
+    cur.execute("CREATE INDEX limited_use_jwt_token_limit_idx ON limited_use_jwt(token_limit)")
+    cur.execute("CREATE INDEX limited_use_jwt_expiry_date_idx ON limited_use_jwt(expiry_date)")
 
     cur.execute("""CREATE TABLE recovery_token ( 
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
@@ -157,6 +172,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         reset_date DATETIME NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX login_attempts_attempts_idx ON login_attempts(attempts)")
+    cur.execute("CREATE INDEX login_attempts_reset_date_idx ON login_attempts(reset_date)")
 
     cur.execute("""CREATE TABLE session (
         session_id CHAR(64) PRIMARY KEY,
@@ -165,6 +182,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         fingerprint_hash CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX session_expiry_date_idx ON session(expiry_date)")
 
     cur.execute("""CREATE TABLE review (
         user_id VARCHAR(32),
@@ -176,6 +194,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
+    cur.execute("CREATE INDEX review_course_rating_idx ON review(course_rating)")
 
     cur.execute("""CREATE TABLE whitelisted_ip_addresses (
         ip_address VARBINARY(512) PRIMARY KEY, -- in encrypted form, for access of admin login portal

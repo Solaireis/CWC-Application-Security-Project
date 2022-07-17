@@ -14,15 +14,13 @@ Dropzone.options.dropper = {
     acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
     autoProcessQueue: false, // whether to automatically process the queue after adding a file (set to false jic)
     init: function() {
-        let courseVideo = this;
-
         //function will remove older video if one is already uploaded
-        courseVideo.on("addedfile", function() {
-            $(".dz-progress").hide();
-            if (courseVideo.files[1] == null) return;
-            courseVideo.removeFile(courseVideo.files[0]);
+        this.on("addedfile", function() {
+            document.querySelector(".dz-progress").classList.add("d-none");
+            if (this.files[1] == null) 
+                return;
+            this.removeFile(this.files[0]);
         });
-
     }
 };
 
