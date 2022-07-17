@@ -31,13 +31,11 @@ def logout():
     return redirect(url_for("generalBP.home"))
 
 # blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
-@loggedInBP.route("/static/course_videos/<string:courseID>")
-def rawVideo(courseID:str):
+@loggedInBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
+def rawVideo(courseID:str, videoName:str):
     # TODO: Work on the video access control
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo.role == "Admin"):
-            pass # Moderate explicit content
         if (userInfo.role == "Teacher" and sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
             pass # allow access to the video for the teacher user if they own the course
         elif (userInfo.role == "Teacher" and "course-data" in session and session["course-data"][0] == courseID):
@@ -55,10 +53,13 @@ def rawVideo(courseID:str):
             max_age=31536000 # TODO: Check and configure the max age cache
         )
 
-    videoPath = get_course_video_path(courseID)
+    videoPath = get_course_video_path(courseID, videoName)
     print("Formatted path:", videoPath)
     if (videoPath is None):
         abort(404)
+
+    if (not convert_to_mpd(current_app.root_path + videoPath)):
+        abort(500)
 
     # TODO: work on partial content request instead of sending the whole video file
     # TODO: Fix video player as it isn't loading/playing anymore

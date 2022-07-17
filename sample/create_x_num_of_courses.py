@@ -207,88 +207,54 @@ if (res is None):
 
 print("Added", demoCourse, "demo courses to the database")
 
+addReviews = ""
 while (1):
     addReviews = input("Do you want to add demo reviews? (Y/n): ").lower().strip()
     if (addReviews not in ("y", "n", "")):
         print("Invalid input", end="\n\n")
         continue
     else:
-        #adding reviews to courses
-        #STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
-        cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
-        res = cur.fetchone()
-        if (res is None):
+        break
 
-            courseReview = """Daniel is actually a very helpful person.
+if (addReviews != "n"):
+    # adding reviews to courses
+    # STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
+    cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
+    res = cur.fetchone()
+    if (res is None):
+        courseReview = """Daniel is actually a very helpful person.
 he has shared many tips and tricks to teaching me
 how to do better at data structure and algorithms"""
-            userID = STUDENT_ID
-            cur.execute(f"SELECT * FROM course")
-            res = cur.fetchall()
-            for course in res:
-                courseRating = randint(1,5)
+        userID = STUDENT_ID
+        cur.execute(f"SELECT * FROM course")
+        res = cur.fetchall()
 
-                courseID = course[0]
-                cur.execute(
-                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
-                    {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
-                )
-                con.commit()
-                # print(f"course details {course}")
-                print(f"Added review to course: {courseID}")
+        for course in res:
+            courseRating = randint(1,5)
+            courseID = course[0]
+            cur.execute(
+                "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
+                {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
+            )
+            con.commit()
 
-            #Adding second review to review
-            print("Adding second review to review")
-            courseReview = "Daniel explained to me Pattern Defeating quicksort in such a simple way. Thank you!"
-            userID = STUDENT_ID2
-            cur.execute(f"SELECT * FROM course")
-            res = cur.fetchall()
-            for course in res:
-                courseRating = randint(1,5)
+        # Adding second review to review
+        print("Adding second review to review")
+        courseReview = "Daniel explained to me Pattern Defeating quicksort in such a simple way. Thank you!"
+        userID = STUDENT_ID2
+        cur.execute(f"SELECT * FROM course")
+        res = cur.fetchall()
 
-                courseID = course[0]
-                cur.execute(
-                    "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
-                    {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
-                )
-                con.commit()
-                # print(f"course details {course}")
-                print(f"Added review to course: {courseID}")
-            
-            
-            break
-
-# while (1):
-#     addReviews = input("Do you want to add X demo reviews? (Y/n): ").lower().strip()
-#     if (addReviews not in ("y", "n", "")):
-#         print("Invalid input", end="\n\n")
-#         continue
-#     else:
-#         xNumReview = input("Number of admins to create: ")
-#         if (not re.fullmatch(NUM_REGEX, xNumReview)):
-#             print("Please enter a number!", end="\n\n")
-
-#         else:
-#             xNumReview = int(xNumReview)
-#             for i in range(xNumReview):
-#                 print("Adding review to course")
-#                 courseReview = "Daniel explained to me Pattern Defeating quicksort in such a simple way. Thank you!"
-#                 #random id
-#                 cur.execute(f"SELECT * FROM course")
-#                 res = cur.fetchall()
-#                 for course in res:
-#                     courseRating = randint(1,5)
-
-#                     courseID = course[0]
-#                     cur.execute(
-#                         "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
-#                         {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
-#                     )
-#                     con.commit()
-#                     # print(f"course details {course}")
-#                     print(f"Added review to course: {courseID}")
-#                 break
-#             pass
+        for course in res:
+            courseRating = randint(1,5)
+            courseID = course[0]
+            cur.execute(
+                "INSERT INTO review ( course_id, user_id, course_rating, course_review, review_date) VALUES (%(courseID)s, %(userID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())",
+                {"courseID": courseID, "userID": userID, "courseRating": courseRating, "courseReview": courseReview}
+            )
+            con.commit()
+    else:
+        print("Error: No such student found with the id,", STUDENT_ID)
 
 con.commit()
 con.close()

@@ -153,8 +153,7 @@ def upload_file_from_path(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
     localFilePath:pathlib.Path=None,
     uploadDestination:str="",
-    cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL,
-    removeOriginal:Optional[bool]=False
+    cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
 ) -> str:
     """
     Uploads a file to Google Cloud Platform Storage API.
@@ -170,8 +169,6 @@ def upload_file_from_path(
     - cacheControl (str, Optional): The cache control header to set on the uploaded file.
         - E.g. "public, max-age=60" for a 1 minute cache
         - Default: DEFAULT_CACHE_CONTROL defined in Constants.py
-    - removeOriginal (bool, Optional): Whether to remove the file from the original file path.
-        - Default: False
 
     Returns:
     - str: The public URL of the uploaded file.
@@ -195,9 +192,6 @@ def upload_file_from_path(
         raise UploadFailedError("Data corruption detected!")
     except (InvalidResponse):
         raise UploadFailedError("Invalid response from Google Cloud Storage!")
-
-    if removeOriginal:
-        localFilePath.unlink(missing_ok=True) 
 
     return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
 
@@ -1678,29 +1672,12 @@ def two_fa_token_is_valid(token:str) -> bool:
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
-def get_video_dimensions(videoPath):
-    # For CLI Testing
-    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
-
-    # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
-    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE)    
-    try:
-        dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
-        print(dimensions)
-        return dimensions['width'], dimensions['height']
-
-    except KeyError:
-        error = dimensions.stderr.decode("utf-8")
-        print(error)
-        return None
-        #TODO: Logging
-
-def convert_to_mpd(courseVideoPath:str, videoWidth, videoHeight) -> bool:
+def convert_to_mpd(courseVideoPath:str) -> bool:
     """
     Converts the video to MPD format.
 
     Args:
-    - courseVideoPath (str): The path to the video to convert, with extension type.
+    - courseVideoPath (str): The path to the video to convert.
         - e.g. "static/course_videos/testID/testVideo.mp4"
 
     Returns:
@@ -1710,18 +1687,37 @@ def convert_to_mpd(courseVideoPath:str, videoWidth, videoHeight) -> bool:
     if (videoPath.suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
         raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 
+    # Create a folder to store the converted video files
+    convertedVideoFolderPath = videoPath.parent.joinpath("converted")
+    convertedVideoFolderPath.mkdir(parents=True, exist_ok=True)
+    convertedVideoPath = str(convertedVideoFolderPath.joinpath(videoPath.with_suffix(".mpd").name))
+
     video = ffmpeg_input(str(videoPath))
     dash = video.dash(Formats.h264())
 
-    _1080p = Representation(Size(videoWidth, videoHeight), Bitrate(4096 * 1024, 320 * 1024))
+    # For CLI Testing
+    # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
+
+    # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
+    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE)    
+    try:
+        dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
+        print(dimensions)
+    except KeyError:
+        error = dimensions.stderr.decode("utf-8")
+        print(error)
+        return False
+        #TODO: Logging
+
+    _1080p = Representation(Size(dimensions["width"], dimensions["height"]), Bitrate(4096 * 1024, 320 * 1024))
     dash.representations(_1080p)
 
     try:
-        dash.output(videoPath)
+        dash.output(convertedVideoPath)
     except (RuntimeError):
         return False
         #TODO: Log
 
-    # Delete original after uploading to cloud
-
+    # Commented it out as I'm not sure why you would want to delete the original video
+    # videoPath.unlink(missing_ok=True) 
     return True
