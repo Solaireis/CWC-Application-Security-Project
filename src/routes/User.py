@@ -140,6 +140,27 @@ def showBackupCodes():
         action = request.form.get("action", default=None, type=str)
         if (action != "generate_codes"):
             return redirect(url_for("userBP.showBackupCodes"))
+
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.", "Sorry!")
+            return redirect(url_for("userBP.showBackupCodes"))
+
+        try:
+            recaptchaResponse = create_assessment(
+                recaptchaToken=recaptchaToken, recaptchaAction="generate_backup_codes"
+            )
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!", "Sorry!")
+            return redirect(url_for("userBP.showBackupCodes"))
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!", "Sorry!")
+            return redirect(url_for("userBP.showBackupCodes"))
+
         backUpCodes = sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
 
     if (request.method == "GET"):
