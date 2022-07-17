@@ -169,7 +169,10 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         "Your account has been locked due to too many failed login attempts.<br>",
         "Please click the link below to unlock your account:",
         f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>"
-        "<br>Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+        "<br>Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes.",
+        "<br>We suggest that you consider changing your password as well just in case after logging in.",
+        "To change password:",
+        f"<a href={url_for('loggedInBP.updatePassword', _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Change Password</a>"
     ]
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
