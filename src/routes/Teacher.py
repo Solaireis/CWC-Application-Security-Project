@@ -2,7 +2,6 @@
 Routes for logged in Teachers
 """
 # import third party libraries
-from turtle import width
 from werkzeug.utils import secure_filename
 import markdown
 
@@ -30,15 +29,15 @@ def courseList():
         maxPage, paginationArr = 0, []
         courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
         try:
-            if (not courseList[0]):
+            if (not courseList[0]):   
                 return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
             if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]
+                courseList, maxPage = courseList[0], courseList[1]      
                 # Compute the buttons needed for pagination
                 paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
         except:
             courseList = []
-
+    
         return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
     else:
         return redirect(url_for("guestBP.login"))
@@ -52,15 +51,15 @@ def draftCourseList():
         maxPage, paginationArr = 0, []
         courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
         try:
-            if (not courseList[0]):
+            if (not courseList[0]):   
                 return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
             if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]
+                courseList, maxPage = courseList[0], courseList[1]      
                 # Compute the buttons needed for pagination
                 paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
         except:
             courseList = []
-
+    
         return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
     else:
         return redirect(url_for("guestBP.login"))
@@ -75,9 +74,6 @@ def videoUpload():
             abort(404)
 
         if (request.method == "POST"):
-            # Clicking upload without uploading anything triggers response 400, with error page 401
-            # Where is handling errors gracefully :skull:
-            # request.files returns a 'ImmutableMultiDict([])'
             if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("teacherBP.videoUpload"))
@@ -87,31 +83,18 @@ def videoUpload():
 
             print(f"This is the filename for the inputted file : {filename}")
 
-            allowedFormats = current_app.config["ALLOWED_VIDEO_EXTENSIONS"]
-            if (Path(filename).suffix not in allowedFormats):
-                flash(f"Only the following formats are accepted: {', '.join(allowedFormats)} ONLY.", "Failed to Upload Course Video!")
-                return redirect(url_for("teacherBP.videoUpload"))
-
             courseID = generate_id()
             filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
 
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
-            videoPath = Path(filePath).joinpath(filename)
-            #TODO: Use a thread in future, have a page showing upload progress?
-            file.save(videoPath)
-            print(videoPath)
-            dimensions = get_video_dimensions(videoPath)
-            if dimensions is None:
-                pass
-            else:
-                convert_to_mpd(videoPath, dimensions[0], dimensions[1])
+            file.save(Path(filePath).joinpath(filename))
 
             #TODO : Finish Drafting
             """
             Create a row inside the database to store the video info.
-            Display this row in the teachers course list
+            Display this row in the teachers course list 
             """
             # sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName="UNSET", courseDescription="UNSET", courseImagePath="UNSET", courseCategory="UNSET", coursePrice=123, videoPath=filePathToStore)
             session["course-data"] = (courseID, filePathToStore)
@@ -132,7 +115,7 @@ def createCourse():
                 abort(500)
 
             courseForm = CreateCourse(request.form)
-            if (request.method == "POST"):
+            if (request.method == "POST" and courseForm.validate()):
                 courseTitle = courseForm.courseTitle.data
                 courseDescription = courseForm.courseDescription.data
                 courseTagInput = request.form.get("courseTag")
@@ -148,7 +131,7 @@ def createCourse():
                 imageData = BytesIO(file.read())
                 try:
                     imageUrlToStore = compress_and_resize_image(
-                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
+                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
                         folderPath=f"course-thumbnails"
                     )
                 except (InvalidProfilePictureError):
@@ -194,10 +177,10 @@ def courseUpdate():
         courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
         if (not courseFound):
             abort(404)
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        userInfo = get_image_path(session["user"], returnUserInfo=True) 
         courseForm = CreateCourseEdit(request.form)
-        updated = ''
-        if (request.method == "POST"):
+        updated = ""
+        if (request.method == "POST" and courseForm.validate()):
             #TODO : Update profile picture, course tag
             if (courseForm.courseTitle.data):
                 if (courseForm.courseTitle.data != courseFound.courseName):
@@ -226,7 +209,7 @@ def courseUpdate():
                 imageData = BytesIO(file.read())
                 try:
                     imageUrlToStore = compress_and_resize_image(
-                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
+                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
                         folderPath=f"course-thumbnails"
                     )
                 except (InvalidProfilePictureError):
@@ -235,16 +218,16 @@ def courseUpdate():
                 except (UploadFailedError):
                     flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
                     return redirect("teacherBP.courseList")
-
+                
                 sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
                 stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
                 updated += "Course Thumbnail, "
-
+            
             if (len(updated) > 0):
                 flash(f"Fields Updated : {updated}", "Successful Update")
             return redirect(url_for("teacherBP.courseList"))
         else:
-
+            
             return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
     else:
         return redirect(url_for("guestBP.login"))
