@@ -27,7 +27,7 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
-def get_course_video_path(courseID:str, videoName:str) -> Union[str, None]:
+def get_course_video_path(courseID:str) -> Union[str, None]:
     """
     Gets the path to the course video by querying the database.
 
@@ -40,19 +40,12 @@ def get_course_video_path(courseID:str, videoName:str) -> Union[str, None]:
     """
     # Will retrieve a google storage link to the course video
     # e.g. https://storage.googleapis.com/<bucketName>/<blobName>
-    matched = sql_operation(table="course", mode="get_video_path", courseID=courseID)
+    matched = sql_operation(table="course", mode="get_course_data", courseID = courseID)
     if (matched is None):
         #TODO: Log
         return None
-
-    databaseVideoFilename = matched.rsplit("/", 1)[1]
-    if (databaseVideoFilename == videoName):
-        return url_for(
-            "static", 
-            filename="/".join(["course_videos", courseID, databaseVideoFilename])
-        )
     else:
-        return None
+        return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
 
 def get_blob_name(url:str="") -> str:
     """

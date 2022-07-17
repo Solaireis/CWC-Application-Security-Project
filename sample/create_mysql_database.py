@@ -58,7 +58,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """
     # Restrict connections to be made from localhost if in debug mode
     # else if not in debug mode, restrict to our custom domain, "coursefinity.social"
-    hostName = "localhost" if (debug) else "coursefinity.social" 
+    hostName = "localhost" if (debug) else "coursefinity.social"
 
     definer = f"root`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None)
@@ -88,16 +88,16 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX role_role_name_idx ON role(role_name)")
 
     cur.execute("""CREATE TABLE user (
-        id VARCHAR(32) PRIMARY KEY, 
+        id VARCHAR(32) PRIMARY KEY,
         role INTEGER UNSIGNED NOT NULL,
-        username VARCHAR(255) NOT NULL UNIQUE, 
-        email VARCHAR(255) NOT NULL UNIQUE, 
+        username VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
         email_verified BOOLEAN NOT NULL DEFAULT FALSE,
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
-        profile_image VARCHAR(255) DEFAULT NULL, 
+        profile_image VARCHAR(255) DEFAULT NULL,
         date_joined DATETIME NOT NULL,
-        cart_courses JSON DEFAULT NULL, -- can be null for admin user
-        purchased_courses JSON DEFAULT NULL, -- can be null for admin user
+        cart_courses JSON,
+        purchased_courses JSON,
         status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned')) DEFAULT 'Active',
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
@@ -109,7 +109,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX user_status_idx ON user(status)")
 
     cur.execute("""CREATE TABLE course (
-        course_id CHAR(32) PRIMARY KEY, 
+        course_id CHAR(32) PRIMARY KEY,
         teacher_id VARCHAR(32) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
         course_description VARCHAR(2000) DEFAULT NULL,
@@ -152,7 +152,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX limited_use_jwt_token_limit_idx ON limited_use_jwt(token_limit)")
     cur.execute("CREATE INDEX limited_use_jwt_expiry_date_idx ON limited_use_jwt(expiry_date)")
 
-    cur.execute("""CREATE TABLE recovery_token ( 
+    cur.execute("""CREATE TABLE recovery_token (
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
         token_id CHAR(64) NOT NULL,
         old_user_email VARCHAR(255) NOT NULL,
@@ -249,10 +249,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `get_course_data`(IN courseID CHAR(32))
         BEGIN
-            SELECT 
-            c.course_id, c.teacher_id, 
+            SELECT
+            c.course_id, c.teacher_id,
             u.username, u.profile_image, c.course_name, c.course_description,
-            c.course_image_path, c.course_price, c.course_category, c.date_created, 
+            c.course_image_path, c.course_price, c.course_category, c.date_created,
             ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
             FROM course AS c
             LEFT OUTER JOIN review AS r
@@ -267,9 +267,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
         BEGIN
             SELECT
-            u.id, r.role_name, u.username, 
-            u.email, u.email_verified, u.password, 
-            u.profile_image, u.date_joined, u.cart_courses, 
+            u.id, r.role_name, u.username,
+            u.email, u.email_verified, u.password,
+            u.profile_image, u.date_joined, u.cart_courses,
             u.purchased_courses, u.status, t.token AS has_two_fa
             FROM user AS u
             LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -277,7 +277,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             WHERE u.id=user_id;
         END
     """)
-    
+
     """Pagination Functions"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
@@ -285,10 +285,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_course_num := (SELECT COUNT(*) FROM course WHERE teacher_id=teacherID);
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             teacher_course_info.* FROM (
-                SELECT c.course_id, c.teacher_id, 
-                u.username, u.profile_image, c.course_name, c.course_description, 
+                SELECT c.course_id, c.teacher_id,
+                u.username, u.profile_image, c.course_name, c.course_description,
                 c.course_image_path, c.course_price, c.course_category, c.date_created,
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
@@ -311,9 +311,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_course_num := (SELECT COUNT(*) FROM draft_course WHERE teacher_id=teacherID);
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             teacher_course_info.* FROM (
-                SELECT c.course_id, c.teacher_id, 
+                SELECT c.course_id, c.teacher_id,
                 u.username, u.profile_image, @total_course_num
                 FROM course AS c
                 INNER JOIN user AS u ON c.teacher_id=u.id
@@ -337,9 +337,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
-                SELECT c.course_id, c.teacher_id, 
-                u.username, u.profile_image, c.course_name, c.course_description, 
-                c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                SELECT c.course_id, c.teacher_id,
+                u.username, u.profile_image, c.course_name, c.course_description,
+                c.course_image_path, c.course_price, c.course_category, c.date_created,
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
@@ -362,9 +362,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
-                SELECT c.course_id, c.teacher_id, 
-                u.username, u.profile_image, c.course_name, c.course_description, 
-                c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                SELECT c.course_id, c.teacher_id,
+                u.username, u.profile_image, c.course_name, c.course_description,
+                c.course_image_path, c.course_price, c.course_category, c.date_created,
                 ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
@@ -388,11 +388,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
-                SELECT u.id, r.role_name, u.username, 
-                u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
+                SELECT u.id, r.role_name, u.username,
+                u.email, u.email_verified, u.password,
+                u.profile_image, u.date_joined, u.cart_courses,
                 u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -418,9 +418,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
-                SELECT u.id, r.role_name, u.username, 
-                u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
+                SELECT u.id, r.role_name, u.username,
+                u.email, u.email_verified, u.password,
+                u.profile_image, u.date_joined, u.cart_courses,
                 u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -446,9 +446,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
-                SELECT u.id, r.role_name, u.username, 
-                u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
+                SELECT u.id, r.role_name, u.username,
+                u.email, u.email_verified, u.password,
+                u.profile_image, u.date_joined, u.cart_courses,
                 u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -472,12 +472,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
-            SELECT (@count := @count + 1) AS row_num, 
+            SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
-                SELECT u.id, r.role_name, u.username, 
-                u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user 
+                SELECT u.id, r.role_name, u.username,
+                u.email, u.email_verified, u.password,
+                u.profile_image, u.date_joined, u.cart_courses,
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
@@ -492,8 +492,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """)
     """Datetime function"""
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
-        DETERMINISTIC 
+        CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME
+        DETERMINISTIC
         COMMENT 'Returns SGT (UTC+8) datetime.'
         BEGIN
             RETURN CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+08:00');
@@ -512,35 +512,35 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     #insert into student role the rbac
     cur.execute("""
-        UPDATE role SET 
+        UPDATE role SET
         guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0
         WHERE role_id = 1;
     """)
 
     #insert into Teacher role the rbac
     cur.execute("""
-        UPDATE role SET 
+        UPDATE role SET
         guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=1, user_bp=1
         WHERE role_id = 2;
     """)
 
     #insert into Admin role the rbac
     cur.execute("""
-        UPDATE role SET 
+        UPDATE role SET
         guest_bp=0, general_bp=1, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0
         WHERE role_id = 3;
     """)
 
     #insert into Super Admin role the rbac
     cur.execute("""
-        UPDATE role SET 
+        UPDATE role SET
         guest_bp=0, general_bp=0, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0
         WHERE role_id = 4;
     """)
 
     #insert into Guest role the rbac
     cur.execute("""
-        UPDATE role SET 
+        UPDATE role SET
         guest_bp=1, general_bp=1, admin_bp=0, logged_in_bp=0, error_bp=1, teacher_bp=0, user_bp=0
         WHERE role_id = 5;
     """)
@@ -619,4 +619,3 @@ if (__name__ == "__main__"):
         print("\nError caught!")
         print("More details:")
         print(e)
-

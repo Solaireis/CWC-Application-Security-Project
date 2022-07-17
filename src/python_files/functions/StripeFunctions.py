@@ -70,6 +70,7 @@ def stripe_product_update(**kwargs) -> None:
                 courseID,
                 description = courseDescription,
             )
+        #TODO: Fix, "default_price": "price_1LKvnkEQ13luXvBjrF3CKePl"
         if (coursePrice):
             stripe.Product.modify(
                 courseID,
@@ -81,21 +82,18 @@ def stripe_product_update(**kwargs) -> None:
         if (courseImagePath):
             stripe.Product.modify(
                 courseID,
-                images = [courseImagePath],
+                [] if courseImagePath is None else [courseImagePath],
             )
     
     except:
         print("There was an Error in updating")
 
+# Does not work
 def stripe_product_deactivate(courseID:str):
     try:
         stripe.Product.modify(courseID, active = False)
     except InvalidRequestError as error:
         print(error)
-
-#TODO: THIS
-def stripe_product_edit(courseName=None, courseDescription = None, coursePrice = None, courseImagePath = None):
-    pass
 
 def stripe_product_check(courseID:str) -> Optional[str]:
     """

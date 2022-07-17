@@ -248,6 +248,8 @@ def purchaseView(courseID:str):
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):
     if ("user" in session):
+        if not sql_operation(table="course", mode="get_course_data", courseID = courseID):
+            abort(400)
         sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
         return redirect(url_for("userBP.shoppingCart"))
     else:
