@@ -134,7 +134,7 @@ def resetPasswordRequest():
         if (userInfo is None):
             # if the user does not exist
             sleep(1.5)
-            flash("Reset password instructions has been sent to your email!", "Success")
+            flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
         if (userInfo[1] is None):
@@ -146,7 +146,7 @@ def resetPasswordRequest():
             ]
             # send email to the user to remind them to login using Google account
             send_email(to=emailInput, subject="Reset Password", htmlBody="<br><br>".join(htmlBody))
-            flash("Reset password instructions has been sent to your email!", "Success")
+            flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
         # create a token that is digitally signed with an active duration of 30 mins 
@@ -168,7 +168,7 @@ def resetPasswordRequest():
         ]
         send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
 
-        flash("Reset password instructions has been sent to your email!", "Success")
+        flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
         return render_template("users/guest/request_password_reset.html", form=requestForm)
@@ -299,15 +299,11 @@ def login():
                     sql_operation(table="login_attempts", mode="add_attempt", user="user", email=emailInput)
                     flash("Please check your entries and try again!", "Danger")
                 except (AccountLockedError):
-                    print("Account locked")
                     flash("Too many failed login attempts, please try again later.", "Danger")
             except (AccountLockedError):
-                print("Account locked")
                 flash("Too many failed login attempts, please try again later.", "Danger")
-            except (UserIsUsingOauth2Error):
+            except (UserIsUsingOauth2Error, EmailNotVerifiedError):
                 flash("Please check your entries and try again!", "Danger")
-            except (EmailNotVerifiedError):
-                flash("Please verify your email first!", "Danger")
             except (LoginFromNewIpAddressError):
                 # sends an email with a generated TOTP code 
                 # to authenticate the user if login was successful.
@@ -661,22 +657,21 @@ def signup():
             returnedVal = sql_operation(table="user", mode="signup", user="user", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 
             if (isinstance(returnedVal, tuple)):
-                emailDupe = returnedVal[0]
                 usernameDupe = returnedVal[1]
-                if (emailDupe and usernameDupe):
-                    flash("Email and username already exists!")
-                elif (emailDupe):
-                    flash("Email already exists!")
-                elif (usernameDupe):
-                    flash("Username already exists!")
-                return render_template("users/guest/signup.html", form=signupForm)
+                # Flash messages with reference to:
+                # https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#account-creation
+                if (usernameDupe):
+                    flash("Username already exists!") # It's okay to show this since the login page uses the email
+                    return render_template("users/guest/signup.html", form=signupForm)
+                else: # if emailDupe
+                    flash("A link to verify your email has been emailed to the address provided!", "Success")
+                    return redirect(url_for("guestBP.login"))
 
             try:
                 send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
-                flash(f"An email has bent sent to {emailInput} for you to verify your email!", "Success")
+                flash("A link to verify your email has been emailed to the address provided!", "Success")
             except (Exception) as e:
                 #TODO: Fix it anyways but can't be XSSed i believed
-                print("Error sending email:", e)
                 write_log_entry(
                     logMessage=f"Error sending verification email: {e}",
                     severity="ERROR",
