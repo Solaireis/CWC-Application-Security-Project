@@ -569,6 +569,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     adminName = f"'admin'@'{hostName}'"
     userName = f"'user'@'{hostName}'"
     guestName = f"'guest'@'{hostName}'"
+    teacherName=f"'teacher'@'{hostName}'"
+
+    #TODO: remove this once roles dont need this variable
+    # superAdminRole = f"'super-admin'@'{hostName}'"
+    # adminRole = f"'admin'@'{hostName}'"
+    # userRole = f"'user'@'{hostName}'"
+    # guestRole = f"'guest'@'{hostName}'"
 
     # drop the user if it exists
     cur.execute(f"DROP USER IF EXISTS {superAdminName}")
@@ -586,10 +593,80 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
     # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
     # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
-    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
+    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
+    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
+    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
     cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
+
+    #Draft cuz the granting privileges is broken
+    
+    #create the users first
+    cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
+    cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
+    cur.execute(f"GRANT 'Admin' TO {adminName} ;")
+    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName} ;")
+    cur.execute(f"GRANT 'Teachers' TO  {userName} ;")
+    cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
+
+    # #Admin Privileges
+    cur.execute("GRANT ALL ON coursefinity.role TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.user TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.course TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.session TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Admin';")
+    cur.execute("GRANT ALL ON coursefinity.review TO 'Admin';")
+
+    # #SuperAdmin Privileges
+    cur.execute("GRANT ALL ON coursefinity.role TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.user TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.course TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.session TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'SuperAdmin';")
+    cur.execute("GRANT ALL ON coursefinity.review TO 'SuperAdmin';")
+
+    # #Student Privileges 
+    cur.execute("GRANT ALL ON coursefinity.role TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.user TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.course TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.session TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Student';")
+    cur.execute("GRANT ALL ON coursefinity.review TO 'Student';")
+
+    #Teacher Privileges
+    cur.execute("GRANT ALL ON coursefinity.role TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.user TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.course TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.session TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Teachers';")
+    cur.execute("GRANT ALL ON coursefinity.review TO 'Teachers';")
+
+    #Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
+    cur.execute("GRANT SELECT ON coursefinity.role TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.Recovery_token TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.limited_use_jwt TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.user TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.course TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.session TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.twofa_token TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.user_ip_addresses TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.login_attempts TO 'Guest';")
+    cur.execute("GRANT SELECT ON coursefinity.review TO 'Guest';")
 
     mydb.commit()
     mydb.close()
