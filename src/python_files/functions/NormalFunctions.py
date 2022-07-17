@@ -543,6 +543,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         - Benefits for using Google Cloud Platform KMS API's random number generator:
             - The random number generator is generated in the HSM
             - Higher entropy than generating by your own
+            - More details: https://cloud.google.com/kms/docs/generate-random
         - Defaults to False to use the secrets library to generate random bytes.
             - Recommended by OWASP to use secrets library to ensure higher entropy
             - More details: https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
@@ -558,11 +559,47 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
     # Construct the location name
     locationName = CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
 
-    # Call the Google Cloud Platform API to generate a random byte string.
-    randomBytesResponse = CONSTANTS.KMS_CLIENT.generate_random_bytes(
-        request={"location": locationName, "length_bytes": nBytes, "protection_level": kms.ProtectionLevel.HSM}
-    )
-    return randomBytesResponse.data.hex() if (returnHex) else randomBytesResponse.data
+    # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes.
+    if (nBytes < 8):
+        nBytes = 8
+
+    # Check if the number of bytes exceeds GCP KMS RNG Cloud HSM limit
+    if (nBytes > 1024):
+        # if exceeded, make multiple API calls to generate the random bytes
+        bytesArr = []
+        maxBytes = 1024
+        numOfMaxBytes = nBytes // maxBytes
+        for _ in range(numOfMaxBytes):
+            bytesArr.append(
+                CONSTANTS.KMS_CLIENT.generate_random_bytes(
+                    request={
+                        "location": locationName,
+                        "length_bytes": maxBytes,
+                        "protection_level": kms.ProtectionLevel.HSM
+                    }
+                )
+            )
+
+        remainder = nBytes % maxBytes
+        if (remainder > 0):
+            bytesArr.append(
+                CONSTANTS.KMS_CLIENT.generate_random_bytes(
+                    request={
+                        "location": locationName,
+                        "length_bytes": remainder,
+                        "protection_level": kms.ProtectionLevel.HSM
+                    }
+                )
+            )
+        randomBytes = b"".join(bytesArr)
+    else:
+        # Call the Google Cloud Platform API to generate a random byte string.
+        randomBytesResponse = CONSTANTS.KMS_CLIENT.generate_random_bytes(
+            request={"location": locationName, "length_bytes": nBytes, "protection_level": kms.ProtectionLevel.HSM}
+        )
+        randomBytes = randomBytesResponse.data
+
+    return randomBytes.hex() if (returnHex) else randomBytes
 
 def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     """
