@@ -1187,6 +1187,17 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             {"courseID":courseID, "teacherID":teacherID, "courseName":courseName, "courseDescription":courseDescription, "courseImagePath":courseImagePath, "coursePrice":coursePrice, "courseCategory":courseCategory, "videoPath":videoPath}
         )
         connection.commit()
+    
+    elif (mode == "insert_draft"):
+        courseID = kwargs["courseID"]
+        teacherID = kwargs["teacherID"]
+        videoPath = kwargs["videoPath"]
+
+        cur.execute(
+            "INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())", 
+            {"courseID":courseID, "teacherID":teacherID, "videoPath":videoPath}
+        )
+        connection.commit()
 
     elif (mode == "check_if_course_owned_by_teacher"):
         courseID = kwargs["courseID"]
@@ -1210,6 +1221,17 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
         return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False)
+    
+    elif (mode == "get_draft_course_data"):
+        courseID = kwargs["courseID"]
+        print("Course ID:", courseID)
+        cur.execute("SELECT * FROM draft_course WHERE course_id=%(courseID)s", {"courseID":courseID})
+        matched = cur.fetchone()
+        print("Matched:", matched)
+        if (matched is None):
+            return False
+        
+        return matched
 
     # Added just in case want to do updating
     elif (mode == "update_course_title"):

@@ -45,66 +45,28 @@
 {% endwith %}
 
 <div class="container">
-{% if accType == "Teacher" %}
-    <h4 class="display-5">Courses Made</h4>
-{% else %}
-    <h4 class="display-5">Courses Found</h4>
-{% endif %}
+<h4 class="display-5">Draft Courses Made</h4>
+
 {% if courseListLen < 1 %}
     <div class="row">
         <div class="col">
-            <h4 class="display-5">No Courses Uploaded</h4>
-            {% if accType == "Teacher" %}
+            <h4 class="display-5">No Draft Courses Found</h4>
             <a class="btn btn-primary" href="{{ url_for('teacherBP.videoUpload') }}">Upload a Course!</a>
-            <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
-            {% endif %}
-            <!-- Add button to redirect  -->
         </div>
     </div>
 {% else %}
-    {% if accType == "Teacher" %}
-    <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
-    {% endif %}
     {% for course in courseList %}
         <div class="card mb-3">
             <div class="row g-0">
                 <div class="col-md-4">
-                    {% if (course.courseImagePath == None) %}
-                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% else %}
-                        <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% endif %}
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Aspect-ratio-16x9.svg/1024px-Aspect-ratio-16x9.svg.png" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                 </div>
                 <div class="col-md-8">
                     <div class="card-body">
-                        <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
-                        <p class="card-text">{{ course.courseDescription }}</p>
-                        {% if accType != "Teacher" or userID != teacherID %}
-                        <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
-                        <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
-                        {% endif %}
-                        <p class="card-text">
-                            <small class="text-muted">
-                                {% if (course.averageRating > 0) %}
-                                <div class="ratings">
-                                    {% with remainingStars = 5 - course.averageRating %}
-                                        {% for _ in range(course.averageRating) %}
-                                            <span class="fas fa-star"></span>
-                                        {% endfor %}
-                                        {% for _ in range(remainingStars) %}
-                                            <span class="far fa-star"></span>
-                                        {% endfor %}
-                                    {% endwith %}
-                                </div>
-                                {% else  %}
-                                <p class="card-text text-danger">No ratings yet...</p>
-                                {% endif %}
-                            </small>
-                        </p>
-                        {% if accType == "Teacher" and userID == teacherID %}
-                        <span><a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">Edit Course</a></span>
+                        <h4 class="card-title">DRAFT COURSE</h4>
+                        <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" onclick="return false;">Complete Course Creation</a></span>
                         <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
-                            data-bs-target="#deleteCourse">Delete Course</a></span>
+                            data-bs-target="#deleteCourse">Delete Draft</a></span>
                         <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
                         data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
                         aria-hidden="true">
@@ -122,7 +84,7 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary"
                                             data-bs-dismiss="modal">Back</button>
-                                        <form action="{{ url_for('teacherBP.courseDelete') }}?cid={{course.courseID}}" method="POST">
+                                        <form action="{{ url_for('teacherBP.draftCourseDelete') }}?cid={{course.courseID}}" method="POST">
                                             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-danger">Delete Course!</button>
                                         </form>
@@ -130,7 +92,6 @@
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -138,10 +99,7 @@
     {% endfor %}
     <nav aria-label="Page navigation" class="d-flex justify-content-center">
         <ul class="pagination">
-            {% with urlPath = url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" %}
-                {% if isOwnself %}
-                    {% set urlPath = url_for("teacherBP.courseList") + "?p=" %}
-                {% endif %}
+            {% with urlPath = url_for("teacherBP.draftCourseList") + "?p=" %}
                 {% if currentPage != 1 %}
                     <li class="page-item">
                         <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
