@@ -157,6 +157,7 @@ def createCourse(courseID:str):
 """ End Of Course Creation """
 
 """ Start Of Course Management """
+
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     if ("user" in session):
