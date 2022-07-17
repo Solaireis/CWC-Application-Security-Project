@@ -1,0 +1,528 @@
+{% extends "admin_base.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block title %}User Management | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            {% for category, message in messages %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>{{ message }}</h6>
+            </div>
+            {% endfor %}
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+            </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endwith %}
+
+{% for user, isInRecovery in userArr %}
+    <form action="" method="POST" class="modalForm">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="formType" value="deleteUser">
+        <input type="hidden" name="uid" value="{{ user.uid }}">
+        <div class="modal fade" id="deleteUserModal{{ user.uid }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ user.uid }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteUserModalLabel{{ user.uid }}">Delete User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Are you sure that you want to delete this user with the ID, {{ user.uid }}?</h6>
+                        <h6 class="text-danger">Warning: There is no going back if you were to delete this user.</h6>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Confirm Delete User</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <form action="" method="POST" class="modalForm">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="formType" value="changeUsername">
+        <input type="hidden" name="uid" value="{{ user.uid }}">
+        <div class="modal fade" id="usernameChangeModal{{ user.uid }}" tabindex="-1" aria-labelledby="usernameChangeModalLabel{{ user.uid }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="usernameChangeModalLabel{{ user.uid }}">Change User's Username</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>
+                            Are you sure that you would like to change {{ user.username }}'s username? If so, please enter a new username below.
+                        </h6>
+                        <label for="username" class="form-label">Enter a username:</label>
+                        <input type="text" name="newUsername" id="username" class="form-control">
+                        <h6 class="text-danger">Warning: There is no going back after clicking confirm.</h6>
+                    </div>
+                        <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Confirm Change of Username</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if "https://storage.googleapis.com/coursefinity" in user.profileImage %}
+        <form action="" method="POST" class="modalForm">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="formType" value="resetProfileImage">
+            <input type="hidden" name="uid" value="{{ user.uid }}">
+            <div class="modal fade" id="profileImageChangeModal{{ user.uid }}" tabindex="-1" aria-labelledby="profileImageChangeModalLabel{{ user.uid }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="profileImageChangeModalLabel{{ user.uid }}">Reset User's Profile Image</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>
+                                Are you sure that you would like to reset {{ user.username }}'s profile image?
+                            </h6>
+                        </div>
+                            <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success">Confirm Reset of Profile Image</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+
+    {% if user.status != "Banned" %}
+        <form action="" method="POST" class="modalForm">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="formType" value="banUser">
+            <input type="hidden" name="uid" value="{{ user.uid }}">
+            <div class="modal fade" id="banUserModal{{ user.uid }}" tabindex="-1" aria-labelledby="banUserModalLabel{{ user.uid }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="banUserModalLabel{{ user.uid }}">Ban User</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>
+                                Are you sure that you want to ban {{ user.username }} with the ID, {{ user.uid }}?
+                            </h6>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" data-bs-target="#banUserModalConfirm{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal" class="btn btn-success">Ban</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="banUserModalConfirm{{ user.uid }}" tabindex="-1" aria-labelledby="banUserModalConfirmLabel{{ user.uid }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="banUserModalConfirmLabel{{ user.uid }}">Ban User Confirmation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>Please confirm that you would like to ban {{ user.username }} with the ID, {{ user.uid }}.</h6>
+                            <h6>Otherwise, please click back.</h6>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-target="#banUserModal{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal"">Back</button>
+                            <button type="submit" class="btn btn-success">Confirm Ban</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        {% if isInRecovery %}
+            <form action="" method="POST" class="modalForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="formType" value="revokeRecoveryProcess">
+                <input type="hidden" name="uid" value="{{ user.uid }}">
+                <div class="modal fade" id="revokeRecoverAccountModal{{ user.uid }}" tabindex="-1" aria-labelledby="revokeRecoverAccountModalLabel{{ user.uid }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="revokeRecoverAccountModalLabel{{ user.uid }}">Revoke User's Account Recovery Process</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>
+                                    Are you sure that you want to revoke {{ user.username }}'s account recovery with the ID, {{ user.uid }}?
+                                </h6>
+                                <h6 class="text-danger">
+                                    Warning: Please only revoke the user's account ONLY after confirming the identity of the user, such as purchase receipts, etc., and when requested by the user themselves.
+                                </h6>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" >Cancel</button>
+                                <button type="button" class="btn btn-success" data-bs-target="#revokeRecoverAccountModalConfirm{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="revokeRecoverAccountModalConfirm{{ user.uid }}" tabindex="-1" aria-labelledby="revokeRecoverAccountModalConfirmLabel{{ user.uid }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="revokeRecoverAccountModalConfirmLabel{{ user.uid }}">Confirm Revoke of User's Account Recovery Process</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>
+                                    Are you sure that you want to revoke {{ user.username }}'s account recovery with the ID, {{ user.uid }}?
+                                </h6>
+                                <h6>User's current email: {{ user.email }}</h6>
+                                <h6>Note: The user's account email will be reverted back to the original email before the recovery process!</h6>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-target="#revokeRecoverAccountModal{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal">Back</button>
+                                <button type="submit" class="btn btn-success">Recover Account</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <form action="" method="POST" class="modalForm">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="formType" value="recoverUser">
+                <input type="hidden" name="uid" value="{{ user.uid }}">
+                <div class="modal fade" id="recoverAccountModal{{ user.uid }}" tabindex="-1" aria-labelledby="recoverAccountModalLabel{{ user.uid }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="recoverAccountModalLabel{{ user.uid }}">Recover User's Account</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>
+                                    Are you sure that you want to reset {{ user.username }}'s password and email with the ID, {{ user.uid }} for account recovery?
+                                </h6>
+                                <h6 class="text-success">
+                                    Note: A follow up email with instructions will be sent to the user.
+                                </h6>
+                                <h6 class="text-danger">
+                                    Warning: Please only help recover the user's account ONLY after confirming the identity of the user, such as purchase receipts, etc., and when requested by the user themselves.
+                                </h6>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-dismiss="modal" >Cancel</button>
+                                <button type="button" class="btn btn-success" data-bs-target="#recoverAccountModalConfirm{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal">Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="recoverAccountModalConfirm{{ user.uid }}" tabindex="-1" aria-labelledby="recoverAccountModalConfirmLabel{{ user.uid }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="recoverAccountModalConfirmLabel{{ user.uid }}">Confirm Recovery of User's Account</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h6>
+                                    Are you sure that you want to reset {{ user.username }}'s password and email with the ID, {{ user.uid }} for account recovery?
+                                </h6>
+                                <h6>If so, please enter the user's new email (that the user has control of).</h6>
+                                <h6>User's current email: {{ user.email }}</h6>
+                                {{ render_field(form.email, class="form-control") }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-danger" data-bs-target="#recoverAccountModal{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal">Back</button>
+                                <button type="submit" class="btn btn-success">Recover Account</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    {% else %}
+        <form action="" method="POST" class="modalForm">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="formType" value="unbanUser">
+            <input type="hidden" name="uid" value="{{ user.uid }}">
+            <div class="modal fade" id="unbanUserModal{{ user.uid }}" tabindex="-1" aria-labelledby="unbanUserModalLabel{{ user.uid }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="unbanUserModalLabel{{ user.uid }}">Unban User</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>
+                                Are you sure that you want to unban {{ user.username }} with the ID, {{ user.uid }}?
+                            </h6>
+                            <h6>Please refrain from unbanning users without valid reasonings.</h6>
+                            <h6 class="text-success">Note: A follow up email will be sent automatically.</h6>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" data-bs-target="#unbanUserModalConfirm{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal" class="btn btn-success">Unban</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="unbanUserModalConfirm{{ user.uid }}" tabindex="-1" aria-labelledby="unbanUserModalConfirmLabel{{ user.uid }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="unbanUserModalConfirmLabel{{ user.uid }}">Unban User Confirmation</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>Please confirm that you would like to unban {{ user.username }} with the ID, {{ user.uid }}.</h6>
+                            <h6>Otherwise, please click back.</h6>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-target="#unbanUserModal{{ user.uid }}" data-bs-toggle="modal" data-bs-dismiss="modal"">Back</button>
+                            <button type="submit" class="btn btn-success">Confirm Unban</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% endif %}
+{% endfor %}
+
+<div class="container container_margin">
+    <div class="row">
+        <div class="col-lg-3 merge-boxes">
+            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+                <h4><span class="fs-4">Admin Dashboard</span></h4>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('adminBP.adminProfile') }}" class="nav-link text-white">
+                            Account Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('adminBP.userManagement') }}" class="nav-link text-white active-custom">
+                            User Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-9 merge-boxes">
+            <div id="right-user">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <form action="{{ url_for('adminBP.userManagement') }}" method="GET" class="row">
+                                <div class="col-12 input-group">
+                                    <input class="form-control mr-2" type="search" placeholder="Search for user (using username or UID or email)..." name="user" aria-label="Search" value="{{ request.args.get('user', default='') }}" required>
+                                    <select name="filter" class="form-select" aria-label="Search Filters">
+                                        {% with filter = request.args.get('filter', default='username') %}
+                                            {% if filter == "username" %}
+                                                <option value="username" selected>Search by Username</option>
+                                                <option value="email">Search by Email</option>
+                                                <option value="uid">Search by Account ID</option>
+                                            {% elif filter == "email" %}
+                                                <option value="username">Search by Username</option>
+                                                <option value="email" selected>Search by Email</option>
+                                                <option value="uid">Search by Account ID</option>
+                                            {% else %}
+                                                <option value="username">Search by Username</option>
+                                                <option value="email">Search by Email</option>
+                                                <option value="uid" selected>Search by Account ID</option>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </select>
+                                    <button class="btn btn-secondary border-0" type="submit"><i class="fas fa-search"></i></button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tr>
+                                    <td>Account ID</td>
+                                    <td>Profile Image</td>
+                                    <td>Username</td>
+                                    <td>Account Type</td>
+                                    <td>Email</td>
+                                    <td colspan="3">Status</td>
+                                </tr>
+                                {% for user, isInRecovery in userArr %}
+                                    <tr>
+                                        <td>
+                                            {{ user.uid }}
+                                        </td>
+                                        <td>
+                                            <img src="{{ user.profileImage }}" alt="user profile image" class="users_profile">
+                                        </td>
+                                        <td>
+                                            {{ user.username }}
+                                        </td>
+                                        <td>
+                                            {{ user.role }}
+                                        </td>
+                                        <td>
+                                            {% if user.emailVerified %}
+                                                <a href="#" class="text-success" data-bs-toggle="tooltip" data-bs-placement="top" title="Email Verified">
+                                            {% else %}
+                                                <a href="#" class="text-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Email Not Verified">
+                                            {% endif %}
+                                            {{ user.email }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {{ user.status }}
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-primary dropdown-toggle" type="button" id="actionsButtons" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="actionsButtons">
+                                                    <li>
+                                                        <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#usernameChangeModal{{ user.uid }}">
+                                                            Change Username
+                                                        </a>
+                                                    </li>
+                                                    {% if "https://storage.googleapis.com/coursefinity" in user.profileImage %}
+                                                        <li>
+                                                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#profileImageChangeModal{{ user.uid }}">
+                                                                Reset Profile Image
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                                    {% if user.hasTwoFA %}
+                                                        <li>
+                                                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#removeOTPModal{{ user.uid }}">
+                                                                Remove 2FA
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                                    {% if user.status != "Banned" %}
+                                                        <li>
+                                                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#banUserModal{{ user.uid }}">
+                                                                Ban
+                                                            </a>
+                                                        </li>
+                                                        {% if isInRecovery %}
+                                                            <li>
+                                                                <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#revokeRecoverAccountModal{{ user.uid }}">
+                                                                    Revoke Recovery
+                                                                </a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li>
+                                                                <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#recoverAccountModal{{ user.uid }}">
+                                                                    Recover Account
+                                                                </a>
+                                                            </li>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <li>
+                                                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#unbanUserModal{{ user.uid }}">
+                                                                Unban
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user.uid }}">
+                                                Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination flex-wrap justify-content-center">
+                                    {% with urlPath = url_for('adminBP.userManagement') %}
+                                        {% if request.args.get('user', default=None) != None %}
+                                            {% set urlPath = urlPath + "?user=" + request.args.get("user") + "&filter=" + request.args.get("filter", default="username") + "&p=" %}
+                                        {% else %}
+                                            {% set urlPath = urlPath + "?p=" %}
+                                        {% endif %}
+                                        {% if currentPage != 1 %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
+                                                <span aria-hidden="true">&laquo;</span>
+                                                <span class="sr-only">First Page</span>
+                                                </a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ urlPath }}{{ currentPage - 1 }}" aria-label="Previous">
+                                                    <span aria-hidden="true">&lt;</span>
+                                                    <span class="sr-only">Previous</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                        {% for pageNum in paginationArr %}
+                                            {% if pageNum == currentPage %}
+                                                <li class="page-item active" aria-current="page">
+                                                    <a class="page-link" href="{{ urlPath }}{{ currentPage }}">{{ currentPage }}</a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ urlPath }}{{ pageNum }}">{{ pageNum }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if currentPage != maxPage %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ urlPath }}{{ currentPage + 1 }}" aria-label="Next">
+                                                    <span aria-hidden="true">&gt;</span>
+                                                    <span class="sr-only">Next</span>
+                                                </a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ urlPath }}{{ maxPage }}" aria-label="Last Page">
+                                                <span aria-hidden="true">&raquo;</span>
+                                                <span class="sr-only">Last Page</span>
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endwith %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <script nonce="{{ csp_nonce() }}">
+            var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+            alertModal.show();
+        </script>
+        {% endif %}
+    {% endwith %}
+    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+{% endblock %}
