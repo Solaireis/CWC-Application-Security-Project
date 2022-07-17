@@ -601,15 +601,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     #Draft cuz the granting privileges is broken
     
-    #create the users first
+    #TODO: Give proper CRUD to the roles
     cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
     cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
-    cur.execute(f"GRANT 'Admin' TO {adminName} ;")
-    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName} ;")
-    cur.execute(f"GRANT 'Teachers' TO  {teacherName} ;")
-    cur.execute(f"GRANT 'Student' TO {userName} ;")
-    cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
 
+    #Grant the privileges
     # #Admin Privileges
     cur.execute("GRANT ALL ON coursefinity.role TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Admin';")
@@ -670,6 +666,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT SELECT ON coursefinity.login_attempts TO 'Guest';")
     cur.execute("GRANT SELECT ON coursefinity.review TO 'Guest';")
 
+    #Assign the roles
+    cur.execute(f"GRANT 'Admin' TO {adminName} ;")
+    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName} ;")
+    cur.execute(f"GRANT 'Teachers' TO  {teacherName} ;")
+    cur.execute(f"GRANT 'Student' TO {userName} ;")
+    cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
+    
     mydb.commit()
     mydb.close()
 
