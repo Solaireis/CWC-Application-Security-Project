@@ -115,7 +115,7 @@ def createCourse():
                 abort(500)
 
             courseForm = CreateCourse(request.form)
-            if (request.method == "POST"):
+            if (request.method == "POST" and courseForm.validate()):
                 courseTitle = courseForm.courseTitle.data
                 courseDescription = courseForm.courseDescription.data
                 courseTagInput = request.form.get("courseTag")
@@ -180,7 +180,7 @@ def courseUpdate():
         userInfo = get_image_path(session["user"], returnUserInfo=True) 
         courseForm = CreateCourseEdit(request.form)
         updated = ''
-        if (request.method == "POST"):
+        if (request.method == "POST" and courseForm.validate()):
             #TODO : Update profile picture, course tag
             if (courseForm.courseTitle.data):
                 if (courseForm.courseTitle.data != courseFound.courseName):
