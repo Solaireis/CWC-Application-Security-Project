@@ -572,17 +572,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     guestName = f"'guest'@'{hostName}'"
     teacherName=f"'teacher'@'{hostName}'"
 
-    #TODO: remove this once roles dont need this variable
-    # superAdminRole = f"'super-admin'@'{hostName}'"
-    # adminRole = f"'admin'@'{hostName}'"
-    # userRole = f"'user'@'{hostName}'"
-    # guestRole = f"'guest'@'{hostName}'"
 
     # drop the user if it exists
     cur.execute(f"DROP USER IF EXISTS {superAdminName}")
     cur.execute(f"DROP USER IF EXISTS {adminName}")
     cur.execute(f"DROP USER IF EXISTS {userName}")
     cur.execute(f"DROP USER IF EXISTS {guestName}")
+    cur.execute(f"DROP USER IF EXISTS {teacherName}")
 
     # create the users
     cur.execute(f"CREATE USER {superAdminName} IDENTIFIED BY '{passTable['super-admin']}'")
@@ -594,10 +590,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
     # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
     # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
-    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
-    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
-    # cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
 
     #Draft cuz the granting privileges is broken
     
@@ -672,7 +664,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"GRANT 'Teachers' TO  {teacherName} ;")
     cur.execute(f"GRANT 'Student' TO {userName} ;")
     cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
-    
+
     mydb.commit()
     mydb.close()
 
