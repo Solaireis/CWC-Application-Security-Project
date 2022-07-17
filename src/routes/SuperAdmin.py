@@ -140,7 +140,7 @@ def adminManagement():
 
     # save the current URL in the session for when the admin searches and an error occurs
     session["relative_url"] = request.full_path
-    return render_template("users/admin/user_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
+    return render_template("users/admin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
 
 @superAdminBP.route("/admin-dashboard/rbac", methods=["GET","POST"])
 def roleManagement():
