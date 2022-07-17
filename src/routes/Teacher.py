@@ -109,7 +109,6 @@ def videoUpload():
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
             file.save(Path(filePath).joinpath(filename))
 
-            #TODO : Finish Drafting, left expiry of draft after 30 days
             """
             Create a row inside the database to store the video info.
             Display this row in the teachers course list 

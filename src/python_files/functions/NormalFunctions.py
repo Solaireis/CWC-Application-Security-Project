@@ -1759,7 +1759,8 @@ def convert_to_mpd(courseVideoPath:str) -> bool:
     # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
 
     # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
-    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE)    
+    # shell = False helps prevent command injection, but idk if it messes with the code 
+    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)    
     try:
         dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
         print(dimensions)

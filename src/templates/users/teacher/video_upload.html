@@ -44,9 +44,9 @@
             <div class="dz-default dz-message">
                 <i class="fas fa-cloud-upload-alt upload-icon"></i>
                 <br>
-                <span>Click here or drop an image here</span>
+                <span>Click here or drop an video here</span>
             </div>
-            <button type="submit" class="btn btn-primary float-end">Upload</button>
+            <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button>
         </form> -->
 
 		<form action="" method="POST" class="body" id="dropper" enctype="multipart/form-data">
@@ -63,8 +63,9 @@
             <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button>
             <!-- <button type="submit" class="btn btn-primary float-end">Upload</button> -->
 		</form>
-	</div>
+    </div>
 </div>
+
 
 {% endblock %}
 
