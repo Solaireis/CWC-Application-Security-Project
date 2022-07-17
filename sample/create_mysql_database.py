@@ -124,11 +124,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
 
-    # FOR DRAFTING A COURSE
     cur.execute("""CREATE TABLE draft_course (
         course_id CHAR(32) PRIMARY KEY,
         teacher_id VARCHAR(32) NOT NULL,
         video_path VARCHAR(255) NOT NULL,
+        date_created DATETIME NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
@@ -315,7 +315,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             teacher_course_info.* FROM (
                 SELECT c.course_id, c.teacher_id, 
                 u.username, u.profile_image, @total_course_num
-                FROM course AS c
+                FROM draft_course AS c
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.teacher_id=teacherID
                 GROUP BY c.course_id

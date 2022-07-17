@@ -59,8 +59,8 @@ def draftCourseList():
                 paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
         except:
             courseList = []
-    
-        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
+
+        return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -81,7 +81,7 @@ def videoUpload():
             file = request.files.get("courseVideo")
             filename = secure_filename(file.filename)
 
-            print(f"This is the filename for the inputted file : {filename}")
+            print(f"This is the ORIGINAL filename for the inputted file : {filename}")
 
             courseID = generate_id()
             filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
@@ -91,68 +91,66 @@ def videoUpload():
             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
             file.save(Path(filePath).joinpath(filename))
 
-            #TODO : Finish Drafting
+            #TODO : Finish Drafting, left expiry of draft after 30 days
             """
             Create a row inside the database to store the video info.
             Display this row in the teachers course list 
             """
-            # sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName="UNSET", courseDescription="UNSET", courseImagePath="UNSET", courseCategory="UNSET", coursePrice=123, videoPath=filePathToStore)
-            session["course-data"] = (courseID, filePathToStore)
-            return redirect(url_for("teacherBP.createCourse"))
+            sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid,videoPath=filePathToStore)
+            return redirect(url_for("teacherBP.createCourse", courseID=courseID))
         else:
             return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return redirect(url_for("guestBP.login"))
 
 #TODO: Hash Video data, implement dropzone to encrpyt video data
-@teacherBP.route("/create-course", methods=["GET","POST"])
-def createCourse():
+@teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
+def createCourse(courseID:str):
     if ("user" in session):
-        if ("course-data" in session):
-            courseData = session["course-data"]
-            userInfo = get_image_path(session["user"], returnUserInfo=True)
-            if (userInfo.role != "Teacher"):
-                abort(500)
+        courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
+        if (not courseTuple):
+            flash("No Course Found", "Course Not Found!")
+            return redirect(url_for("teacherBP.draftCourseList"))
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        if (userInfo.role != "Teacher"):
+            abort(500)
 
-            courseForm = CreateCourse(request.form)
-            if (request.method == "POST" and courseForm.validate()):
-                courseTitle = courseForm.courseTitle.data
-                courseDescription = courseForm.courseDescription.data
-                courseTagInput = request.form.get("courseTag")
-                coursePrice = float(courseForm.coursePrice.data)
+        courseForm = CreateCourse(request.form)
+        if (request.method == "POST" and courseForm.validate()):
+            courseTitle = courseForm.courseTitle.data
+            courseDescription = courseForm.courseDescription.data
+            courseTagInput = request.form.get("courseTag")
+            coursePrice = float(courseForm.coursePrice.data)
 
-                file = request.files.get("courseThumbnail")
-                filename = secure_filename(file.filename)
-                if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
-                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
+            file = request.files.get("courseThumbnail")
+            filename = secure_filename(file.filename)
+            if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
+                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
-                filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
-                imageData = BytesIO(file.read())
-                try:
-                    imageUrlToStore = compress_and_resize_image(
-                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
-                        folderPath=f"course-thumbnails"
-                    )
-                except (InvalidProfilePictureError):
-                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
-                except (UploadFailedError):
-                    flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
-                    return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
+            filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
+            imageData = BytesIO(file.read())
+            try:
+                imageUrlToStore = compress_and_resize_image(
+                    imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
+                    folderPath=f"course-thumbnails"
+                )
+            except (InvalidProfilePictureError):
+                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+            except (UploadFailedError):
+                flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
-                sql_operation(table="course", mode="insert",courseID=courseData[0], teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseData[1])
-                stripe_product_create(courseID=courseData[0], courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
+            sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseTuple[2])
+            stripe_product_create(courseID=courseID, courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
+            sql_operation(table="course", mode="delete_draft", courseID=courseID)
 
-
-                session.pop("course-data")
-                flash("Course Created", "Successful Course Created!")
-                return redirect(url_for("userBP.userProfile"))
-            else:
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseData[0], videoPath=courseData[1])
+            flash("Course Created", "Successful Course Created!")
+            return redirect(url_for("userBP.userProfile"))
         else:
-            flash("No Video Uploaded", "File Upload Error!")
-            return redirect(url_for("teacherBP.videoUpload"))
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
     else:
         return redirect(url_for("guestBP.login"))
 
@@ -165,6 +163,16 @@ def courseDelete():
         courseID = request.args.get("cid", default="test", type=str)
         sql_operation(table="course", mode="delete", courseID=courseID)
         print("Course Deleted")
+        return redirect(url_for("teacherBP.courseList"))
+    else:
+        return redirect(url_for("guestBP.login"))
+
+@teacherBP.route("/delete-draft-course", methods=["GET", "POST"])
+def draftCourseDelete():
+    if ("user" in session):
+        courseID = request.args.get("cid", default="test", type=str)
+        sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
+        print("Draft Course Deleted")
         return redirect(url_for("teacherBP.courseList"))
     else:
         return redirect(url_for("guestBP.login"))
