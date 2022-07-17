@@ -591,7 +591,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
     # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
 
-    #TODO: Give proper CRUD to the roles
+    #TODO: Give proper CRUD to the roles,
     cur.execute("DROP ROLE IF EXISTS 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
     cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
     cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
@@ -669,8 +669,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"GRANT 'Teachers' TO {teacherName};")
     cur.execute(f"GRANT 'Student' TO {userName};")
     cur.execute(f"GRANT 'Guest' TO {guestName};")
-    #cur.execute("SET ROLE ALL;")
-    #cur.execute(f"SET PERSIST activate_all_roles_on_login = ON;")
+    #cur.execute("SET ROLE ALL;") 
+    #cur.execute(f"SET PERSIST activate_all_roles_on_login = ON;") #this should be off by default, security misconfig
+    #ull also need special privileges for that to enable as well
     cur.execute("SELECT CURRENT_ROLE()")
     hi = cur.fetchall()
     print(hi)

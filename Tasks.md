@@ -180,9 +180,20 @@
 #### Implemented:
 - Seperation of user roles connecting to the mysql server
 - Seperation of user role privileges in the mysql database
+- Checked if Flask App.py uses default configuration
+  - Currently we have set the cookies to be ONLY HTTPS 
+  - Debug Mode must be disabled when application is set to Production
+
 - Removal of any unused ports if any
   - Currently we are using port 8080 (web servers )
   - To communicate with users we use port 443 which is HTTPS only
+
+- List of Files/Folders that must be disabled during production (due to possible attack surface)
+  - For the sake of the technical review, they will be enabled
+  - Folders that must be removed during production:
+    - Sample files
+    - Test files
+  - Remove any Unused HTML,CSS Files
 
 
 ---
