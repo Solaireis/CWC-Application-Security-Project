@@ -1353,11 +1353,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         courseList = []
         cur.execute("SELECT SGT_NOW()")
+        currentDay = cur.fetchone()[0]
         for tupleInfo in resultsList:
             foundResultsTuple = tupleInfo[1:]
-            courseList.append(
-                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True, draftStatus=True)
-            )
+            if ((currentDay - foundResultsTuple[4]).days == 0):
+                cur.execute("DELETE FROM draft_course WHERE course_id=%(courseID)s", {"courseID":foundResultsTuple[0]})
+                connection.commit()
+            else:
+                courseList.append(
+                    CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True, draftStatus=True)
+                )
 
         return (courseList, maxPage)
 
