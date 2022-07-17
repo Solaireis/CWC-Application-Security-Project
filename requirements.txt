@@ -20,7 +20,7 @@ requests>=2.28.0
 dicebear>=0.4.17
 Pillow>=9.0.0
 markdown>=3.3.7
-randomuser>=1.6
+
 
 # Stripe API for the
 # web app's payment gateway
@@ -61,3 +61,6 @@ google-cloud-secret-manager>=2.11.1
 google-cloud-logging>=3.1.2
 google-cloud-recaptcha-enterprise>=1.7.1
 google-cloud-storage>=2.4.0
+
+# Used in the demo files for testing
+randomuser>=1.6
