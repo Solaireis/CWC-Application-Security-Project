@@ -1,6 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
+<script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 
 {% block title %}Create Course | CourseFinity{% endblock %}
@@ -35,7 +36,7 @@
     <div class="row">
         <div class="LSUForm col">
             <div class="login-form bg-dark mt-4 p-4 rounded" id="userForm">
-                <form action="" method="POST" class="row g-3 m-2" enctype="multipart/form-data">
+                <form action="" method="POST" class="row g-3 m-2" enctype="multipart/form-data" id="courseEdit">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="submittedForm" value="courseDetails">
                     <h4 class="text-white">Course Edit</h4>
@@ -123,7 +124,8 @@
 
 
                         <div class="col-md-12">
-                            <button type="submit" class="btn btn-primary float-end">Edit</button>
+                            <button data-action="edit_course" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="edit">Edit</button>
+                            <!-- <button type="submit" class="btn btn-primary float-end">Edit</button> -->
                         </div>
                     </div>
                 </form>
@@ -139,6 +141,11 @@
     <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
     <script nonce="{{ csp_nonce() }}">
         document.getElementById("formFile").onchange = function() {readURL(this);};
+    </script>
+    <script nonce="{{ csp_nonce() }}">
+        function onSubmit(token) {
+            document.getElementById("courseEdit").submit();
+        }
     </script>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
