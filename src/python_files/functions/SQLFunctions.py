@@ -1319,8 +1319,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         maxPage = ceil(resultsList[0][-1] / 10)
 
         # Get the teacher's profile image from the first tuple
-        teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
-                                                               else resultsList[0][3]
+        teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
+                                                               else resultsList[0][4]
 
         courseList = []
         for tupleInfo in resultsList:
@@ -1347,10 +1347,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
-        teacherProfile = get_dicebear_image(resultsList[0][2]) if (resultsList[0][3] is None) \
-                                                               else resultsList[0][3]
+        print(resultsList[0])
+        teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
+                                                               else resultsList[0][4]
 
         courseList = []
+        cur.execute("SELECT SGT_NOW()")
         for tupleInfo in resultsList:
             foundResultsTuple = tupleInfo[1:]
             courseList.append(
