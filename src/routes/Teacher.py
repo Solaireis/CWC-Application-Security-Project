@@ -74,6 +74,24 @@ def videoUpload():
             abort(404)
 
         if (request.method == "POST"):
+            recaptchaToken = request.form.get("g-recaptcha-response")
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+
+            try:
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="upload")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
+                flash("Please check the reCAPTCHA box and try again.", "Danger")
+                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            
             if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("teacherBP.videoUpload"))
@@ -117,6 +135,24 @@ def createCourse(courseID:str):
 
         courseForm = CreateCourse(request.form)
         if (request.method == "POST" and courseForm.validate()):
+            recaptchaToken = request.form.get("g-recaptcha-response")
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+            try:
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="create_course")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
+                flash("Please check the reCAPTCHA box and try again.", "Danger")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+            
             courseTitle = courseForm.courseTitle.data
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
@@ -144,7 +180,7 @@ def createCourse(courseID:str):
 
             sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseTuple[2])
             stripe_product_create(courseID=courseID, courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
-            sql_operation(table="course", mode="delete_draft", courseID=courseID)
+            sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
 
             flash("Course Created", "Successful Course Created!")
             return redirect(url_for("userBP.userProfile"))
@@ -190,7 +226,24 @@ def courseUpdate():
         courseForm = CreateCourseEdit(request.form)
         updated = ""
         if (request.method == "POST" and courseForm.validate()):
-            #TODO : Update profile picture, course tag
+            recaptchaToken = request.form.get("g-recaptcha-response")
+            if (recaptchaToken is None):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+            try:
+                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="edit_course")
+            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+                flash("Please verify that you are not a bot!", "Danger")
+                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+                # if the score is not within the acceptable threshold
+                # then the user is likely a bot
+                # hence, we will flash an error message
+                flash("Please check the reCAPTCHA box and try again.", "Danger")
+                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
             if (courseForm.courseTitle.data):
                 if (courseForm.courseTitle.data != courseFound.courseName):
                     sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)

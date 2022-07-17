@@ -1,8 +1,4 @@
-{% if accType == "Admin" %}
-    {% extends "admin_base.html" %}
-{% else %}
-    {% extends "user_base.html" %}
-{% endif %}
+{% extends "user_base.html" %}
 
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
 {% block title %}Setup 2FA | CourseFinity{% endblock %}
@@ -53,13 +49,8 @@
                         {{ render_field(form.twoFATOTP, class="form-control") }}
                     </div>
                     <div class="col-12">
-                        {% if session.get("role") == "Admin" %}
-                            <a href="/admin_profile" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
-                            <button type="submit" class="btn btn-colour text-white float-end">Submit</button>
-                        {% else %}
-                            <a href="{{ url_for('userBP.userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
-                            <button type="submit" class="btn btn-colour text-white float-end">Submit</button>
-                        {% endif %}
+                        <a href="{{ url_for('userBP.userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
+                        <button type="submit" class="btn btn-colour text-white float-end">Submit</button>
                     </div>
                 </form>
             </div>

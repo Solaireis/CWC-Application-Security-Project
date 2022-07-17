@@ -1418,7 +1418,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
-        print(resultsList[0])
         teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
                                                                else resultsList[0][4]
 
@@ -1427,7 +1426,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         currentDay = cur.fetchone()[0]
         for tupleInfo in resultsList:
             foundResultsTuple = tupleInfo[1:]
-            if ((currentDay - foundResultsTuple[4]).days == 0):
+            if ((currentDay - foundResultsTuple[4]).days > 30):
                 cur.execute("DELETE FROM draft_course WHERE course_id=%(courseID)s", {"courseID":foundResultsTuple[0]})
                 connection.commit()
             else:
