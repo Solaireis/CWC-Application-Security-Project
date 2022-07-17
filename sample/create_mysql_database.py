@@ -572,7 +572,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     guestName = f"'guest'@'{hostName}'"
     teacherName=f"'teacher'@'{hostName}'"
 
-
     # drop the user if it exists
     cur.execute(f"DROP USER IF EXISTS {superAdminName}")
     cur.execute(f"DROP USER IF EXISTS {adminName}")
@@ -591,14 +590,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
     # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
 
-    #Draft cuz the granting privileges is broken
-    
+    # Draft cuz the granting privileges is broken
+
     #TODO: Give proper CRUD to the roles
-    cur.execute("DROP ROLE IF EXISTS 'Admin','SuperAdmin' , 'Teachers', 'Student', 'Guest';")
+    cur.execute("DROP ROLE IF EXISTS 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
     cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
 
-    #Grant the privileges
-    # #Admin Privileges
+    # Grant the privileges
+    # Admin Privileges
     cur.execute("GRANT ALL ON coursefinity.role TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Admin';")
@@ -610,7 +609,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.review TO 'Admin';")
 
-    # #SuperAdmin Privileges
+    # SuperAdmin Privileges
     cur.execute("GRANT ALL ON coursefinity.role TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'SuperAdmin';")
@@ -622,7 +621,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.review TO 'SuperAdmin';")
 
-    # #Student Privileges 
+    # Student Privileges 
     cur.execute("GRANT ALL ON coursefinity.role TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Student';")
@@ -634,7 +633,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.review TO 'Student';")
 
-    #Teacher Privileges
+    # Teacher Privileges
     cur.execute("GRANT ALL ON coursefinity.role TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Teachers';")
@@ -646,7 +645,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.review TO 'Teachers';")
 
-    #Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
+    # Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
     cur.execute("GRANT SELECT ON coursefinity.role TO 'Guest';")
     cur.execute("GRANT SELECT ON coursefinity.Recovery_token TO 'Guest';")
     cur.execute("GRANT SELECT ON coursefinity.limited_use_jwt TO 'Guest';")
@@ -658,12 +657,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT SELECT ON coursefinity.login_attempts TO 'Guest';")
     cur.execute("GRANT SELECT ON coursefinity.review TO 'Guest';")
 
-    #Assign the roles
-    cur.execute(f"GRANT 'Admin' TO {adminName} ;")
-    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName} ;")
-    cur.execute(f"GRANT 'Teachers' TO  {teacherName} ;")
-    cur.execute(f"GRANT 'Student' TO {userName} ;")
-    cur.execute(f"GRANT 'Guest' TO  {guestName} ;")
+    # Assign the roles
+    cur.execute(f"GRANT 'Admin' TO {adminName};")
+    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName};")
+    cur.execute(f"GRANT 'Teachers' TO {teacherName};")
+    cur.execute(f"GRANT 'Student' TO {userName};")
+    cur.execute(f"GRANT 'Guest' TO {guestName};")
 
     mydb.commit()
     mydb.close()
