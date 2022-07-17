@@ -30,7 +30,7 @@
 //     }
 // };
 
-// For video upload
+//For video upload
 
 var input = document.getElementById( 'upload' );
 var infoArea = document.getElementById( 'file-upload-filename' );
