@@ -272,8 +272,6 @@ def sql_operation(table:str=None, mode:str=None, user:Optional[str]="user", **kw
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "whitelisted_ip_addresses"):
                 returnValue = whitelisted_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
-            elif (table == "backup_codes"):
-                returnValue = backup_codes_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -300,69 +298,6 @@ def sql_operation(table:str=None, mode:str=None, user:Optional[str]="user", **kw
             abort(500)
 
     return returnValue
-
-def backup_codes_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, list, str, None]:
-    if (mode is None):
-        raise ValueError("You must specify a mode in the backup_codes_sql_operation function")
-
-    cur = connection.cursor()
-    if (mode == "get_backup_codes"):
-        cur.execute(
-            "SELECT backup_codes_json FROM backup_codes WHERE user_id = %(userID)s",
-            {"userID": kwargs["userID"]}
-        )
-        matched = cur.fetchone()
-        return json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)) \
-               if (matched is not None) else []
-
-    elif (mode == "delete_codes"):
-        cur.execute(
-            "DELETE FROM backup_codes WHERE user_id = %(userID)s",
-            {"userID": kwargs["userID"]}
-        )
-        return
-
-    elif (mode == "generate_codes"):
-        userID = kwargs["userID"]
-
-        # Delete all existing backup codes for the user if exists
-        cur.execute(
-            "DELETE FROM backup_codes WHERE user_id = %(userID)s",
-            {"userID": userID}
-        )
-
-        # Generate new backup codes
-        backupCodes = []
-        for _ in range(8):
-            backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=True, returnHex=True)
-            formattedBackupCode = "-".join([backupCode[:4], backupCode[4:8], backupCode[8:12], backupCode[12:16]])
-            backupCodes.append(formattedBackupCode)
-
-        encrypteBackupCodesdArr = symmetric_encrypt(plaintext=json.dumps(backupCodes), keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
-        cur.execute(
-            "INSERT INTO backup_codes (user_id, backup_codes_json) VALUES (%(userID)s, %(backupCode)s)",
-            {"userID": userID, "backupCode": encrypteBackupCodesdArr}
-        )
-        connection.commit()
-        return backupCodes
-
-    elif (mode == "check_backup_code_validity"):
-        cur.execute(
-            "SELECT backup_codes_json FROM backup_codes WHERE user_id = %(userID)s",
-            {"userID": kwargs["userID"]}
-        )
-        matched = cur.fetchone()
-        if (matched is None):
-            return False
-
-        backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
-        if (kwargs["backupCode"] in backupCodes):
-            return True
-        else:
-            return False
-
-    else:
-        raise ValueError("Invalid mode in backup_codes_sql_operation function!")
 
 def whitelisted_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -533,6 +468,20 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     else:
         raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
 
+def generate_encrypted_backup_codes() -> list:
+    """Generate new backup codes for the user with 2FA"""
+    # Generate new backup codes
+    backupCodes = []
+    for _ in range(8):
+        backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=True, returnHex=True)
+        formattedBackupCode = "-".join([backupCode[:4], backupCode[4:8], backupCode[8:12], backupCode[12:16]])
+        el = (formattedBackupCode, "Active")
+        backupCodes.append(el)
+
+    # Encrypt the backup codes
+    encryptedBackupCodesdArr = symmetric_encrypt(plaintext=json.dumps(backupCodes), keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
+    return encryptedBackupCodesdArr
+
 def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
         raise ValueError("You must specify a mode in the twofa_token_sql_operation function!")
@@ -543,7 +492,18 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         userID = kwargs["userID"]
         token = symmetric_encrypt(plaintext=token, keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
 
-        cur.execute("INSERT INTO twofa_token (token, user_id) VALUES (%(token)s, %(userID)s)", {"token":token, "userID":userID})
+        try:
+            # Try inserting a new data
+            cur.execute(
+                "INSERT INTO twofa_token (token, user_id, backup_codes_json) VALUES (%(token)s, %(userID)s, %(tokenJSON)s)", 
+                {"token":token, "userID":userID, "tokenJSON": generate_encrypted_backup_codes()}
+            )
+        except (MySQLErrors.IntegrityError):
+            # If the 2FA tuple already exists, then update the token with a new token
+            cur.execute(
+                "UPDATE twofa_token SET token = %(token)s WHERE user_id = %(userID)s",
+                {"token":token, "userID":userID}
+            )
         connection.commit()
 
     elif (mode == "get_token"):
@@ -561,12 +521,65 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         userID = kwargs["userID"]
         cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         matchedToken = cur.fetchone()
-        return True if (matchedToken is not None) else False
+        if (matchedToken is None):
+            return False
+
+        return True if (matchedToken[0] is not None) else False
 
     elif (mode == "delete_token"):
         userID = kwargs["userID"]
-        cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
+        cur.execute("UPDATE twofa_token SET token = NULL WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
+
+    elif (mode == "get_backup_codes"):
+        cur.execute(
+            "SELECT backup_codes_json FROM twofa_token WHERE user_id = %(userID)s",
+            {"userID": kwargs["userID"]}
+        )
+        matched = cur.fetchone()
+        return json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)) \
+               if (matched is not None) else []
+
+    elif (mode == "generate_codes"):
+        userID = kwargs["userID"]
+
+        # Overwrite the old backup codes if it exists
+        cur.execute("UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s", {"backupCodesJSON": generate_encrypted_backup_codes()})
+        connection.commit()
+        return backupCodes
+
+    elif (mode == "disable_2fa_with_backup_code"):
+        cur.execute(
+            "SELECT backup_codes_json FROM twofa_token WHERE user_id = %(userID)s",
+            {"userID": kwargs["userID"]}
+        )
+        matched = cur.fetchone()
+        if (matched is None):
+            return False
+
+        validFlag, idx = False, 0
+        backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
+        for idx, codeTuple in enumerate(backupCodes):
+            if (codeTuple[0] == kwargs["backupCode"] and codeTuple[1] == "Active"):
+                validFlag = True
+                break
+
+        if (validFlag):
+            # Mark the backup code as used
+            backupCodes[idx] = (kwargs["backupCode"], "Used")
+            encryptedBackupCodesdArr = symmetric_encrypt(
+                plaintext=json.dumps(backupCodes), keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+            )
+
+            # Update the backup codes in the database
+            cur.execute("UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s WHERE user_id = %(userID)s", {"backupCodesJSON": encryptedBackupCodesdArr, "userID": kwargs["userID"]})
+
+            # Update the token to null to disable 2FA
+            cur.execute("UPDATE twofa_token SET token = NULL WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
+            connection.commit()
+            return True
+
+        return False # Not valid
 
     else:
         raise ValueError("Invalid mode in the twofa_token_sql_operation function!")

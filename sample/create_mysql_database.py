@@ -169,8 +169,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE twofa_token (
         user_id VARCHAR(32) PRIMARY KEY,
-        token VARBINARY(1024) NOT NULL,
-        backup_codes_json VARBINARY(1024), -- Holds at most 8 64 bits hexadecimal (e.g. 'e7b1-4215-89b6-655e') codes that are encrypted as a whole
+        token VARBINARY(1024),
+        backup_codes_json VARBINARY(1024) DEFAULT NULL, -- Holds at most 8 64 bits hexadecimal (e.g. 'e7b1-4215-89b6-655e') codes that are encrypted as a whole
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
 
