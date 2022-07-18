@@ -205,9 +205,9 @@ def videoUpload():
 def createCourse(courseID:str):
     if ("user" in session):
         courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
-        filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-        filename = courseID + Path(courseTuple[2]).suffix
-        absFilePath = filePath.joinpath(filename)
+        videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+        videoFilename = courseID + Path(courseTuple[2]).suffix
+        absFilePath = videoFilePath.joinpath(videoFilename)
         if (not courseTuple):
             flash("No Course Found", "Course Not Found!")
             return redirect(url_for("teacherBP.draftCourseList"))
@@ -260,7 +260,7 @@ def createCourse(courseID:str):
                 flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
                 return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
             
-            videoPath = upload_file_from_path()
+            videoPath = upload_file_from_path(bucketName="coursefinity-videos", localFilePath=absFilePath, uploadDestination=f"videos/{videoFilename}")
             sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseTuple[2])
             stripe_product_create(courseID=courseID, courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
             sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
