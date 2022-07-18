@@ -720,6 +720,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     # Grant the privileges
     # Admin Privileges
+    cur.execute("GRANT Select ON coursefinity.* TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.role TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Admin';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Admin';")
@@ -732,6 +733,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.review TO 'Admin';")
 
     # SuperAdmin Privileges
+    cur.execute("GRANT Select ON coursefinity.* TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.role TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'SuperAdmin';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'SuperAdmin';")
@@ -744,6 +746,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.review TO 'SuperAdmin';")
 
     # Student Privileges 
+    cur.execute("GRANT Select ON coursefinity.* TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.role TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Student';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Student';")
@@ -756,6 +759,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.review TO 'Student';")
 
     # Teacher Privileges
+    cur.execute("GRANT Select ON coursefinity.* TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.role TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Teachers';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Teachers';")
