@@ -475,7 +475,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @search_query := CONCAT('%', username_input, '%');
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
-                                WHERE username LIKE @search_query AND r.role_name="Admin");
+                                WHERE username LIKE @search_query AND r.role_name='Admin');
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -488,7 +488,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE username LIKE @search_query AND r.role_name<>'Admin'
+                WHERE username LIKE @search_query AND r.role_name='Admin'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -532,7 +532,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @search_query := CONCAT('%', uid_input, '%');
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
-                                WHERE id LIKE @search_query AND r.role_name<>"Admin");
+                                WHERE id LIKE @search_query AND r.role_name="Admin");
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -545,7 +545,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.id LIKE @search_query AND r.role_name<>'Admin'
+                WHERE u.id LIKE @search_query AND r.role_name='Admin'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -602,7 +602,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.email LIKE @search_query AND r.role_name<>'Admin'
+                WHERE u.email LIKE @search_query AND r.role_name='Admin'
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info

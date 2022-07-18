@@ -1224,15 +1224,15 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
         if (userInput is None):
-            cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
+            cur.execute("CALL paginate_admins(%(pageNum)s)", {"pageNum":pageNum})
         elif (filterType == "uid"):
-            cur.execute("CALL paginate_users_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            cur.execute("CALL paginate_admins_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
         elif (filterType == "email"):
-            cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            cur.execute("CALL paginate_admins_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
         else:
             # Paginate by username by default in the HTML, 
             # but this is also a fallback if the user has tampered with the HTML value
-            cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            cur.execute("CALL paginate_admins_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
         matched = cur.fetchall() or []
 
         maxPage = 1
@@ -1251,6 +1251,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             userInfo = format_user_info(data, offset=1)
             isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
             courseArr.append((userInfo, isInRecovery))
+
+        return courseArr, maxPage
 
     elif (mode == "get_user_purchases"):
         userID = kwargs["userID"]

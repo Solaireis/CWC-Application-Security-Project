@@ -120,20 +120,21 @@ def adminManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", user="super-admin", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
     else:
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum)
+        print(sql_operation(table="user", mode="paginate_admins", user="super-admin", pageNum=pageNum))
+        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", user="super-admin", pageNum=pageNum)
 
     if (pageNum > maxPage):
         if (userInput is not None):
-            return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
+            return redirect(f"{url_for('superAdminBP.adminManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
         else:
-            return redirect(f"{url_for('adminBP.userManagement')}?p={maxPage}")
+            return redirect(f"{url_for('superAdminBP.adminManagement')}?p={maxPage}")
     elif (pageNum < 1):
         if (userInput is not None):
-            return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p=1")
+            return redirect(f"{url_for('superAdminBP.adminManagement')}?user={userInput}&filter={filterInput}&p=1")
         else:
-            return redirect(f"{url_for('adminBP.userManagement')}?p=1")
+            return redirect(f"{url_for('superAdminBP.adminManagement')}?p=1")
 
     # Compute the buttons needed for pagination
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
@@ -249,20 +250,20 @@ def roleManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", user="super-admin", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
     else:
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", user="admin", pageNum=pageNum)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", user="super-admin", pageNum=pageNum)
 
     if (pageNum > maxPage):
         if (userInput is not None):
-            return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
+            return redirect(f"{url_for('supeAdminBP.roleManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
         else:
-            return redirect(f"{url_for('adminBP.userManagement')}?p={maxPage}")
+            return redirect(f"{url_for('superAdminBP.roleManagement')}?p={maxPage}")
     elif (pageNum < 1):
         if (userInput is not None):
-            return redirect(f"{url_for('adminBP.userManagement')}?user={userInput}&filter={filterInput}&p=1")
+            return redirect(f"{url_for('superAdminBP.roleManagement')}?user={userInput}&filter={filterInput}&p=1")
         else:
-            return redirect(f"{url_for('adminBP.userManagement')}?p=1")
+            return redirect(f"{url_for('superAdminBP.roleManagement')}?p=1")
 
     # Compute the buttons needed for pagination
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
