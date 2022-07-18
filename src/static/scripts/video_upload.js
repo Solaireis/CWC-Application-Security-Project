@@ -1,34 +1,31 @@
 // For Dropzone
 // https://github.com/dropzone/dropzone/blob/main/src/options.js
 
-Dropzone.options.dropper = {
-    url: "/upload-video", // Determines where to reroute after submission
-    chunking: true, // Enable chunking
-    forceChunking: true, // Force chunking to happen
-    chunkSize: 2000000, // Size of each chunk in bytes (Need to clarify this, default:2mb)
-    retryChunks: true, // Retry chunk uploads
-    retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
-    maxFilesize: 10000, // Maximum size of each file in MB (current: 10GB)
-    paramName: "videoUpload", // The name of the uploaded file
-    maxFiles: 1, // Number of files allowed to be uploaded
-    acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
-    autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
-    init: function() {
-        //function will remove older video if one is already uploaded
-        this.on("addedfile", function() {
-            document.querySelector(".dz-progress").classList.add("d-none");
-            if (this.files[1] == null) 
-                return;
-            this.removeFile(this.files[0]);
-        });
-
-        this.element.querySelector("button[type=submit]").addEventListener("click", function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.processQueue();
-        });
-    }
-};
+// Dropzone.options.dropper = {
+//     url: "/upload-video", // Determines where to reroute after submission
+//     chunking: true, // Enable chunking
+//     forceChunking: true, // Force chunking to happen
+//     chunkSize: 2000000, // Size of each chunk in bytes (Need to clarify this, default:2mb)
+//     retryChunks: true, // Retry chunk uploads
+//     retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
+//     maxFilesize: 10000, // Maximum size of each file in MB (current: 10GB)
+//     paramName: "videoUpload", // The name of the uploaded file
+//     maxFiles: 1, // Number of files allowed to be uploaded
+//     acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
+//     autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
+//     init: function() {
+//         //function will remove older video if one is already uploaded
+//         this.on("addedfile", function() {
+//             document.querySelector(".dz-progress").classList.add("d-none");
+//             if (this.files[1] == null) 
+//                 return;
+//             this.removeFile(this.files[0]);
+//         });
+//         this.on("success", function () {
+//             window.location = "";
+//         });
+//     }
+// };
 
 //For video upload
 
