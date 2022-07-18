@@ -27,8 +27,14 @@ spec.loader.exec_module(NormalFunctions)
 CONSTANTS = NormalFunctions.CONSTANTS
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 
-def deactivate_stripe_courses(debug:bool=False):
+def deactivate_stripe_courses(debug:bool=False) -> None:
+    """
+    Deactivate stripe product/course
 
+    Args:
+    - debug (bool)
+        - Defaults to False
+    """
     try:
         mydb = NormalFunctions.get_mysql_connection(debug=debug)
         cur = mydb.cursor()
@@ -164,11 +170,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("""CREATE TABLE twofa_token (
         user_id VARCHAR(32) PRIMARY KEY,
         token VARBINARY(1024) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES user(id)
-    )""")
-
-    cur.execute("""CREATE TABLE backup_codes (
-        user_id VARCHAR(32) PRIMARY KEY, 
         backup_codes_json VARBINARY(1024), -- Holds at most 8 64 bits hexadecimal (e.g. 'e7b1-4215-89b6-655e') codes that are encrypted as a whole
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
@@ -555,13 +556,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # Insert IP address to whitelist for admin login page
     if (NormalFunctions.CONSTANTS.DEBUG_MODE):
         encryptedLocalhostIP = NormalFunctions.symmetric_encrypt(plaintext="127.0.0.1", keyID=NormalFunctions.CONSTANTS.SENSITIVE_DATA_KEY_ID)
-        cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {'ip_address': encryptedLocalhostIP})
+        cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {"ip_address": encryptedLocalhostIP})
     else:
         # In production mode, allow access to each member's IP address and NYP's IP address
         ipWhitelist = json.loads(NormalFunctions.CONSTANTS.get_secret_payload(secretID="ip-address-whitelist"))
         encryptedIpList = [NormalFunctions.symmetric_encrypt(plaintext=ip, keyID=NormalFunctions.CONSTANTS.SENSITIVE_DATA_KEY_ID) for ip in ipWhitelist]
         for ip in encryptedIpList:
-            cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {'ip_address': ip})
+            cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {"ip_address": ip})
 
     mydb.commit()
 
@@ -675,12 +676,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"GRANT 'Teachers' TO {teacherName};")
     cur.execute(f"GRANT 'Student' TO {userName};")
     cur.execute(f"GRANT 'Guest' TO {guestName};")
-    #cur.execute("SET ROLE ALL;") 
-    #cur.execute(f"SET PERSIST activate_all_roles_on_login = ON;") #this should be off by default, security misconfig
-    #ull also need special privileges for that to enable as well
-    cur.execute("SELECT CURRENT_ROLE()")
-    hi = cur.fetchall()
-    print(hi)
+    # cur.execute("SET ROLE ALL;") 
+    # cur.execute(f"SET PERSIST activate_all_roles_on_login = ON;") # this should be off by default, security misconfig
+    # ull also need special privileges for that to enable as well
+    # cur.execute("SELECT CURRENT_ROLE()")
+    # hi = cur.fetchall()
+    # print(hi)
 
     mydb.commit()
     mydb.close()
@@ -699,7 +700,6 @@ if (__name__ == "__main__"):
     except pymysql.err.ProgrammingError:
         pass
 
-    mysql_init_tables(debug=debugFlag)
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised database, \"coursefinity\"!")
@@ -711,4 +711,3 @@ if (__name__ == "__main__"):
         print("\nError caught!")
         print("More details:")
         print(e)
-
