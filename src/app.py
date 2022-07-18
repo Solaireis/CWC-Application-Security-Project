@@ -170,49 +170,49 @@ def remove_unverified_users_for_more_than_30_days() -> None:
     """
     Remove unverified users from the database
 
-    >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days", user="root")
+    >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
     """
-    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days", user="root")
+    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
 
 def remove_expired_jwt() -> None:
     """
     Remove expired jwt from the database
 
-    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt", user="root")
+    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
     """
-    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt", user="root")
+    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
 
 def remove_expired_sessions() -> None:
     """
     Remove expired sessions from the database
 
-    >>> sql_operation(table="session", mode="delete_expired_sessions", user="root")
+    >>> sql_operation(table="session", mode="delete_expired_sessions")
     """
-    return sql_operation(table="session", mode="delete_expired_sessions", user="root")
+    return sql_operation(table="session", mode="delete_expired_sessions")
 
 def reset_expired_login_attempts() -> None:
     """
     Reset expired login attempts for users
 
-    >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date", user="root")
+    >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
     """
-    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date", user="root")
+    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
 
 def remove_last_accessed_more_than_10_days() -> None:
     """
     Remove last accessed more than 10 days from the database
 
-    >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days", user="root")
+    >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
     """
-    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days", user="root")
+    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
 
 def re_encrypt_data_in_db() -> None:
     """
     Re-encrypt data in the database
 
-    >>> sql_operation(table="user", mode="re-encrypt_data_in_database", user="root")
+    >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
     """
-    return sql_operation(table="user", mode="re-encrypt_data_in_database", user="root")
+    return sql_operation(table="user", mode="re-encrypt_data_in_database")
 
 def update_ip_blacklist_from_github() -> None:
     """

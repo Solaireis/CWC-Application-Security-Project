@@ -82,7 +82,7 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
     sessionID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
 
-    sql_operation(table="session", mode="create_session", user="user", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
+    sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
 
 def generate_limited_usage_jwt_token(
@@ -115,7 +115,7 @@ def generate_limited_usage_jwt_token(
     tokenID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
     token = EC_sign(payload=payload, b64EncodeData=encodeTokenFlag, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
-        table="limited_use_jwt", mode="add_jwt", user="user", tokenID=tokenID,
+        table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
         expiryDate=expiryInfoToStore, limit=limit
     )
     return token if (not getTokenIDFlag) else (token, tokenID)
@@ -193,7 +193,7 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo
     - The image path (str) only if returnUserInfo is False
     - The UserInfo object with the profile image path in the object if returnUserInfo is True
     """
-    userInfo = sql_operation(table="user", mode="get_user_data", user="guest", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
 
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
@@ -220,22 +220,20 @@ def format_user_info(userInfo:tuple, offset:int=0) -> UserInfo:
     userProfile = get_dicebear_image(userInfo[2 + offset]) if (userInfo[6 + offset] is None) else userInfo[6 + offset]
     return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset)
 
-def sql_operation(table:str=None, mode:str=None, user:Optional[str]="user", **kwargs) -> Union[str, list, tuple, bool, dict, None]:
+def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
     Connects to the database and returns the connection object
 
     Args:
     - table: The table to connect to ("course", "user")
     - mode: The mode to use ("insert", "edit", "login", etc.)
-    - user: The user to connect to in the database
-        - Default: "user"
     - kwargs: The keywords to pass into the respective sql operation functions
 
     Returns the returned value from the SQL operation.
     """
     returnValue = con = None
     try:
-        con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE, user=user)
+        con = get_mysql_connection(debug=CONSTANTS.DEBUG_MODE, user="coursefinity")
     except (MySQLErrors.OperationalError):
         print("Fatal Error: Database Not Found...")
         if (CONSTANTS.DEBUG_MODE):

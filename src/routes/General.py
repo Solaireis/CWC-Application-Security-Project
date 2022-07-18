@@ -17,8 +17,8 @@ generalBP = Blueprint("generalBP", __name__, static_folder="static", template_fo
 
 @generalBP.route("/")
 def home():
-    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", user="guest")
-    threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses", user="guest")
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
+    threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
 
     userPurchasedCourses = []
     accType = imageSrcPath = None
@@ -37,8 +37,8 @@ def home():
 
 @generalBP.route("/teacher/<string:teacherID>")
 def teacherPage(teacherID:str):
-    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", user="guest", teacherID=teacherID, getTeacherUsername=False)
-    threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", user="guest", teacherID=teacherID, getTeacherUsername=True)
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
+    threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
     teacherProfilePath = get_image_path(userID=teacherID)
 
@@ -68,7 +68,7 @@ def allCourses(teacherID:str):
             return redirect(url_for("teacherBP.courseList"))
 
     page = request.args.get("p", default=1, type=int)
-    allCourses = sql_operation(table="course", mode="get_all_courses_by_teacher", user="guest", pageNum=page, teacherID=teacherID)
+    allCourses = sql_operation(table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID)
     maxPage = 0
     if (len(allCourses) != 0):
         courseList, maxPage = allCourses[0], allCourses[1]         
@@ -84,7 +84,7 @@ def allCourses(teacherID:str):
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
     # print(courseID)
-    courses = sql_operation(table="course", mode="get_course_data", user="guest", courseID=courseID)
+    courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courses): #raise exception
         abort(404)
     #create variable to store these values
@@ -95,11 +95,11 @@ def coursePage(courseID:str):
         )
     )
     # print("hi",courses)
-    teacherRecords = sql_operation(table="user", mode="get_user_data", user="guest", userID=courses.teacherID)
+    teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
     teacherName = teacherRecords.username
     teacherProfilePath = teacherRecords.profileImage
 
-    retrieveReviews = sql_operation(table="review", mode="retrieve_all", user="guest", courseID=courseID)
+    retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
     # print("the reviews", retrieveReviews)
     reviewList = [] #list to store all the reviews
     if retrieveReviews: #if there are reviews
@@ -188,9 +188,9 @@ def search():
 
     page = request.args.get("p", default=1, type=int)
     if (courseCategory):
-        listInfo = sql_operation(table="course", mode="explore", user="guest", courseCategory=courseCategory, pageNum=page)
+        listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
     else:
-        listInfo = sql_operation(table="course", mode="search", user="guest", searchInput=searchInput, pageNum=page)
+        listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
 
     if (listInfo):
         foundResults, maxPage = listInfo[0], listInfo[1]

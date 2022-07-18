@@ -41,14 +41,12 @@ def deactivate_stripe_courses(debug:bool=False) -> None:
         cur.execute("SELECT course_id FROM course")
         courses = cur.fetchall()
     except (pymysql.err.ProgrammingError, pymysql.err.OperationalError):
-        print('Database does not yet exist')
+        print("Database does not yet exist")
         return
 
     for courseID in courses:
-        courseID = courseID[0]
-
         try:
-            stripe.Product.modify(courseID, active = False)
+            stripe.Product.modify(courseID[0], active = False)
         except InvalidRequestError as error:
             print(error)
 
@@ -67,7 +65,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     hostName = "localhost" if (debug) else "coursefinity.social" 
 
     definer = f"root`@`{hostName}"
-    mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None)
+    mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None, user="root")
     cur = mydb.cursor()
 
     cur.execute("DROP DATABASE IF EXISTS coursefinity")
@@ -77,7 +75,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     mydb.commit()
     mydb.close()
 
-    mydb = NormalFunctions.get_mysql_connection(debug=debug)
+    mydb = NormalFunctions.get_mysql_connection(debug=debug, user="root")
     cur = mydb.cursor()
 
     cur.execute("""CREATE TABLE role (
@@ -681,125 +679,18 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     mydb.commit()
 
     # get users' info for user creation for the database
-    passTable = {
-        "super-admin": CONSTANTS.get_secret_payload(secretID="sql-super-admin-password"),
-        "admin": CONSTANTS.get_secret_payload(secretID="sql-admin-password"),
-        "user": CONSTANTS.get_secret_payload(secretID="sql-user-password"),
-        "guest": CONSTANTS.get_secret_payload(secretID="sql-guest-password"),
-        "teacher": CONSTANTS.get_secret_payload(secretID="sql-teacher-password"),
-    }
-    superAdminName = f"'super-admin'@'{hostName}'"
-    adminName = f"'admin'@'{hostName}'"
-    userName = f"'user'@'{hostName}'"
-    guestName = f"'guest'@'{hostName}'"
-    teacherName=f"'teacher'@'{hostName}'"
+    coursefinityName = f"'coursefinity'@'{hostName}'"
 
     # drop the user if it exists
-    cur.execute(f"DROP USER IF EXISTS {superAdminName}")
-    cur.execute(f"DROP USER IF EXISTS {adminName}")
-    cur.execute(f"DROP USER IF EXISTS {userName}")
-    cur.execute(f"DROP USER IF EXISTS {guestName}")
-    cur.execute(f"DROP USER IF EXISTS {teacherName}")
+    cur.execute(f"DROP USER IF EXISTS {coursefinityName}")
 
     # create the users
-    cur.execute(f"CREATE USER {superAdminName} IDENTIFIED BY '{passTable['super-admin']}'")
-    cur.execute(f"CREATE USER {adminName} IDENTIFIED BY '{passTable['admin']}'")
-    cur.execute(f"CREATE USER {userName} IDENTIFIED BY '{passTable['user']}'")
-    cur.execute(f"CREATE USER {guestName} IDENTIFIED BY '{passTable['guest']}'")
-    cur.execute(f"CREATE USER {teacherName} IDENTIFIED BY '{passTable['teacher']}'")
+    coursefinitySQLPass = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
+    cur.execute(f"CREATE USER {coursefinityName} IDENTIFIED BY '{coursefinitySQLPass}'")
 
-    # grant privileges to users
-    # More details: https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#privileges-provided-summary
-    # TODO: Properly assign roles to each user and to the tables instead of just granting the user the privileges
-    # TODO: Read up on https://dev.mysql.com/doc/refman/8.0/en/roles.html
-
-    #TODO: Give proper CRUD to the roles,
-    cur.execute("DROP ROLE IF EXISTS 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
-    cur.execute(f"CREATE ROLE 'Admin', 'SuperAdmin', 'Teachers', 'Student', 'Guest';")
-    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {superAdminName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT, UPDATE, DELETE ON coursefinity.* TO {adminName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {userName} WITH GRANT OPTION")
-    cur.execute(f"GRANT EXECUTE, SELECT ON coursefinity.* TO {guestName} WITH GRANT OPTION")
-
-    # Grant the privileges
-    # Admin Privileges
-    cur.execute("GRANT Select ON coursefinity.* TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.role TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.user TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.course TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.session TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Admin';")
-    cur.execute("GRANT ALL ON coursefinity.review TO 'Admin';")
-
-    # SuperAdmin Privileges
-    cur.execute("GRANT Select ON coursefinity.* TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.role TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.user TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.course TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.session TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'SuperAdmin';")
-    cur.execute("GRANT ALL ON coursefinity.review TO 'SuperAdmin';")
-
-    # Student Privileges 
-    cur.execute("GRANT Select ON coursefinity.* TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.role TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.user TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.course TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.session TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Student';")
-    cur.execute("GRANT ALL ON coursefinity.review TO 'Student';")
-
-    # Teacher Privileges
-    cur.execute("GRANT Select ON coursefinity.* TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.role TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.user TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.course TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.session TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.login_attempts TO 'Teachers';")
-    cur.execute("GRANT ALL ON coursefinity.review TO 'Teachers';")
-
-    # Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
-    cur.execute("GRANT EXECUTE, SELECT ON coursefinity.* TO 'Guest' WITH GRANT OPTION;") # the error is not granting the user the db first
-    cur.execute("GRANT ALL ON coursefinity.role TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.user TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.course TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.session TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.twofa_token TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.user_ip_addresses TO 'Guest';")
-    cur.execute("GRANT ALl ON coursefinity.login_attempts TO 'Guest';")
-    cur.execute("GRANT ALL ON coursefinity.review TO 'Guest';")
-
-    # Assign the roles
-    cur.execute(f"GRANT 'Admin','SuperAdmin','Teachers','Student','Guest' TO 'root'@'localhost';")
-    cur.execute(f"GRANT 'Admin' TO {adminName};")
-    cur.execute(f"GRANT 'SuperAdmin' TO {superAdminName};")
-    cur.execute(f"GRANT 'Teachers' TO {teacherName};")
-    cur.execute(f"GRANT 'Student' TO {userName};")
-    cur.execute(f"GRANT 'Guest' TO {guestName};")
-    # cur.execute("SET ROLE ALL;") 
-    # cur.execute(f"SET PERSIST activate_all_roles_on_login = ON;") # this should be off by default, security misconfig
-    # ull also need special privileges for that to enable as well
-    # cur.execute("SELECT CURRENT_ROLE()")
-    # hi = cur.fetchall()
-    # print(hi)
+    # grant the coursefinity web app MySQL account 
+    # privileges for CRUD of tuples and Execute (for calling stored procedures)
+    cur.execute(f"GRANT EXECUTE, SELECT, INSERT, UPDATE, DELETE ON coursefinity.* TO {coursefinityName} WITH GRANT OPTION")
 
     mydb.commit()
     mydb.close()

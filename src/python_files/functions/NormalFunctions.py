@@ -266,7 +266,7 @@ def delete_blob(bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, destinati
 def get_mysql_connection(
     debug:bool=CONSTANTS.DEBUG_MODE,
     database:Optional[str]=CONSTANTS.DATABASE_NAME,
-    user:str="root"
+    user:Optional[str]="coursefinity"
 ) -> pymysql.connections.Connection:
     """
     Get a MySQL connection to the coursefinity database.
@@ -278,7 +278,7 @@ def get_mysql_connection(
         - Defaults to DATABASE_NAME defined in Constants.py if not defined
         - Define database to None if you do not want to connect to a database
     - user (str, optional): the name of the user to connect as
-        - Defaults to "root"
+        - Defaults to "coursefinity"
 
     Returns:
     - A MySQL connection.
@@ -288,14 +288,11 @@ def get_mysql_connection(
         password = environ.get("LOCAL_SQL_PASS")
     elif (not debug and user == "root"):
         password = CONSTANTS.get_secret_payload(secretID="sql-root-password")
-    elif (user == "super-admin"):
-        password = CONSTANTS.get_secret_payload(secretID="sql-super-admin-password")
-    elif (user == "admin"):
-        password = CONSTANTS.get_secret_payload(secretID="sql-admin-password")
-    elif (user == "user"):
-        password = CONSTANTS.get_secret_payload(secretID="sql-user-password")
-    else:
-        password = CONSTANTS.get_secret_payload(secretID="sql-guest-password")
+    elif (user == "coursefinity"):
+        password = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
+    else: # if the user parameter is not "root" or "coursefinity"
+        user = "coursefinity" # defaults to coursefinity MySQL account instead
+        password = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
 
     if (debug):
         LOCAL_SQL_CONFIG = {"host": "localhost", "user": user, "password": password}
