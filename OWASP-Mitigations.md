@@ -122,6 +122,10 @@
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with Google
+- Backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
+  - Recommended by [OWASP Multifactor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
+  - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
+    - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
   - Secure:
     - Only allow the cookie to be transmitted via HTTPS
