@@ -249,6 +249,8 @@ class ConstantsConfigs:
         GOOGLE_STORAGE_JSON = json.loads(self.get_secret_payload(secretID="google-storage"))
         self.__GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(GOOGLE_STORAGE_JSON)
         self.__PUBLIC_BUCKET_NAME = "coursefinity"
+        self.__COURSE_VIDEOS_BUCKET_NAME = "coursefinity-videos"
+        self.__GOOGLE_STORAGE_URL_REGEX = re.compile(r"^https:\/\/storage\.cloud\.google\.com\/[a-zA-Z0-9-_ ]+\/.+$")
         self.__DEFAULT_CACHE_CONTROL = "public, max-age=31536000" # 1 year
         del GOOGLE_STORAGE_JSON
 
@@ -514,6 +516,14 @@ class ConstantsConfigs:
     @property
     def PUBLIC_BUCKET_NAME(self) -> str:
         return self.__PUBLIC_BUCKET_NAME
+
+    @property
+    def COURSE_VIDEOS_BUCKET_NAME(self) -> str:
+        return self.__COURSE_VIDEOS_BUCKET_NAME
+
+    @property
+    def GOOGLE_STORAGE_URL_REGEX(self) -> re.Pattern[str]:
+        return self.__GOOGLE_STORAGE_URL_REGEX
 
     @property
     def DEFAULT_CACHE_CONTROL(self) -> str:

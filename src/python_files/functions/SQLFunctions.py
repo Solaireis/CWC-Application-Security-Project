@@ -2,7 +2,7 @@
 This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
-import json
+import json, re
 from socket import inet_aton, inet_pton, AF_INET6
 from typing import Union, Optional
 from datetime import datetime, timedelta
@@ -60,11 +60,13 @@ def get_blob_name(url:str="") -> str:
 
     Args:
     - url (str): The URL of the blob.
+        - E.g. https://storage.cloud.google.com/coursefinity-videos/videos/watame.mp4
+            - Will return "videos/watame.mp4"
 
     Returns:
-    - The blob name (str)
+    - The blob name (str) or a empty string if the url is not a valid Google Storage URL.
     """
-    return "/".join(url.split("/")[4:])
+    return "/".join(url.split("/")[4:]) if (re.fullmatch(CONSTANTS.GOOGLE_STORAGE_URL_REGEX, url)) else ""
 
 def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
