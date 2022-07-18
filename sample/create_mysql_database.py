@@ -225,7 +225,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM course WHERE teacher_id = user_id_input;
             DELETE FROM user_ip_addresses WHERE user_id = user_id_input;
             DELETE FROM twofa_token WHERE user_id = user_id_input;
-            DELETE FROM backup_codes WHERE user_id = user_id_input;
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
             DELETE FROM review WHERE user_id = user_id_input;
