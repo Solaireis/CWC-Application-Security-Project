@@ -39,18 +39,19 @@
 			<p><i class="fa fa-cloud-upload fa-2x"></i><span><span>up</span>load</span></p>			
 		</div>
 
-        <!-- <form action="" method="POST" class="dropzone body" id="dropper" enctype="multipart/form-data">
-            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <form action="" method="POST" class="dropzone body" id="dropper" enctype="multipart/form-data">
+            <!-- <input type="hidden" name="_csrf_token" value="{# csrf_token() #}"> -->
             <div class="dz-default dz-message">
                 <i class="fas fa-cloud-upload-alt upload-icon"></i>
                 <br>
                 <strong>Drag and drop</strong> files here<br>
                 or <span>browse</span> to begin the upload
             </div>
-            <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button>
-        </form> -->
+            <button type="submit" class="btn btn-primary float-end">Upload</button>
+            <!-- <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button> -->
+        </form>
 
-		<form action="" method="POST" class="body" id="dropper" enctype="multipart/form-data">
+		<!-- <form action="" method="POST" class="body" id="dropper" enctype="multipart/form-data">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             <input accept=".mp4, .mov, .wmv, .avi, .webm" name="courseVideo" class="form-control" id="upload" type='file' />
 			<label for="upload">
@@ -62,7 +63,7 @@
 			</label>
             <div id="file-upload-filename"></div>
             <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button>
-		</form>
+		</form> -->
     </div>
 </div>
 

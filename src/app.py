@@ -39,7 +39,8 @@ if (not CONSTANTS.DEBUG_MODE):
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
 app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=7)
-csrf = SeaSurf(app)
+from routes.RoutesSecurity import csrf
+csrf.init_app(app)
 
 # flask extension that helps set policies for the web app
 csp = {

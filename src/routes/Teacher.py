@@ -14,6 +14,7 @@ from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from .RoutesSecurity import csrf
 
 # import python standard libraries
 from pathlib import Path
@@ -66,6 +67,7 @@ def draftCourseList():
 
 """ Start Of Course Creation """
 
+@csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     if ("user" in session):
@@ -74,24 +76,25 @@ def videoUpload():
             abort(404)
 
         if (request.method == "POST"):
-            recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is None):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            # recaptchaToken = request.form.get("g-recaptcha-response")
+            # if (recaptchaToken is None):
+            #     flash("Please verify that you are not a bot!", "Danger")
+            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
-            try:
-                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="upload")
-            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            # try:
+            #     recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="upload")
+            # except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            #     flash("Please verify that you are not a bot!", "Danger")
+            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
-            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                # if the score is not within the acceptable threshold
-                # then the user is likely a bot
-                # hence, we will flash an error message
-                flash("Please check the reCAPTCHA box and try again.", "Danger")
-                return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-            
+            # if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            #     # if the score is not within the acceptable threshold
+            #     # then the user is likely a bot
+            #     # hence, we will flash an error message
+            #     flash("Please check the reCAPTCHA box and try again.", "Danger")
+            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            #TODO : FIX THE REST OF CODE
+            print(request.files["videoUpload"])
             if (request.files["courseVideo"].filename == ""):
                 flash("Please Upload a Video", "File Upload Error!")
                 return redirect(url_for("teacherBP.videoUpload"))

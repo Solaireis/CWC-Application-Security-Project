@@ -149,5 +149,5 @@ def roleManagement():
     for roleID in roles:
         roleList.append(RoleInfo(roleID))
 
-    return 
+    return render_template("users/admin/admin_management.html")
 
