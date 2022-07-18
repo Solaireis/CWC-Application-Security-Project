@@ -58,7 +58,7 @@ class PwdTooLongError(Exception):
     
     Reason: 
         - Due to limitations of the password hashing algorithm, the password cannot be too long.
-        - Set the limit to 128 characters as defined in Constants_Init.py
+        - Set the limit to 64 characters as defined in Constants_Init.py
     
     More details:
         https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls

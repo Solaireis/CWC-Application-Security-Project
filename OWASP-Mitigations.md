@@ -87,7 +87,7 @@
   - Prevent automated attacks such as
     - Credential stuffing attacks
     - Brute force attacks
-- Minimum Password Complexity Policy using regex
+- Minimum Password Complexity Policy using regex as recommended by [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
   - At least 1 uppercase letter
   - At least 1 lowercase letter
   - At least 1 digit

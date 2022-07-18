@@ -123,7 +123,7 @@ class ConstantsConfigs:
         # Password regex follows OWASP's recommendations
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
         self.__MIN_PASSWORD_LENGTH = 8
-        self.__MAX_PASSWORD_LENGTH = 128
+        self.__MAX_PASSWORD_LENGTH = 64 # To prevent long password denial of service
         # Strict password regex to be used when haveibeenpwned's API is down (acts as a fallback)
         self.__STRICT_PASSWORD_REGEX = re.compile(r"""
         ^                                                                   # beginning of password
