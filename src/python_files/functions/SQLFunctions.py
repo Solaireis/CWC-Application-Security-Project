@@ -468,9 +468,18 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
     else:
         raise ValueError("Invalid mode in the user_ip_addresses_sql_operation function!")
 
-def generate_encrypted_backup_codes() -> list:
-    """Generate new backup codes for the user with 2FA"""
-    # Generate new backup codes
+def generate_backup_codes(encrypt:Optional[bool]=False) -> Union[list, bytes]:
+    """
+    Generate a list of backup codes
+
+    Args:
+    - encrypt (bool): Whether to return the list in encrypted format
+        - Default: False, will return a list
+
+    Returns:
+    - list: A list of backup codes if encrypt is False
+    - bytes: A list of backup codes in encrypted format if encrypt is True
+    """
     backupCodes = []
     for _ in range(8):
         backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=True, returnHex=True)
@@ -478,9 +487,13 @@ def generate_encrypted_backup_codes() -> list:
         el = (formattedBackupCode, "Active")
         backupCodes.append(el)
 
-    # Encrypt the backup codes
-    encryptedBackupCodesdArr = symmetric_encrypt(plaintext=json.dumps(backupCodes), keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID)
-    return encryptedBackupCodesdArr
+    if (encrypt):
+        backupCodes = symmetric_encrypt(
+            plaintext=json.dumps(backupCodes), 
+            keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+        )
+
+    return backupCodes 
 
 def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
@@ -496,7 +509,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
             # Try inserting a new data
             cur.execute(
                 "INSERT INTO twofa_token (token, user_id, backup_codes_json) VALUES (%(token)s, %(userID)s, %(tokenJSON)s)", 
-                {"token":token, "userID":userID, "tokenJSON": generate_encrypted_backup_codes()}
+                {"token":token, "userID":userID, "tokenJSON": generate_backup_codes(encrypt=True)}
             )
         except (MySQLErrors.IntegrityError):
             # If the 2FA tuple already exists, then update the token with a new token
@@ -544,7 +557,15 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         userID = kwargs["userID"]
 
         # Overwrite the old backup codes if it exists
-        cur.execute("UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s", {"backupCodesJSON": generate_encrypted_backup_codes()})
+        backupCodes = generate_backup_codes(encrypt=False)
+        encryptedBackupCodes = symmetric_encrypt(
+            plaintext=json.dumps(backupCodes), 
+            keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+        )
+        cur.execute(
+            "UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s", 
+            {"backupCodesJSON": encryptedBackupCodes}
+        )
         connection.commit()
         return backupCodes
 
@@ -1159,6 +1180,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
+
         userInput = kwargs.get("userInput")
         filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
@@ -1177,6 +1199,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         maxPage = 1
         if (len(matched) > 0):
             maxPage = ceil(matched[0][-1] / 10)
+
+        # To prevent infinite redirects
+        if (maxPage <= 0):
+            maxPage = 1
 
         if (pageNum > maxPage):
             return [], maxPage
@@ -1188,10 +1214,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             courseArr.append((userInfo, isInRecovery))
 
         return courseArr, maxPage
+
     elif (mode == "paginate_admins"):
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
+
         userInput = kwargs.get("userInput")
         filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
@@ -1211,6 +1239,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (len(matched) > 0):
             maxPage = ceil(matched[0][-1] / 10)
 
+        # To prevent infinite redirects
+        if (maxPage <= 0):
+            maxPage = 1
+
         if (pageNum > maxPage):
             return [], maxPage
 
@@ -1219,7 +1251,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             userInfo = format_user_info(data, offset=1)
             isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
             courseArr.append((userInfo, isInRecovery))
-            
+
     elif (mode == "get_user_purchases"):
         userID = kwargs["userID"]
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})

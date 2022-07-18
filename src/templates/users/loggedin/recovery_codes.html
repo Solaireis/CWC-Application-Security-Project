@@ -75,22 +75,27 @@
                     </div>
                 </div>
                 <ul class="list-group list-group-flush">
-                    {% for backupCode in backupCodes %}
-                        <li class="list-group-item">{{ backupCode }}</li>
+                    {% for backupCode, status in backupCodes %}
+                        {% if status != "Active" %}
+                            <li class="list-group-item">
+                                <span class="text-decoration-line-through">
+                                    {{ backupCode }}
+                                </span>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item">{{ backupCode }}</li>
+                        {% endif %}
                     {% endfor %}
                 </ul>
-                <div class="col-12">
-                        <button class="btn btn-primary btn-block" data-bs-toggle="modal" data-bs-target="#generateNewCodesModal">
-                            Generate New Codes
-                        </button>
-                    </form>
-                </div>
-                <div class="col-12">
+                <div class="col-12 p-2">
+                    <button class="btn btn-primary btn-block" data-bs-toggle="modal" data-bs-target="#generateNewCodesModal">
+                        Generate New Codes
+                    </button>
                     <button class="btn btn-primary btn-block" id="downloadCodes">
                         <i class="fas fa-download"></i> Download Codes
                     </button>
                 </div>
-                <div class="col-12">
+                <div class="col-12 p-2">
                     <a href="{{ url_for('userBP.userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
                 </div>
             </div>
