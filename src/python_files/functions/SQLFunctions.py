@@ -1188,7 +1188,38 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             courseArr.append((userInfo, isInRecovery))
 
         return courseArr, maxPage
+    elif (mode == "paginate_admins"):
+        pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
+        userInput = kwargs.get("userInput")
+        filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
+        if (userInput is None):
+            cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
+        elif (filterType == "uid"):
+            cur.execute("CALL paginate_users_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        elif (filterType == "email"):
+            cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        else:
+            # Paginate by username by default in the HTML, 
+            # but this is also a fallback if the user has tampered with the HTML value
+            cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        matched = cur.fetchall() or []
+
+        maxPage = 1
+        if (len(matched) > 0):
+            maxPage = ceil(matched[0][-1] / 10)
+
+        if (pageNum > maxPage):
+            return [], maxPage
+
+        courseArr = []
+        for data in matched:
+            userInfo = format_user_info(data, offset=1)
+            isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
+            courseArr.append((userInfo, isInRecovery))
+            
     elif (mode == "get_user_purchases"):
         userID = kwargs["userID"]
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})

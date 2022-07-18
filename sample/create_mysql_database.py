@@ -391,7 +391,34 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
-                                WHERE r.role_name<>"Admin");
+                                WHERE r.role_name<>"Admin" AND r.role_name<>"SuperAdmin);
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+            user_info.* FROM (
+                SELECT u.id, r.role_name, u.username, 
+                u.email, u.email_verified, u.password, 
+                u.profile_image, u.date_joined, u.cart_courses, 
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
+                INNER JOIN role AS r ON u.role=r.role_id
+                WHERE r.role_name<>'Admin'
+                ORDER BY u.date_joined DESC -- show newest users first
+            ) AS user_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_admins` (IN page_number INT)
+        BEGIN
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE r.role_name="Admin");
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -442,7 +469,63 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     """)
 
     cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_admins_by_username` (IN page_number INT, IN username_input VARCHAR(255))
+        BEGIN
+            SET @search_query := CONCAT('%', username_input, '%');
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE username LIKE @search_query AND r.role_name="Admin");
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num,
+            user_info.* FROM (
+                SELECT u.id, r.role_name, u.username, 
+                u.email, u.email_verified, u.password, 
+                u.profile_image, u.date_joined, u.cart_courses, 
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
+                INNER JOIN role AS r ON u.role=r.role_id
+                WHERE username LIKE @search_query AND r.role_name<>'Admin'
+                ORDER BY u.date_joined DESC -- show newest users first
+            ) AS user_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
+    cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_users_by_uid` (IN page_number INT, IN uid_input VARCHAR(32))
+        BEGIN
+            SET @search_query := CONCAT('%', uid_input, '%');
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE id LIKE @search_query AND r.role_name<>"Admin");
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num,
+            user_info.* FROM (
+                SELECT u.id, r.role_name, u.username, 
+                u.email, u.email_verified, u.password, 
+                u.profile_image, u.date_joined, u.cart_courses, 
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
+                INNER JOIN role AS r ON u.role=r.role_id
+                WHERE u.id LIKE @search_query AND r.role_name<>'Admin'
+                ORDER BY u.date_joined DESC -- show newest users first
+            ) AS user_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_admins_by_uid` (IN page_number INT, IN uid_input VARCHAR(32))
         BEGIN
             SET @search_query := CONCAT('%', uid_input, '%');
             SET @total_user := (SELECT COUNT(*) FROM user AS u
@@ -497,6 +580,35 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             LIMIT 10;
         END
     """)
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_admins_by_email` (IN page_number INT, IN email_input VARCHAR(255))
+        BEGIN
+            SET @search_query := CONCAT('%', email_input, '%');
+            SET @total_user := (SELECT COUNT(*) FROM user AS u
+                                INNER JOIN role AS r ON u.role=r.role_id
+                                WHERE email LIKE @search_query AND r.role_name="Admin");
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+            user_info.* FROM (
+                SELECT u.id, r.role_name, u.username, 
+                u.email, u.email_verified, u.password, 
+                u.profile_image, u.date_joined, u.cart_courses, 
+                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user 
+                FROM user AS u
+                LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
+                INNER JOIN role AS r ON u.role=r.role_id
+                WHERE u.email LIKE @search_query AND r.role_name<>'Admin'
+                GROUP BY u.id
+                ORDER BY u.date_joined DESC -- show newest users first
+            ) AS user_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
     """Datetime function"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
@@ -656,7 +768,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("GRANT ALL ON coursefinity.review TO 'Teachers';")
 
     # Guest Privileges (probably will be removed, Likely i will have the coursefinity itself to just display)
-    # cur.execute("GRANT EXECUTE, SELECT ON coursefinity.* TO 'Guest' WITH GRANT OPTION;")
+    cur.execute("GRANT EXECUTE, SELECT ON coursefinity.* TO 'Guest' WITH GRANT OPTION;") # the error is not granting the user the db first
     cur.execute("GRANT ALL ON coursefinity.role TO 'Guest';")
     cur.execute("GRANT ALL ON coursefinity.Recovery_token TO 'Guest';")
     cur.execute("GRANT ALL ON coursefinity.limited_use_jwt TO 'Guest';")
