@@ -84,6 +84,7 @@ class CourseInfo:
             self.__courseCategory = tupleInfo[8]
             self.__dateCreated = tupleInfo[9]
             self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
+            self.__videoPath = tupleInfo[11]
 
     @property
     def courseID(self) -> str:
@@ -118,6 +119,9 @@ class CourseInfo:
     @property
     def averageRating(self) -> int:
         return self.__averageRating
+    @property
+    def videoPath(self) -> str:
+        return self.__videoPath
 
 
     def __repr__(self) -> str:

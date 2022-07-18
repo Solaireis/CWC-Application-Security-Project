@@ -258,7 +258,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             c.course_id, c.teacher_id, 
             u.username, u.profile_image, c.course_name, c.course_description,
             c.course_image_path, c.course_price, c.course_category, c.date_created, 
-            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
             FROM course AS c
             LEFT OUTER JOIN review AS r
             ON c.course_id = r.course_id

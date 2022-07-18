@@ -176,24 +176,22 @@ def videoUpload():
                 return make_response("Uploaded image is corrupted! Please try again!", 500)
             else:
                 print(f'File {file.filename} has been uploaded successfully')
-
+                
+                #convert to mpd still broke on macbook i think cause the terminal need drag the file in
                 if (not convert_to_mpd(courseID)): # Error with conversion
                     flash("Invalid Video!", "File Upload Error!")
                     return redirect(url_for("teacherBP.videoUpload"))
 
-                    if (not convert_to_mpd(courseID)): # Error with conversion
-                        flash("Invalid Video!", "File Upload Error!")
-                        return redirect(url_for("teacherBP.videoUpload"))
-
-                    # constructing a file path to see if the user has already uploaded an image and if the file exists
-                    sql_operation(
-                        table="course",
-                        mode="insert_draft",
-                        courseID=courseID,
-                        teacherID=userInfo.uid,
-                        videoPath=Path(filePathToStore).with_suffix(".mpd")
-                    )
-                    return redirect(url_for("teacherBP.createCourse", courseID=courseID))
+                # constructing a file path to see if the user has already uploaded an image and if the file exists
+                sql_operation(
+                    table="course",
+                    mode="insert_draft",
+                    courseID=courseID,
+                    teacherID=userInfo.uid,
+                    # videoPath=filePathToStore
+                    videoPath=Path(filePathToStore).with_suffix(".mpd")
+                )
+                return redirect(url_for("teacherBP.createCourse", courseID=courseID))
             """
             Create a row inside the database to store the video info.
             Display this row in the teachers course list
@@ -434,7 +432,7 @@ def courseUpdate():
         if (len(updated) > 0):
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
-    else:
-        return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+    return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoPath=courseFound.videoPath)
 
 """ End Of Course Management """
