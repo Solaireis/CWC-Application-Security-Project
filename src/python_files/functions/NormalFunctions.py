@@ -1729,18 +1729,18 @@ def two_fa_token_is_valid(token:str) -> bool:
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
-def convert_to_mpd(courseVideoPath:str) -> bool:
+def convert_to_mpd(courseID:str=None) -> bool:
     """
     Converts the video to MPD format.
 
     Args:
-    - courseVideoPath (str): The path to the video to convert.
-        - e.g. "static/course_videos/testID/testVideo.mp4"
+    - courseID (str): The courseID of the video to convert.
+        - e.g. ".../static/course_videos/<courseID>/<courseID>.mp4"
 
     Returns:
     - True if the conversion was successful, False otherwise.
     """
-    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath(courseVideoPath)
+    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath('static', 'course_videos', courseID, courseID).with_suffix('.mp4')
     if (videoPath.suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
         raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 

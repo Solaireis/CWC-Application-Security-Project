@@ -126,6 +126,14 @@ def draftCourseList():
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     if ("user" in session):
+
+        if 'video_saving' in session:
+            # Delete folder
+            # Remove from SQL (if exists)
+            # 
+            session.pop('video_saving')
+            pass
+
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         if (userInfo.role != "Teacher"):
             abort(404)
@@ -159,13 +167,16 @@ def videoUpload():
                 return redirect(url_for("teacherBP.videoUpload"))
 
             courseID = generate_id()
-            filename = courseID + Path(filename).suffix
-            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+            session['video_saving'] = courseID # Saving started; interruption = restart from scratch
+            filename = courseID + Path(filename).suffix #change filename to courseid.mp4
+            #folder creation
+            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) #path to create the folder
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
-            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
+            
+            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") #path for mp4 file stored in sql
             print("Total file size:", int(request.form['dztotalfilesize']))
-            absFilePath = filePath.joinpath(filename)
+            absFilePath = filePath.joinpath(filename) #path of the mp4 file
 
             try:
                 with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
@@ -188,8 +199,13 @@ def videoUpload():
                     return make_response("Uploaded image is corrupted! Please try again!", 500)
                 else:
                     print(f'File {file.filename} has been uploaded successfully')
+
+                    if not convert_to_mpd(courseID): # Error with conversion
+                        flash("Invalid Video!", "File Upload Error!")
+                        return redirect(url_for("teacherBP.videoUpload"))
+                    
                     # constructing a file path to see if the user has already uploaded an image and if the file exists
-                    sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid,videoPath=filePathToStore)
+                    sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid, videoPath=Path(filePathToStore).with_suffix(".mpd"))
                     return redirect(url_for("teacherBP.createCourse", courseID=courseID))
             """
             Create a row inside the database to store the video info.
@@ -203,6 +219,8 @@ def videoUpload():
 #TODO: Hash Video data, implement dropzone to encrpyt video data
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
+    if 'video_saving' in session:
+        session.pop('video_saving')
     if ("user" in session):
         courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
         videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
@@ -261,9 +279,11 @@ def createCourse(courseID:str):
                 return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
             
             videoPath = upload_file_from_path(bucketName="coursefinity-videos", localFilePath=absFilePath, uploadDestination=f"videos/{videoFilename}")
+            # Delete video from storage (relying on mpd file)
             sql_operation(table="course", mode="insert",courseID=courseID, teacherID=userInfo.uid, courseName=courseTitle, courseDescription=courseDescription, courseImagePath=imageUrlToStore, courseCategory=courseTagInput, coursePrice=coursePrice, videoPath=courseTuple[2])
             stripe_product_create(courseID=courseID, courseName=courseTitle, courseDescription=courseDescription, coursePrice=coursePrice, courseImagePath=imageUrlToStore)
             sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
+            
 
             flash("Course Created", "Successful Course Created!")
             return redirect(url_for("userBP.userProfile"))

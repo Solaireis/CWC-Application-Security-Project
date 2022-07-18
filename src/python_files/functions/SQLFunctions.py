@@ -22,37 +22,34 @@ from pymysql.connections import Connection as MySQLConnection
 from python_files.classes.Course import CourseInfo
 from python_files.classes.User import UserInfo
 from python_files.classes.Errors import *
-from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
+from .NormalFunctions import JWTExpiryProperties, convert_to_mpd, download_to_path, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
-def get_course_video_path(courseID:str, videoName:str) -> Union[str, None]:
+def validate_course_video_path(courseID:str, urlPath:bool=False) -> Optional[str]:
     """
     Gets the path to the course video by querying the database.
 
     Args:
-    - courseID: The course ID of the video.
-    - videoName: The filename of the video.
+    - courseID (str): The path to the video to convert.
+        - e.g. ".../static/course_videos/<courseID>/<courseID>.mp4"
+
 
     Returns:
     - The path to the course video if it exists in the database, None otherwise.
     """
     # Will retrieve a google storage link to the course video
     # e.g. https://storage.googleapis.com/<bucketName>/<blobName>
-    matched = sql_operation(table="course", mode="get_video_path", courseID=courseID)
-    if (matched is None):
-        #TODO: Log
-        return None
 
-    databaseVideoFilename = matched.rsplit("/", 1)[1]
-    if (databaseVideoFilename == videoName):
-        return url_for(
-            "static", 
-            filename="/".join(["course_videos", courseID, databaseVideoFilename])
-        )
-    else:
-        return None
+    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath('static', 'course_videos', courseID, courseID).with_suffix('.mp4')
+    if not videoPath.is_file():
+        download_to_path("coursefinity-videos", get_blob_name(), videoPath)
+        convert_to_mpd(courseID)
+        pass
+
+    if urlPath:
+        return url_for('static', filename=f'course_videos/{courseID}/{courseID}.mpd')
 
 def get_blob_name(url:str="") -> str:
     """
