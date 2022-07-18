@@ -84,7 +84,7 @@ class ConstantsConfigs:
         self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
         self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
         self.__ADMIN_BLUEPRINTS = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-        self.__SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP")
+        self.__SUPER_ADMIN_BLUEPRINTS = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP","adminBP")
         self.__TEACHER_BLUEPRINTS = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
         # Request limit
         self.__REQUEST_LIMIT = "120 per minute"

@@ -631,10 +631,10 @@ def loginCallback():
     session.clear()
 
     # assign the session accordingly based on the role of the user
-    if (returnedRole != "Admin"):
-        session["user"] = userID
-    else:
+    if (returnedRole == "Admin" or returnedRole == "SuperAdmin"):
         session["admin"] = userID
+    else:
+        session["user"] = userID
 
     session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
     return redirect(url_for("generalBP.home"))
