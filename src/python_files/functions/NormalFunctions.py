@@ -1740,7 +1740,10 @@ def convert_to_mpd(courseID:str=None) -> bool:
     Returns:
     - True if the conversion was successful, False otherwise.
     """
-    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath('static', 'course_videos', courseID, courseID).with_suffix('.mp4')
+    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath(
+        "static", "course_videos", courseID, courseID
+    ).with_suffix(".mp4")
+
     if (videoPath.suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
         raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 

@@ -127,37 +127,16 @@ def draftCourseList():
 def videoUpload():
     if ("user" in session):
 
-        if 'video_saving' in session:
+        if ("video_saving" in session):
             # Delete folder
             # Remove from SQL (if exists)
-            # 
-            session.pop('video_saving')
-            pass
+            session.pop("video_saving", None)
 
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         if (userInfo.role != "Teacher"):
             abort(404)
 
         if (request.method == "POST"):
-            #TODO : maybe try find a way to fix?
-            # recaptchaToken = request.form.get("g-recaptcha-response")
-            # if (recaptchaToken is None):
-            #     flash("Please verify that you are not a bot!", "Danger")
-            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
-            # try:
-            #     recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="upload")
-            # except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            #     flash("Please verify that you are not a bot!", "Danger")
-            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
-            # if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-            #     # if the score is not within the acceptable threshold
-            #     # then the user is likely a bot
-            #     # hence, we will flash an error message
-            #     flash("Please check the reCAPTCHA box and try again.", "Danger")
-            #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
             file = request.files["videoUpload"]
             filename = secure_filename(file.filename)
             totalChunks = int(request.form["dztotalchunkcount"])
@@ -167,24 +146,24 @@ def videoUpload():
                 return redirect(url_for("teacherBP.videoUpload"))
 
             courseID = generate_id()
-            session['video_saving'] = courseID # Saving started; interruption = restart from scratch
-            filename = courseID + Path(filename).suffix #change filename to courseid.mp4
+            session["video_saving"] = courseID # Saving started; interruption = restart from scratch
+            filename = courseID + Path(filename).suffix # change filename to courseid.mp4
             #folder creation
-            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) #path to create the folder
+            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
             print(f"This is the folder for the inputted file: {filePath}")
             filePath.mkdir(parents=True, exist_ok=True)
-            
-            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") #path for mp4 file stored in sql
-            print("Total file size:", int(request.form['dztotalfilesize']))
-            absFilePath = filePath.joinpath(filename) #path of the mp4 file
+
+            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") # path for mp4 file stored in sql
+            print("Total file size:", int(request.form["dztotalfilesize"]))
+            absFilePath = filePath.joinpath(filename) # path of the mp4 file
 
             try:
                 with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
-                    videoData.seek(int(request.form['dzchunkbyteoffset']))
-                    print("dzchunkbyteoffset:", int(request.form['dzchunkbyteoffset']))
+                    videoData.seek(int(request.form["dzchunkbyteoffset"]))
+                    print("dzchunkbyteoffset:", int(request.form["dzchunkbyteoffset"]))
                     videoData.write(file.stream.read())
-            except OSError:
-                print('Could not write to file')
+            except (OSError):
+                print("Could not write to file")
                 return make_response("Error writing to file", 500)
             except:
                 print("Unexpected error.")
@@ -192,7 +171,7 @@ def videoUpload():
 
             if (currentChunk + 1 == totalChunks):
                 # This was the last chunk, the file should be complete and the size we expect
-                if absFilePath.stat().st_size != int(request.form['dztotalfilesize']):
+                if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
                     print(f"File {file.filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
                     # remove corrupted image
                     absFilePath.unlink(missing_ok=True) # missing_ok argument is set to True as the file might not exist (>= Python 3.8)
@@ -200,17 +179,24 @@ def videoUpload():
                 else:
                     print(f'File {file.filename} has been uploaded successfully')
 
-                    if not convert_to_mpd(courseID): # Error with conversion
+                    if (not convert_to_mpd(courseID)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
                         return redirect(url_for("teacherBP.videoUpload"))
-                    
+
                     # constructing a file path to see if the user has already uploaded an image and if the file exists
-                    sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid, videoPath=Path(filePathToStore).with_suffix(".mpd"))
+                    sql_operation(
+                        table="course", 
+                        mode="insert_draft",
+                        courseID=courseID, 
+                        teacherID=userInfo.uid, 
+                        videoPath=Path(filePathToStore).with_suffix(".mpd")
+                    )
                     return redirect(url_for("teacherBP.createCourse", courseID=courseID))
             """
             Create a row inside the database to store the video info.
             Display this row in the teachers course list 
             """
+            # TODO: Missing one return statement here
         else:
             return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
@@ -254,7 +240,7 @@ def createCourse(courseID:str):
                 # hence, we will flash an error message
                 flash("Please check the reCAPTCHA box and try again.", "Danger")
                 return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-            
+
             courseTitle = courseForm.courseTitle.data
             courseDescription = courseForm.courseDescription.data
             courseTagInput = request.form.get("courseTag")
@@ -279,7 +265,7 @@ def createCourse(courseID:str):
             except (UploadFailedError):
                 flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
                 return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-            
+
             videoPath = upload_file_from_path(
                 bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME, 
                 localFilePath=absFilePath, 
