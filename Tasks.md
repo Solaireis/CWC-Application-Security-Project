@@ -156,6 +156,10 @@
 #### Implemented:
 - Role based Access Control which groups the approutes via Blueprints, access control is granted only to the specific blueprints group
 - Role Based Access Control for the SQL Server
+  - Removal of complex group based SQL based on teachers recommendations
+  - This is due to the complexities of the group role functionality
+  - Reduce the security of SQL server to CRUD and Execute, keeping security simple 
+  - Security of SQL server depends on the web application to have proper Access Control
 
 ---
 
@@ -194,6 +198,8 @@
     - Sample files
     - Test files
   - Remove any Unused HTML,CSS Files
+
+
 
 
 ---
