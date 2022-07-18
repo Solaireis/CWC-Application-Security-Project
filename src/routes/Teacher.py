@@ -30,15 +30,15 @@ def courseList():
         maxPage, paginationArr = 0, []
         courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
         try:
-            if (not courseList[0]):   
+            if (not courseList[0]):
                 return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
             if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]      
+                courseList, maxPage = courseList[0], courseList[1]
                 # Compute the buttons needed for pagination
                 paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
         except:
             courseList = []
-    
+
         return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
     else:
         return redirect(url_for("guestBP.login"))
@@ -52,10 +52,10 @@ def draftCourseList():
         maxPage, paginationArr = 0, []
         courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
         try:
-            if (not courseList[0]):   
+            if (not courseList[0]):
                 return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
             if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]      
+                courseList, maxPage = courseList[0], courseList[1]
                 # Compute the buttons needed for pagination
                 paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
         except:
@@ -113,7 +113,7 @@ def draftCourseList():
 
 #             """
 #             Create a row inside the database to store the video info.
-#             Display this row in the teachers course list 
+#             Display this row in the teachers course list
 #             """
 #             sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid,videoPath=filePathToStore)
 #             return redirect(url_for("teacherBP.createCourse", courseID=courseID))
@@ -181,20 +181,26 @@ def videoUpload():
                     flash("Invalid Video!", "File Upload Error!")
                     return redirect(url_for("teacherBP.videoUpload"))
 
-                # constructing a file path to see if the user has already uploaded an image and if the file exists
-                sql_operation(
-                    table="course", 
-                    mode="insert_draft",
-                    courseID=courseID, 
-                    teacherID=userInfo.uid, 
-                    videoPath=Path(filePathToStore).with_suffix(".mpd")
-                )
-                return redirect(url_for("teacherBP.createCourse", courseID=courseID))
-        """
-        Create a row inside the database to store the video info.
-        Display this row in the teachers course list 
-        """
-        # TODO: Missing one return statement here
+                    if (not convert_to_mpd(courseID)): # Error with conversion
+                        flash("Invalid Video!", "File Upload Error!")
+                        return redirect(url_for("teacherBP.videoUpload"))
+
+                    # constructing a file path to see if the user has already uploaded an image and if the file exists
+                    sql_operation(
+                        table="course",
+                        mode="insert_draft",
+                        courseID=courseID,
+                        teacherID=userInfo.uid,
+                        videoPath=Path(filePathToStore).with_suffix(".mpd")
+                    )
+                    return redirect(url_for("teacherBP.createCourse", courseID=courseID))
+            """
+            Create a row inside the database to store the video info.
+            Display this row in the teachers course list
+            """
+            # TODO: Missing one return statement here
+        else:
+            return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
@@ -202,7 +208,7 @@ def videoUpload():
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
     if 'video_saving' in session:
-        session.pop('video_saving')
+        session.pop('video_saving', None)
     if ("user" in session):
         courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
         videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
@@ -263,28 +269,28 @@ def createCourse(courseID:str):
                 return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
             videoPath = upload_file_from_path(
-                bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME, 
-                localFilePath=absFilePath, 
+                bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
+                localFilePath=absFilePath,
                 uploadDestination=f"videos/{videoFilename}"
             )
             # Delete video from storage (relying on mpd file)
             sql_operation(
                 table="course",
                 mode="insert",
-                courseID=courseID, 
-                teacherID=userInfo.uid, 
-                courseName=courseTitle, 
-                courseDescription=courseDescription, 
-                courseImagePath=imageUrlToStore, 
-                courseCategory=courseTagInput, 
+                courseID=courseID,
+                teacherID=userInfo.uid,
+                courseName=courseTitle,
+                courseDescription=courseDescription,
+                courseImagePath=imageUrlToStore,
+                courseCategory=courseTagInput,
                 coursePrice=coursePrice,
                 videoPath=courseTuple[2]
             )
             stripe_product_create(
-                courseID=courseID, 
-                courseName=courseTitle, 
-                courseDescription=courseDescription, 
-                coursePrice=coursePrice, 
+                courseID=courseID,
+                courseName=courseTitle,
+                courseDescription=courseDescription,
+                coursePrice=coursePrice,
                 courseImagePath=imageUrlToStore
             )
             sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
@@ -344,7 +350,22 @@ def courseUpdate():
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courseFound):
         abort(404)
+
     userInfo = get_image_path(session["user"], returnUserInfo=True) 
+    courseForm = CreateCourseEdit(request.form)
+    updated = ""
+
+    if (request.method == "POST"):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot!", "Danger")
+
+    courseID = request.args.get("cid", default="test", type=str)
+    courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if (not courseFound):
+        abort(404)
+
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseForm = CreateCourseEdit(request.form)
     updated = ""
     if (request.method == "POST"):
@@ -371,16 +392,19 @@ def courseUpdate():
                 sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
                 stripe_product_update(courseID=courseID, courseName=courseForm.courseTitle.data)
                 updated += "Course Title, "
+
         if (courseForm.courseDescription.data):
             if (courseForm.courseDescription.data != courseFound.courseDescription):
                 sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
                 stripe_product_update(courseID=courseID, courseDescription=courseForm.courseDescription.data)
                 updated += "Course Description, "
+
         if (courseForm.coursePrice.data):
             if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
                 sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
                 stripe_product_update(courseID=courseID, coursePrice=courseForm.coursePrice.data)
                 updated += "Course Price, "
+
         courseTagInput = request.form.get("courseTag")
         if (courseTagInput != courseFound.courseCategory):
             sql_operation(table="course", mode="update_course_category", courseID=courseID, courseCategory=courseTagInput)
@@ -393,7 +417,7 @@ def courseUpdate():
             imageData = BytesIO(file.read())
             try:
                 imageUrlToStore = compress_and_resize_image(
-                    imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
+                    imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
                     folderPath=f"course-thumbnails"
                 )
             except (InvalidProfilePictureError):
@@ -402,16 +426,15 @@ def courseUpdate():
             except (UploadFailedError):
                 flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
                 return redirect("teacherBP.courseList")
-            
+
             sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
             stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
             updated += "Course Thumbnail, "
-        
+
         if (len(updated) > 0):
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
     else:
-        
         return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
 
 """ End Of Course Management """
