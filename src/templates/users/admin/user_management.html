@@ -505,6 +505,15 @@
                                     {% endwith %}
                                 </ul>
                             </nav>
+                            {% if request.args.get("user") != None %}
+                                <div class="col-12">
+                                    {% with urlPath = url_for("adminBP.userManagement") + "?p=" %}
+                                        <a href="{{ urlPath }}{{ request.args.get('p', default=1) }}">
+                                            <i class="fas fa-arrow-left"></i> Clear Search Filters
+                                        </a>
+                                    {% endwith %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
