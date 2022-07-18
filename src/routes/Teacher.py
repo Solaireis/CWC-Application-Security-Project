@@ -304,7 +304,7 @@ def courseUpdate():
         userInfo = get_image_path(session["user"], returnUserInfo=True) 
         courseForm = CreateCourseEdit(request.form)
         updated = ""
-        if (request.method == "POST" and courseForm.validate()):
+        if (request.method == "POST"):
             recaptchaToken = request.form.get("g-recaptcha-response")
             if (recaptchaToken is None):
                 flash("Please verify that you are not a bot!", "Danger")
