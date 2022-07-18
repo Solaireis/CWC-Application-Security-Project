@@ -44,7 +44,7 @@ def validate_course_video_path(courseID:str, urlPath:bool=False) -> Optional[str
 
     videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath('static', 'course_videos', courseID, courseID).with_suffix('.mp4')
     if not videoPath.is_file():
-        download_to_path("coursefinity-videos", get_blob_name(), videoPath)
+        download_to_path("coursefinity-videos", get_blob_name(None), videoPath)
         convert_to_mpd(courseID)
         pass
 
