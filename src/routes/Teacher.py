@@ -93,7 +93,6 @@ def draftCourseList():
 #             #     # hence, we will flash an error message
 #             #     flash("Please check the reCAPTCHA box and try again.", "Danger")
 #             #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-#             #TODO : FIX THE REST OF CODE
 #             print(request.files["videoUpload"])
 #             if (request.files["courseVideo"].filename == ""):
 #                 flash("Please Upload a Video", "File Upload Error!")
@@ -132,6 +131,7 @@ def videoUpload():
             abort(404)
 
         if (request.method == "POST"):
+            #TODO : maybe try find a way to fix?
             # recaptchaToken = request.form.get("g-recaptcha-response")
             # if (recaptchaToken is None):
             #     flash("Please verify that you are not a bot!", "Danger")
@@ -149,7 +149,7 @@ def videoUpload():
             #     # hence, we will flash an error message
             #     flash("Please check the reCAPTCHA box and try again.", "Danger")
             #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-            #TODO : FIX THE REST OF CODE
+
             file = request.files["videoUpload"]
             filename = secure_filename(file.filename)
             totalChunks = int(request.form["dztotalchunkcount"])
