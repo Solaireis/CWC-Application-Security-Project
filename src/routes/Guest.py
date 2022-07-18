@@ -132,11 +132,10 @@ def recoverAccountMFA():
             flash("Backup code is invalid!", "Danger")
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
-        if (not sql_operation(table="backup_codes", mode="check_backup_code_validity", backupCode=backupCodeInput, userID=userID)):
+        if (not sql_operation(table="2fa_token", mode="disable_2fa_with_backup_code", backupCode=backupCodeInput, userID=userID)):
             flash("Backup code is invalid!", "Danger")
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
-        sql_operation(table="2fa_token", mode="delete_token", userID=userID)
         flash("2FA has been disabled successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:

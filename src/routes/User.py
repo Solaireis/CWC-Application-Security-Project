@@ -109,7 +109,6 @@ def twoFactorAuthSetup():
         if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
             # update the user's 2FA status to True
             sql_operation(table="2fa_token", mode="add_token", userID=userInfo.uid, token=secretToken)
-            sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
             flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
             return redirect(url_for("userBP.userProfile"))
         else:
@@ -161,12 +160,12 @@ def showBackupCodes():
             flash("Please verify that you are not a bot!", "Sorry!")
             return redirect(url_for("userBP.showBackupCodes"))
 
-        backUpCodes = sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
+        backUpCodes = sql_operation(table="2fa_token", mode="generate_codes", userID=userID)
 
     if (request.method == "GET"):
-        backUpCodes = sql_operation(table="backup_codes", mode="get_backup_codes", userID=userID)
+        backUpCodes = sql_operation(table="2fa_token", mode="get_backup_codes", userID=userID)
         if (len(backUpCodes) < 1):
-            backUpCodes = sql_operation(table="backup_codes", mode="generate_codes", userID=userID)
+            backUpCodes = sql_operation(table="2fa_token", mode="generate_codes", userID=userID)
 
     userID = session["user"]
     userInfo = get_image_path(userID, returnUserInfo=True)
@@ -187,7 +186,6 @@ def disableTwoFactorAuth():
 
     if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
         sql_operation(table="2fa_token", mode="delete_token", userID=userID)
-        sql_operation(table="backup_codes", mode="delete_codes", userID=userID)
         flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
     else:
         flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
