@@ -131,7 +131,7 @@ def videoUpload():
             # Delete folder
             # Remove from SQL (if exists)
             # 
-            session.pop('video_saving')
+            session.pop('video_saving', None)
             pass
 
         userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -220,7 +220,7 @@ def videoUpload():
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
     if 'video_saving' in session:
-        session.pop('video_saving')
+        session.pop('video_saving', None)
     if ("user" in session):
         courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
         videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
