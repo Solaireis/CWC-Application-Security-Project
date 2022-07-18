@@ -103,6 +103,7 @@ def before_request() -> None:
             if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
                 # if user session is invalid as the user does not exist anymore
                 sql_operation(table="session", mode="delete_session", sessionID=sessionID)
+                print("Session cleared due to invalid user session")
                 session.clear()
 
             elif (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
@@ -110,12 +111,15 @@ def before_request() -> None:
                 if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address(), userAgent=request.user_agent.string)):
                     # if user session is expired or the userID does not match with the sessionID
                     sql_operation(table="session", mode="delete_session", sessionID=sessionID)
+                    print("Session cleared due to expired session!")
                     session.clear()
                 else:
                     # update session expiry time
+                    print("Session expiry time updated!")
                     sql_operation(table="session", mode="update_session", sessionID=sessionID)
             else:
                 # if session does not exist in the db
+                print("Session cleared due to invalid session ID!")
                 session.clear()
 
     # If the admin still has the session cookie but is not in a whitelisted IP address

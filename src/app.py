@@ -22,8 +22,17 @@ import logging
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
-# general Flask configurations
 app = Flask(__name__)
+
+# add the constant object to the flask app
+app.config["CONSTANTS"] = CONSTANTS
+
+# Import security related functions/objects
+with (app.app_context()):
+    from routes.RoutesSecurity import csrf, limiter
+
+# rate limiter configuration using flask limiter
+limiter.init_app(app)
 
 # Integrate Google CLoud Logging to the Flask app
 gcp_logging.handlers.setup_logging(CONSTANTS.GOOGLE_LOGGING_HANDLER)
@@ -39,7 +48,6 @@ if (not CONSTANTS.DEBUG_MODE):
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
 app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=7)
-from routes.RoutesSecurity import csrf
 csrf.init_app(app)
 
 # flask extension that helps set policies for the web app
@@ -115,18 +123,10 @@ app.config["ALLOWED_IMAGE_EXTENSIONS"] = CONSTANTS.ALLOWED_IMAGE_EXTENSIONS
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = CONSTANTS.ALLOWED_VIDEO_EXTENSIONS
 
-# add the constant object to the flask app
-app.config["CONSTANTS"] = CONSTANTS
-
 # import utility functions into the flask app and get neccessary functions
 # such as update_secret_key() for rotation of the secret key
 with app.app_context():
     from routes.RoutesUtils import update_secret_key
-
-# rate limiter configuration using flask limiter
-with app.app_context():
-    from routes.RoutesLimiter import limiter
-    limiter.init_app(app)
 
 # Register all app routes
 from routes.SuperAdmin import superAdminBP
@@ -138,8 +138,9 @@ app.register_blueprint(adminBP)
 from routes.Errors import errorBP
 app.register_blueprint(errorBP)
 
-from routes.General import generalBP
-app.register_blueprint(generalBP)
+with app.app_context():
+    from routes.General import generalBP
+    app.register_blueprint(generalBP)
 
 with app.app_context():
     from routes.Guest import guestBP

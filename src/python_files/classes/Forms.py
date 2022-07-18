@@ -48,7 +48,7 @@ class CreateChangePasswordForm(Form):
 
 class RecoverAccountMFAForm(Form):
     email = EmailField("Enter your email address:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
-    backupCode = StringField("Enter your backup code:", [validators.Length(min=12, max=12), validators.DataRequired()])
+    backupCode = StringField("Enter your backup code:", [validators.Length(min=19, max=19), validators.DataRequired()])
 
 class RequestResetPasswordForm(Form):
     email = EmailField("Enter your email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])

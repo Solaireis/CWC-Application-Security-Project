@@ -25,8 +25,7 @@ const lowercaseRegex = /[a-z]+/;
 const uppercaseRegex = /[A-Z]+/;
 const numberRegex = /[\d]+/;
 
-passForm.addEventListener("submit", function(e) {
-    e.preventDefault();
+function checkPasswords() {
     var failed = false;
     var progressPercent = parseInt(strengthIndicator.style.width);
     if (progressPercent < (100 / numOfRegex) * 3) {
@@ -46,12 +45,24 @@ passForm.addEventListener("submit", function(e) {
     }
 
     if (failed) {
-        flashMsg.remove();
-        return;
+        if (flashMsg) {
+            flashMsg.remove();
+        }
+        return false;
     }
 
-    passForm.submit();
-});
+    return true;
+}
+
+if (passForm) {
+    passForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        var successfulChecks = checkPasswords();
+        if (successfulChecks) {
+            passForm.submit();
+        }
+    });
+}
 
 passInput.addEventListener("input", function(e) {
     var pass = passInput.value;

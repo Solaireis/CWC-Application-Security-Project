@@ -14,49 +14,10 @@ loggedInBP = Blueprint("loggedInBP", __name__, static_folder="static", template_
 
 @loggedInBP.route("/logout")
 def logout():
-    if ("user" not in session and "admin" not in session):
-        return redirect(url_for("guestBP.login"))
-
     sql_operation(table="session", mode="delete_session", sessionID=session["sid"])
     session.clear()
     flash("You have successfully logged out.", "You have logged out!")
     return redirect(url_for("generalBP.home"))
-
-# blocks all user from viewing the video so that they are only allowed to view the video from the purchase view
-@loggedInBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
-def rawVideo(courseID:str, videoName:str):
-    # TODO: Work on the video access control
-    if ("user" in session):
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo.role == "Teacher" and sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
-            pass # allow access to the video for the teacher user if they own the course
-        elif (userInfo.role == "Teacher" and sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)):
-            pass # allow access to the video if the teacher user is in the midst of creating the course
-        else:
-            abort(404)
-
-    courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
-    # Allow the teacher to see the video if the teacher is in the midst of creating the course
-    if (courseTuple):
-        filePathArr = courseTuple[2].rsplit("/", 2)[-2:]
-        return send_from_directory(
-            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])), 
-            filePathArr[1], 
-            as_attachment=False, 
-            max_age=31536000 # TODO: Check and configure the max age cache
-        )
-
-    videoPath = get_course_video_path(courseID, videoName)
-    print("Formatted path:", videoPath)
-    if (videoPath is None):
-        abort(404)
-
-    if (not convert_to_mpd(current_app.root_path + videoPath)):
-        abort(500)
-
-    # TODO: work on partial content request instead of sending the whole video file
-    # TODO: Fix video player as it isn't loading/playing anymore
-    return render_template("users/admin/raw_video.html", videoPath=videoPath)
 
 @loggedInBP.route("/change-username", methods=["GET","POST"])
 def updateUsername():

@@ -61,7 +61,7 @@
 <div class="container">
     <div class="row">
         <div class="LSUForm col">
-            <div class="bg-dark p-4 rounded">
+            <div class="bg-dark p-4 rounded" id="userForm">
                 <h4 class="text-white">Two-factor backup codes</h4>
                 <div class="col-12">
                     <p class="text-white">
@@ -71,32 +71,45 @@
                 <div class="alert alert-warning d-flex align-items-center" role="alert">
                     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
                     <div>
-                        Put these in a safe spot. If you lose your device and don’t have the recovery codes, you will lose access to your account.
+                        Store these backup codes somewhere safe. If you do not have these backup codes and lost access to your 2FA codes, you will lose access to your account.
                     </div>
                 </div>
-                <ul class="list-group list-group-flush">
+                <ul class="list-group">
                     {% for backupCode, status in backupCodes %}
                         {% if status != "Active" %}
-                            <li class="list-group-item">
-                                <span class="text-decoration-line-through">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="text-decoration-line-through backupCodeUsed">
                                     {{ backupCode }}
                                 </span>
+                                <span class="badge bg-danger rounded-pill">Used</span>
                             </li>
                         {% else %}
-                            <li class="list-group-item">{{ backupCode }}</li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span class="backupCodeActive">{{ backupCode }}</span>
+                                <span class="badge bg-success rounded-pill">Active</span>
+                            </li>
                         {% endif %}
                     {% endfor %}
                 </ul>
-                <div class="col-12 p-2">
-                    <button class="btn btn-primary btn-block" data-bs-toggle="modal" data-bs-target="#generateNewCodesModal">
-                        Generate New Codes
-                    </button>
+                <div class="col-12 pt-2 d-flex justify-content-end">
+                    
                     <button class="btn btn-primary btn-block" id="downloadCodes">
                         <i class="fas fa-download"></i> Download Codes
                     </button>
                 </div>
-                <div class="col-12 p-2">
-                    <a href="{{ url_for('userBP.userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back</a>
+                <hr class="mt-4 text-white">
+                <div class="col-12 text-white text-center">
+                    <h6>Generate new backup codes</h6>
+                    <p>When you generate new backup codes, your old codes won't work anymore and you must download or print the new codes.</p>
+                </div>
+                <div class="col-12 pt-2 d-flex justify-content-center">
+                    <button class="btn btn-primary btn-block" data-bs-toggle="modal" data-bs-target="#generateNewCodesModal">
+                        Generate New Codes
+                    </button>
+                </div>
+                <hr class="mt-4 text-white">
+                <div class="col-12 pt-4 pb-4">
+                    <a href="{{ url_for('userBP.userProfile') }}" class="float-start form-buttons margin-top margin-top2 text-white"><i class="fas fa-arrow-left"></i> Back to profile</a>
                 </div>
             </div>
         </div>
@@ -118,24 +131,5 @@
             document.getElementById("generateCodesForm").submit();
         }
     </script>
-    <script nonce="{{ csp_nonce() }}">
-        let downloadCodes = document.getElementById("downloadCodes");
-        const backupCodes = document.querySelectorAll("li.list-group-item");
-
-        downloadCodes.addEventListener("click", function() {
-            // Construct a string to hold the backup codes.
-            var backupCodesText = "";
-            for (var i = 0; i < backupCodes.length; i++) {
-                backupCodesText += backupCodes[i].innerText + "\n";
-            }
-
-            // Create a link to download the backup codes (client-side).
-            var backupCodesBlob = new Blob([backupCodesText], {type: "text/plain;charset=utf-8"});
-            var backupCodesURL = URL.createObjectURL(backupCodesBlob);
-            var backupCodesLink = document.createElement("a");
-            backupCodesLink.href = backupCodesURL;
-            backupCodesLink.download = "backup_codes.txt";
-            backupCodesLink.click();
-        });
-    </script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/backup_codes.js') }}"></script>
 {% endblock %}

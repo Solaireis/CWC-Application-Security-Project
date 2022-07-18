@@ -37,7 +37,7 @@
                         </div>
                     </div>
                 </div>
-                <form action="" method="POST" class="row g-3" id="passForm">
+                <form action="" method="POST" class="row g-3" id="signupForm">
                     <h4 class="text-white">Join us and start learning!</h4>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
@@ -116,7 +116,7 @@
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
     <script nonce="{{ csp_nonce() }}">
         function onSubmit(token) {
-            document.getElementById("passForm").submit();
+            document.getElementById("signupForm").submit();
         }
     </script>
 {% endblock %}

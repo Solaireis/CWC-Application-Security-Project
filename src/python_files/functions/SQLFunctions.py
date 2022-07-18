@@ -27,7 +27,7 @@ from .NormalFunctions import JWTExpiryProperties, convert_to_mpd, download_to_pa
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
-def validate_course_video_path(courseID:str, urlPath:bool=False) -> Optional[str]:
+def validate_course_video_path(courseID:str) -> Optional[str]:
     """
     Gets the path to the course video by querying the database.
 
@@ -35,21 +35,29 @@ def validate_course_video_path(courseID:str, urlPath:bool=False) -> Optional[str
     - courseID (str): The path to the video to convert.
         - e.g. ".../static/course_videos/<courseID>/<courseID>.mp4"
 
-
     Returns:
     - The path to the course video if it exists in the database, None otherwise.
     """
-    # Will retrieve a google storage link to the course video
+    videoPath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath("static", "course_videos", courseID)
+    if (not videoPath.exists() or not videoPath.is_dir()):
+        # Make directory for the video to be downloaded from Google Cloud Storage API
+        videoPath.mkdir(parents=True, exist_ok=True)
+
+    # Retrieve the Google Storage link to the course video from the database
     # e.g. https://storage.googleapis.com/<bucketName>/<blobName>
+    videoStorageURL = sql_operation(table="course", mode="get_video_path", courseID=courseID)
+    if (videoStorageURL is None):
+        # If course does not exist for some reason
+        return None
 
-    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath('static', 'course_videos', courseID, courseID).with_suffix('.mp4')
-    if not videoPath.is_file():
-        download_to_path("coursefinity-videos", get_blob_name(None), videoPath)
+    # Join the filename from the Google Storage link with the path to the course video folder path
+    videoPath = videoPath.joinpath(videoStorageURL.rsplit("/", 1)[1])
+    if (not videoPath.is_file()):
+        # Download the video from Google Cloud Storage API
+        download_to_path("coursefinity-videos", get_blob_name(videoStorageURL), videoPath)
         convert_to_mpd(courseID)
-        pass
 
-    if urlPath:
-        return url_for('static', filename=f'course_videos/{courseID}/{courseID}.mpd')
+    return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
 
 def get_blob_name(url:str="") -> str:
     """
@@ -142,7 +150,7 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
     htmlBody = [
         f"Welcome to CourseFinity!<br>",
         "Please click the link below to verify your email address:",
-        f"<a href={url_for('guestBP.verifyEmail', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
+        f"<a href={url_for('generalBP.verifyEmail', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
     ]
     send_email(to=email, subject="Please verify your email!", body="<br>".join(htmlBody), name=username)
 

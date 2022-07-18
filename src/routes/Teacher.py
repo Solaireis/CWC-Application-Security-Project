@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response, send_from_directory
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -125,82 +125,78 @@ def draftCourseList():
 @csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
-    if ("user" in session):
+    if ("video_saving" in session):
+        # Delete folder
+        # Remove from SQL (if exists)
+        session.pop("video_saving", None)
 
-        if ("video_saving" in session):
-            # Delete folder
-            # Remove from SQL (if exists)
-            session.pop("video_saving", None)
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    if (userInfo.role != "Teacher"):
+        abort(404)
 
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo.role != "Teacher"):
-            abort(404)
+    if (request.method == "POST"):
+        file = request.files["videoUpload"]
+        filename = secure_filename(file.filename)
+        totalChunks = int(request.form["dztotalchunkcount"])
+        currentChunk = int(request.form['dzchunkindex'])
+        if (filename == ""):
+            flash("Please Upload a Video", "File Upload Error!")
+            return redirect(url_for("teacherBP.videoUpload"))
 
-        if (request.method == "POST"):
-            file = request.files["videoUpload"]
-            filename = secure_filename(file.filename)
-            totalChunks = int(request.form["dztotalchunkcount"])
-            currentChunk = int(request.form['dzchunkindex'])
-            if (filename == ""):
-                flash("Please Upload a Video", "File Upload Error!")
-                return redirect(url_for("teacherBP.videoUpload"))
+        courseID = generate_id()
+        session["video_saving"] = courseID # Saving started; interruption = restart from scratch
+        filename = courseID + Path(filename).suffix # change filename to courseid.mp4
+        #folder creation
+        filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
+        print(f"This is the folder for the inputted file: {filePath}")
+        filePath.mkdir(parents=True, exist_ok=True)
 
-            courseID = generate_id()
-            session["video_saving"] = courseID # Saving started; interruption = restart from scratch
-            filename = courseID + Path(filename).suffix # change filename to courseid.mp4
-            #folder creation
-            filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
-            print(f"This is the folder for the inputted file: {filePath}")
-            filePath.mkdir(parents=True, exist_ok=True)
+        filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") # path for mp4 file stored in sql
+        print("Total file size:", int(request.form["dztotalfilesize"]))
+        absFilePath = filePath.joinpath(filename) # path of the mp4 file
 
-            filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") # path for mp4 file stored in sql
-            print("Total file size:", int(request.form["dztotalfilesize"]))
-            absFilePath = filePath.joinpath(filename) # path of the mp4 file
+        try:
+            with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
+                videoData.seek(int(request.form["dzchunkbyteoffset"]))
+                print("dzchunkbyteoffset:", int(request.form["dzchunkbyteoffset"]))
+                videoData.write(file.stream.read())
+        except (OSError):
+            print("Could not write to file")
+            return make_response("Error writing to file", 500)
+        except:
+            print("Unexpected error.")
+            return make_response("Unexpected error", 500)
 
-            try:
-                with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
-                    videoData.seek(int(request.form["dzchunkbyteoffset"]))
-                    print("dzchunkbyteoffset:", int(request.form["dzchunkbyteoffset"]))
-                    videoData.write(file.stream.read())
-            except (OSError):
-                print("Could not write to file")
-                return make_response("Error writing to file", 500)
-            except:
-                print("Unexpected error.")
-                return make_response("Unexpected error", 500)
+        if (currentChunk + 1 == totalChunks):
+            # This was the last chunk, the file should be complete and the size we expect
+            if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
+                print(f"File {file.filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
+                # remove corrupted image
+                absFilePath.unlink(missing_ok=True) # missing_ok argument is set to True as the file might not exist (>= Python 3.8)
+                return make_response("Uploaded image is corrupted! Please try again!", 500)
+            else:
+                print(f'File {file.filename} has been uploaded successfully')
 
-            if (currentChunk + 1 == totalChunks):
-                # This was the last chunk, the file should be complete and the size we expect
-                if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
-                    print(f"File {file.filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
-                    # remove corrupted image
-                    absFilePath.unlink(missing_ok=True) # missing_ok argument is set to True as the file might not exist (>= Python 3.8)
-                    return make_response("Uploaded image is corrupted! Please try again!", 500)
-                else:
-                    print(f'File {file.filename} has been uploaded successfully')
+                if (not convert_to_mpd(courseID)): # Error with conversion
+                    flash("Invalid Video!", "File Upload Error!")
+                    return redirect(url_for("teacherBP.videoUpload"))
 
-                    if (not convert_to_mpd(courseID)): # Error with conversion
-                        flash("Invalid Video!", "File Upload Error!")
-                        return redirect(url_for("teacherBP.videoUpload"))
-
-                    # constructing a file path to see if the user has already uploaded an image and if the file exists
-                    sql_operation(
-                        table="course", 
-                        mode="insert_draft",
-                        courseID=courseID, 
-                        teacherID=userInfo.uid, 
-                        videoPath=Path(filePathToStore).with_suffix(".mpd")
-                    )
-                    return redirect(url_for("teacherBP.createCourse", courseID=courseID))
-            """
-            Create a row inside the database to store the video info.
-            Display this row in the teachers course list 
-            """
-            # TODO: Missing one return statement here
-        else:
-            return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+                # constructing a file path to see if the user has already uploaded an image and if the file exists
+                sql_operation(
+                    table="course", 
+                    mode="insert_draft",
+                    courseID=courseID, 
+                    teacherID=userInfo.uid, 
+                    videoPath=Path(filePathToStore).with_suffix(".mpd")
+                )
+                return redirect(url_for("teacherBP.createCourse", courseID=courseID))
+        """
+        Create a row inside the database to store the video info.
+        Display this row in the teachers course list 
+        """
+        # TODO: Missing one return statement here
     else:
-        return redirect(url_for("guestBP.login"))
+        return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 #TODO: Hash Video data, implement dropzone to encrpyt video data
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
@@ -304,104 +300,118 @@ def createCourse(courseID:str):
 
 """ Start Of Course Management """
 
+@teacherBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
+def rawVideo(courseID:str, videoName:str):
+    if (sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
+        pass # allow access to the video for the teacher user if they own the course
+    elif (sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)):
+        pass # allow access to the video if the teacher user is in the midst of creating the course
+    else:
+        abort(404)
+
+    # TODO: Fix SQL query to get the video path (Index out of error)
+    courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
+    # Allow the teacher to see the video if the teacher is in the midst of creating the course
+    if (courseTuple):
+        filePathArr = courseTuple[2].rsplit("/", 2)[-2:]
+        return send_from_directory(
+            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])), 
+            filePathArr[1], 
+            as_attachment=False, 
+            max_age=31536000
+        )
+    else:
+        abort(404)
+
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
-    if ("user" in session):
-        courseID = request.args.get("cid", default="test", type=str)
-        sql_operation(table="course", mode="delete", courseID=courseID)
-        print("Course Deleted")
-        return redirect(url_for("teacherBP.courseList"))
-    else:
-        return redirect(url_for("guestBP.login"))
+    courseID = request.args.get("cid", default="test", type=str)
+    sql_operation(table="course", mode="delete", courseID=courseID)
+    print("Course Deleted")
+    return redirect(url_for("teacherBP.courseList"))
 
 @teacherBP.route("/delete-draft-course", methods=["GET", "POST"])
 def draftCourseDelete():
-    if ("user" in session):
-        courseID = request.args.get("cid", default="test", type=str)
-        sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
-        print("Draft Course Deleted")
-        return redirect(url_for("teacherBP.courseList"))
-    else:
-        return redirect(url_for("guestBP.login"))
+    courseID = request.args.get("cid", default="test", type=str)
+    sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
+    print("Draft Course Deleted")
+    return redirect(url_for("teacherBP.courseList"))
 
 @teacherBP.route("/edit-course", methods=["GET", "POST"])
 def courseUpdate():
     #TODO: Form is working, gonna make edits soon
-    if ("user" in session):
-        courseID = request.args.get("cid", default="test", type=str)
-        courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-        if (not courseFound):
-            abort(404)
-        userInfo = get_image_path(session["user"], returnUserInfo=True) 
-        courseForm = CreateCourseEdit(request.form)
-        updated = ""
-        if (request.method == "POST"):
-            recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is None):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
-
-            try:
-                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="edit_course")
-            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
-
-            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                # if the score is not within the acceptable threshold
-                # then the user is likely a bot
-                # hence, we will flash an error message
-                flash("Please check the reCAPTCHA box and try again.", "Danger")
-                return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
-
-            if (courseForm.courseTitle.data):
-                if (courseForm.courseTitle.data != courseFound.courseName):
-                    sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
-                    stripe_product_update(courseID=courseID, courseName=courseForm.courseTitle.data)
-                    updated += "Course Title, "
-            if (courseForm.courseDescription.data):
-                if (courseForm.courseDescription.data != courseFound.courseDescription):
-                    sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
-                    stripe_product_update(courseID=courseID, courseDescription=courseForm.courseDescription.data)
-                    updated += "Course Description, "
-            if (courseForm.coursePrice.data):
-                if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
-                    sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
-                    stripe_product_update(courseID=courseID, coursePrice=courseForm.coursePrice.data)
-                    updated += "Course Price, "
-            courseTagInput = request.form.get("courseTag")
-            if (courseTagInput != courseFound.courseCategory):
-                sql_operation(table="course", mode="update_course_category", courseID=courseID, courseCategory=courseTagInput)
-                updated += "Course Tag, "
-
-            file = request.files.get("courseThumbnail")
-            filename = secure_filename(file.filename)
-            if (filename != ""):
-                filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
-                imageData = BytesIO(file.read())
-                try:
-                    imageUrlToStore = compress_and_resize_image(
-                        imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
-                        folderPath=f"course-thumbnails"
-                    )
-                except (InvalidProfilePictureError):
-                    flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                    return redirect("teacherBP.courseList")
-                except (UploadFailedError):
-                    flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
-                    return redirect("teacherBP.courseList")
-                
-                sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
-                stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
-                updated += "Course Thumbnail, "
-            
-            if (len(updated) > 0):
-                flash(f"Fields Updated : {updated}", "Successful Update")
-            return redirect(url_for("teacherBP.courseList"))
-        else:
-            
+    courseID = request.args.get("cid", default="test", type=str)
+    courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if (not courseFound):
+        abort(404)
+    userInfo = get_image_path(session["user"], returnUserInfo=True) 
+    courseForm = CreateCourseEdit(request.form)
+    updated = ""
+    if (request.method == "POST"):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="edit_course")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!", "Danger")
+            return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+
+        if (courseForm.courseTitle.data):
+            if (courseForm.courseTitle.data != courseFound.courseName):
+                sql_operation(table="course", mode="update_course_title", courseID=courseID, courseTitle=courseForm.courseTitle.data)
+                stripe_product_update(courseID=courseID, courseName=courseForm.courseTitle.data)
+                updated += "Course Title, "
+        if (courseForm.courseDescription.data):
+            if (courseForm.courseDescription.data != courseFound.courseDescription):
+                sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
+                stripe_product_update(courseID=courseID, courseDescription=courseForm.courseDescription.data)
+                updated += "Course Description, "
+        if (courseForm.coursePrice.data):
+            if (float(courseForm.coursePrice.data) != float(courseFound.coursePrice)):
+                sql_operation(table="course", mode="update_course_price", courseID=courseID, coursePrice=courseForm.coursePrice.data)
+                stripe_product_update(courseID=courseID, coursePrice=courseForm.coursePrice.data)
+                updated += "Course Price, "
+        courseTagInput = request.form.get("courseTag")
+        if (courseTagInput != courseFound.courseCategory):
+            sql_operation(table="course", mode="update_course_category", courseID=courseID, courseCategory=courseTagInput)
+            updated += "Course Tag, "
+
+        file = request.files.get("courseThumbnail")
+        filename = secure_filename(file.filename)
+        if (filename != ""):
+            filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
+            imageData = BytesIO(file.read())
+            try:
+                imageUrlToStore = compress_and_resize_image(
+                    imageData=imageData, imagePath=filePath, dimensions=(1920, 1080), 
+                    folderPath=f"course-thumbnails"
+                )
+            except (InvalidProfilePictureError):
+                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+                return redirect("teacherBP.courseList")
+            except (UploadFailedError):
+                flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
+                return redirect("teacherBP.courseList")
+            
+            sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
+            stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
+            updated += "Course Thumbnail, "
+        
+        if (len(updated) > 0):
+            flash(f"Fields Updated : {updated}", "Successful Update")
+        return redirect(url_for("teacherBP.courseList"))
     else:
-        return redirect(url_for("guestBP.login"))
+        
+        return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
 
 """ End Of Course Management """

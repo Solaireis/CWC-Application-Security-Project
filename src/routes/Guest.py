@@ -20,7 +20,7 @@ from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.Errors import *
-from .RoutesLimiter import limiter
+from .RoutesSecurity import limiter
 
 # import python standard libraries
 from zoneinfo import ZoneInfo
@@ -144,9 +144,6 @@ def recoverAccountMFA():
 @guestBP.route("/reset-password", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
 def resetPasswordRequest():
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     requestForm = RequestResetPasswordForm(request.form)
     if (request.method == "POST" and requestForm.validate()):
         # if the request is a post request and the form is valid
@@ -216,9 +213,6 @@ def resetPasswordRequest():
 @guestBP.route("/reset-password/<string:token>", methods=["GET", "POST"])
 @limiter.limit("15 per minute")
 def resetPassword(token:str):
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
@@ -291,161 +285,155 @@ def resetPassword(token:str):
 @guestBP.route("/login", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
 def login():
-    if ("user" not in session or "admin" not in session):
-        loginForm = CreateLoginForm(request.form)
-        if (request.method == "GET"):
+    loginForm = CreateLoginForm(request.form)
+    if (request.method == "GET"):
+        return render_template("users/guest/login.html", form=loginForm)
+
+    if (request.method == "POST" and loginForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
-        if (request.method == "POST" and loginForm.validate()):
-            recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is None):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/guest/login.html", form=loginForm)
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="login")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!", "Danger")
+            return render_template("users/guest/login.html", form=loginForm)
 
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            return render_template("users/guest/login.html", form=loginForm)
+
+        requestIPAddress = get_remote_address()
+        emailInput = loginForm.email.data
+        passwordInput = loginForm.password.data
+        userInfo = successfulLogin = userHasTwoFA = False
+        try:
+            # returns the userID, boolean if user logged in from a new IP address, username, role
+            userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
+            # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
+
+            if (userInfo[1]):
+                # login from new ip address
+                raise LoginFromNewIpAddressError("Login from a new IP address!")
+
+            successfulLogin = True
+            sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
+
+            userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
+        except (UserIsNotActiveError, EmailDoesNotExistError):
+            flash("Please check your entries and try again!", "Danger")
+        except (IncorrectPwdError):
             try:
-                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="login")
-            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/guest/login.html", form=loginForm)
-
-            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                # if the score is not within the acceptable threshold
-                # then the user is likely a bot
-                # hence, we will flash an error message
-                flash("Please check the reCAPTCHA box and try again.", "Danger")
-                return render_template("users/guest/login.html", form=loginForm)
-
-            requestIPAddress = get_remote_address()
-            emailInput = loginForm.email.data
-            passwordInput = loginForm.password.data
-            userInfo = successfulLogin = userHasTwoFA = False
-            try:
-                # returns the userID, boolean if user logged in from a new IP address, username, role
-                userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
-                # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
-
-                if (userInfo[1]):
-                    # login from new ip address
-                    raise LoginFromNewIpAddressError("Login from a new IP address!")
-
-                successfulLogin = True
-                sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
-
-                userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
-            except (UserIsNotActiveError, EmailDoesNotExistError):
+                sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
                 flash("Please check your entries and try again!", "Danger")
-            except (IncorrectPwdError):
-                try:
-                    sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
-                    flash("Please check your entries and try again!", "Danger")
-                except (AccountLockedError):
-                    flash("Too many failed login attempts, please try again later.", "Danger")
             except (AccountLockedError):
                 flash("Too many failed login attempts, please try again later.", "Danger")
-            except (UserIsUsingOauth2Error, EmailNotVerifiedError):
-                flash("Please check your entries and try again!", "Danger")
-            except (LoginFromNewIpAddressError):
-                # sends an email with a generated TOTP code 
-                # to authenticate the user if login was successful.
-                # 640 bits/128 characters in length (5 bits per base32 character).
-                # Chose the length of the code to be 824 characters
-                # as it must be a multiple of 8 for the length
-                # to avoid unexpected behaviour when verifying the TOTP
-                # https://github.com/pyauth/pyotp/issues/115
-                generatedTOTPSecretToken = pyotp.random_base32(length=128)
-                generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
+        except (AccountLockedError):
+            flash("Too many failed login attempts, please try again later.", "Danger")
+        except (UserIsUsingOauth2Error, EmailNotVerifiedError):
+            flash("Please check your entries and try again!", "Danger")
+        except (LoginFromNewIpAddressError):
+            # sends an email with a generated TOTP code 
+            # to authenticate the user if login was successful.
+            # 640 bits/128 characters in length (5 bits per base32 character).
+            # Chose the length of the code to be 824 characters
+            # as it must be a multiple of 8 for the length
+            # to avoid unexpected behaviour when verifying the TOTP
+            # https://github.com/pyauth/pyotp/issues/115
+            generatedTOTPSecretToken = pyotp.random_base32(length=128)
+            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
-                ipDetails = current_app.config["CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
-                # utc+8 time (SGT)
-                currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
-                currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
+            ipDetails = current_app.config["CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
+            # utc+8 time (SGT)
+            currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
+            currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
 
-                # format the string location from the ip address details
-                locationString = ""
-                if (ipDetails.get("city") is not None):
-                    locationString += ipDetails["city"]
-                else:
-                    locationString += "Unknown city"
-
-                if (ipDetails.get("region") is not None):
-                    if (locationString != ""):
-                        locationString += ", "
-                    locationString += ipDetails["region"]
-                else:
-                    locationString += ", Unknown region"
-
-                if (ipDetails.get("country_name") is not None):
-                    if (locationString != ""):
-                        locationString += ", "
-                    locationString += ipDetails["country_name"]
-                else:
-                    locationString += ", Unknown country"
-
-                messagePartList = [
-                    f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
-                    f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
-                    "* Location is approximate based on the login's IP address.",
-                    f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
-                    f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('loggedInBP.updatePassword', _external=True)}"
-                ]
-                send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
-
-                session["user_email"] = emailInput
-                session["ip_details"] = ipDetails
-
-                # Check if password has been compromised using haveibeenpwned's API,
-                # If the API is down, then we will not check for the time being
-                passwordCompromised = pwd_has_been_pwned(passwordInput)
-                if (isinstance(passwordCompromised, tuple)):
-                    session["password_compromised"] = False
-                else:
-                    session["password_compromised"] = passwordCompromised
-                session["temp_uid"] = userInfo[0]
-                session["username"] = userInfo[2]
-                session["token"] = RSA_encrypt(generatedTOTPSecretToken)
-                flash("An email has been sent to you with your special access code!", "Success")
-                return redirect(url_for("guestBP.enterGuardTOTP"))
-
-            passwordCompromised = None
-            if (successfulLogin):
-                # Check if password has been compromised using haveibeenpwned's API,
-                # If the API is down, then we will not check for the time being
-                # Otherwise, if the API is available, check if compromised.
-                # If so, we will send an email to the user and flash a message
-                # on the home page after the login process
-                passwordCompromised = pwd_has_been_pwned(passwordInput)
-                if (isinstance(passwordCompromised, tuple)):
-                    passwordCompromised = False
-
-            if (successfulLogin and not userHasTwoFA):
-                session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
-                session["user"] = userInfo[0]
-
-                if (passwordCompromised):
-                    send_change_password_alert_email(email=emailInput)
-                    return redirect(url_for("generalBP.home"))
-                return redirect(url_for("generalBP.home"))
-            elif (successfulLogin and userHasTwoFA):
-                # if user has 2fa enabled and is 
-                # logged in from a known ip address
-                session["user_email"] = emailInput
-                session["password_compromised"] = passwordCompromised
-                session["temp_uid"] = userInfo[0]
-                return redirect(url_for("guestBP.enter2faTOTP"))
+            # format the string location from the ip address details
+            locationString = ""
+            if (ipDetails.get("city") is not None):
+                locationString += ipDetails["city"]
             else:
-                sleep(2) # Artificial delay to prevent attacks such as enumeration attacks, etc.
-                return render_template("users/guest/login.html", form=loginForm)
+                locationString += "Unknown city"
+
+            if (ipDetails.get("region") is not None):
+                if (locationString != ""):
+                    locationString += ", "
+                locationString += ipDetails["region"]
+            else:
+                locationString += ", Unknown region"
+
+            if (ipDetails.get("country_name") is not None):
+                if (locationString != ""):
+                    locationString += ", "
+                locationString += ipDetails["country_name"]
+            else:
+                locationString += ", Unknown country"
+
+            messagePartList = [
+                f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
+                f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
+                "* Location is approximate based on the login's IP address.",
+                f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
+                f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('loggedInBP.updatePassword', _external=True)}"
+            ]
+            send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
+
+            session["user_email"] = emailInput
+            session["ip_details"] = ipDetails
+
+            # Check if password has been compromised using haveibeenpwned's API,
+            # If the API is down, then we will not check for the time being
+            passwordCompromised = pwd_has_been_pwned(passwordInput)
+            if (isinstance(passwordCompromised, tuple)):
+                session["password_compromised"] = False
+            else:
+                session["password_compromised"] = passwordCompromised
+            session["temp_uid"] = userInfo[0]
+            session["username"] = userInfo[2]
+            session["token"] = RSA_encrypt(generatedTOTPSecretToken)
+            flash("An email has been sent to you with your special access code!", "Success")
+            return redirect(url_for("guestBP.enterGuardTOTP"))
+
+        passwordCompromised = None
+        if (successfulLogin):
+            # Check if password has been compromised using haveibeenpwned's API,
+            # If the API is down, then we will not check for the time being
+            # Otherwise, if the API is available, check if compromised.
+            # If so, we will send an email to the user and flash a message
+            # on the home page after the login process
+            passwordCompromised = pwd_has_been_pwned(passwordInput)
+            if (isinstance(passwordCompromised, tuple)):
+                passwordCompromised = False
+
+        if (successfulLogin and not userHasTwoFA):
+            session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
+            session["user"] = userInfo[0]
+
+            if (passwordCompromised):
+                send_change_password_alert_email(email=emailInput)
+                return redirect(url_for("generalBP.home"))
+            return redirect(url_for("generalBP.home"))
+        elif (successfulLogin and userHasTwoFA):
+            # if user has 2fa enabled and is 
+            # logged in from a known ip address
+            session["user_email"] = emailInput
+            session["password_compromised"] = passwordCompromised
+            session["temp_uid"] = userInfo[0]
+            return redirect(url_for("guestBP.enter2faTOTP"))
         else:
-            return render_template("users/guest/login.html", form = loginForm)
+            sleep(2) # Artificial delay to prevent attacks such as enumeration attacks, etc.
+            return render_template("users/guest/login.html", form=loginForm)
     else:
-        return redirect(url_for("generalBP.home"))
+        return render_template("users/guest/login.html", form = loginForm)
 
 @guestBP.route("/unlock-account/<string:token>")
 @limiter.limit("15 per minute")
 def unlockAccount(token:str):
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     # verify the token
     data = EC_verify(data=token, getData=True)
     if (not data.get("verified")):
@@ -482,9 +470,6 @@ def enterGuardTOTP():
     """
     This page is only accessible to users who are logging but from a new IP address.
     """
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     if (
         "user_email" not in session or
         "ip_details" not in session or
@@ -554,29 +539,23 @@ def enterGuardTOTP():
 
 @guestBP.route("/login-google")
 def loginViaGoogle():
-    if ("user" not in session or "admin" not in session):
-        # https://developers.google.com/identity/protocols/oauth2/web-server#python
-        authorisationUrl, state = current_app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
-            # Enable offline access so that you can refresh an
-            # access token without re-prompting the user for permission
-            access_type="offline",
+    # https://developers.google.com/identity/protocols/oauth2/web-server#python
+    authorisationUrl, state = current_app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
+        # Enable offline access so that you can refresh an
+        # access token without re-prompting the user for permission
+        access_type="offline",
 
-            # Enable incremental authorization
-            # Recommended as a best practice according to Google documentation
-            include_granted_scopes="true"
-        )
+        # Enable incremental authorization
+        # Recommended as a best practice according to Google documentation
+        include_granted_scopes="true"
+    )
 
-        # Store the state so the callback can verify the auth server response
-        session["state"] = RSA_encrypt(state)
-        return redirect(authorisationUrl)
-    else:
-        return redirect(url_for("generalBP.home"))
+    # Store the state so the callback can verify the auth server response
+    session["state"] = RSA_encrypt(state)
+    return redirect(authorisationUrl)
 
 @guestBP.route("/login-callback")
 def loginCallback():
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     if ("state" not in session):
         return redirect(url_for("guestBP.login"))
 
@@ -640,100 +619,94 @@ def loginCallback():
 
 @guestBP.route("/signup", methods=["GET", "POST"])
 def signup():
-    if ("user" not in session and "admin" not in session):
-        signupForm = CreateSignUpForm(request.form)
-        if (request.method == "GET"):
+    signupForm = CreateSignUpForm(request.form)
+    if (request.method == "GET"):
+        return render_template("users/guest/signup.html", form=signupForm)
+
+    if (request.method == "POST" and signupForm.validate()):
+        # POST request code below
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot.")
             return render_template("users/guest/signup.html", form=signupForm)
 
-        if (request.method == "POST" and signupForm.validate()):
-            # POST request code below
-            recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is None):
-                flash("Please verify that you are not a bot.")
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="signup")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/signup.html", form=signupForm)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please verify that you are not a bot!")
+            return render_template("users/guest/signup.html", form=signupForm)
+
+        emailInput = signupForm.email.data
+        usernameInput = signupForm.username.data
+        passwordInput = signupForm.password.data
+        confirmPasswordInput = signupForm.cfmPassword.data
+
+        # some checks on the password input
+        if (passwordInput != confirmPasswordInput):
+            flash("Entered passwords do not match!")
+            return render_template("users/guest/signup.html", form=signupForm)
+        if (len(passwordInput) < current_app.config["CONSTANTS"].MIN_PASSWORD_LENGTH):
+            flash(f"Password must be at least {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} characters long!")
+            return render_template("users/guest/signup.html", form=signupForm)
+        if (len(passwordInput) > current_app.config["CONSTANTS"].MAX_PASSWORD_LENGTH):
+            flash(f"Password cannot be more than {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long!")
+            return render_template("users/guest/signup.html", form=signupForm)
+
+        pwnedPassword = pwd_has_been_pwned(passwordInput)
+        if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
+            # If the haveibeenpwned's API is down, tell user to match all requirements
+            flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
+            return render_template("users/guest/signup.html", form=signupForm)
+
+        if (pwnedPassword or not pwd_is_strong(passwordInput)):
+            flash("Password is too weak, please enter a stronger password!")
+            return render_template("users/guest/signup.html", form=signupForm)
+
+        passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
+        ipAddress = get_remote_address()
+
+        returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
+
+        if (isinstance(returnedVal, tuple)):
+            usernameDupe = returnedVal[1]
+            # Flash messages with reference to:
+            # https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#account-creation
+            if (usernameDupe):
+                flash("Username already exists!") # It's okay to show this since the login page uses the email
                 return render_template("users/guest/signup.html", form=signupForm)
-
-            try:
-                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="signup")
-            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                flash("Please verify that you are not a bot!")
-                return render_template("users/guest/signup.html", form=signupForm)
-
-            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
-                # if the score is not within the acceptable threshold
-                # then the user is likely a bot
-                # hence, we will flash an error message
-                flash("Please verify that you are not a bot!")
-                return render_template("users/guest/signup.html", form=signupForm)
-
-            emailInput = signupForm.email.data
-            usernameInput = signupForm.username.data
-            passwordInput = signupForm.password.data
-            confirmPasswordInput = signupForm.cfmPassword.data
-
-            # some checks on the password input
-            if (passwordInput != confirmPasswordInput):
-                flash("Entered passwords do not match!")
-                return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) < current_app.config["CONSTANTS"].MIN_PASSWORD_LENGTH):
-                flash(f"Password must be at least {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} characters long!")
-                return render_template("users/guest/signup.html", form=signupForm)
-            if (len(passwordInput) > current_app.config["CONSTANTS"].MAX_PASSWORD_LENGTH):
-                flash(f"Password cannot be more than {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long!")
-                return render_template("users/guest/signup.html", form=signupForm)
-
-            pwnedPassword = pwd_has_been_pwned(passwordInput)
-            if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
-                # If the haveibeenpwned's API is down, tell user to match all requirements
-                flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
-                return render_template("users/guest/signup.html", form=signupForm)
-
-            if (pwnedPassword or not pwd_is_strong(passwordInput)):
-                flash("Password is too weak, please enter a stronger password!")
-                return render_template("users/guest/signup.html", form=signupForm)
-
-            passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
-            ipAddress = get_remote_address()
-
-            returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
-
-            if (isinstance(returnedVal, tuple)):
-                usernameDupe = returnedVal[1]
-                # Flash messages with reference to:
-                # https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#account-creation
-                if (usernameDupe):
-                    flash("Username already exists!") # It's okay to show this since the login page uses the email
-                    return render_template("users/guest/signup.html", form=signupForm)
-                else: # if emailDupe
-                    flash("A link to verify your email has been emailed to the address provided!", "Success")
-                    return redirect(url_for("guestBP.login"))
-
-            try:
-                send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
+            else: # if emailDupe
                 flash("A link to verify your email has been emailed to the address provided!", "Success")
-            except (Exception) as e:
-                #TODO: Fix it anyways but can't be XSSed i believed
-                write_log_entry(
-                    logMessage=f"Error sending verification email: {e}",
-                    severity="ERROR",
-                )
-                flash(
-                    Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
-                    "Danger"
-                )
                 return redirect(url_for("guestBP.login"))
+
+        try:
+            send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
+            flash("A link to verify your email has been emailed to the address provided!", "Success")
+        except (Exception) as e:
+            #TODO: Fix it anyways but can't be XSSed i believed
+            write_log_entry(
+                logMessage=f"Error sending verification email: {e}",
+                severity="ERROR",
+            )
+            flash(
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
+                "Danger"
+            )
             return redirect(url_for("guestBP.login"))
-        else:
-            # post request but form inputs are not valid
-            return render_template("users/guest/signup.html", form=signupForm)
+        return redirect(url_for("guestBP.login"))
     else:
-        return redirect(url_for("generalBP.home"))
+        # post request but form inputs are not valid
+        return render_template("users/guest/signup.html", form=signupForm)
 
 @guestBP.route("/send-verify-email")
 @limiter.limit("60 per minute")
 def sendVerifyEmail():
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     userID = request.args.get("user", default=None, type=str)
     if (userID is None):
         abort(404)
@@ -760,80 +733,16 @@ def sendVerifyEmail():
         # If user does not exist or already has its email verified
         abort(404)
 
-@guestBP.route("/verify-email/<string:token>")
-@limiter.limit("15 per minute")
-def verifyEmail(token:str):
-    # verify the token
-    data = EC_verify(data=token, getData=True)
-    if (not data.get("verified")):
-        # if the token is invalid
-        flash("Verify email link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
-    if (tokenID is None):
-        abort(404)
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
-        if ("user" in session):
-            flash("Verify email url is invalid or has expired!", "Warning!")
-            return redirect(url_for("userBP.userProfile"))
-        elif ("user" not in session):
-            flash("Verify email url is invalid or has expired!", "Danger")
-            return redirect(url_for("guestBP.login"))
-
-    # get the userID from the token
-    jsonPayload = data["data"]["payload"]
-    userID = jsonPayload["userID"]
-
-    # Check if user is logged in, check if the userID in the token
-    # matches the userID in the session.
-    if ("user" in session and session["user"] != userID):
-        flash("Verify email link is invalid or has expired!", "Danger")
-        return redirect(url_for("generalBP.home"))
-
-    # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-        # if the user does not exist
-        flash("Reset password link is invalid or has expired!", "Danger")
-        if ("user" in session):
-            session.clear()
-        return redirect(url_for("guestBP.login"))
-
-    # check if email has been verified
-    if (sql_operation(table="user", mode="email_verified", userID=userID)):
-        # if the email has been verified
-        if ("user" in session):
-            flash("Your email has already been verified!", "Sorry!")
-            return redirect(url_for("generalBP.home"))
-        else:
-            flash("Your email has already been verified!", "Danger")
-            return redirect(url_for("guestBP.login"))
-
-    # update the email verified column to true
-    sql_operation(table="user", mode="update_email_to_verified", userID=userID)
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
-    if ("user" in session):
-        flash("Your email has been verified!", "Email Verified!")
-        return redirect(url_for("generalBP.home"))
-    else:
-        flash("Your email has been verified!", "Success")
-        return redirect(url_for("guestBP.login"))
-
 @guestBP.route("/enter-2fa", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
 def enter2faTOTP():
     """
     This page is only accessible to users who have 2FA enabled and is trying to login.
     """
-    if ("user" in session or "admin" in session):
-        return redirect(url_for("generalBP.home"))
-
     if (
         "user_email" not in session or
         "password_compromised" not in session or
-        "temp_uid" not in session or
-        "is_admin" not in session
+        "temp_uid" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -843,7 +752,7 @@ def enter2faTOTP():
     formBody = "You are seeing this as you have enabled 2FA on your account. Please enter the 6 digit code on the Google Authenticator app installed on your phone to authenticate yourself."
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader, formBody=formBody)
+        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader, formBody=formBody, title=htmlTitle)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
@@ -863,9 +772,8 @@ def enter2faTOTP():
             if (session["password_compromised"]):
                 send_change_password_alert_email(email=session["user_email"])
 
-            # clear the temp_uid and temp_role
+            # clear the temp_uid
             session.pop("temp_uid", None)
-            session.pop("is_admin", None)
             return redirect(url_for("generalBP.home"))
         else:
             flash("Invalid 2FA code, please try again!", "Danger")

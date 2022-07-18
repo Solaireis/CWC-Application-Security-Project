@@ -5,15 +5,17 @@ Routes for the general public and CourseFinity users (Guests, Students, Teachers
 import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, Blueprint, Markup, redirect
+from flask import render_template, request, session, abort, Blueprint, Markup, redirect, flash, current_app
 
 # import local python libraries
-from python_files.functions.NormalFunctions import get_pagination_arr
+from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Reviews import Reviews
 from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from .RoutesSecurity import limiter
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
+limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(generalBP)
 
 @generalBP.route("/")
 def home():
@@ -215,3 +217,72 @@ def search():
         return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role, tagSearch=tagSearch)
 
     return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=None, tagSearch=tagSearch)
+
+@generalBP.route("/verify-email/<string:token>")
+@limiter.limit("15 per minute")
+def verifyEmail(token:str):
+    """
+    In the general blueprint as a user might change their email when logged in.
+    Hence, in this blueprint, it would allow a logged in user to verify their new email.
+    """
+    if ("admin" in session):
+        return redirect(url_for("generalBP.home"))
+
+    # verify the token
+    data = EC_verify(data=token, getData=True)
+    if (not data.get("verified")):
+        # if the token is invalid
+        flash("Verify email link is invalid or has expired!", "Danger")
+        return redirect(url_for("guestBP.login"))
+
+    # check if jwt exists in database
+    tokenID = data["header"].get("token_id")
+    if (tokenID is None):
+        abort(404)
+    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
+        if ("user" in session):
+            flash("Verify email url is invalid or has expired!", "Warning!")
+            return redirect(url_for("userBP.userProfile"))
+        elif ("user" not in session):
+            flash("Verify email url is invalid or has expired!", "Danger")
+            return redirect(url_for("guestBP.login"))
+        else:
+            abort(404)
+
+    # get the userID from the token
+    jsonPayload = data["data"]["payload"]
+    userID = jsonPayload["userID"]
+
+    # Check if user is logged in, check if the userID in the token
+    # matches the userID in the session.
+    if ("user" in session and session["user"] != userID):
+        flash("Verify email link is invalid or has expired!", "Danger")
+        return redirect(url_for("generalBP.home"))
+
+    # check if the user exists in the database
+    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
+        # if the user does not exist
+        flash("Reset password link is invalid or has expired!", "Danger")
+        if ("user" in session):
+            session.clear()
+        return redirect(url_for("guestBP.login"))
+
+    # check if email has been verified
+    if (sql_operation(table="user", mode="email_verified", userID=userID)):
+        # if the email has been verified
+        if ("user" in session):
+            flash("Your email has already been verified!", "Sorry!")
+            return redirect(url_for("generalBP.home"))
+        else:
+            flash("Your email has already been verified!", "Danger")
+            return redirect(url_for("guestBP.login"))
+
+    # update the email verified column to true
+    sql_operation(table="user", mode="update_email_to_verified", userID=userID)
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+    if ("user" in session):
+        flash("Your email has been verified!", "Email Verified!")
+        return redirect(url_for("generalBP.home"))
+    else:
+        flash("Your email has been verified!", "Success")
+        return redirect(url_for("guestBP.login"))
