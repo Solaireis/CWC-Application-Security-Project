@@ -63,7 +63,8 @@ def get_blob_name(url:str="") -> str:
     Returns:
     - The blob name (str) or a empty string if the url is not a valid Google Storage URL.
     """
-    return "/".join(url.split("/")[4:]) if (re.fullmatch(CONSTANTS.GOOGLE_STORAGE_URL_REGEX, url)) else ""
+    # if (re.fullmatch(CONSTANTS.GOOGLE_STORAGE_URL_REGEX, url)) else ""
+    return "/".join(url.split("/")[4:])
 
 def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
@@ -1416,6 +1417,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "update_course_thumbnail"):
         courseID = kwargs["courseID"]
+        courseImagePath = kwargs["courseImagePath"]
 
         # Delete old thumbnail from Google Cloud Storage API
         cur.execute("SELECT course_image_path FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
@@ -1427,7 +1429,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             except (FileNotFoundError):
                 pass
 
-        courseImagePath = kwargs["courseImagePath"]
         cur.execute("UPDATE course SET course_image_path=%(courseImagePath)s WHERE course_id=%(courseID)s", {"courseImagePath":courseImagePath, "courseID":courseID})
         connection.commit()
 
@@ -1523,7 +1524,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
-                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
                     FROM course AS c
                     LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
@@ -1540,7 +1541,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
-                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
                     FROM course AS c
                     LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
@@ -1560,7 +1561,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
-                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
                     FROM course AS c
                     LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id
@@ -1577,7 +1578,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
-                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating
+                    ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
                     FROM course AS c
                     LEFT OUTER JOIN review AS r
                     ON c.course_id = r.course_id

@@ -178,7 +178,8 @@ def videoUpload():
                     return make_response("Uploaded image is corrupted! Please try again!", 500)
                 else:
                     print(f'File {file.filename} has been uploaded successfully')
-
+                    
+                    #convert to mpd still broke on macbook i think cause the terminal need drag the file in
                     if (not convert_to_mpd(courseID)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
                         return redirect(url_for("teacherBP.videoUpload"))
@@ -189,6 +190,7 @@ def videoUpload():
                         mode="insert_draft",
                         courseID=courseID,
                         teacherID=userInfo.uid,
+                        # videoPath=filePathToStore
                         videoPath=Path(filePathToStore).with_suffix(".mpd")
                     )
                     return redirect(url_for("teacherBP.createCourse", courseID=courseID))
@@ -400,7 +402,7 @@ def courseUpdate():
             return redirect(url_for("teacherBP.courseList"))
         else:
 
-            return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
+            return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoPath=courseFound.videoPath)
     else:
         return redirect(url_for("guestBP.login"))
 
