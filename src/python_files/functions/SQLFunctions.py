@@ -1220,6 +1220,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
             courseArr.append((userInfo, isInRecovery))
 
+        return courseArr, maxPage
+
     elif (mode == "get_user_purchases"):
         userID = kwargs["userID"]
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
