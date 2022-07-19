@@ -161,7 +161,7 @@
   - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
   - More secure as the admin does not use the same method of logging as normal users of the web application.
   - The admin routes are also IP address protected via a whitelist for extra security
-    - In the database, there is a table of whitelisted IP addresses that are also encrypted using Google Cloud Platform KMS symmetric encryption service which uses AES256-GCM
+    - Will retrieve the list of whitelisted IP addresses from Google Cloud Platform Secret Manager API for each request to the admin pages
 
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
   - Secure:
