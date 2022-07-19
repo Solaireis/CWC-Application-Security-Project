@@ -90,7 +90,7 @@ def NotOwnEmail(form,field):
 
 class RemoveShoppingCartCourse(Form):
     courseID = HiddenField("Course ID: Easter Egg Text, Now with More Easter Eggs!")
-    #courseType = HiddenField("Course Type: More Easter Eggs!")
+    #courseType = HiddenField("Course Category: More Easter Eggs!")
 
 class CheckoutComplete(Form):
     checkoutComplete = HiddenField("Check whether PayPal is complete: Extra Secret Easter Egg", [validators.DataRequired()], default = False)

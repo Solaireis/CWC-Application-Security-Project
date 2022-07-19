@@ -1,7 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
     <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
-    <script nonce="{{ csp_nonce() }}" src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Backup Codes | CourseFinity{% endblock %}
@@ -63,19 +62,19 @@
     <div class="row">
         <div class="LSUForm col">
             <div class="bg-dark p-4 rounded" id="userForm">
-                <h4 class="text-white">Two-factor backup codes</h4>
+                <h4 class="text-white" id="backupCodesTitle">Two-factor backup codes</h4>
                 <div class="col-12">
-                    <p class="text-white">
+                    <p class="text-white" id="backupCodesDesc">
                         Backup codes can be used to access your account in the event you lose access to your device and cannot receive two-factor authentication codes.
                     </p>
                 </div>
                 <div class="alert alert-warning d-flex align-items-center" role="alert">
                     <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-                    <div>
+                    <div id="backupCodesImpt">
                         Store these backup codes somewhere safe. If you do not have these backup codes and lost access to your 2FA codes, you will lose access to your account.
                     </div>
                 </div>
-                <ul class="list-group">
+                <ul class="list-group" id="backupCodesTable">
                     {% for backupCode, status in backupCodes %}
                         {% if status != "Active" %}
                             <li class="list-group-item d-flex justify-content-between align-items-center">

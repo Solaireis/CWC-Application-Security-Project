@@ -1343,7 +1343,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         if (matched is None):
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
-        return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False)
+        return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False, getReadableCategory=True)
     
     elif (mode == "get_draft_course_data"):
         courseID = kwargs["courseID"]
