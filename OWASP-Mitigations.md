@@ -22,17 +22,19 @@
     - Using Google Cloud Platform Key Management Service's Cloud Hardware Security Module RNG API.
 
 - Secure Flask Session Cookie
-  - Using Google Cloud Platform KMS API RNG in the Cloud HSM (4096 bits)
-    - Ensures high entropy
-    - Unlikely to be guessed ($2^{4096}$ possible keys)
-    - Prevent session cookie from being tampered with
-    - Automatically rotated at the end of each month
-    - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
-  - Configured the default HMAC algorithm used from HMAC-SHA1 to HMAC-SHA512
+  - The Flask session cookie is digitally signed using HMAC-SHA512 algorithm.
+    - Although HMAC cannot be used for digital signature, in this context, it is possible as only the web application knows the secret/symmetric key used in the HMAC algorithm.
+  - Configured the Flask session's default HMAC algorithm from HMAC-SHA1 to HMAC-SHA512.
     - Since SHA1 has been "broken" and is no longer considered secure, it is now recommended to use SHA256 or SHA512
     - References:
       - [SHATTERED](https://shattered.it/)
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
+    - Using Google Cloud Platform KMS API RNG in the Cloud HSM (4096 bits) for the symmetric key used in the HMAC algorithm.
+      - Ensures high entropy
+      - Unlikely to be guessed ($2^{4096}$ possible keys)
+      - Prevent session cookie from being tampered with
+      - Automatically rotated at the end of each month
+      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
 
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
@@ -140,10 +142,11 @@
   - Configured the session cookie to be deleted from the browser once the user closes the browser.
     - Initially, the session cookie will expire after 1 hour of inactivity (no requests to the web server).
     - However, it would be an inconvenience/bad usability as the web application is about watching educational videos which means that a user might not send a request to the web server for several minutes to possibly a few hours.
-  - After 2 days in the database, the session identifier will be deleted.
+  - After 5 hours of inactivity, the session identifier will be deleted from the database.
+    - To invalidate the session identifier.
     - To free up space in the database.
-    - Attackers cannot reuse the session identifier and tamper with the cookie values as the cookie is digitally signed (HMAC-SHA512)
-      - Although HMAC cannot be used for digital signature, in this context, it is possible as only the web application knows the secret key used in the HMAC algorithm.
+    - Chose 4 hours as a video can last from several minutes to several hours for this web application.
+      - Improve usability to avoid legitimate user from being logged out after watching a video.
   - Checks the session identifier in the database and compare with the session identifier in the cookie
   - Checks the user's digital fingerprint against the digital fingerprint in the database
     - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application

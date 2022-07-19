@@ -92,11 +92,12 @@ class ConstantsConfigs:
         # For lockout policy
         self.__MAX_LOGIN_ATTEMPTS = 6
 
-        # For Flask's session cookie
+        # For Flask's session cookie key length
         self.__SESSION_NUM_OF_BYTES = 512
-        # For removing session identifiers 
-        # from the database that are older than this
-        self.__SESSION_EXPIRY_DAYS = 2 # 2 days
+
+        # For removing session identifiers that has no activity for more than x hours 
+        # (Expiry date will be updated per request to the web application)
+        self.__SESSION_EXPIRY_INTERVALS = 4 # 4 hours
 
         # Duration (in minutes) for locked accounts
         # before user can try to login again
@@ -303,8 +304,8 @@ class ConstantsConfigs:
         return self.__SESSION_NUM_OF_BYTES
 
     @property
-    def SESSION_EXPIRY_DAYS(self) -> int:
-        return self.__SESSION_EXPIRY_DAYS
+    def SESSION_EXPIRY_INTERVALS(self) -> int:
+        return self.__SESSION_EXPIRY_INTERVALS
 
     @property
     def LOCKED_ACCOUNT_DURATION(self) -> int:

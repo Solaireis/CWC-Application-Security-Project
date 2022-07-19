@@ -662,8 +662,8 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
 
         cur.execute(
-            "INSERT INTO session VALUES (%(sessionID)s, %(userID)s, DATE_ADD(SGT_NOW(), INTERVAL %(intervalMins)s DAY), %(fingerprintHash)s)", 
-            {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_DAYS, "fingerprintHash":fingerprintHash}
+            "INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalHours)s HOUR, %(fingerprintHash)s)", 
+            {"sessionID":sessionID, "userID":userID, "intervalHours":CONSTANTS.SESSION_EXPIRY_INTERVALS, "fingerprintHash":fingerprintHash}
         )
         connection.commit()
 
@@ -685,17 +685,25 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         storedUserID = result[0]
         expiryDate = result[1]
         storedFingerprintHash = result[2]
+
         cur.execute("SELECT SGT_NOW()")
-        if (expiryDate >= cur.fetchone()[0]):
-            # not expired, check if the userID matches the sessionID
-            # and if the fingerprint hash matches the storedFingerprintHash
-            userID = kwargs.get("userID")
-            userIP, userAgent = kwargs["userIP"].encode("utf-8"), kwargs["userAgent"].encode("utf-8")
-            fingerprintHash = sha512(b".".join([userIP, userAgent])).hexdigest()
-            return ((userID == storedUserID) and (fingerprintHash == storedFingerprintHash))
+        if (expiryDate < cur.fetchone()[0]):
+            return False # expired
+
+        # not expired, check if the userID matches the sessionID
+        # and if the fingerprint hash matches the storedFingerprintHash
+        userID = kwargs.get("userID")
+        userIP, userAgent = kwargs["userIP"].encode("utf-8"), kwargs["userAgent"].encode("utf-8")
+        fingerprintHash = sha512(b".".join([userIP, userAgent])).hexdigest()
+        if ((userID == storedUserID) and (fingerprintHash == storedFingerprintHash)):
+            cur.execute(
+                "UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalHours)s HOUR WHERE session_id = %(sessionID)s", 
+                {"intervalHours":CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID":sessionID}
+            )
+            connection.commit()
+            return True
         else:
-            # expired
-            return False
+            return False # Invalid session due to a different userID or fingerprintHash
 
     elif (mode == "delete_expired_sessions"):
         cur.execute("DELETE FROM session WHERE expiry_date < SGT_NOW()")
