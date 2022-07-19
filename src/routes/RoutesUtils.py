@@ -85,7 +85,7 @@ def before_request() -> None:
     # check if relative_url key is in session
     # Remove if the admin is not on the userManagement page anymore
     if ("relative_url" in session):
-        # remove if the endpoint is not the same as userManagement
+        # remove if the endpoint is not the same as userManagement or adminManagement
         # note that since before_request checks for every request,
         # meaning the css, js, and images are also checked when a user request the webpage
         # which will cause the relative_url key to be removed from the session as the endpoint is "static"
