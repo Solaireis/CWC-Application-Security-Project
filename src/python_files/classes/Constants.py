@@ -154,13 +154,14 @@ class ConstantsConfigs:
         self.__TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
         # Configured Argon2id default configurations so that it will take 
-        # at least 500ms/0.5s to hash a plaintext password.
+        # at least +-200ms/0.2s to hash a plaintext password.
+        # i.e. around 5 hashes per minute
         self.__PH = PasswordHasher(
-            time_cost=12,         # 12 count of iterations
+            time_cost=6,          # 6 count of iterations
             salt_len=64,          # 64 bytes salt
             hash_len=64,          # 64 bytes hash
-            parallelism=12,       # 12 threads
-            memory_cost=256*1024, # 256 MiB
+            parallelism=6,        # 6 threads
+            memory_cost=80*1024,  # 80 MiB
             type=Argon2Type.ID    # using hybrids of Argon2i and Argon2d
         )
         # More helpful details on choosing the parameters for argon2id:
