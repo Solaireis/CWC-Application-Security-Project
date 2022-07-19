@@ -11,7 +11,7 @@ from flask import render_template, request, session, abort, Blueprint, Markup, r
 from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Reviews import Reviews
-from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import limiter
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
@@ -93,7 +93,7 @@ def coursePage(courseID:str):
     courseDescription = Markup(
         markdown.markdown(
             courses.courseDescription,
-            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
+            extensions=[AnchorTagExtension()]
         )
     )
     # print("hi",courses)

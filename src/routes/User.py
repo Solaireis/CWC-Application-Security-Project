@@ -14,7 +14,7 @@ from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
 from python_files.classes.Forms import *
-from python_files.classes.MarkdownExtensions import AnchorTagPreExtension, AnchorTagPostExtension
+from python_files.classes.MarkdownExtensions import AnchorTagExtension
 
 # import python standard libraries
 from pathlib import Path
@@ -354,7 +354,7 @@ def purchaseView(courseID:str):
     courseDescription = Markup(
         markdown.markdown(
             courses.courseDescription,
-            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()], 
+            extensions=[AnchorTagExtension()], 
         )
     )
 
