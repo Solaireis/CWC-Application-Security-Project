@@ -74,7 +74,8 @@ csp = {
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js blob:",
         "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
         "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
-        "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"
+        "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js",
+        "https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"
     ]
 }
 permissions_policy = {

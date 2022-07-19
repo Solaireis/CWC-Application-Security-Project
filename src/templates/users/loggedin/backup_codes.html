@@ -1,6 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
     <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <script nonce="{{ csp_nonce() }}" src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Backup Codes | CourseFinity{% endblock %}
@@ -92,7 +93,9 @@
                     {% endfor %}
                 </ul>
                 <div class="col-12 pt-2 d-flex justify-content-end">
-                    
+                    <button class="btn btn-primary btn-block me-2" id="printCodes">
+                        <i class="fas fa-print"></i> Print
+                    </button>
                     <button class="btn btn-primary btn-block" id="downloadCodes">
                         <i class="fas fa-download"></i> Download Codes
                     </button>
