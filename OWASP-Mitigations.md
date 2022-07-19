@@ -247,14 +247,16 @@
 ### Insecure Design
 
 ### Plan
-- Stripe with modified JWT (no encoding/encryption method stored; no reason to)
-- mpd video player, randomised blob url
-
-### Implemented
 - DRM (Maybe https://www.vdocipher.com)
 - receipt generator
 - contact us form for issues
 - VirusTotal ffmpeg
+- File type policies
+- Max content length policy
+
+### Implemented
+- Stripe with modified JWT (no encoding/encryption method stored; no reason to)
+- mpd video player, randomised blob url
 
 #### Plan:
 - Flask limiter

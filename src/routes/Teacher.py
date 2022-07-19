@@ -137,6 +137,9 @@ def videoUpload():
             flash("Please Upload a Video", "File Upload Error!")
             return redirect(url_for("teacherBP.videoUpload"))
 
+        if (Path(filename).suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
+            flash("Unsupported format!", f"Please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
+
         filename = courseID + Path(filename).suffix # change filename to courseid.mp4
         #folder creation
         filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
@@ -170,7 +173,7 @@ def videoUpload():
                 print(f'File {file.filename} has been uploaded successfully')
                 #so that can download the file, we uncomment when for other platforms it works
                 if (platform.system() != "Darwin"):
-                    if (not convert_to_mpd(courseID)): # Error with conversion
+                    if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
                         return redirect(url_for("teacherBP.videoUpload"))
                     filePathToStore = Path(filePathToStore).with_suffix(".mpd")
@@ -208,6 +211,8 @@ def createCourse(courseID:str):
     videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
     videoFilename = courseID + Path(courseTuple[2]).suffix
     absFilePath = videoFilePath.joinpath(videoFilename)
+
+    videoPath = url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
 
     if (not courseTuple):
         flash("No Course Found", "Course Not Found!")
@@ -293,12 +298,12 @@ def createCourse(courseID:str):
         flash("Course Created", "Successful Course Created!")
         return redirect(url_for("userBP.userProfile"))
     else:
-        return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+        return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=videoPath)
 
 """ End Of Course Creation """
 
 """ Start Of Course Management """
-
+"""
 @teacherBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
 def rawVideo(courseID:str, videoName:str):
     if (sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
@@ -314,14 +319,14 @@ def rawVideo(courseID:str, videoName:str):
     if (courseTuple):
         filePathArr = courseTuple[2].rsplit("/", 2)[-2:]
         return send_from_directory(
-            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])), 
-            filePathArr[1], 
-            as_attachment=False, 
+            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])),
+            filePathArr[1],
+            as_attachment=False,
             max_age=31536000
         )
     else:
         abort(404)
-
+"""
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     courseID = request.args.get("cid", default="test", type=str)
@@ -344,7 +349,7 @@ def courseUpdate():
     if (not courseFound):
         abort(404)
 
-    userInfo = get_image_path(session["user"], returnUserInfo=True) 
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseForm = CreateCourseEdit(request.form)
     updated = ""
 

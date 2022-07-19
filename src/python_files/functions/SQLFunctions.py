@@ -2,7 +2,7 @@
 This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
-import json, re
+import json
 from socket import inet_aton, inet_pton, AF_INET6
 from typing import Union, Optional
 from datetime import datetime, timedelta
@@ -27,28 +27,30 @@ from .NormalFunctions import JWTExpiryProperties, convert_to_mpd, download_to_pa
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
-def validate_course_video_path(courseID:str) -> Optional[str]:
+def validate_course_video_path(courseID:str, returnUrl:bool=False) -> Optional[str]:
     """
     Gets the path to the course video by querying the database.
 
     Args:
     - courseID (str): The path to the video to convert.
-        - e.g. ".../static/course_videos/<courseID>/<courseID>.mp4"
+        - e.g. ".../static/course_videos/<courseID>/<courseID>.mpd"
+    - returnUrl (bool): Whether to return the mpd file url
 
     Returns:
-    - The path to the course video if it exists in the database, None otherwise.
+    - The path to the course video if asked and exists in the database, None otherwise.
     """
-    videoPath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath("static", "course_videos", courseID)
-    if (not videoPath.exists() or not videoPath.is_dir()):
-        # Make directory for the video to be downloaded from Google Cloud Storage API
-        videoPath.mkdir(parents=True, exist_ok=True)
-
     # Retrieve the Google Storage link to the course video from the database
     # e.g. https://storage.googleapis.com/<bucketName>/<blobName>
     videoStorageURL = sql_operation(table="course", mode="get_video_path", courseID=courseID)
+    
     if (videoStorageURL is None):
         # If course does not exist for some reason
         return None
+
+    videoPath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID)
+    if not videoPath.is_dir():
+        # Make directory for the video to be downloaded from Google Cloud Storage API
+        videoPath.mkdir(parents=True, exist_ok=True)
 
     # Join the filename from the Google Storage link with the path to the course video folder path
     videoPath = videoPath.joinpath(videoStorageURL.rsplit("/", 1)[1])
@@ -57,7 +59,8 @@ def validate_course_video_path(courseID:str) -> Optional[str]:
         download_to_path("coursefinity-videos", get_blob_name(videoStorageURL), videoPath)
         convert_to_mpd(courseID)
 
-    return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
+    if returnUrl:
+        return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
 
 def get_blob_name(url:str="") -> str:
     """
