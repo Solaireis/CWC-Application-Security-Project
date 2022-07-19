@@ -767,7 +767,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "re-encrypt_data_in_database"):
         # Used for re-encrypting all the encrypted data in the database at the last day of every month due to 30 days key rotations.
         current_app.config["MAINTENANCE_MODE"] = True
-        cur.execute("SELECT u.id, u.password, tfa.token FROM user AS u LEFT OUTER JOIN twofa_token AS tfa ON u.id=tfa.user_id;")
+        cur.execute("SELECT u.id, u.password, tfa.token, tfa.backup_codes_json FROM user AS u LEFT OUTER JOIN twofa_token AS tfa ON u.id=tfa.user_id;")
         for row in cur.fetchall():
             userID = row[0]
 
@@ -789,7 +789,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                         severity="ALERT"
                     )
                     return
-                cur.execute("UPDATE user SET password = %(password)s WHERE id=%(userID)s", {"password":newEncryptedPasswordHash, "userID":userID})
+                cur.execute(
+                    "UPDATE user SET password = %(password)s WHERE id=%(userID)s",
+                    {"password":newEncryptedPasswordHash, "userID":userID}
+                )
                 connection.commit()
 
             # Re-encrypt the 2FA token if the user has set one
@@ -809,8 +812,35 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                         severity="ALERT"
                     )
                     return
-                cur.execute("UPDATE twofa_token SET token = %(token)s WHERE user_id=%(userID)s", {"token":newEncryptedToken, "userID":userID})
+                cur.execute(
+                    "UPDATE twofa_token SET token = %(token)s WHERE user_id=%(userID)s",
+                    {"token":newEncryptedToken, "userID":userID}
+                )
                 connection.commit()
+
+            # Re-encrypt the backup codes if the user has set up 2FA
+            oldEncryptedBackupCodes = row[3]
+            if (oldEncryptedBackupCodes is not None):
+                try:
+                    newEncryptedBackupCodes = symmetric_encrypt(
+                        plaintext=symmetric_decrypt(
+                            ciphertext=oldEncryptedBackupCodes,
+                            keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+                        ),
+                        keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
+                    )
+                except (DecryptionError):
+                    write_log_entry(
+                        logMessage="Re-encryption of backup codes has failed...",
+                        severity="ALERT"
+                    )
+                    return
+                cur.execute(
+                    "UPDATE twofa_token SET backup_codes_json = %(backupCodes)s WHERE user_id=%(userID)s",
+                    {"backupCodes":newEncryptedBackupCodes, "userID":userID}
+                )
+                connection.commit()
+
         write_log_entry(
             logMessage=f"All sensitive user data have re-encrypted in the database at {datetime.now().astimezone(tz=ZoneInfo('Asia/Singapore'))}, please destroy the old symmetric keys used for the database as soon as possible!",
             severity="ALERT"
