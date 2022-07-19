@@ -3,7 +3,7 @@ Routes for users who are not logged in (Guests)
 """
 # import third party libraries
 import requests as req
-import pyotp
+import pyotp, random
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -170,7 +170,7 @@ def resetPasswordRequest():
         userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
         if (userInfo is None):
             # if the user does not exist
-            sleep(1.5)
+            sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
@@ -426,7 +426,7 @@ def login():
             session["temp_uid"] = userInfo[0]
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
-            sleep(2) # Artificial delay to prevent attacks such as enumeration attacks, etc.
+            sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             return render_template("users/guest/login.html", form=loginForm)
     else:
         return render_template("users/guest/login.html", form = loginForm)

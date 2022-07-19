@@ -1372,84 +1372,6 @@ def compress_and_resize_image(
         bucketName=bucketName, fileObj=fileObj, uploadDestination=destinationPath, cacheControl=cacheControl
     )
 
-def get_IP_address_blacklist(checkForUpdates:bool=True) -> list:
-    """
-    Get the IP address to blacklist from the server.
-    Though this is not the most effective way of preventing malcious threat actors from
-    accessing the server as they can use VPNs or spoof their ip address,
-    it acts as another layer of security.
-
-    Args:
-    - checkForUpdates:  If True, the function will check for updates to the blacklist.
-                        Otherwise, it will just load from the saved text file if found.
-
-    Returns:
-    - A tuple containing the IP address to blacklist
-    """
-    if (checkForUpdates):
-        response = req.get("https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt")
-        if (response.status_code != 200):
-            print("Something went wrong!")
-            return get_IP_address_blacklist(checkForUpdates=False)
-
-        results = response.text.splitlines()
-
-        dateComment = results[3].split(",")[-1].strip()
-        lastUpdated = datetime.strptime(dateComment, "%d %b %Y %H:%M:%S %z")
-        # convert utc+2 to utc+8
-        lastUpdated = lastUpdated.astimezone(tz=ZoneInfo("Asia/Singapore"))
-
-        action = 0 # 1 for update, 0 for creating a new file
-        if (CONSTANTS.BLACKLIST_FILEPATH.exists() and CONSTANTS.BLACKLIST_FILEPATH.is_file()):
-            with open(CONSTANTS.BLACKLIST_FILEPATH, "r") as f:
-                txtFile = f.read()
-            blacklist = txtFile.split("\n")
-
-            try:
-                date = datetime.strptime(blacklist[0], CONSTANTS.DATE_FORMAT)
-            except (ValueError):
-                CONSTANTS.BLACKLIST_FILEPATH.unlink()
-                return get_IP_address_blacklist()
-
-            if (date >= lastUpdated):
-                print("\nIP Address Blacklist is up to date!")
-                print("Successfully loaded IP Address Blacklist from the saved file.\n")
-                return blacklist[1:] # return the blacklist if it is up to date
-            else:
-                print("\nIP Address Blacklist is outdated!", end="")
-                action = 1
-
-        print("\nLoading IP Address Blacklist from the github repo...")
-        blacklist = [ip.split("\t")[0] for ip in results if (not ip.startswith("#"))]
-
-        with open(CONSTANTS.BLACKLIST_FILEPATH, "w") as f:
-            f.write(lastUpdated.strftime(CONSTANTS.DATE_FORMAT) + "\n")
-            f.write("\n".join(blacklist))
-        print(f"IP Address Blacklist, blacklist.txt, {'created' if (action == 0) else 'updated'} and loaded!\n")
-
-        return blacklist
-    else:
-        if (CONSTANTS.BLACKLIST_FILEPATH.exists()):
-            with open(CONSTANTS.BLACKLIST_FILEPATH, "r") as f:
-                txtFile = f.read()
-            blacklist = txtFile.split("\n")
-
-            # try to parse the date from the first line
-            try:
-                datetime.strptime(blacklist[0], CONSTANTS.DATE_FORMAT)
-            except (ValueError):
-                CONSTANTS.BLACKLIST_FILEPATH.unlink()
-                return get_IP_address_blacklist(checkForUpdates=True) # true as a last resort
-
-            print("\nLoading potentially outdated IP Address Blacklist from the saved text file...")
-            print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
-            return blacklist[1:]
-        else:
-            print("\nIP Address Blacklist GitHub repo and text file were not found!")
-            print("IP Address Blacklist will not be loaded and will be empty!")
-            print("Reason: GitHub repo link might be incorrect or GitHub is not available.\n")
-            return []
-
 def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, destroyPastVer:bool=False, destroyOptimise:bool=False) -> None:
     """
     Uploads the new secret to Google Cloud Platform's Secret Manager API.
@@ -1659,7 +1581,7 @@ def pwd_has_been_pwned(password:str) -> bool:
     # hash the password (plaintext) using sha1 to check
     # against haveibeenpwned's database
     # but will not be stored in the MySQL database
-    passwordHash = sha1(password.encode("utf-8"), usedforsecurity=False).hexdigest().upper()
+    passwordHash = sha1(password.encode("utf-8")).hexdigest().upper()
     hashPrefix = passwordHash[:5]
     hashSuffix = passwordHash[5:]
     del passwordHash

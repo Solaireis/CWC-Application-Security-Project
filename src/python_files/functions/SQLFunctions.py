@@ -276,8 +276,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "recovery_token"):
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
-            elif (table == "whitelisted_ip_addresses"):
-                returnValue = whitelisted_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -304,23 +302,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             abort(500)
 
     return returnValue
-
-def whitelisted_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
-    if (mode is None):
-        raise ValueError("You must specify a mode in the whitelisted_ip_addresses_sql_operation function")
-
-    cur = connection.cursor()
-    if (mode == "check_if_whitelisted"):
-        reqIpAddress = kwargs["ipAddress"]
-        cur.execute("SELECT ip_address FROM whitelisted_ip_addresses")
-        resultArr = cur.fetchall()
-        for ipAddress in resultArr:
-            if (symmetric_decrypt(ciphertext=ipAddress[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID) == reqIpAddress):
-                return True
-        return False
-
-    else:
-        raise ValueError("Invalid mode in the whitelisted_ip_addresses_sql_operation function!")
 
 def recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -680,35 +661,27 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         userID = kwargs["userID"]
         fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
 
-        cur.execute("INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(intervalMins)s MINUTE, %(fingerprintHash)s)", {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_INTERVALS, "fingerprintHash":fingerprintHash})
+        cur.execute(
+            "INSERT INTO session VALUES (%(sessionID)s, %(userID)s, DATE_ADD(SGT_NOW(), INTERVAL %(intervalMins)s DAY), %(fingerprintHash)s)", 
+            {"sessionID":sessionID, "userID":userID, "intervalMins":CONSTANTS.SESSION_EXPIRY_DAYS, "fingerprintHash":fingerprintHash}
+        )
         connection.commit()
-
-    elif (mode == "get_user_id"):
-        sessionID = kwargs["sessionID"]
-        cur.execute("SELECT user_id FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
-        userID = cur.fetchone()[0]
-        return userID
-
-    elif (mode == "get_session"):
-        sessionID = kwargs["sessionID"]
-        cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
-        returnValue = cur.fetchone()
-        return returnValue
 
     elif (mode == "delete_session"):
         sessionID = kwargs["sessionID"]
         cur.execute("DELETE FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
         connection.commit()
 
-    elif (mode == "update_session"):
-        sessionID = kwargs["sessionID"]
-        cur.execute("UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE session_id = %(sessionID)s", {"intervalMins": CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID": sessionID})
-        connection.commit()
-
     elif (mode == "check_if_valid"):
         sessionID = kwargs["sessionID"]
-        cur.execute("SELECT user_id, expiry_date, fingerprint_hash FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
+        cur.execute(
+            "SELECT user_id, expiry_date, fingerprint_hash FROM session WHERE session_id = %(sessionID)s", 
+            {"sessionID":sessionID}
+        )
         result = cur.fetchone()
+        if (result is None):
+            return False
+
         storedUserID = result[0]
         expiryDate = result[1]
         storedFingerprintHash = result[2]
@@ -725,22 +698,6 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
     elif (mode == "delete_expired_sessions"):
         cur.execute("DELETE FROM session WHERE expiry_date < SGT_NOW()")
-        connection.commit()
-
-    elif (mode == "if_session_exists"):
-        sessionID = kwargs["sessionID"]
-        cur.execute("SELECT * FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
-        returnValue = cur.fetchone()
-        if (returnValue):
-            return True
-        else:
-            return False
-
-    elif (mode == "delete_users_other_session"):
-        # delete all session of a user except the current session id
-        userID = kwargs["userID"]
-        sessionID = kwargs["sessionID"]
-        cur.execute("DELETE FROM session WHERE user_id = %(userID)s AND session_id != %(sessionID)s", {"userID":userID, "session_id":sessionID})
         connection.commit()
 
     else:

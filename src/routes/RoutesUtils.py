@@ -5,10 +5,10 @@ from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import get_IP_address_blacklist, upload_new_secret_version, generate_secure_random_bytes
+from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes
 
 # import python standard libraries
-import re
+import re, json
 
 def update_secret_key() -> None:
     """
@@ -30,17 +30,6 @@ def update_secret_key() -> None:
         destroyOptimise=True
     )
 
-@current_app.before_first_request
-def before_first_request() -> None:
-    """
-    Called called at the very first request to the web app.
-
-    Returns:
-    - None
-    """
-    # get ip address blacklist from a github repo or the saved file
-    current_app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
-
 @current_app.before_request
 def before_request() -> None:
     """
@@ -48,9 +37,6 @@ def before_request() -> None:
     Returns:
     - None
     """
-    if (get_remote_address() in current_app.config["IP_ADDRESS_BLACKLIST"]):
-        abort(403)
-
     # Redirect user to coursefinity.social domain if they are not on it
     # Reason: Firebase have their own set of default domain names (that cannot be disabled) 
     # which are not protected by Cloudflare.
@@ -102,34 +88,40 @@ def before_request() -> None:
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value (but not both)
             userID = session.get("user") or session.get("admin")
-            sessionID = session["sid"]
+            sessionID = session.get("sid")
 
-            if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-                # if user session is invalid as the user does not exist anymore
-                sql_operation(table="session", mode="delete_session", sessionID=sessionID)
-                print("Session cleared due to invalid user session")
-                session.clear()
-
-            elif (sql_operation(table="session", mode="if_session_exists", sessionID=sessionID)):
-                # if session exists
-                if (not sql_operation(table="session", mode="check_if_valid", sessionID=sessionID, userID=userID, userIP=get_remote_address(), userAgent=request.user_agent.string)):
-                    # if user session is expired or the userID does not match with the sessionID
-                    sql_operation(table="session", mode="delete_session", sessionID=sessionID)
-                    print("Session cleared due to expired session!")
-                    session.clear()
-                else:
-                    # update session expiry time
-                    print("Session expiry time updated!")
-                    sql_operation(table="session", mode="update_session", sessionID=sessionID)
-            else:
-                # if session does not exist in the db
+            # if the sid is not in the session cookie value
+            if (
+                sessionID is not None and 
+                not sql_operation(
+                    table="session",
+                    mode="check_if_valid", 
+                    sessionID=sessionID, 
+                    userID=userID, 
+                    userIP=get_remote_address(), 
+                    userAgent=request.user_agent.string
+                )
+            ):
+                # if session does not exist in the db or is in invalid
                 print("Session cleared due to invalid session ID!")
+                session.clear()
+            elif (sessionID is None):
+                # if session is missing from the cookie
+                print("Session cleared due to missing session ID!")
                 session.clear()
 
     # If the admin still has the session cookie but is not in a whitelisted IP address
-    if ("admin" in session and not sql_operation(table="whitelisted_ip_addresses", mode="check_if_whitelisted", ipAddress=get_remote_address())):
-        session.clear()
-        abort(403)
+    if ("admin" in session):
+        if (current_app.config["DEBUG_FLAG"]):
+            adminWhitelistedIP = json.loads(
+                current_app.config["CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
+            )
+        else:
+            adminWhitelistedIP = ["127.0.0.1"]
+
+        if (get_remote_address() not in adminWhitelistedIP):
+            session.clear()
+            abort(403)
 
     if ("user" in session and "admin" in session):
         # both user and admin are in session cookie value
@@ -172,9 +164,10 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
     """
     # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
     # will be uncommented when the web app is ready to be hosted on firebase.
-    if (request.endpoint != "static"):
-        response.headers["Cache-Control"] = "public, max-age=0"
-    elif (not current_app.config["CONSTANTS"].DEBUG_MODE):
+    if (request.endpoint == "static"):
         # Cache for 1 year for static files (except when in debug/dev mode)
         response.headers["Cache-Control"] = "public, max-age=31536000"
+    elif (not current_app.config["CONSTANTS"].DEBUG_MODE):
+        # Disable caching for state changing requests (if NOT in debug/dev mode)
+        response.headers["Cache-Control"] = "public, max-age=0"
     return response

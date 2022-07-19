@@ -94,9 +94,9 @@ class ConstantsConfigs:
 
         # For Flask's session cookie
         self.__SESSION_NUM_OF_BYTES = 512
-        # For invalidating sessions after x mins of inactivity
-        # Inactivity in this case: No requests to the web server for x mins
-        self.__SESSION_EXPIRY_INTERVALS = 60 # 60 mins/1 hr
+        # For removing session identifiers 
+        # from the database that are older than this
+        self.__SESSION_EXPIRY_DAYS = 2 # 2 days
 
         # Duration (in minutes) for locked accounts
         # before user can try to login again
@@ -303,8 +303,8 @@ class ConstantsConfigs:
         return self.__SESSION_NUM_OF_BYTES
 
     @property
-    def SESSION_EXPIRY_INTERVALS(self) -> int:
-        return self.__SESSION_EXPIRY_INTERVALS
+    def SESSION_EXPIRY_DAYS(self) -> int:
+        return self.__SESSION_EXPIRY_DAYS
 
     @property
     def LOCKED_ACCOUNT_DURATION(self) -> int:

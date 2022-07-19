@@ -3,22 +3,21 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # import flask libraries (Third-party libraries)
 from flask import Flask
+from flask.sessions import SecureCookieSessionInterface
 from flask_talisman import Talisman
-from flask_seasurf import SeaSurf
 
 # import Google Cloud Logging API (third-party library)
 from google.cloud import logging as gcp_logging
 
 # import local python libraries
 from python_files.classes.Constants import CONSTANTS
-from python_files.functions.NormalFunctions import get_IP_address_blacklist
 from python_files.functions.SQLFunctions import sql_operation
 
 # import python standard libraries
 from pathlib import Path
 from os import environ
 from datetime import timedelta
-import logging
+import logging, hashlib
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
@@ -98,7 +97,15 @@ app.config["DEBUG_FLAG"] = CONSTANTS.DEBUG_MODE
 app.config["MAINTENANCE_MODE"] = False
 
 # Session cookie configurations
-# More details: https://flask.palletsprojects.com/en/2.1.x/config/?highlight=session#SECRET_KEY
+# Change the default FLask session default
+# HMAC algorithm from HMAC-SHA1 to HMAC-SHA512
+# Reference: 
+# https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
+# https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
+FLASK_SESSION_INTERFACE = SecureCookieSessionInterface()
+FLASK_SESSION_INTERFACE.digest_method = staticmethod(hashlib.sha512)
+app.session_interface = FLASK_SESSION_INTERFACE
+
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
 app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
@@ -225,14 +232,6 @@ def re_encrypt_data_in_db() -> None:
     """
     return sql_operation(table="user", mode="re-encrypt_data_in_database")
 
-def update_ip_blacklist_from_github() -> None:
-    """
-    Update IP blacklist from the database from ipsum GitHub repository
-
-    >>> app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
-    """
-    app.config["IP_ADDRESS_BLACKLIST"] = get_IP_address_blacklist()
-
 def check_for_new_flask_secret_key() -> None:
     """
     Check for new flask secret key and if there is a new key in 
@@ -291,11 +290,6 @@ if (__name__ == "__main__"):
     scheduler.add_job(
         check_for_new_flask_secret_key,
         trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
-    )
-    # For updating the IP address blacklist from ipsum GitHub repo everday at 12:00 P.M.
-    scheduler.add_job(
-        update_ip_blacklist_from_github,
-        trigger="cron", hour=12, minute=0, second=0, id="updateIPAddressBlacklistFromGithub"
     )
 
     # Start all the scheduled jobs

@@ -202,10 +202,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
     cur.execute("CREATE INDEX review_course_rating_idx ON review(course_rating)")
 
-    cur.execute("""CREATE TABLE whitelisted_ip_addresses (
-        ip_address VARBINARY(512) PRIMARY KEY, -- in encrypted form, for access of admin login portal
-        date_added DATETIME NOT NULL
-    )""")
     # end of table creation
     mydb.commit()
 
@@ -664,18 +660,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         guest_bp=1, general_bp=1, admin_bp=0, logged_in_bp=0, error_bp=1, teacher_bp=0, user_bp=0
         WHERE role_id = 5;
     """)
-
-    # Insert IP address to whitelist for admin login page
-    if (NormalFunctions.CONSTANTS.DEBUG_MODE):
-        encryptedLocalhostIP = NormalFunctions.symmetric_encrypt(plaintext="127.0.0.1", keyID=NormalFunctions.CONSTANTS.SENSITIVE_DATA_KEY_ID)
-        cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {"ip_address": encryptedLocalhostIP})
-    else:
-        # In production mode, allow access to each member's IP address and NYP's IP address
-        ipWhitelist = json.loads(NormalFunctions.CONSTANTS.get_secret_payload(secretID="ip-address-whitelist"))
-        encryptedIpList = [NormalFunctions.symmetric_encrypt(plaintext=ip, keyID=NormalFunctions.CONSTANTS.SENSITIVE_DATA_KEY_ID) for ip in ipWhitelist]
-        for ip in encryptedIpList:
-            cur.execute("INSERT INTO whitelisted_ip_addresses (ip_address, date_added) VALUES (%(ip_address)s, SGT_NOW())", {"ip_address": ip})
-
     mydb.commit()
 
     # get users' info for user creation for the database
