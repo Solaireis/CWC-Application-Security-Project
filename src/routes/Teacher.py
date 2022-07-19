@@ -188,8 +188,8 @@ def videoUpload():
                     mode="insert_draft",
                     courseID=courseID,
                     teacherID=userInfo.uid,
-                    # videoPath=filePathToStore
-                    videoPath=Path(filePathToStore).with_suffix(".mpd")
+                    videoPath=filePathToStore
+                    # videoPath=Path(filePathToStore).with_suffix(".mpd")
                 )
                 return redirect(url_for("teacherBP.createCourse", courseID=courseID))
             """
@@ -282,7 +282,7 @@ def createCourse(courseID:str):
                 courseImagePath=imageUrlToStore,
                 courseCategory=courseTagInput,
                 coursePrice=coursePrice,
-                videoPath=courseTuple[2]
+                videoPath=videoPath
             )
             stripe_product_create(
                 courseID=courseID,
