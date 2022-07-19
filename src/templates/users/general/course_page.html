@@ -7,8 +7,8 @@
 {% endif %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
 {% endblock %}
 {% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
 

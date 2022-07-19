@@ -52,6 +52,16 @@ csrf.init_app(app)
 
 # flask extension that helps set policies for the web app
 csp = {
+    "style-src": [
+        "'self'", 
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
+        "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
+        "https://unpkg.com/@videojs/themes@1/dist/forest/index.css",
+        "https://vjs.zencdn.net/7.19.2/video-js.css",
+        "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css",
+        "https://unpkg.com/dropzone@5/dist/min/dropzone.min.css",
+    ],
     "frame-src":[
         "'self'",
         "https://www.google.com/recaptcha/",

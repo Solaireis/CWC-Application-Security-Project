@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
 {% block title %}User Management | CourseFinity{% endblock %}
 
 {% block content %}

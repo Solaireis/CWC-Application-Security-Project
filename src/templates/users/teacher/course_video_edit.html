@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
 <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 
@@ -113,7 +113,7 @@
                                         <option value="Other Academics">Other Academics</option>
                                     </optgroup>
                                 </select>
-                                <i style="color:white;">Current Course Tag: {{ courseTag }}</i>
+                                <i class="text-white">Current Course Tag: {{ courseTag }}</i>
                             </div>
                             <!-- coursePrice -->
                             <div class="col-md-6 text-white">
