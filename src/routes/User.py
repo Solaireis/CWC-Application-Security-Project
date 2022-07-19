@@ -333,7 +333,7 @@ def courseReview(courseID:str):
         print("review updated")
         flash("Your review has been successfully added.", "Review Added!")
         #redirect back to coursepage
-        return redirect(url_for("courseBP.coursePage", courseID=courseID))
+        return redirect(url_for("generalBP.coursePage", courseID=courseID))
     else:
         return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
 
