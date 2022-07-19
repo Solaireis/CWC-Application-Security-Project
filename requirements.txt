@@ -19,7 +19,7 @@ APScheduler>=3.8.1
 requests>=2.28.0
 dicebear>=0.4.17
 Pillow>=9.0.0
-markdown>=3.3.7
+markdown>=3.1.7
 
 
 # Stripe API for the

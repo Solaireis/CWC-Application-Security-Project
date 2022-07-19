@@ -10,14 +10,13 @@ class MarkdownRegex:
     """This class will be used to store the regex pattern for Markdown syntax."""
     ANCHOR_REGEX: re.Pattern[str] = re.compile(r"^\[(.*?)\]\((.*?)\)$")
 
-# Add attributes to anchor tag in the markdown string
 class AnchorTagPreprocessor(markdown.preprocessors.Preprocessor):
     """Add attributes to the anchor html tag or the anchor markdown syntax."""
     def run(self, lines):
         newLines = []
         for line in lines:
             if (line.startswith("<a")):
-                line = line.replace("<a", "<a rel=\"nofollow\"")
+                line = line.replace("<a", "<a rel='nofollow'")
             elif (re.fullmatch(MarkdownRegex.ANCHOR_REGEX, line)):
                 line = re.sub(MarkdownRegex.ANCHOR_REGEX, r"<a rel='nofollow' href='\2'>\1</a>", line)
             newLines.append(line)
