@@ -60,6 +60,3 @@ google-cloud-secret-manager>=2.11.1
 google-cloud-logging>=3.1.2
 google-cloud-recaptcha-enterprise>=1.7.1
 google-cloud-storage>=2.4.0
-
-# Used in the demo files for testing
-randomuser>=1.6
