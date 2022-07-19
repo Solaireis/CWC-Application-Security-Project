@@ -29,7 +29,7 @@ def adminManagement():
             flash("No user account was found with the provided ID.", "No Such User!")
             return redirect(session["relative_url"])
 
-        if (userInfo.role == "Admin" or userInfo.role == "SuperAdmin"):
+        if (userInfo.role == "SuperAdmin"):
             flash("An error occurred while processing your request.", "Sorry!")
             return redirect(session["relative_url"])
 
