@@ -243,6 +243,16 @@
 
 ### Insecure Design
 
+### Plan
+- Stripe with modified JWT (no encoding/encryption method stored; no reason to)
+- mpd video player, randomised blob url
+
+### Implemented
+- DRM (Maybe https://www.vdocipher.com)
+- receipt generator
+- contact us form for issues
+- VirusTotal ffmpeg
+
 #### Plan:
 - Flask limiter
 - implement reCAPTCHA (if you have the time to read docs :D)
