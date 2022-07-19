@@ -57,6 +57,7 @@ csp = {
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
+        "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js \'unsafe-inline\'",
         "https://unpkg.com/@videojs/themes@1/dist/forest/index.css",
         "https://vjs.zencdn.net/7.19.2/video-js.css",
         "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css",
@@ -76,7 +77,7 @@ csp = {
         "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
         "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
         "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"
-    ]
+    ],
 }
 permissions_policy = {
     "geolocation": "()",

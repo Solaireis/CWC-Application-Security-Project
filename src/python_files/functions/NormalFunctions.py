@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
 from subprocess import run as subprocess_run, PIPE
-from subprocess import check_output 
+from subprocess import check_output
 from os import environ
 
 # import local python libraries
@@ -536,7 +536,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
     Args:
     - nBytes (int): The length of the byte string to generate.
         - Defaults to 512
-    - generateFromHSM (bool): Whether to generate random bytes from 
+    - generateFromHSM (bool): Whether to generate random bytes from
                               Google Cloud Platform KMS API's random number generated in the HSM.
         - Benefits for using Google Cloud Platform KMS API's random number generator:
             - The random number generator is generated in the HSM
@@ -894,9 +894,9 @@ class JWTExpiryProperties:
 
 def EC_sign(
         payload:Union[str, dict]="",
-        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:Optional[int]=None, 
+        keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str=CONSTANTS.EC_SIGNING_KEY_ID, versionID:Optional[int]=None,
         purpose:Optional[str]="sensitive-actions",
-        b64EncodeData:Optional[bool]=False, 
+        b64EncodeData:Optional[bool]=False,
         expiry:Optional[JWTExpiryProperties]=None, limit:Optional[int]=None, tokenID:Optional[str]=None
     ) -> Union[dict, str]:
     """
@@ -1652,28 +1652,26 @@ def two_fa_token_is_valid(token:str) -> bool:
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
-def convert_to_mpd(courseID:str=None) -> bool:
+def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
     """
     Converts the video to MPD format.
 
     Args:
     - courseID (str): The courseID of the video to convert.
-        - e.g. ".../static/course_videos/<courseID>/<courseID>.mp4"
+    - fileSuffix (str): video suffix; use google link stored in SQL
+        - e.g. ".../static/course_videos/<courseID>/<courseID>[.mp4]"
+        - *The '.' in '.mp4' is important
 
     Returns:
     - True if the conversion was successful, False otherwise.
     """
-    videoPath = CONSTANTS.ROOT_FOLDER_PATH.joinpath(
-        "static", "course_videos", courseID, courseID
-    ).with_suffix(".mp4")
 
-    if (videoPath.suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
-        raise Exception(f"Unsupported format, please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
+    if fileSuffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]:
+        return False
 
-    # Create a folder to store the converted video files
-    convertedVideoFolderPath = videoPath.parent.joinpath("converted")
-    convertedVideoFolderPath.mkdir(parents=True, exist_ok=True)
-    convertedVideoPath = str(convertedVideoFolderPath.joinpath(videoPath.with_suffix(".mpd").name))
+    videoFolderPath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID)
+    videoFolderPath.mkdir(parents=True, exist_ok=True)
+    videoPath = videoFolderPath.joinpath(courseID).with_suffix(fileSuffix)
 
     video = ffmpeg_input(str(videoPath))
     dash = video.dash(Formats.h264())
@@ -1690,7 +1688,7 @@ def convert_to_mpd(courseID:str=None) -> bool:
         dimensions = json.loads(check_output(args).decode('utf-8'))["streams"][0]
     else:
         # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
-        # shell = False helps prevent command injection, but idk if it messes with the code 
+        # shell = False helps prevent command injection, but idk if it messes with the code
         dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)
     try:
         if (platform.system() != "Darwin"):
@@ -1706,12 +1704,11 @@ def convert_to_mpd(courseID:str=None) -> bool:
     dash.representations(_1080p)
 
     try:
-        #TODO: This uses ffmpeg but idk where the command is located, so currently for now no convert
-        dash.output(convertedVideoPath)
+        dash.output(str(videoPath.with_suffix(".mpd")))
     except (RuntimeError):
         return False
         #TODO: Log
 
     # Commented it out as I'm not sure why you would want to delete the original video
-    # videoPath.unlink(missing_ok=True) 
+    # videoPath.unlink(missing_ok=True)
     return True
