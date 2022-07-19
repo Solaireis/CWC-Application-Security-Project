@@ -20,3 +20,17 @@ downloadCodes.addEventListener("click", function() {
     backupCodesLink.download = "backup_codes.txt";
     backupCodesLink.click();
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+    const pdfDoc = new jspdf();
+    let printCodes = document.getElementById("printCodes");
+
+    var backUpCodesHTML = document.getElementById("userForm");
+    printCodes.addEventListener("click", function() {
+        pdfDoc.fromHTML(backUpCodesHTML, 15, 15, {
+            'width': 170,
+            'elementHandlers': specialElementHandlers
+        });
+        pdfDoc.output("dataurlnewwindow");
+    });
+});

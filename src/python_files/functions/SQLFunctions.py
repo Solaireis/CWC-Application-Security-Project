@@ -690,7 +690,8 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
             # not expired, check if the userID matches the sessionID
             # and if the fingerprint hash matches the storedFingerprintHash
             userID = kwargs.get("userID")
-            fingerprintHash = sha512(kwargs["userIP"].encode("utf-8") + b"." + kwargs["userAgent"].encode("utf-8")).hexdigest()
+            userIP, userAgent = kwargs["userIP"].encode("utf-8"), kwargs["userAgent"].encode("utf-8")
+            fingerprintHash = sha512(b".".join([userIP, userAgent])).hexdigest()
             return ((userID == storedUserID) and (fingerprintHash == storedFingerprintHash))
         else:
             # expired

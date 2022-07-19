@@ -3,7 +3,7 @@
 <br>
 CourseFinity Web Application using Flask
 <br>
-(Requires Python 3.9 and above)
+(Requires Python 3.10 and above)
 </h1>
 
 ---
@@ -37,26 +37,6 @@ This project consists of us making a SECURE web application using Flask as its f
 >The students can then buy the courses and start learning! 
 
 ---
-
-**Libraries needed:**
-
->1. Flask Version 2.0.2
->2. WTForms Version 3.0.0
->3. Jinja2 Version 3.0.3
->4. email-validator Version 1.1.3
->5. setuptools Version 60.1.0 
->6. Flask-Limiter Version 2.0.4
->7. argon2-cffi Version 21.3.0
->8. Pillow Version 9.0.0
->9. Flask-Mailman Version 0.3.0
->10. paypalrestsdk Version 1.13.1
->11. shortuuid Version 1.0.8
->12. dicebear Version 0.2.15
->13. matplotlib Version 3.5.1
->14. APScheduler Version 3.8.1
->15. phonenumbers Version 8.12.42
->16. qrcode Version 7.3.1
->17. pyotp Version 2.6.0
 
 **To Install All Libraries At Once:**
 
