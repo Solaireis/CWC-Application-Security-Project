@@ -1,8 +1,8 @@
 {% extends "user_base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/checkout.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/checkout.css') }}">
 {% endblock %}
 
 {% block title %}Add Cashout Preference | CourseFinity{% endblock %}

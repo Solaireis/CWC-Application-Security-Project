@@ -1,4 +1,11 @@
 {% extends "user_base.html" %}
+{% block head %}
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/video_js.css') }}">
+<link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet">
+<link href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="container-lg">
     <div class="row">
@@ -87,13 +94,6 @@
 
 </div>
     
-{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/video_js.css') }}">
-<link href="https://vjs.zencdn.net/7.19.2/video-js.css" rel="stylesheet">
-<link href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css" rel="stylesheet">
 {% endblock %}
 
 {% block extra_js %}

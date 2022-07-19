@@ -1,7 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
 {% endblock %}
 {% block title %}Profile Settings | CourseFinity{% endblock %}
 

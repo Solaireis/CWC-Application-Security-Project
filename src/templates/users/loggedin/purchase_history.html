@@ -1,8 +1,8 @@
 {% extends "user_base.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/purchase_history.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/purchase_history.css') }}">
 {% endblock %}
 
 {% block title %}Purchase History | CourseFinity{% endblock %}

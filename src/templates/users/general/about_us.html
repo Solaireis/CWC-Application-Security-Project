@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}"><link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}">{% endblock %}
 {% block title %}About Us | CourseFinity{% endblock %}
 
 {% block content %}
