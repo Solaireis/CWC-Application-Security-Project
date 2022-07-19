@@ -18,3 +18,31 @@ class RoleInfo:
         self.error_bp = tupleData[6]
         self.teacher_bp = tupleData[7]
         self.user_bp = tupleData[8]
+
+@property
+def role_id(self) -> str:
+    return self.__role_id
+@property
+def role_name(self) -> str:
+    return self.__role_name
+@property
+def guest_bp(self) -> int:
+    return self.__guest_bp
+@property
+def general_bp(self) -> int:
+    return self.__general_bp
+@property
+def admin_bp(self) -> int:
+    return self.__admin_bp
+@property
+def logged_in_bp(self) -> int:
+    return self.__logged_in_bp
+@property
+def error_bp(self) -> int:
+    return self.__error_bp
+@property
+def teacher_bp(self) -> int:
+    return self.__teacher_bp
+@property
+def user_bp(self) -> int:
+    return self.__user_bp
