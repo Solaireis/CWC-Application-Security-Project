@@ -101,6 +101,10 @@ course_id_list = []
 for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
     if i == 1:
         course_id = "077d2d721fa64093a6d673902ab4b830" # For easier testing, first course is a preset value
+        try:
+            stripe.Product.modify(course_id, active = True)
+        except InvalidRequestError as error:
+            print(error)
     else:
         course_id = NormalFunctions.generate_id()
     course_id_list.append(course_id)
