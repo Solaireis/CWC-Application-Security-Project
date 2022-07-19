@@ -19,6 +19,7 @@ from .RoutesSecurity import csrf
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
+import platform
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -168,10 +169,11 @@ def videoUpload():
             else:
                 print(f'File {file.filename} has been uploaded successfully')
                 
-                #convert to mpd still broke on macbook i think cause the terminal need drag the file in
-                if (not convert_to_mpd(courseID)): # Error with conversion
-                    flash("Invalid Video!", "File Upload Error!")
-                    return redirect(url_for("teacherBP.videoUpload"))
+                #so that can download the file, we uncomment when for other platforms it works
+                if (platform.system() != "Darwin"):
+                    if (not convert_to_mpd(courseID)): # Error with conversion
+                        flash("Invalid Video!", "File Upload Error!")
+                        return redirect(url_for("teacherBP.videoUpload"))
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(

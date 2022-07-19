@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
 from subprocess import run as subprocess_run, PIPE
-from flask import current_app
+from subprocess import check_output 
 from os import environ
 
 # import local python libraries
@@ -38,9 +38,10 @@ import PIL, pymysql
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
+import shlex, platform
 
 # import Flask libraries
-from flask import url_for, flash, Markup
+from flask import url_for, flash, Markup, current_app
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
@@ -1680,11 +1681,20 @@ def convert_to_mpd(courseID:str=None) -> bool:
     # For CLI Testing
     # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
 
-    # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
-    # shell = False helps prevent command injection, but idk if it messes with the code 
-    dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)    
+    if (platform.system() == "Darwin"):
+        filepath = CONSTANTS.ROOT_FOLDER_PATH.joinpath(
+            "static", "executables", "ffprobe")
+        cmd = f"{filepath} -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\""
+        args = shlex.split(cmd)
+        # run the ffprobe process, decode stdout into utf-8 & convert to JSON
+        dimensions = json.loads(check_output(args).decode('utf-8'))["streams"][0]
+    else:
+        # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
+        # shell = False helps prevent command injection, but idk if it messes with the code 
+        dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)
     try:
-        dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
+        if (platform.system() != "Darwin"):
+            dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
         print(dimensions)
     except KeyError:
         error = dimensions.stderr.decode("utf-8")
@@ -1696,6 +1706,7 @@ def convert_to_mpd(courseID:str=None) -> bool:
     dash.representations(_1080p)
 
     try:
+        #TODO: This uses ffmpeg but idk where the command is located, so currently for now no convert
         dash.output(convertedVideoPath)
     except (RuntimeError):
         return False
