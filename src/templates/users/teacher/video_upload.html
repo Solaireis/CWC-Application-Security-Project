@@ -99,9 +99,9 @@
                     reader.readAsText(file, "UTF-8");
                 });
                 //comment this out when testing hash
-                // this.on("success", function () {
-                //     window.location = "{{ url_for('teacherBP.draftCourseList') }}";
-                // });
+                this.on("success", function () {
+                    window.location = "{{ url_for('teacherBP.draftCourseList') }}";
+                });
             }
         };
     </script>
