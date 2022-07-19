@@ -1014,9 +1014,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         # Delete old profile picture from Google Cloud Storage API
         cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
-        matched = cur.fetchone()
-        if (matched is not None):
-            oldUrlToDelete = get_blob_name(url=matched[0])
+        profileImage = cur.fetchone()[0]
+        if (profileImage is not None):
+            oldUrlToDelete = get_blob_name(url=profileImage)
             try:
                 delete_blob(destinationURL=oldUrlToDelete)
             except (FileNotFoundError):

@@ -364,11 +364,10 @@ def purchaseView(courseID:str):
 
     accType = imageSrcPath = None
     userPurchasedCourses = {}
-    if ("user" in session):
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo.uid
-        accType = userInfo.role
-        imageSrcPath = userInfo.profileImage
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    userPurchasedCourses = userInfo.uid
+    accType = userInfo.role
+    imageSrcPath = userInfo.profileImage
 
     return render_template("users/loggedin/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
