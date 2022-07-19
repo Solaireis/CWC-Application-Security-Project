@@ -24,53 +24,47 @@ teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_fo
 
 @teacherBP.route("/course-video-list")
 def courseList():
-    if ("user" in session):
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        page = request.args.get("p", default=1, type=int)
-        maxPage, paginationArr = 0, []
-        courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
-        try:
-            if (not courseList[0]):
-                return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
-            if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]
-                # Compute the buttons needed for pagination
-                paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
-        except:
-            courseList = []
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    page = request.args.get("p", default=1, type=int)
+    maxPage, paginationArr = 0, []
+    courseList = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
+    try:
+        if (not courseList[0]):
+            return redirect(url_for("teacherBP.courseList") + f"?p={courseList[1]}")
+        if (len(courseList) != 0) :
+            courseList, maxPage = courseList[0], courseList[1]
+            # Compute the buttons needed for pagination
+            paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+    except:
+        courseList = []
 
-        return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
-    else:
-        return redirect(url_for("guestBP.login"))
+    return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
 
 @teacherBP.route("/draft-course-video-list")
 def draftCourseList():
-    if ("user" in session):
-        #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        page = request.args.get("p", default=1, type=int)
-        maxPage, paginationArr = 0, []
-        courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
-        try:
-            if (not courseList[0]):
-                return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
-            if (len(courseList) != 0) :
-                courseList, maxPage = courseList[0], courseList[1]
-                # Compute the buttons needed for pagination
-                paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
-        except:
-            courseList = []
+    #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    page = request.args.get("p", default=1, type=int)
+    maxPage, paginationArr = 0, []
+    courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
+    try:
+        if (not courseList[0]):
+            return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
+        if (len(courseList) != 0) :
+            courseList, maxPage = courseList[0], courseList[1]
+            # Compute the buttons needed for pagination
+            paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
+    except:
+        courseList = []
 
-        return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
-    else:
-        return redirect(url_for("guestBP.login"))
+    return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
 
 """ Start Of Course Creation """
 
 # @csrf.exempt
 # @teacherBP.route("/upload-video", methods=["GET", "POST"])
 # def videoUpload():
-#     if ("user" in session):
+#     if ("user" in session): #TODO: DELETE IF USER IN SESSION IF UNCOMMENTED
 #         userInfo = get_image_path(session["user"], returnUserInfo=True)
 #         if (userInfo.role != "Teacher"):
 #             abort(404)
@@ -131,9 +125,6 @@ def videoUpload():
         session.pop("video_saving", None)
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
-    if (userInfo.role != "Teacher"):
-        abort(404)
-
     if (request.method == "POST"):
         file = request.files["videoUpload"]
         filename = secure_filename(file.filename)
@@ -205,100 +196,98 @@ def videoUpload():
 #TODO: Hash Video data, implement dropzone to encrpyt video data
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
-    if 'video_saving' in session:
-        session.pop('video_saving', None)
-    if ("user" in session):
-        courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
-        videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-        videoFilename = courseID + Path(courseTuple[2]).suffix
-        absFilePath = videoFilePath.joinpath(videoFilename)
+    if ("video_saving" in session):
+        session.pop("video_saving", None)
 
-        if (not courseTuple):
-            flash("No Course Found", "Course Not Found!")
-            return redirect(url_for("teacherBP.draftCourseList"))
+    courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
+    videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
+    videoFilename = courseID + Path(courseTuple[2]).suffix
+    absFilePath = videoFilePath.joinpath(videoFilename)
 
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        if (userInfo.role != "Teacher"):
-            abort(500)
+    if (not courseTuple):
+        flash("No Course Found", "Course Not Found!")
+        return redirect(url_for("teacherBP.draftCourseList"))
 
-        courseForm = CreateCourse(request.form)
-        if (request.method == "POST" and courseForm.validate()):
-            recaptchaToken = request.form.get("g-recaptcha-response")
-            if (recaptchaToken is None):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    if (userInfo.role != "Teacher"):
+        abort(500)
 
-            try:
-                recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="create_course")
-            except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-                flash("Please verify that you are not a bot!", "Danger")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-
-            if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-                # if the score is not within the acceptable threshold
-                # then the user is likely a bot
-                # hence, we will flash an error message
-                flash("Please check the reCAPTCHA box and try again.", "Danger")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-
-            courseTitle = courseForm.courseTitle.data
-            courseDescription = courseForm.courseDescription.data
-            courseTagInput = request.form.get("courseTag")
-            coursePrice = float(courseForm.coursePrice.data)
-
-            file = request.files.get("courseThumbnail")
-            filename = secure_filename(file.filename)
-            if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
-                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-
-            filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
-            imageData = BytesIO(file.read())
-            try:
-                imageUrlToStore = compress_and_resize_image(
-                    imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
-                    folderPath=f"course-thumbnails"
-                )
-            except (InvalidProfilePictureError):
-                flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-            except (UploadFailedError):
-                flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
-                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
-
-            videoPath = upload_file_from_path(
-                bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
-                localFilePath=absFilePath,
-                uploadDestination=f"videos/{videoFilename}"
-            )
-            # Delete video from storage (relying on mpd file)
-            sql_operation(
-                table="course",
-                mode="insert",
-                courseID=courseID,
-                teacherID=userInfo.uid,
-                courseName=courseTitle,
-                courseDescription=courseDescription,
-                courseImagePath=imageUrlToStore,
-                courseCategory=courseTagInput,
-                coursePrice=coursePrice,
-                videoPath=courseTuple[2]
-            )
-            stripe_product_create(
-                courseID=courseID,
-                courseName=courseTitle,
-                courseDescription=courseDescription,
-                coursePrice=coursePrice,
-                courseImagePath=imageUrlToStore
-            )
-            sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
-
-            flash("Course Created", "Successful Course Created!")
-            return redirect(url_for("userBP.userProfile"))
-        else:
+    courseForm = CreateCourse(request.form)
+    if (request.method == "POST" and courseForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="create_course")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Please verify that you are not a bot!", "Danger")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+        courseTitle = courseForm.courseTitle.data
+        courseDescription = courseForm.courseDescription.data
+        courseTagInput = request.form.get("courseTag")
+        coursePrice = float(courseForm.coursePrice.data)
+
+        file = request.files.get("courseThumbnail")
+        filename = secure_filename(file.filename)
+        if (filename == "" or not accepted_file_extension(filename=filename, typeOfFile="image")):
+            flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+        filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
+        imageData = BytesIO(file.read())
+        try:
+            imageUrlToStore = compress_and_resize_image(
+                imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
+                folderPath=f"course-thumbnails"
+            )
+        except (InvalidProfilePictureError):
+            flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+        except (UploadFailedError):
+            flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
+
+        videoPath = upload_file_from_path(
+            bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
+            localFilePath=absFilePath,
+            uploadDestination=f"videos/{videoFilename}"
+        )
+        # Delete video from storage (relying on mpd file)
+        sql_operation(
+            table="course",
+            mode="insert",
+            courseID=courseID,
+            teacherID=userInfo.uid,
+            courseName=courseTitle,
+            courseDescription=courseDescription,
+            courseImagePath=imageUrlToStore,
+            courseCategory=courseTagInput,
+            coursePrice=coursePrice,
+            videoPath=courseTuple[2]
+        )
+        stripe_product_create(
+            courseID=courseID,
+            courseName=courseTitle,
+            courseDescription=courseDescription,
+            coursePrice=coursePrice,
+            courseImagePath=imageUrlToStore
+        )
+        sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
+
+        flash("Course Created", "Successful Course Created!")
+        return redirect(url_for("userBP.userProfile"))
     else:
-        return redirect(url_for("guestBP.login"))
+        return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
 """ End Of Course Creation """
 
