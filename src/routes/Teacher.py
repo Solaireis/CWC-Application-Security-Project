@@ -119,10 +119,12 @@ def draftCourseList():
 @csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
-    if ("video_saving" in session):
-        # Delete folder
-        # Remove from SQL (if exists)
-        session.pop("video_saving", None)
+    if ("video_saving" not in session):
+        courseID = generate_id()
+        session["video_saving"] = courseID # Saving started; interruption = restart from scratch
+    else:
+        courseID = session["video_saving"]
+        #TODO : Find a way to check if this was the file currently being saved or not
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     if (request.method == "POST"):
@@ -134,8 +136,6 @@ def videoUpload():
             flash("Please Upload a Video", "File Upload Error!")
             return redirect(url_for("teacherBP.videoUpload"))
 
-        courseID = generate_id()
-        session["video_saving"] = courseID # Saving started; interruption = restart from scratch
         filename = courseID + Path(filename).suffix # change filename to courseid.mp4
         #folder creation
         filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
@@ -182,6 +182,7 @@ def videoUpload():
                     videoPath=filePathToStore
                     # videoPath=Path(filePathToStore).with_suffix(".mpd")
                 )
+                session.pop("video_saving", None)
                 return redirect(url_for("teacherBP.createCourse", courseID=courseID))
         else:
             return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
