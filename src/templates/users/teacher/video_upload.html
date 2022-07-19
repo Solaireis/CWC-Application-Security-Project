@@ -87,18 +87,20 @@
             acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
             autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
             init: function() {
-                //function will remove older video if one is already uploaded
-                // returning a hash but not the same as hashlib
+
+                // returning a hash but not the same as hashlib(wrong hash), might be different encoding
+                // I tested it on a string, i think I am passing in the wrong file
                 this.on("addedfile", function(file) {
                     var reader = new FileReader();
                     reader.onload = function(event) {
-                        const hash = CryptoJS.SHA256(reader.result);
-                        console.log(hash.toString());
+                        const hash = CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(event.target.result));
+                        console.log(hash.toString(CryptoJS.enc.Hex));
                     };
-                    reader.readAsDataURL(file);
+                    reader.readAsText(file, "UTF-8");
                 });
+                //comment this out when testing hash
                 // this.on("success", function () {
-                //     // window.location = "{{ url_for('teacherBP.draftCourseList') }}";
+                //     window.location = "{{ url_for('teacherBP.draftCourseList') }}";
                 // });
             }
         };
