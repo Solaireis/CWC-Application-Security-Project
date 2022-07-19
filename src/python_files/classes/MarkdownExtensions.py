@@ -18,7 +18,7 @@ class AnchorTagPreExtension(markdown.extensions.Extension):
     """
     Will add rel="nofollow" after markdown conversion for <a ..>text</a> HTML tags.
     """
-    def extendMarkdown(self, md, md_globals):
+    def extendMarkdown(self, md):
         md.registerExtension(self)
         # Note that the integer in the third argument is the priority when parsing the markdown string.
         md.preprocessors.register(AnchorTagPreprocessor(md), "addAttributesToAnchorTags", 75)
@@ -36,7 +36,7 @@ class AnchorTagPostExtension(markdown.extensions.Extension):
     """
     Will add rel="nofollow" after markdown conversion for (anchorText)[anchorLink] markdown syntax.
     """
-    def extendMarkdown(self, md, md_globals):
+    def extendMarkdown(self, md):
         md.registerExtension(self)
         # Note that the integer in the third argument is the priority when parsing the markdown string.
         md.postprocessors.register(AnchorTagPostprocessor(md), "addAttributesToAnchorMarkdownTags", 75)
