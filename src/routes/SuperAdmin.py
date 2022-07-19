@@ -240,6 +240,7 @@ def roleManagement():
 
         return redirect(session["relative_url"])
 
+    # TODO: Role Management do not need pagination and relative url session
     # Pagination starts below
     pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
@@ -269,7 +270,7 @@ def roleManagement():
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
 
     # save the current URL in the session for when the admin searches and an error occurs
-    session["relative_url"] = request.full_path
+    session["relative_url"] = request.full_path 
     return render_template("users/admin/admin_RBAC.html",currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
 
 

@@ -90,7 +90,11 @@ def before_request() -> None:
         # meaning the css, js, and images are also checked when a user request the webpage
         # which will cause the relative_url key to be removed from the session as the endpoint is "static"
         # hence, adding allowing if the request endpoint is pointing to a static file
-        if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "userManagement"):
+        if (
+            request.endpoint and 
+            request.endpoint != "static" and 
+            request.endpoint.split(".")[-1] not in ("userManagement", "adminManagement")
+        ):
             session.pop("relative_url", None)
 
     # Validate the user's session for every request that is not to the static files

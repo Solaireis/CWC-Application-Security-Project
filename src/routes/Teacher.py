@@ -183,11 +183,6 @@ def videoUpload():
                     # videoPath=Path(filePathToStore).with_suffix(".mpd")
                 )
                 return redirect(url_for("teacherBP.createCourse", courseID=courseID))
-            """
-            Create a row inside the database to store the video info.
-            Display this row in the teachers course list
-            """
-            # TODO: Missing one return statement here
         else:
             return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
