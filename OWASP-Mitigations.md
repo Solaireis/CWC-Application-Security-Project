@@ -97,6 +97,12 @@
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
   - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
 
+- 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
+  - Backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
+    - Recommended by [OWASP Multifactor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
+    - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
+      - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption
+
 - Implemented [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) onto the web application
   - Added on:
     - Login page
@@ -147,14 +153,15 @@
       - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 
-- 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with Google
-- Backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
-  - Recommended by [OWASP Multifactor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
-  - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
-    - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption
+
+- Different method for logging in as an Admin (Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server))
+  - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
+  - More secure as the admin does not use the same method of logging as normal users of the web application.
+  - The admin routes are also IP address protected via a whitelist for extra security
+    - In the database, there is a table of whitelisted IP addresses that are also encrypted using Google Cloud Platform KMS symmetric encryption service which uses AES256-GCM
 
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
   - Secure:
@@ -163,12 +170,6 @@
   - HttpOnly:
     - Prevent client-side scripts from accessing the cookie
       - Prevent cookie theft
-
-- Different method for logging in as an Admin
-  - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
-  - More secure as the admin does not use the same method of logging as normal users of the web application.
-  - The admin routes are also IP address protected via a whitelist for extra security
-    - In the database, there is a table of whitelisted IP addresses that are also encrypted using Google Cloud Platform KMS symmetric encryption service which uses AES256-GCM
 
 ---
 

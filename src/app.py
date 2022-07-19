@@ -102,9 +102,9 @@ app.config["MAINTENANCE_MODE"] = False
 # Reference: 
 # https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
 # https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
-FLASK_SESSION_INTERFACE = SecureCookieSessionInterface()
-FLASK_SESSION_INTERFACE.digest_method = staticmethod(hashlib.sha512)
-app.session_interface = FLASK_SESSION_INTERFACE
+FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
+FLASK_SESSION_COOKIE_INTERFACE.digest_method = staticmethod(hashlib.sha512)
+app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
 
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
@@ -124,6 +124,7 @@ app.config["SESSION_COOKIE_NAME"] = "session"
 app.config["SESSION_COOKIE_SECURE"] = True
 
 # for other scheduled tasks such as deleting expired session id from the database
+# Uses threading to run the task in a separate thread
 scheduler = BackgroundScheduler()
 
 # Remove jinja whitespace
@@ -244,57 +245,57 @@ def check_for_new_flask_secret_key() -> None:
     if (retrievedKeyFromGCPSecretManager != app.config["SECRET_KEY"]):
         app.config["SECRET_KEY"] = retrievedKeyFromGCPSecretManager
 
+scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
+
+# APScheduler docs:
+# https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
+# Free up database of users who have not verified their email for more than 30 days
+scheduler.add_job(
+    remove_unverified_users_for_more_than_30_days,
+    trigger="cron", hour=23, minute=56, second=0, id="removeUnverifiedUsers"
+)
+# Free up the database of expired JWT
+scheduler.add_job(
+    remove_expired_jwt,
+    trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
+)
+# Free up the database of expired sessions
+scheduler.add_job(
+    remove_expired_sessions,
+    trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions"
+)
+# Free up database of expired login attempts
+scheduler.add_job(
+    reset_expired_login_attempts,
+    trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts"
+)
+# Remove user's IP address from the database if the the user has not logged in from that IP address for more than 10 days
+scheduler.add_job(
+    remove_last_accessed_more_than_10_days,
+    trigger="interval", hours=1, id="removeUnusedIPAddresses"
+)
+# Re-encrypt all the encrypted data in the database due to the monthly key rotations
+scheduler.add_job(
+    re_encrypt_data_in_db,
+    trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
+)
+# For key rotation of the secret key for digitally signing the session cookie
+scheduler.add_job(
+    update_secret_key,
+    trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
+)
+# For checking if the Flask secret key has been manually changed every 30 minutes
+scheduler.add_job(
+    check_for_new_flask_secret_key,
+    trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
+)
+
+# Start all the scheduled jobs
+scheduler.start()
+
 """------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
 if (__name__ == "__main__"):
-    scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
-
-    # APScheduler docs:
-    # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
-    # Free up database of users who have not verified their email for more than 30 days
-    scheduler.add_job(
-        remove_unverified_users_for_more_than_30_days,
-        trigger="cron", hour=23, minute=56, second=0, id="removeUnverifiedUsers"
-    )
-    # Free up the database of expired JWT
-    scheduler.add_job(
-        remove_expired_jwt,
-        trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
-    )
-    # Free up the database of expired sessions
-    scheduler.add_job(
-        remove_expired_sessions,
-        trigger="cron", hour=23, minute=58, second=0, id="deleteExpiredSessions"
-    )
-    # Free up database of expired login attempts
-    scheduler.add_job(
-        reset_expired_login_attempts,
-        trigger="cron", hour=23, minute=59, second=0, id="resetLockedAccounts"
-    )
-    # Remove user's IP address from the database if the the user has not logged in from that IP address for more than 10 days
-    scheduler.add_job(
-        remove_last_accessed_more_than_10_days,
-        trigger="interval", hours=1, id="removeUnusedIPAddresses"
-    )
-    # Re-encrypt all the encrypted data in the database due to the monthly key rotations
-    scheduler.add_job(
-        re_encrypt_data_in_db,
-        trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
-    )
-    # For key rotation of the secret key for digitally signing the session cookie
-    scheduler.add_job(
-        update_secret_key,
-        trigger="cron", day="last", hour=23, minute=59, second=59, id="updateFlaskSecretKey"
-    )
-    # For checking if the Flask secret key has been manually changed every 30 minutes
-    scheduler.add_job(
-        check_for_new_flask_secret_key,
-        trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
-    )
-
-    # Start all the scheduled jobs
-    scheduler.start()
-
     if (app.config["DEBUG_FLAG"]):
         hostName = None
         SSL_CONTEXT = (
