@@ -382,18 +382,18 @@
                                     <td>User Routes</td>
                                     <td colspan="3">Status</td>
                                 </tr>
-                                {% for i in range roleInfo}
-                                <tr>
-                                    <td>{{ i.role_name }}</td> 
-                                    <td>{{ i.guest_bp}}</td>
-                                    <td>{{ i.general_bp }}</td>
-                                    <td>{{ i.admin_bp }}</td>
-                                    <td>{{ i.logged_in_bp }}</td>
-                                    <td>{{ i.error_bp }}</td>
-                                    <td>{{ i.teacher_bp}}</td>
-                                    <td>{{ i.user_bp }}</td>
-
-                                </tr>
+                                {% for i in range(count) %}
+                                    <tr>
+                                        <td>{{ roleInfo[i].role_name }}</td> 
+                                        <td>{{ roleInfo[i].guest_bp}}</td>
+                                        <td>{{ roleInfo[i].general_bp }}</td>
+                                        <td>{{ roleInfo[i].admin_bp }}</td>
+                                        <td>{{ roleInfo[i].logged_in_bp }}</td>
+                                        <td>{{ roleInfo[i].error_bp }}</td>
+                                        <td>{{ roleInfo[i].teacher_bp }}</td>
+                                        <td>{{ roleInfo[i].user_bp }}</td>
+                                    </tr>
+                            {% endfor %}
                             </table>
                         </div>
                     </div>

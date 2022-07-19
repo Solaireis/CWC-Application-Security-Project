@@ -151,11 +151,11 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     for role in role:
         roleInfo = RoleInfo(role)
         rolelist.append(roleInfo)
-
+    count = len(rolelist)
 
 
     # Check if user is logged in
     # TODO: Role Management do not need pagination and relative url session
-    return render_template("users/admin/admin_RBAC.html",roleInfo=roleInfo)
+    return render_template("users/admin/admin_RBAC.html",roleInfo=roleInfo, count=count)
 
 
