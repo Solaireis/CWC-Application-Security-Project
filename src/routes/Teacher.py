@@ -196,6 +196,9 @@ def createCourse(courseID:str):
         session.pop("video_saving", None)
 
     courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
+    if (not courseTuple):
+        flash("Course Already Created / Draft Does not exist!", "Course Creation error")
+        return redirect(url_for("teacherBP.courseList"))
     videoFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
     videoFilename = courseID + Path(courseTuple[2]).suffix
     absFilePath = videoFilePath.joinpath(videoFilename)
@@ -256,7 +259,8 @@ def createCourse(courseID:str):
         videoPath = upload_file_from_path(
             bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
             localFilePath=absFilePath,
-            uploadDestination=f"videos/{videoFilename}"
+            uploadDestination=f"videos"
+            # uploadDestination=f"videos/{videoFilename}" #folder created
         )
         # Delete video from storage (relying on mpd file)
         sql_operation(
