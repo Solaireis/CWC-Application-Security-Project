@@ -19,7 +19,7 @@ from .RoutesSecurity import csrf
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
-import platform
+import platform, hashlib
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -168,12 +168,16 @@ def videoUpload():
                 return make_response("Uploaded image is corrupted! Please try again!", 500)
             else:
                 print(f'File {file.filename} has been uploaded successfully')
-                
                 #so that can download the file, we uncomment when for other platforms it works
                 if (platform.system() != "Darwin"):
                     if (not convert_to_mpd(courseID)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
                         return redirect(url_for("teacherBP.videoUpload"))
+                    filePathToStore = Path(filePathToStore).with_suffix(".mpd")
+
+                #TODO : CryptoJS not returning the same hash , find a way to get javascript data (AJAX but idw use it)
+                with open(absFilePath, 'rb') as f:
+                    print(hashlib.sha256(f.read()).hexdigest())
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(

@@ -72,6 +72,7 @@
 
 {% block extra_js %}
     <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script nonce="{{ csp_nonce() }}">
         Dropzone.options.dropper = {
             url: "/upload-video", // Determines where to reroute after submission
@@ -87,15 +88,18 @@
             autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
             init: function() {
                 //function will remove older video if one is already uploaded
-                this.on("addedfile", function() {
-                    document.querySelector(".dz-progress").classList.add("d-none");
-                    if (this.files[1] == null) 
-                        return;
-                    this.removeFile(this.files[0]);
+                // returning a hash but not the same as hashlib
+                this.on("addedfile", function(file) {
+                    var reader = new FileReader();
+                    reader.onload = function(event) {
+                        const hash = CryptoJS.SHA256(reader.result);
+                        console.log(hash.toString());
+                    };
+                    reader.readAsDataURL(file);
                 });
-                this.on("success", function () {
-                    window.location = "{{ url_for('teacherBP.draftCourseList') }}";
-                });
+                // this.on("success", function () {
+                //     // window.location = "{{ url_for('teacherBP.draftCourseList') }}";
+                // });
             }
         };
     </script>
