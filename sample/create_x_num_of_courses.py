@@ -115,6 +115,7 @@ for i in range(latestDemoCourse, latestDemoCourse + demoCourse):
 It is a course for students who are interested in learning about Data Structure and Algorithms.
 
 In this course you will learn about the following topics:
+
 1. Arrays
 2. Linked Lists
 3. Stack and Queue

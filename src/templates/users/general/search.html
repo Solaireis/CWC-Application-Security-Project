@@ -12,7 +12,7 @@
 {% block content %}
 <div class="container">
     {% if tagSearch %}
-        <h2 class="display-5" class="overflow-auto">All courses tagged with "{{ searchInput }}"</h2>
+        <h2 class="display-5" class="overflow-auto">All courses tagged with "{{ get_readable_category(searchInput) }}"</h2>
     {% else %}
         <h2 class="display-5" class="overflow-auto">You Searched For "{{ searchInput }}"</h2>
     {% endif %}
@@ -35,7 +35,7 @@
                     </div>
                     <div class="col-md-8">
                         <div class="card-body">
-                            <h5 class="card-title"><a href="#">{{ results.courseName }}</a></h5>
+                            <h5 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=results.courseID) }}">{{ results.courseName }}</a></h5>
                             <p class="card-text">{{ results.courseDescription }}</p>
                             <p class="card-text">
                                 <small class="text-muted">

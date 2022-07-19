@@ -38,7 +38,7 @@
                 
                 <p>Uploaded by: <span><img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">{{ courses.teacherUsername }}</span></p>
                 <p>Date Published: {{courses.dateCreated}}</p>
-                <p>Course Type: <span>{{ courses.courseCategory }}</span></p>
+                <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
                 <p> Course Rating: {% if (courses.averageRating > 0) %}
                     <span class="ratings">
                         {% with remainingStars = 5 - courses.averageRating %}
@@ -67,7 +67,7 @@
             </h2>
         <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
             <div class="accordion-body"> 
-                <p>Course Type: <span>{{ courseCategory }}</span></p>
+                <p>Course Category: <span>{{ courseCategory }}</span></p>
                 <p>Uploaded by: <span><img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">{{ courses.teacherUsername }}</span></p>
                 <p>Date Published: {{courses.dateCreated}}</p>
                 <p> Course Rating: {{courses.averageRating}}</p> / 5 </p>
@@ -76,10 +76,6 @@
                 <hr>
                 <p>Description</p>
                 <p>{{ courseDescription }}</p>
-                
-
-                
-
             </div>
         </div>
     </div>

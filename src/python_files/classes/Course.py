@@ -1,48 +1,47 @@
 # import python standard libraries
 from datetime import datetime
-import warnings
 
-class Course:
-    def __init__(self, tupleInfo:tuple, truncateData:bool=False) -> None:
-        """
-        WARNING:
-        - THIS COURSE OBJECT IS DEPRECATED!
-        - Please use the CourseInfo object instead!
+def get_readable_category(courseCategory:str="") -> str:
+    """
+    Get the readable category name from the course category.
 
-        Creates a course object in this format, 
-        [(("Daniel", "daniel_profile_image"), (course_id, teacher_name, course_name,...))]
+    E.g. "Programming" -> "Development - Programming"
 
-        Basically a tuple of a tuple of the teacher's username and profile pic and 
-        a tuple of the course info tuple.
+    Args:
+    - courseCategory (str): The course category.
 
-        Note that all attributes are public.
-        """
-        warnings.warn("Course object is now deprecated! Please use CourseInfo object instead!", DeprecationWarning)
-        self.teacher_name = tupleInfo[0][0]
-        self.teacher_profile_image = tupleInfo[0][1][0]
-        self.dicebear_profile_image = tupleInfo[0][1][1]
-        self.course_id = tupleInfo[1][0]
-        self.teacher_id = tupleInfo[1][1]
-        self.course_name = tupleInfo[1][2]
-        self.course_description = tupleInfo[1][3]
-        if (truncateData):
-            # Limit to 300 characters
-            self.course_description = self.course_description[:300].strip() + "..."
-        self.course_image_path = tupleInfo[1][4]
-        self.course_price = f"${round(float(tupleInfo[1][5]), 2):.2f}"
-        self.course_category = tupleInfo[1][6]
-        self.course_date_created = tupleInfo[1][7]
-
-        # total ratings score / num of ratings
-        self.rating_count = tupleInfo[1][9]
-        self.total_rating_score = tupleInfo[1][8]
-        if (self.rating_count == 0):
-            self.average_rating = 0
-        else:
-            self.average_rating = int(round(self.total_rating_score / self.rating_count, 0)) 
-
-    def __repr__(self) -> str:
-        return f"\n[Course: {self.course_name} | " + f"By: {self.teacher_name} | " + f"Price: ${self.course_price} | " + f"Category: {self.course_category} | " + f"Date Created: {self.course_date_created} | " + f"Rating: {self.average_rating} ]\n"
+    Returns:
+    - str: The readable category name or "Unknown Category" if the category is not found.
+    """
+    readableTagDict = {
+        "Programming": "Development - Programming",
+        "Web_Development": "Development - Web Development",
+        "Game_Development": "Development - Game Development",
+        "Mobile_App_Development": "Development - Mobile App Development",
+        "Software_Development": "Development - Software Development",
+        "Other_Development": "Development - Other Development",
+        "Entrepreneurship": "Business - Entrepreneurship",
+        "Project_Management": "Business - Project Management",
+        "BI_Analytics": "Business - Business Intelligence & Analytics",
+        "Business_Strategy": "Business - Business Strategy",
+        "Other_Business": "Business - Other Business",
+        "3D_Modelling": "Design - 3D Modelling",
+        "Animation": "Design - Animation",
+        "UX_Design": "Design - UX Design",
+        "Design_Tools": "Design - Design Tools",
+        "Other_Design": "Design - Other Design",
+        "Digital_Photography": "Photography/Videography - Digital Photography",
+        "Photography_Tools": "Photography/Videography - Photography Tools",
+        "Video_Production": "Photography/Videography - Video Production",
+        "Video_Design_Tools": "Photography/Videography - Video Design Tools",
+        "Other_Photography_Videography": "Photography/Videography - Other Photography/Videography",
+        "Science": "Academics - Science",
+        "Math": "Academics - Math",
+        "Language": "Academics - Language",
+        "Test_Prep": "Academics - Test Prep",
+        "Other_Academics": "Academics - Other Academics"
+    }
+    return readableTagDict.get(courseCategory, "Unknown Category")
 
 class CourseInfo:
     """
@@ -56,7 +55,13 @@ class CourseInfo:
         c.avg_rating, number_of_results
     )
     """
-    def __init__(self, tupleInfo:tuple="", profilePic:str="", truncateData:bool=False, draftStatus:bool=False):
+    def __init__(self, 
+        tupleInfo:tuple="",
+        profilePic:str="", 
+        truncateData:bool=False, 
+        draftStatus:bool=False,
+        getReadableCategory=False
+    ):
         """
         Constructor for course info object.
     
@@ -70,6 +75,8 @@ class CourseInfo:
                 )
         - profilePic (str): The dicebear url or the path to the teacher's profile picture
         - truncateData (bool): Truncate the course description to 300 characters
+        - draftStatus (bool): True if the course is a draft, False if it is not
+        - getReadableCategory (bool): True if the course category should be converted to a readable category, False if not
         """
         self.__courseID = tupleInfo[0]
         self.__teacherID = tupleInfo[1]
@@ -78,10 +85,11 @@ class CourseInfo:
         if (not draftStatus):
             self.__courseName = tupleInfo[4]
             self.__courseDescription = tupleInfo[5] if (not truncateData) \
-                                                else tupleInfo[5][:300].strip() + "..."
+                                                    else tupleInfo[5][:300].strip() + "..."
             self.__courseImagePath = tupleInfo[6]
             self.__coursePrice = tupleInfo[7]
-            self.__courseCategory = tupleInfo[8]
+            self.__courseCategory = tupleInfo[8] if (not getReadableCategory) \
+                                                 else get_readable_category(tupleInfo[8])
             self.__dateCreated = tupleInfo[9]
             self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
             self.__videoPath = tupleInfo[11]

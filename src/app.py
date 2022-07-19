@@ -11,6 +11,7 @@ from google.cloud import logging as gcp_logging
 
 # import local python libraries
 from python_files.classes.Constants import CONSTANTS
+from python_files.classes.Course import get_readable_category
 from python_files.functions.SQLFunctions import sql_operation
 
 # import python standard libraries
@@ -74,8 +75,7 @@ csp = {
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js blob:",
         "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
         "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
-        "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js",
-        "https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"
+        "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"
     ]
 }
 permissions_policy = {
@@ -128,9 +128,12 @@ app.config["SESSION_COOKIE_SECURE"] = True
 # Uses threading to run the task in a separate thread
 scheduler = BackgroundScheduler()
 
-# Remove jinja whitespace
+# Remove Jinja2 whitespace
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
+
+# Add custom functions to Jinja2
+app.jinja_env.globals.update(get_readable_category=get_readable_category)
 
 # Maximum file size for uploading anything to the web app's server
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB

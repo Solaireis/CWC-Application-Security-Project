@@ -1,4 +1,4 @@
-let downloadCodes = document.getElementById("downloadCodes");
+const downloadCodes = document.getElementById("downloadCodes");
 const activeBackupCodes = document.querySelectorAll("span.backupCodeActive");
 const usedBackupCodes = document.querySelectorAll("span.backupCodeUsed");
 
@@ -21,16 +21,31 @@ downloadCodes.addEventListener("click", function() {
     backupCodesLink.click();
 });
 
-document.addEventListener("DOMContentLoaded", function() {
-    const pdfDoc = new jspdf();
-    let printCodes = document.getElementById("printCodes");
+// Get the HTML content for formatting it into a new HTML page for printing
+const backupCodesHTML = document.getElementById("backupCodesTable");
+const backupCodesTitle = document.getElementById("backupCodesTitle");
+const backupCodesDesc = document.getElementById("backupCodesDesc");
+const backupCodesImpt = document.getElementById("backupCodesImpt");
+document.getElementById("printCodes").addEventListener("click", function() {
+    // open a new tab with the html content of the backup codes for the user to print
+    var myWindow = window.open("", "PRINT", "width=800,height=600");
 
-    var backUpCodesHTML = document.getElementById("userForm");
-    printCodes.addEventListener("click", function() {
-        pdfDoc.fromHTML(backUpCodesHTML, 15, 15, {
-            'width': 170,
-            'elementHandlers': specialElementHandlers
-        });
-        pdfDoc.output("dataurlnewwindow");
-    });
+    // Write the html head content to the new tab
+    myWindow.document.write("<html><head><title>Print Backup Codes</title>");
+    myWindow.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"></head><body class="p-5">');
+
+    // Write the html body content
+    myWindow.document.write(`<h1>${backupCodesTitle.innerText}</h1>`);
+    myWindow.document.write(`<p>${backupCodesDesc.innerText}</p>`);
+    myWindow.document.write(`<p>${backupCodesImpt.innerText}</p>`);
+    myWindow.document.write(backupCodesHTML.innerHTML);
+
+    // Finished writing the html body content
+    myWindow.document.write("</body></html>");
+    myWindow.document.close();
+
+    // Focus on the new tab 
+    // and prompt the print window
+    myWindow.focus();
+    myWindow.print();
 });

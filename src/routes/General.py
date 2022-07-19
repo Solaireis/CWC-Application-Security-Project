@@ -93,7 +93,7 @@ def coursePage(courseID:str):
     courseDescription = Markup(
         markdown.markdown(
             courses.courseDescription,
-            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()], 
+            extensions=[AnchorTagPreExtension(), AnchorTagPostExtension()]
         )
     )
     # print("hi",courses)

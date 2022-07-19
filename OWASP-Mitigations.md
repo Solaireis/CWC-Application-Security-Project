@@ -243,6 +243,16 @@
 
 ### Insecure Design
 
+### Plan
+- Stripe with modified JWT (no encoding/encryption method stored; no reason to)
+- mpd video player, randomised blob url
+
+### Implemented
+- DRM (Maybe https://www.vdocipher.com)
+- receipt generator
+- contact us form for issues
+- VirusTotal ffmpeg
+
 #### Plan:
 - Flask limiter
 - implement reCAPTCHA (if you have the time to read docs :D)
@@ -298,7 +308,7 @@
   - shell = False in subprocess_run()
 - Cross Site Scripting
   - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
-  - In Jinja, everything is escaped by default except for values explicitly marked with the |safe filter.
+  - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
     - If required use Markup()
   - Implemented CSP, but only for scripts & frames
     - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
