@@ -19,8 +19,7 @@ APScheduler>=3.8.1
 requests>=2.28.0
 dicebear>=0.4.17
 Pillow>=9.0.0
-markdown>=3.1.7
-
+markdown>=3.4.1
 
 # Stripe API for the
 # web app's payment gateway
