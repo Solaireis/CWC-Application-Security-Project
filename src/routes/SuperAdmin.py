@@ -147,15 +147,18 @@ def adminManagement():
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
 def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
     role = sql_operation(table="role", mode="retrieve_all")
-    rolelist = []
+    roleList = []
     for role in role:
         roleInfo = RoleInfo(role)
-        rolelist.append(roleInfo)
-    count = len(rolelist)
+        roleList.append(roleInfo)
+    count = len(roleList)
+    for role in roleList:
+        print(role.role_name)
+
 
 
     # Check if user is logged in
     # TODO: Role Management do not need pagination and relative url session
-    return render_template("users/superadmin/admin_rbac.html",roleInfo=roleInfo, count=count)
+    return render_template("users/superadmin/admin_rbac.html",roleList=roleList, count=count)
 
 
