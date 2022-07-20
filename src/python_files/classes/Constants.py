@@ -30,10 +30,6 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-#own Libraries
-from python_files.classes.Roles import *
-from python_files.functions.SQLFunctions import * 
-
 class ConstantsConfigs:
     """
     This class is used to store all the constants used in the application.
@@ -82,119 +78,6 @@ class ConstantsConfigs:
 
         # For redirecting user to the custom domain on firebase
         self.__FIREBASE_DOMAIN_REGEX = re.compile(r"^(https://coursefinity-339412\.web\.app|https://coursefinity-339412\.firebaseapp\.com)(\/.*)?$")
-
-        # Blueprints endpoint routes
-        #TODO:Integrate this with the admin console
-        # guest_blueprints_list=[]
-        # user_blueprints_list=[]
-        # teacher_blueprints_list=[]
-        # admin_blueprints_list=[]
-        # super_admin_blueprints_list=[]
-        # role = sql_operation(table="role", mode="retrieve_all")
-        # roleList = []
-        # for role in role:
-        #     roleInfo = RoleInfo(role)
-        #     roleList.append(roleInfo)
-        # for role in roleList:
-        
-        #     if role.role_name == "Teacher":
-        #         if role.guest_bp == 1:
-        #             teacher_blueprints_list.append(guestBP)
-        #         if role.user_bp == 1: 
-        #             teacher_blueprints_list.append(userBP)
-        #         if role.teacher_bp == 1:
-        #             teacher_blueprints_list.append(teacherBP)
-        #         if role.admin_bp == 1:
-        #             teacher_blueprints_list.append(adminBP)
-        #         if role.super_admin_bp == 1: #super admin not in the property yet
-        #             teacher_blueprints_list.append(superAdminBP)
-        #         if role.logged_in_bp == 1:
-        #             teacher_blueprints_list.append(loggedInBP)
-        #         if role.error_bp == 1:
-        #             teacher_blueprints_list.append(errorBP)
-        #         if role.general_bp == 1:
-        #             teacher_blueprints_list.append(generalBP)
-
-
-        #     elif role.role_name == "Admin":
-        #         if role.guest_bp == 1:
-        #             admin_blueprints_list.append(guestBP)
-        #         if role.user_bp == 1:
-        #             admin_blueprints_list.append(userBP)
-        #         if role.teacher_bp == 1:
-        #             admin_blueprints_list.append(teacherBP)
-        #         if role.admin_bp == 1:
-        #             admin_blueprints_list.append(adminBP)
-        #         if role.super_admin_bp == 1:
-        #             admin_blueprints_list.append(superAdminBP)
-        #         if role.logged_in_bp == 1:
-        #             admin_blueprints_list.append(loggedInBP)
-        #         if role.error_bp == 1:
-        #             admin_blueprints_list.append(errorBP)
-        #         if role.general_bp == 1:
-        #             admin_blueprints_list.append(generalBP)
-
-
-        #     elif role.role_name == "Super Admin":
-        #         if role.guest_bp == 1:
-        #             super_admin_blueprints_list.append(guestBP)
-        #         if role.user_bp == 1:
-        #             super_admin_blueprints_list.append(userBP)
-        #         if role.teacher_bp == 1:
-        #             super_admin_blueprints_list.append(teacherBP)
-        #         if role.admin_bp == 1:
-        #             super_admin_blueprints_list.append(adminBP)
-        #         if role.super_admin_bp == 1:
-        #             super_admin_blueprints_list.append(superAdminBP)
-        #         if role.logged_in_bp == 1:
-        #             super_admin_blueprints_list.append(loggedInBP)
-        #         if role.error_bp == 1:
-        #             super_admin_blueprints_list.append(errorBP)
-        #         if role.general_bp == 1:
-        #             super_admin_blueprints_list.append(generalBP)
-
-
-        #     elif role.role_name == "Guest":
-        #         if role.guest_bp == 1:
-        #             guest_blueprints_list.append(guestBP)
-        #         if role.user_bp == 1:
-        #             guest_blueprints_list.append(userBP)
-        #         if role.teacher_bp == 1:
-        #             guest_blueprints_list.append(teacherBP)
-        #         if role.admin_bp == 1:
-        #             guest_blueprints_list.append(adminBP)
-        #         if role.super_admin_bp == 1:
-        #             guest_blueprints_list.append(superAdminBP)
-        #         if role.logged_in_bp == 1:
-        #             guest_blueprints_list.append(loggedInBP)
-        #         if role.error_bp == 1:
-        #             guest_blueprints_list.append(errorBP)
-        #         if role.general_bp == 1:
-        #             guest_blueprints_list.append(generalBP)
-
-
-        #     elif role.role_name == "User":
-        #         if role.guest_bp == 1:
-        #             user_blueprints_list.append(guestBP)
-        #         if role.user_bp == 1:
-        #             user_blueprints_list.append(userBP)
-        #         if role.teacher_bp == 1:
-        #             user_blueprints_list.append(teacherBP)
-        #         if role.admin_bp == 1:
-        #             user_blueprints_list.append(adminBP)
-        #         if role.super_admin_bp == 1:
-        #             user_blueprints_list.append(superAdminBP)
-        #         if role.logged_in_bp == 1:
-        #             user_blueprints_list.append(loggedInBP)
-        #         if role.error_bp == 1:
-        #             user_blueprints_list.append(errorBP)
-        #         if role.general_bp == 1:
-        #             user_blueprints_list.append(generalBP)
-
-
-        # # basically i planned to retrieve the sql roles, 
-        # # then checks if the blueprint columns are 1 or 0 if 1 add if 0 dont add
-        
 
         self.__GUEST_BLUEPRINTS = ("guestBP", "generalBP","errorBP")
         self.__USER_BLUEPRINTS = ("generalBP", "userBP", "loggedInBP", "errorBP")
