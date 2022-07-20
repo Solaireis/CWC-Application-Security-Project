@@ -181,7 +181,7 @@ def videoUpload():
                 #TODO : CryptoJS not returning the same hash , find a way to get javascript data (AJAX but idw use it)
                 #TODO : If use json.dumps can try secure insecure deserialization
                 with open(absFilePath, 'rb') as f:
-                    print(hashlib.sha256(f.read()).hexdigest())
+                    print(hashlib.sha512(f.read()).hexdigest())
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(
