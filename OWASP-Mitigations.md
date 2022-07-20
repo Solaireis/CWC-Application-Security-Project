@@ -52,7 +52,7 @@
     - 16 bytes salt, `os.urandom(16)`
     - 32 bytes hash
     - Argon2id
-    - On average, the time taken to hash a password is about 0.05+ seconds.
+    - On average, the time taken to hash a password is about 0.05+- seconds.
   - Manually tweaked Argon2 configurations (Meets the minimum requirements):
     - 80MiB of memory
     - 6 count of iterations
@@ -60,7 +60,7 @@
     - 64 bytes salt, `os.urandom(64)`
     - 64 bytes hash
     - Argon2id
-    - On average, the time taken to hash a password is about 0.5+ seconds.
+    - On average, the time taken to hash a password is about 0.19+- seconds.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 
 - Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
