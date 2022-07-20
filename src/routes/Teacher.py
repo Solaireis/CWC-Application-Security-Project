@@ -178,7 +178,7 @@ def videoUpload():
                         return redirect(url_for("teacherBP.videoUpload"))
                     filePathToStore = Path(filePathToStore).with_suffix(".mpd")
 
-                #TODO : CryptoJS not returning the same hash , find a way to get javascript data (AJAX but idw use it)
+                #TODO : find a way to get javascript data (AJAX but idw use it)
                 #TODO : If use json.dumps can try secure insecure deserialization
                 with open(absFilePath, 'rb') as f:
                     print(hashlib.sha512(f.read()).hexdigest())
