@@ -18,6 +18,7 @@ class RoleInfo:
         self.__error_bp = tupleData[6]
         self.__teacher_bp = tupleData[7]
         self.__user_bp = tupleData[8]
+        self.__super_admin_bp = tupleData[9]
 
     @property
     def role_id(self) -> str:
@@ -46,3 +47,6 @@ class RoleInfo:
     @property
     def user_bp(self) -> int:
         return self.__user_bp
+    @property
+    def super_admin_bp(self) -> int:
+        return self.__super_admin_bp
