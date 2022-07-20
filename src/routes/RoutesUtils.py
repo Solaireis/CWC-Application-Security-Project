@@ -38,16 +38,13 @@ def before_request() -> None:
     - None
     """
     # Redirect user to coursefinity.social domain if they are not on it
-    # Reason: Firebase have their own set of default domain names (that cannot be disabled) 
-    # which are not protected by Cloudflare.
-    if (re.fullmatch(current_app.config["CONSTANTS"].FIREBASE_DOMAIN_REGEX, request.url) is not None):
-        return redirect(
-            re.sub(
-                current_app.config["CONSTANTS"].FIREBASE_DOMAIN_REGEX, 
-                r"https://coursefinity.social\2", 
-                request.url
-            )
-        )
+    # Reason: Firebase and Google Cloud Run have their own default 
+    # domain names (that cannot be disabled) which are not protected by Cloudflare.
+    if (
+        not current_app.config["DEBUG_FLAG"] and 
+        re.fullmatch(current_app.config["CONSTANTS"].CUSTOM_DOMAIN_REGEX, request.url) is None
+    ):
+        return redirect("https://coursefinity.social" + request.full_path, code=301)
 
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
