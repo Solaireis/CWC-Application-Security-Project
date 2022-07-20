@@ -11,20 +11,20 @@ class Reviews:
         - courseID (str): The course ID of the course the review is for
         - profileImage (str): The dicebear url or the path to the user's profile picture
         """
-        self.__user_id = tupleData[0]
-        self.__course_id = courseID
+        self.__userID = tupleData[0]
+        self.__courseID = courseID
         self.__rating = tupleData[2]
         self.__review = tupleData[3]
-        self.__date_created = tupleData[4]
+        self.__dateCreated = tupleData[4]
         self.__username = tupleData[5]
-        self.__profile_image = profileImage
+        self.__profileImage = profileImage
 
     @property
     def user_id(self) -> str:
-        return self.__user_id
+        return self.__userID
     @property
     def course_id(self) -> str:
-        return self.__course_id
+        return self.__courseID
     @property
     def rating(self) -> int:
         return self.__rating
@@ -33,10 +33,10 @@ class Reviews:
         return self.__review
     @property
     def date_created(self) -> datetime:
-        return self.__date_created
+        return self.__dateCreated
     @property
     def username(self) -> str:
         return self.__username
     @property
     def profile_image(self) -> str:
-        return self.__profile_image
+        return self.__profileImage

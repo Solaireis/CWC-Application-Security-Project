@@ -55,28 +55,28 @@
                 <div>            
                     <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
                     {{ courses.teacherUsername }}
-                </div></p>
+                </div>
+            </p>
             <p>Date Published: {{courses.dateCreated}}</p>
             <p>Course Rating: 
                 {% if (courses.averageRating > 0) %}
-                <span class="ratings">
-                    {% with remainingStars = 5 - courses.averageRating %}
-                        {% for _ in range(courses.averageRating) %}
-                            <span class="fas fa-star"></span>
-                        {% endfor %}
-                        {% for _ in range(remainingStars) %}
-                            <span class="far fa-star"></span>
-                        {% endfor %}
-                    {% endwith %}
-                </span> 
+                    <span class="ratings">
+                        {% with remainingStars = 5 - courses.averageRating %}
+                            {% for _ in range(courses.averageRating) %}
+                                <span class="fas fa-star"></span>
+                            {% endfor %}
+                            {% for _ in range(remainingStars) %}
+                                <span class="far fa-star"></span>
+                            {% endfor %}
+                        {% endwith %}
+                    </span> 
                 {% else %}
-                <p class="card-text text-danger">No ratings yet...</p>
+                    <p class="card-text text-danger">No ratings yet...</p>
                 {% endif %}
             </p>
             <p>Number of reviews: </p>
-            <p>Course Price: ${{courses.coursePrice}}</p>
+            <p>Course Price: ${{ courses.coursePrice }}</p>
             <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
-            
             <hr>
             <div>
                 <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
@@ -85,36 +85,32 @@
                     <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
                 </form>
             </div>
-            
-            
         </div>
         <div class="col-lg-8">
             <h1>Reviews</h1>
             {% for review in reviewList %}
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        
-                        <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
-                        {{review.username}}
-                        <div class="ratings">
-                            {% with remainingStars = 5 - review.rating %}
-                                {% for _ in range(review.rating) %}
-                                    <span class="fas fa-star"></span>
-                                {% endfor %}
-                                {% for _ in range(remainingStars) %}
-                                    <span class="far fa-star"></span>
-                                {% endfor %}
-                            {% endwith %}
-                        </div> <!-- Username -->
-                    </h5>
-                    <p class="card-text">{{review.review}}</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                            {{review.username}}
+                            <div class="ratings">
+                                {% with remainingStars = 5 - review.rating %}
+                                    {% for _ in range(review.rating) %}
+                                        <span class="fas fa-star"></span>
+                                    {% endfor %}
+                                    {% for _ in range(remainingStars) %}
+                                        <span class="far fa-star"></span>
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+                        </h5>
+                        <p class="card-text">
+                            {{ review.review }}
+                        </p>
+                    </div>
                 </div>
             {% endfor %}
-        </div>
     </div> 
 </div>
-
-    
 {% endblock %}
-    

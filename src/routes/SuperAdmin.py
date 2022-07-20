@@ -149,16 +149,12 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     role = sql_operation(table="role", mode="retrieve_all")
     roleList = []
     for role in role:
-        roleInfo = RoleInfo(role)
-        roleList.append(roleInfo)
+        roleList.append(RoleInfo(role))
+
     count = len(roleList)
     for role in roleList:
-        print(role.role_name)
-
-
+        print(role.roleName)
 
     # Check if user is logged in
     # TODO: Role Management do not need pagination and relative url session
-    return render_template("users/superadmin/admin_rbac.html",roleList=roleList, count=count)
-
-
+    return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count)

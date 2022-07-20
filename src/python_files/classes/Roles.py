@@ -9,44 +9,44 @@ class RoleInfo:
         
         Note that all attributes are public.
         """
-        self.__role_id = tupleData[0]
-        self.__role_name= tupleData[1]
-        self.__guest_bp = tupleData[2]
-        self.__general_bp = tupleData[3]
-        self.__admin_bp = tupleData[4]
-        self.__logged_in_bp = tupleData[5]
-        self.__error_bp = tupleData[6]
-        self.__teacher_bp = tupleData[7]
-        self.__user_bp = tupleData[8]
-        self.__super_admin_bp = tupleData[9]
+        self.__roleID = tupleData[0]
+        self.__roleName= tupleData[1]
+        self.__guestBP = bool(tupleData[2])
+        self.__generalBP = bool(tupleData[3])
+        self.__adminBP = bool(tupleData[4])
+        self.__loggedInBP = bool(tupleData[5])
+        self.__errorBP = bool(tupleData[6])
+        self.__teacherBP = bool(tupleData[7])
+        self.__userBP = bool(tupleData[8])
+        self.__superAdminBP = bool(tupleData[9])
 
     @property
-    def role_id(self) -> str:
-        return self.__role_id
+    def roleID(self) -> str:
+        return self.__roleID
     @property
-    def role_name(self) -> str:
-        return self.__role_name
+    def roleName(self) -> str:
+        return self.__roleName
     @property
-    def guest_bp(self) -> int:
-        return self.__guest_bp
+    def guestBP(self) -> bool:
+        return self.__guestBP
     @property
-    def general_bp(self) -> int:
-        return self.__general_bp
+    def generalBP(self) -> bool:
+        return self.__generalBP
     @property
-    def admin_bp(self) -> int:
-        return self.__admin_bp
+    def adminBP(self) -> bool:
+        return self.__adminBP
     @property
-    def logged_in_bp(self) -> int:
-        return self.__logged_in_bp
+    def loggedInBP(self) -> bool:
+        return self.__loggedInBP
     @property
-    def error_bp(self) -> int:
-        return self.__error_bp
+    def errorBP(self) -> bool:
+        return self.__errorBP
     @property
-    def teacher_bp(self) -> int:
-        return self.__teacher_bp
+    def teacherBP(self) -> bool:
+        return self.__teacherBP
     @property
-    def user_bp(self) -> int:
-        return self.__user_bp
+    def userBP(self) -> bool:
+        return self.__userBP
     @property
-    def super_admin_bp(self) -> int:
-        return self.__super_admin_bp
+    def superAdminBP(self) -> bool:
+        return self.__superAdminBP
