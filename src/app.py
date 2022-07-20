@@ -24,36 +24,54 @@ import logging, hashlib
 
 app = Flask(__name__)
 
-# add the constant object to the flask app
+# Add the constant object to the flask app
 app.config["CONSTANTS"] = CONSTANTS
+
+# Flask session cookie configurations
+# Change the default FLask session default
+# HMAC algorithm from HMAC-SHA1 to HMAC-SHA512
+# Source Codes Reference: 
+# https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
+# https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
+FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
+FLASK_SESSION_COOKIE_INTERFACE.digest_method = staticmethod(hashlib.sha512)
+app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
+
+# Secret key mainly for digitally signing the session cookie
+# it will retrieve the secret key from Google Secret Manager API
+app.config["SECRET_KEY"] = app.config["CONSTANTS"].get_secret_payload(
+    secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+)
 
 # Import security related functions/objects
 with (app.app_context()):
     from routes.RoutesSecurity import csrf, limiter
 
-# rate limiter configuration using flask limiter
+# Rate limiter configuration using flask limiter
 limiter.init_app(app)
 
 # Integrate Google CLoud Logging to the Flask app
-gcp_logging.handlers.setup_logging(CONSTANTS.GOOGLE_LOGGING_HANDLER)
+gcp_logging.handlers.setup_logging(app.config["CONSTANTS"].GOOGLE_LOGGING_HANDLER)
 logging.getLogger().setLevel(logging.INFO)
-app.logger.addHandler(CONSTANTS.GOOGLE_LOGGING_HANDLER)
+app.logger.addHandler(app.config["CONSTANTS"].GOOGLE_LOGGING_HANDLER)
 
 # Add gunicorn logger to the Flask app (when in production)
 if (not CONSTANTS.DEBUG_MODE):
     gunicornLogger = logging.getLogger("gunicorn.error")
     app.logger.addHandler(gunicornLogger)
 
-# flask extension that prevents cross site request forgery
+# Flask SeaSurf to prevents cross-site request forgery
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
-app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=7)
+app.config["CSRF_COOKIE_SAMESITE"] = "Lax"
+app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=1)
 csrf.init_app(app)
 
-# flask extension that helps set policies for the web app
-csp = {
+# Flask Talisman to helps set policies
+# and security related configurations for the web application
+CSP = {
     "style-src": [
-        "\'self\'",
+        "'self'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
@@ -64,11 +82,11 @@ csp = {
         "https://unpkg.com/dropzone@5/dist/min/dropzone.min.css",
     ],
     "frame-src":[
-        "\'self\'",
+        "'self'",
         "https://www.google.com/recaptcha/",
     ],
     "script-src":[
-        "\'self\'",
+        "'self'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
@@ -80,51 +98,53 @@ csp = {
         "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js",
     ]
 }
-permissions_policy = {
+PERMS_POLICY = {
     "geolocation": "()",
     "microphone": "()"
 }
-# nonce="{{ csp_nonce() }}"
-# xss_protection is already defaulted True
-talisman = Talisman(app,
-    content_security_policy=csp,
+talisman = Talisman(
+    app=app,
+
+    # The web application's policies
+    permissions_policy=PERMS_POLICY,
+
+    # CSP configurations
+    content_security_policy=CSP,
     content_security_policy_nonce_in=["script-src"],
-    permissions_policy=permissions_policy,
-    x_xss_protection=True
+
+    # XSS protection configuration
+    # to prevent reflected XSS attacks
+    x_xss_protection=True, # Will require nonce="{{ csp_nonce() }}" in script tags
+
+    # HTTPS configurations to redirect
+    # HTTP requests to use HTTPS
+    # Note: This is still vulnerable to MITM attacks
+    force_https=True,
+    force_https_permanent=True,
+
+    # HSTS configurations to tell the browser
+    # to automatically use HTTPS for the next 1 year
+    # to prevents MITM attacks.
+    # Note: HSTS is also enabled on our custom domain via Cloudflare
+    strict_transport_security=True,
+    strict_transport_security_preload=True,
+    strict_transport_security_max_age=31536000, # 1 year
+    strict_transport_security_include_subdomains=True,
+
+    # Flask session cookie configurations
+    session_cookie_http_only=True,
+    session_cookie_samesite="Lax"
 )
 
+# Additional Flask session cookie configurations
+app.config["SESSION_COOKIE_SECURE"] = True # Prevents session cookie from being sent over HTTP
+app.config["SESSION_PERMANENT"] = False # Session cookie will be deleted when the browser is closed
+
 # Debug flag (will be set to false when deployed)
-app.config["DEBUG_FLAG"] = CONSTANTS.DEBUG_MODE
+app.config["DEBUG_FLAG"] = app.config["CONSTANTS"].DEBUG_MODE
 
 # Maintenance mode flag
 app.config["MAINTENANCE_MODE"] = False
-
-# Session cookie configurations
-# Change the default FLask session default
-# HMAC algorithm from HMAC-SHA1 to HMAC-SHA512
-# Reference: 
-# https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
-# https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
-FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
-FLASK_SESSION_COOKIE_INTERFACE.digest_method = staticmethod(hashlib.sha512)
-app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
-
-# Secret key mainly for digitally signing the session cookie
-# it will retrieve the secret key from Google Secret Manager API
-app.config["SECRET_KEY"] = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
-
-# Make it such that the session cookie will be deleted when the browser is closed
-app.config["SESSION_PERMANENT"] = False
-# Browsers will not allow JavaScript access to cookies marked as “HTTP only” for security.
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-# https://flask.palletsprojects.com/en/2.1.x/security/#security-cookie
-# Lax prevents sending cookies with CSRF-prone requests
-# from external sites, such as submitting a form
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-# The name of the session cookie
-app.config["SESSION_COOKIE_NAME"] = "session"
-# Only allow the session cookie to be sent over HTTPS
-app.config["SESSION_COOKIE_SECURE"] = True
 
 # for other scheduled tasks such as deleting expired session id from the database
 # Uses threading to run the task in a separate thread
@@ -141,11 +161,11 @@ app.jinja_env.globals.update(get_readable_category=get_readable_category)
 app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
 
 # for image uploads file path
-app.config["ALLOWED_IMAGE_EXTENSIONS"] = CONSTANTS.ALLOWED_IMAGE_EXTENSIONS
+app.config["ALLOWED_IMAGE_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_IMAGE_EXTENSIONS
 
 # for course video uploads file path
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
-app.config["ALLOWED_VIDEO_EXTENSIONS"] = CONSTANTS.ALLOWED_VIDEO_EXTENSIONS
+app.config["ALLOWED_VIDEO_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_VIDEO_EXTENSIONS
 
 # import utility functions into the flask app and get neccessary functions
 # such as update_secret_key() for rotation of the secret key
