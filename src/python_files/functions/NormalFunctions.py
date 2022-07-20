@@ -16,8 +16,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
-from subprocess import run as subprocess_run, PIPE
-from subprocess import check_output
+from subprocess import run as subprocess_run, PIPE, check_output
 from os import environ
 
 # import local python libraries
@@ -34,11 +33,10 @@ else:
     from python_files.classes.Errors import *
 
 # import third party libraries
-import PIL, pymysql
+import PIL, pymysql, shlex, platform
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
-import shlex, platform
 
 # import Flask libraries
 from flask import url_for, flash, Markup, current_app

@@ -11,26 +11,26 @@
 {% from "includes/_formHelper.html" import render_field %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            {% for category, message in messages %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h6>{{ message }}</h6>
-            </div>
-            {% endfor %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+    {% if messages %}
+    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                {% for category, message in messages %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>{{ message }}</h6>
+                </div>
+                {% endfor %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 {% endwith %}
 
 <div class="container-sm">
@@ -66,14 +66,13 @@
 		</form> -->
     </div>
 </div>
-
-
 {% endblock %}
 
 {% block extra_js %}
     <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script nonce="{{ csp_nonce() }}">
+        // TODO: Move this js script to a js file for caching
         Dropzone.options.dropper = {
             url: "/upload-video", // Determines where to reroute after submission
             chunking: true, // Enable chunking
@@ -87,8 +86,7 @@
             acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
             autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
             init: function() {
-
-                // returning a hash but not the same as hashlib(wrong hash), might be different encoding
+                // returning a hash but not the same as hashlib (wrong hash), might be different encoding
                 // I tested it on a string, i think I am passing in the wrong file
                 this.on("addedfile", function(file) {
                     var reader = new FileReader();

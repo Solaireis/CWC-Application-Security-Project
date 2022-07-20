@@ -34,7 +34,7 @@ def userProfile():
     """
     Updates to teacher but page does not change, requires refresh
     """
-    return render_template("users/loggedin/user_profile.html", username=username, email=email, imageSrcPath=userInfo.profileImage, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo.role)
+    return render_template("users/user/user_profile.html", username=username, email=email, imageSrcPath=userInfo.profileImage, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo.role)
 
 @userBP.route("/setup-2fa", methods=["GET", "POST"])
 def twoFactorAuthSetup():
@@ -76,7 +76,7 @@ def twoFactorAuthSetup():
         # get the image from the memory buffer and encode it into base64
         qrCodeEncodedBase64 = b64encode(stream.getvalue()).decode()
 
-        return render_template("users/loggedin/2fa.html", form=twoFactorAuthForm, imageSrcPath=userInfo.profileImage, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo.role)
+        return render_template("users/user/2fa.html", form=twoFactorAuthForm, imageSrcPath=userInfo.profileImage, qrCodeEncodedBase64=qrCodeEncodedBase64, secretToken=secretToken, accType=userInfo.role)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
         # POST request code below
@@ -166,7 +166,7 @@ def showBackupCodes():
 
     userID = session["user"]
     userInfo = get_image_path(userID, returnUserInfo=True)
-    return render_template("users/loggedin/backup_codes.html", backupCodes=backUpCodes, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    return render_template("users/user/backup_codes.html", backupCodes=backUpCodes, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.post("/disable-2fa")
 def disableTwoFactorAuth():
@@ -218,7 +218,7 @@ def updateEmail():
             flash("Sorry, please check your current password and try again!")
 
         if (not changed):
-            return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            return render_template("users/user/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
         else:
             print(f"old email:{oldEmail}, new email:{updatedEmail}")
             flash(
@@ -227,7 +227,7 @@ def updateEmail():
             )
             return redirect(url_for("userBP.userProfile"))
     else:
-        return render_template("users/loggedin/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+        return render_template("users/user/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.post("/change-account-type")
 def changeAccountType():
@@ -335,7 +335,7 @@ def courseReview(courseID:str):
         #redirect back to coursepage
         return redirect(url_for("generalBP.coursePage", courseID=courseID))
     else:
-        return render_template("users/loggedin/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
+        return render_template("users/user/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
@@ -369,7 +369,7 @@ def purchaseView(courseID:str):
     accType = userInfo.role
     imageSrcPath = userInfo.profileImage
 
-    return render_template("users/loggedin/purchase_view.html",
+    return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
 
 @userBP.post("/add_to_cart/<string:courseID>")
@@ -403,7 +403,7 @@ def shoppingCart():
             courseList.append(course)
             subtotal += course.coursePrice
 
-        return render_template("users/loggedin/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+        return render_template("users/user/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.route("/checkout", methods = ["GET", "POST"])
 def checkout():
@@ -463,4 +463,4 @@ def purchaseHistory():
         if course != False:
             courseList.append(course)
 
-    return render_template("users/loggedin/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    return render_template("users/user/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)

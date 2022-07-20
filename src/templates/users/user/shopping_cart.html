@@ -1,0 +1,157 @@
+{% extends "user_base.html" %}
+
+{% block head %}
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/shopping_card_payment.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block title %}Shopping Cart | CourseFinity{% endblock %}
+
+{% block content %}
+{% from "includes/_formHelper.html" import render_field %}
+<div id="shopping-title">
+    <h4>Shopping Cart</h4>
+    <hr>
+</div>
+
+{% if courseList != [] %}
+    <div class="row g-0">
+        <div class="col">
+            {% if courseAddedTitle != None %}
+                {% if status == "Success" %}
+                <div>
+                    <div class="alert-div alert alert-info alert-dismissible fade show" role="alert">
+                        <div>
+                            <i class="bi bi-info-circle"></i>
+                        </div>
+                        <div>
+                            Course Titled '{{ courseAddedTitle }}' Added to Cart
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+                {% elif status == "Already in Cart" %}
+                <div>
+                    <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                        <div>
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            Course Titled '{{ courseAddedTitle }}' Already In Cart
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+                {% elif status == "Already Purchased" %}
+                <div>
+                    <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                        <div>
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            Course Titled '{{ courseAddedTitle }}' Already Purchased
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+                {% elif status == "Own Course" %}
+                <div>
+                    <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
+                        <div>
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {% for course in courseList %}
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-0">
+                            <div class="col">
+                                {% if (course.courseImagePath == None) %}
+                                    <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                                {% else %}
+                                    <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
+                                {% endif %}
+                            </div>
+                            <div class="col">
+                                <div class="information">
+                                    <p class="text-center">
+                                        <a class="d-inline-flex align-items-center" href="{{ course.courseOwnerLink }}">
+                                            <span>{{ course.courseOwnerUsername }}</span>&nbsp;
+                                            <img src="{{ course.teacherProfile }}" alt="Course Creator Profile">
+                                        </a>
+                                        <br>
+                                        <span class="fw-bold">US${{ course.coursePrice }}</span>
+                                    </a></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text">
+                        <h5 class="card-title d-flex justify-content-between">
+                            <a href="/course/{{ course.courseID }}">{{ course.courseName }}</a>
+                            <form action="" method="POST">
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="courseID" value="{{ course.courseID }}">
+                                <button class="btn btn-link float-end" type="submit" name="delete-course">
+                                    <i class="fas fa-times cross"></i>
+                                </button>
+                            </form>
+                        </h5>
+                        <p class="card-text">{{ course.courseDescription }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="subtotal">
+            {% if courseList | length == 1 %}
+                <h5>Subtotal: US ${{ subtotal }}</h5>
+            {% else %}
+                <h5>Subtotal ({{ courseList | length }} items): US ${{ subtotal }}</h5>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('userBP.checkout') }}" id="checkout-button">
+            <button type="button" class="btn btn-outline-warning">Proceed to Checkout</button>
+        </a>
+    </div>
+{% else %}
+    {% if courseAddedTitle != None %}
+        {% if status == "Already Purchased" %}
+            <div class="div d-flex justify-content-center">
+                <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        Course Titled '{{ courseAddedTitle }}' Already Purchased
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        {% elif status == "Own Course" %}
+            <div class="div d-flex justify-content-center">
+                <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
+                    <div>
+                        <i class="bi bi-exclamation-circle"></i>
+                    </div>
+                    <div>
+                        Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+    <div class="empty-cart">
+        <a href="/"><i class="fas fa-cart-plus"></i></a>
+        <p>Seems like there isn't anything here. Continue Shopping?</p>
+    </div>
+{% endif %}
+{% endblock %}

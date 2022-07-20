@@ -32,13 +32,12 @@
     justify-content: center;
 }
 
-.card-title .fa-times:hover {
-    color:#009df8;
-    cursor:pointer;
+.cross {
+    color: #6c757d;
+    font-size: 1.5rem;
 }
-
-.card-title .fa-times {
-    float:right;
+.cross:hover {
+    color:#009df8;
 }
 
 .layer-1, .layer-2 {

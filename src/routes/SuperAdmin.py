@@ -142,7 +142,7 @@ def adminManagement():
 
     # save the current URL in the session for when the admin searches and an error occurs
     session["relative_url"] = request.full_path
-    return render_template("users/admin/admin_dashboard.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
+    return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
 
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
 def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
@@ -156,6 +156,6 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
 
     # Check if user is logged in
     # TODO: Role Management do not need pagination and relative url session
-    return render_template("users/admin/admin_RBAC.html",roleInfo=roleInfo, count=count)
+    return render_template("users/superadmin/admin_rbac.html",roleInfo=roleInfo, count=count)
 
 
