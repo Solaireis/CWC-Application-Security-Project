@@ -112,7 +112,7 @@ def before_request() -> None:
 
     # If the admin still has the session cookie but is not in a whitelisted IP address
     if ("admin" in session):
-        if (current_app.config["DEBUG_FLAG"]):
+        if (not current_app.config["DEBUG_FLAG"]):
             adminWhitelistedIP = json.loads(
                 current_app.config["CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
             )
