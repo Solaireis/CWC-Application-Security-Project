@@ -332,4 +332,4 @@ if (__name__ == "__main__"):
         hostName = "0.0.0.0"
         SSL_CONTEXT = None
 
-    app.run(debug=app.config["DEBUG_FLAG"], host=hostName, port=environ.get("PORT", 8080), ssl_context=SSL_CONTEXT)
+    app.run(debug=app.config["DEBUG_FLAG"], host=hostName, port=int(environ.get("PORT", 8080)), ssl_context=SSL_CONTEXT)
