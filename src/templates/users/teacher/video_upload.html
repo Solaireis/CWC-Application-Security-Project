@@ -95,9 +95,9 @@
                         const hash = CryptoJS.SHA512(event.target.result);
                         console.log(hash.toString(CryptoJS.enc.Hex));
                     };
-                    reader.readAsArrayBuffer(file);
+                    reader.readAsArrayBuffer(file, "UTF-8");
                 });
-                //comment this out when testing hash
+                // comment this out when testing hash
                 this.on("success", function () {
                     window.location = "{{ url_for('teacherBP.draftCourseList') }}";
                 });
