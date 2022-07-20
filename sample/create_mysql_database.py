@@ -87,7 +87,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         logged_in_bp BOOL NOT NULL DEFAULT 0,
         error_bp BOOL NOT NULL DEFAULT 1,
         teacher_bp BOOL NOT NULL DEFAULT 0,
-        user_bp BOOL NOT NULL DEFAULT 0
+        user_bp BOOL NOT NULL DEFAULT 0,
         super_admin_bp BOOL NOT NULL DEFAULT 0
     )""")
     cur.execute("CREATE INDEX role_role_name_idx ON role(role_name)")
