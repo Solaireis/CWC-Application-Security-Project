@@ -71,7 +71,7 @@ csrf.init_app(app)
 # and security related configurations for the web application
 CSP = {
     "style-src": [
-        "'self'",
+        "\'self\'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
@@ -82,11 +82,11 @@ CSP = {
         "https://unpkg.com/dropzone@5/dist/min/dropzone.min.css",
     ],
     "frame-src":[
-        "'self'",
+        "\'self\'",
         "https://www.google.com/recaptcha/",
     ],
     "script-src":[
-        "'self'",
+        "\'self\'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
