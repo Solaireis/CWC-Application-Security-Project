@@ -380,20 +380,68 @@
                                     <td>Error Routes</td>
                                     <td>Teacher Routes</td>
                                     <td>User Routes</td>
-                                    <td colspan="3">Status</td>
                                 </tr>
-                                {% for i in range(count) %}
-                                    <tr>
-                                        <td>{{ roleInfo[i].role_name }}</td> 
-                                        <td>{{ roleInfo[i].guest_bp}}</td>
-                                        <td>{{ roleInfo[i].general_bp }}</td>
-                                        <td>{{ roleInfo[i].admin_bp }}</td>
-                                        <td>{{ roleInfo[i].logged_in_bp }}</td>
-                                        <td>{{ roleInfo[i].error_bp }}</td>
-                                        <td>{{ roleInfo[i].teacher_bp }}</td>
-                                        <td>{{ roleInfo[i].user_bp }}</td>
-                                    </tr>
-                            {% endfor %}
+                                {% for role in roleList %}
+                                <tr>
+                                    <td>{{role.role_name}}</td> 
+                                    {% if role.guest_bp == 1 %}
+                                        <td >Enabled</td>
+                                    {% elif role.guest_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.general_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.general_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.admin_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.admin_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.logged_in_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.logged_in_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.error_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.error_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.teacher_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.teacher_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                    {% if role.user_bp == 1 %}
+                                        <td>Enabled</td>
+                                    {% elif role.user_bp == 0 %}
+                                        <td>Disabled</td>
+                                    {% else %}
+                                        <td> Not Set </td>
+                                    {% endif %}
+
+                                </tr>
+                                {% endfor %}
                             </table>
                         </div>
                     </div>
