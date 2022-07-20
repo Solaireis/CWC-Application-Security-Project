@@ -88,6 +88,18 @@
       - Prevents man-in-the-middle attacks
     - More info on [OWASP cheatsheet series](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html)
 
+- Enabled HSTS for the Flask web application to be hosted using [Flask-Talisman](https://pypi.org/project/flask-talisman/)
+  - Flask-Talisman was originally created by Google but has not been maintained, hence, using a forked repository that is being maintained by [Winterbloom](https://github.com/wntrblm) and supported by other developers.
+  - Since the web application will be hosted using [gunicorn](https://gunicorn.org/), I have configured the HTTP redirects to HTTPS and enabled HSTS to prevent MITM attacks.
+    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls before being redirected to the custom domain.
+      - Firebase's default domains that cannot be disabled:
+        - [https://coursefinity-339412.firebaseapp.com/](https://coursefinity-339412.firebaseapp.com/)
+        - [https://coursefinity-339412.web.app/](https://coursefinity-339412.web.app/)
+    - Additionally, since we are using Google Cloud Run to host the container, we have to configure the HSTS on the Cloud Run docker image url which does not have HSTS enabled. 
+      - Hence, acting as a layered security instead of just relying on Cloudflare's HSTS configuration on our custom domain.
+      - URL example:
+        - https://(service-id)-(random-id)-(region).run.app
+
 ---
 
 ### Identification and Authentication Failures
