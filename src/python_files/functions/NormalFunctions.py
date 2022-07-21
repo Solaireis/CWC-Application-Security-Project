@@ -1080,6 +1080,10 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
             # if some keys in the dict are missing, just return False by default
             return {"verified": False, "payload": data} if (getData) else False
     elif (isinstance(data, str) or isinstance(data, bytes)):
+        # TODO: Calvin's OWASP, check if the base64 encoded JWT url
+        # TODO: can be manipulated in the URL to the attacker's favour
+        # TODO: JWT Format: <gcpKeyInfo>.<payload>.<signature>
+        # TODO: Checks done: - KMS key not found in GCP, missing dict keys in the payload
         # If data is base64 encoded, encode it to bytes
         if (isinstance(data, str)):
             data = unquote(data).encode("utf-8")

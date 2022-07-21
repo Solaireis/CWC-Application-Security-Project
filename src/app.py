@@ -56,7 +56,7 @@ logging.getLogger().setLevel(logging.INFO)
 app.logger.addHandler(app.config["CONSTANTS"].GOOGLE_LOGGING_HANDLER)
 
 # Add gunicorn logger to the Flask app (when in production)
-if (not CONSTANTS.DEBUG_MODE):
+if (not app.config["CONSTANTS"].DEBUG_MODE):
     gunicornLogger = logging.getLogger("gunicorn.error")
     app.logger.addHandler(gunicornLogger)
 
@@ -119,7 +119,7 @@ talisman = Talisman(
     # HTTPS configurations to redirect
     # HTTP requests to use HTTPS
     # Note: This is still vulnerable to MITM attacks
-    force_https=True,
+    force_https=True, # Note: Will be disabled in debug mode
     force_https_permanent=True,
 
     # HSTS configurations to tell the browser
@@ -132,13 +132,19 @@ talisman = Talisman(
     strict_transport_security_include_subdomains=True,
 
     # Flask session cookie configurations
+    session_cookie_secure=True, # Note: Will be disabled in debug mode
     session_cookie_http_only=True,
     session_cookie_samesite="Lax"
 )
 
 # Additional Flask session cookie configurations
-app.config["SESSION_COOKIE_SECURE"] = True # Prevents session cookie from being sent over HTTP
 app.config["SESSION_PERMANENT"] = False # Session cookie will be deleted when the browser is closed
+# Since secure cookie is disabled in debug mode by Flask-Talisman,
+if (app.config["CONSTANTS"].DEBUG_MODE):
+    # Override the session cookie secure configuration
+    # if in debug mode to enable secure cookie as
+    # 
+    app.config["SESSION_COOKIE_SECURE"] = True 
 
 # Debug flag (will be set to false when deployed)
 app.config["DEBUG_FLAG"] = app.config["CONSTANTS"].DEBUG_MODE
