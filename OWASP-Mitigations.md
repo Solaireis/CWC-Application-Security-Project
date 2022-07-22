@@ -203,6 +203,10 @@
 - Work on integrating AWS Identity Provider with GCP Workforce Identification Pool
   - Since [google-sm.json](src/config_files/google-sm.json) is stored locally in the web file system, it is a security risk as one might get a copy and have access to all the secrets stored in Google Secret Manager API.
 - Work on Admin console, a Super Administrator account must be created to access the admin console
+- Check for IDOR attacks
+- Layer for access control
+- allow for changes to the access control configuration
+- show different UI based on the RBAC
 
 #### Implemented:
 - Role based Access Control which groups the approutes via Blueprints, access control is granted only to the specific blueprints group
