@@ -122,15 +122,20 @@ def draftCourseList():
 def videoUpload():
     if ("video_saving" not in session):
         courseID = generate_id()
-        session["video_saving"] = courseID # Saving started; interruption = restart from scratch
+        session["video_saving"] = [courseID, None] # Saving started; interruption = restart from scratch
     else:
-        courseID = session["video_saving"]
+        courseID = session["video_saving"][0]
+        try:
+            resp = request.json
+            session["video_saving"] = [courseID, resp["hash"]]
+        except:
+            pass
         #TODO : Find a way to check if this was the file currently being saved or not
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     if (request.method == "POST"):
         file = request.files["videoUpload"]
-        filename = secure_filename(file.filename)
+        filename = courseID + Path(secure_filename(file.filename)).suffix # change filename to courseid.mp4
         totalChunks = int(request.form["dztotalchunkcount"])
         currentChunk = int(request.form['dzchunkindex'])
         if (filename == ""):
@@ -140,15 +145,12 @@ def videoUpload():
         if (Path(filename).suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
             flash("Unsupported format!", f"Please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 
-        filename = courseID + Path(filename).suffix # change filename to courseid.mp4
         #folder creation
-        filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID) # path to create the folder
-        print(f"This is the folder for the inputted file: {filePath}")
-        filePath.mkdir(parents=True, exist_ok=True)
+        Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID).mkdir(parents=True, exist_ok=True)
 
         filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") # path for mp4 file stored in sql
         print("Total file size:", int(request.form["dztotalfilesize"]))
-        absFilePath = filePath.joinpath(filename) # path of the mp4 file
+        absFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID, filename)
 
         try:
             with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
@@ -183,14 +185,16 @@ def videoUpload():
                 #TODO : If use json.dumps can try secure insecure deserialization
 
                 # COMPARISON OF HASH
-                # if (hashNum):
-                #     with open(absFilePath, 'rb') as f:
-                #         fileHash = hashlib.sha512(f.read()).hexdigest()
-                #     if (fileHash != hashNum):
-                #         print("File Hash is incorrect")
-                #         absFilePath.unlink(missing_ok=True)
-                #         session.pop("video_saving", None)
-                #         return make_response("Uploaded image is corrupted! Please try again!", 500)
+                hashNum = session["video_saving"][1]
+                if (hashNum):
+                    with open(absFilePath, 'rb') as f:
+                        fileHash = hashlib.sha512(f.read()).hexdigest()
+                    
+                    if (fileHash != hashNum):
+                        print("File Hash is incorrect")
+                        absFilePath.unlink(missing_ok=True)
+                        session.pop("video_saving", None)
+                        return make_response("Uploaded image is corrupted! Please try again!", 500)
 
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
@@ -348,13 +352,19 @@ def courseDelete():
 @teacherBP.route("/delete-draft-course", methods=["GET", "POST"])
 def draftCourseDelete():
     courseID = request.args.get("cid", default="test", type=str)
+    courseFound = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
+    if (not courseFound):
+        abort(404)
+
+    # TODO : This only deletes the mp4 file & directory cannot be deleted unless empty, find way to completely clear the directory
+    Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID, courseID + Path(courseFound[2]).suffix).unlink(missing_ok=True)
+    Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID).rmdir()
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
     print("Draft Course Deleted")
-    return redirect(url_for("teacherBP.courseList"))
+    return redirect(url_for("teacherBP.draftCourseList"))
 
 @teacherBP.route("/edit-course", methods=["GET", "POST"])
 def courseUpdate():
-    #TODO: Form is working, gonna make edits soon
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courseFound):
