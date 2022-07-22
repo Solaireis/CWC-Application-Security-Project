@@ -4,7 +4,7 @@ Routes for logged in normal users (Students or Teachers)
 # import third party libraries
 from werkzeug.utils import secure_filename
 from flask_limiter.util import get_remote_address
-import markdown, pyotp, qrcode
+import markdown, pyotp, qrcode, html
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
@@ -353,7 +353,7 @@ def purchaseView(courseID:str):
     #create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
-            courses.courseDescription,
+            html.escape(courses.courseDescription),
             extensions=[AnchorTagExtension()], 
         )
     )

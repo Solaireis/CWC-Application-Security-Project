@@ -2,7 +2,7 @@
 Routes for the general public and CourseFinity users (Guests, Students, Teachers, and Admins)
 """
 # import third party libraries
-import markdown
+import markdown, html
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, session, abort, Blueprint, Markup, redirect, flash, current_app
@@ -96,7 +96,7 @@ def coursePage(courseID:str):
     #create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
-            courses.courseDescription,
+            html.escape(courses.courseDescription),
             extensions=[AnchorTagExtension()]
         )
     )
@@ -117,7 +117,7 @@ def coursePage(courseID:str):
             imageSrcPath = reviewInfo.profileImage
             reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
     else: #if there are no reviews
-        reviewList = None
+        reviewList = []
 
     #TODO: Pagnination required.
 
