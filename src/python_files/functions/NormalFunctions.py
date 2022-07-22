@@ -1676,7 +1676,9 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
     videoPath = videoFolderPath.joinpath(courseID).with_suffix(fileSuffix)
 
     video = ffmpeg_input(str(videoPath))
-    dash = video.dash(Formats.h264())
+    # Remove all subtitle encoding; too unique, difficult to control
+    # https://gist.github.com/tayvano/6e2d456a9897f55025e25035478a3a50
+    dash = video.dash(Formats.h264(sn=""))
 
     # For CLI Testing
     # print(f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json "{videoPath}"')
@@ -1701,6 +1703,11 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
         print(error)
         return False
         #TODO: Logging
+
+    # Convert to even number
+    # Error message: [libx264 @ 000002a59eafb080] width not divisible by 2 (427x240)
+    dimensions["width"] += dimensions["width"] % 2
+    dimensions["height"] += dimensions["height"] % 2
 
     _1080p = Representation(Size(dimensions["width"], dimensions["height"]), Bitrate(4096 * 1024, 320 * 1024))
     dash.representations(_1080p)
