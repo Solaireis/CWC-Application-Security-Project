@@ -365,7 +365,7 @@
 
 #### Implemented:
 - Best Practices Followed 
-  - SQL Injection
+  - SQL Injection / ORM Injection (?)
     - Avoid Using Dynamic SQL (String Concatenation)
   
   - Server Side Template Injection
@@ -373,13 +373,21 @@
       - render_template() is safer because users are unable to modify the template
   
   - Code / Command Injection
-    - Avoid using eval()
-    - Avoid using exec()
+    - Avoid using:
+      - exec()
+      - eval()
+      - os.system()
+      - os.popen()
+      - subprocess.popen()
+      - subprocess.call()
   
   - Cross Site Scripting
     - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
       - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
         - If required use Markup()
+  
+  - CRLF Injection
+    - Avoid using CRLF as a special sequence
 
 - Features Implemented
   - SQL Injection
@@ -410,6 +418,14 @@
 
 - Planned Features
   - Implement DDL Triggers (?)
+  - Sanitisation for All input (Kind of Done, but should double check)
+    - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
+    - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
+    - List Validation (?)
+    - Filter CSRF(?)
+  - Escaping all input (?)
+    - Encoding it all
+    - Output Encoding
 ---
 
 ### Software and Data Integrity Failures
@@ -423,6 +439,15 @@
 #### Implemented:
 - Best Practices Followed
   - Usage Of HTTPS to send data from Client Side to Server Side
+  - Usage of JSON data format, lesser chance of custom deserialisation logic
+  - Usage of Python Modules such as JSON with built in encoders
+    - Prevents Insecure Deserialiasation
+  - Keeping Libraries Up to Date
+  - Usage Of Libraries That Have No known Vulnerabilities recorded
+
+  - Infrastructure As Code Security
+    - Develop & Distribute
+      - Usage of Extensions such as Snyk to detect Potential Risks
 
 - Features Implemented
   - Implemented MySQL
@@ -431,4 +456,5 @@
 
 - Planned Features
   - Data Integrity For Profile Pictures
+  - Use Checksums to check for integrity (?)
 ---
