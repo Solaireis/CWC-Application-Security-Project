@@ -40,11 +40,9 @@ def home():
 @generalBP.route("/teacher/<string:teacherID>")
 def teacherPage(teacherID:str):
     teacherInfo = sql_operation(table="user", mode="get_user_data", userID=teacherID)
-    if (teacherInfo is None):
-        abort(404)
-    #print(teacherInfo.role)
-    if (teacherInfo.role != "Teacher"):
-        abort(404) # prevent users from using other ids except teachers
+    if (teacherInfo is None or teacherInfo.role != "Teacher"):
+        abort(404) # prevent users from using other ids except existing teachers
+
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
     threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
