@@ -6,6 +6,19 @@
 
 ---
 
+### Functionality Of Web App
+
+#### Implemented:
+- Home
+- Login
+- Signup
+- Admin Login
+- Admin Profile
+- Super Admin Login
+- Teacher Page
+- User Management System
+
+---
 ### Cryptographic Failures
 
 #### Implemented:
@@ -193,6 +206,14 @@
 
 ---
 
+### Functionality Of Web App
+
+#### Implemented:
+- Review Feature
+- Course Page
+- Admin Management System
+
+---
 ### Broken Access Control
 
 #### Plan
@@ -264,6 +285,15 @@
 
 ---
 
+### Functionality Of Web App
+
+#### Implemented:
+- Purchase History
+- Shopping Cart
+- Checkout
+- Stripe API
+
+---
 ### Insecure Design
 
 ### Plan
@@ -312,6 +342,19 @@
 
 ---
 
+### Functionality Of Web App
+
+#### Implemented:
+- User Profile
+- Course Video Upload
+- Course Video Management (Edit, Delete)
+- Search Bar
+- Explore Page
+- View All Course For a Particular Teacher
+- Pagination for above 4 pages (Editted By Json)
+
+---
+
 ### Injection
 
 #### Plan:
@@ -321,25 +364,52 @@
 - Protect against attacks via Markdown inputs (NOT MARKUP)
 
 #### Implemented:
-- SQL Injection
-  - Implement Parameterised Queries
-  - Implement Stored Procedures
-- Server Side Template Injection
-  - Avoid using render_template_string(template)
-    - render_template() is safer because users are unable to modify the template
-- Code / Command Injection
-  - Avoid using eval()
-  - Avoid using exec()
-  - shell = False in subprocess_run()
-- Cross Site Scripting
-  - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
-  - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
-    - If required use Markup()
-  - Implemented CSP, but only for scripts & frames
-    - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
-    - script src in csp shows all the scripts allowed to be taken from external sources
-    - frame src in csp shows all the iframes allowed to be run
+- Best Practices Followed 
+  - SQL Injection
+    - Avoid Using Dynamic SQL (String Concatenation)
+  
+  - Server Side Template Injection
+    - Avoid using render_template_string(template)
+      - render_template() is safer because users are unable to modify the template
+  
+  - Code / Command Injection
+    - Avoid using eval()
+    - Avoid using exec()
+  
+  - Cross Site Scripting
+    - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
+      - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
+        - If required use Markup()
 
+- Features Implemented
+  - SQL Injection
+    - Implement Parameterised Queries
+    - Implement Stored Procedures
+  
+  - Server Side Template Injection
+  
+  - Code / Command Injection
+    - shell = False in subprocess_run()
+  
+  - Cross Site Scripting
+    - Implemented Flask Talisman
+      - Set CSP, Perms Policy
+      - Though some already done on Cloudfare,
+        - Set for XSS Protection
+        - HTTPS configuration to redirect HTTP requests to HTTPS
+        - HSTS to ensure that HTTPS is used (Done On Cloudfare)
+    - Implemented CSP, but only for scripts & frames
+      - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
+      - script src in csp shows all the scripts allowed to be taken from external sources
+      - frame src in csp shows all the iframes allowed to be run
+      - style src in csp shows all the css allowed to run
+    - Encoded The User Input for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
+  
+  - Cross Site Request Injection(?)
+    - Implemented CSRF
+
+- Planned Features
+  - Implement DDL Triggers (?)
 ---
 
 ### Software and Data Integrity Failures
@@ -351,7 +421,14 @@
     (check hash between original and downloaded files)
 
 #### Implemented:
-- Implemented MySQL
-- Comparing Hashes of Packages, before pip installing them
+- Best Practices Followed
+  - Usage Of HTTPS to send data from Client Side to Server Side
 
+- Features Implemented
+  - Implemented MySQL
+  - Comparing Hashes of Packages, before pip installing them
+  - Check Hash of Video File, before saving it
+
+- Planned Features
+  - Data Integrity For Profile Pictures
 ---
