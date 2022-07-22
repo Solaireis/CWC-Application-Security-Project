@@ -1,11 +1,13 @@
 from lxml import html
 import asyncio, aiohttp, platform
 
-async def fetch(url:str, session:aiohttp.ClientSession, data:dict) -> dict:
+async def fetch(url:str, session:aiohttp.ClientSession, data:aiohttp.FormData) -> tuple:
+    """Does a POST request to the login page and returns the response and the status code"""
     async with session.post(url, data=data, headers={"Referer": url}) as r:
         return await r.text(), r.status
 
 async def send_requests(urls:list) -> list:
+    """Asynchronously sends requests to the login page and returns an array of response tuples"""
     async with aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar()) as session:
         # Send a get request and retrieve 
         # the CSRF token cookie value from the login page
@@ -25,6 +27,7 @@ async def send_requests(urls:list) -> list:
         return await asyncio.gather(*[fetch(url, session, data) for url in urls])
 
 def get_result(responses:list) -> list:
+    """Process the array of response tuples and returns an array of verdicts for each response"""
     statusArr = []
     for response in responses:
         statusCode = response[1]
