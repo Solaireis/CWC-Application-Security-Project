@@ -39,6 +39,9 @@ def home():
 
 @generalBP.route("/teacher/<string:teacherID>")
 def teacherPage(teacherID:str):
+    teacherInfo = sql_operation(table="user", mode="get_user_data", userID=teacherID)
+    if (teacherInfo.role != "2"):
+        abort(404) # prevent users from using other ids except teachers
     latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
     threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
 
@@ -98,6 +101,8 @@ def coursePage(courseID:str):
     )
     # print("hi",courses)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
+    if (not teacherRecords): #raise exception
+        abort(404)
     teacherName = teacherRecords.username
     teacherProfilePath = teacherRecords.profileImage
 
@@ -110,6 +115,8 @@ def coursePage(courseID:str):
             reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
             imageSrcPath = reviewInfo.profileImage
             reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
+    else: #if there are no reviews
+        reviewList = None
 
     #TODO: Pagnination required.
 
