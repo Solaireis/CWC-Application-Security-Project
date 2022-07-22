@@ -1,21 +1,8 @@
-import platform
 from lxml import html
-import asyncio, aiohttp
+import asyncio, aiohttp, platform
 
-async def fetch(url:str, session:aiohttp.ClientSession) -> dict:
-    # get the _csrf_token value from the login page
-    data = {"email": "demo@test.com", "password": "123123123"}
-    async with session.get(url) as r:
-        htmlResponse = await r.text()
-        if (r.status != 200):
-            return htmlResponse, r.status
-
-        # Retrieve the CSRF token from the login page
-        htmlTree = html.fromstring(htmlResponse)
-        csrfToken = htmlTree.xpath("//input[@name='_csrf_token']/@value")
-        data["_csrf_token"] = csrfToken[0]
-
-    async with session.post(url, json=data) as r:
+async def fetch(url:str, session:aiohttp.ClientSession, data:dict) -> dict:
+    async with session.post(url, data=data, headers={"Referer": url}) as r:
         return await r.text(), r.status
 
 async def send_requests(urls:list) -> list:
@@ -32,13 +19,16 @@ async def send_requests(urls:list) -> list:
         # add the csrfToken cookie to the session
         session.cookie_jar.update_cookies(csrfCookie)
 
-        return await asyncio.gather(*[fetch(url, session) for url in urls])
+        # get the _csrf_token value from the login page
+        data = {"email": "demo@test.com", "password": "123123123", "_csrf_token": csrfCookie["_csrf_token"].value}
+        data = aiohttp.FormData(data)
+        return await asyncio.gather(*[fetch(url, session, data) for url in urls])
 
 def get_result(responses:list) -> list:
     statusArr = []
-    for r in responses:
-        statusCode = r[1]
-        htmlResponse = r[0]
+    for response in responses:
+        statusCode = response[1]
+        htmlResponse = response[0]
         if (statusCode != 200):
             statusArr.append(statusCode)
         else:

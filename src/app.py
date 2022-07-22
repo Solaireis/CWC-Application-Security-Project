@@ -72,7 +72,7 @@ csrf.init_app(app)
 CSP = {
     "style-src": [
         "'self'",
-        "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css",
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js \'unsafe-inline\'",
@@ -87,7 +87,7 @@ CSP = {
     ],
     "script-src":[
         "'self'",
-        "https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js",
+        "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js",
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
         "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js",

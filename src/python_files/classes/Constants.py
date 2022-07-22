@@ -95,7 +95,7 @@ class ConstantsConfigs:
 
         # For removing session identifiers that has no activity for more than x hours 
         # (Expiry date will be updated per request to the web application)
-        self.__SESSION_EXPIRY_INTERVALS = 4 # 4 hours
+        self.__SESSION_EXPIRY_INTERVALS = 3 # 3 hours
 
         # Duration (in minutes) for locked accounts
         # before user can try to login again

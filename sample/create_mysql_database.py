@@ -64,7 +64,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     # else if not in debug mode, restrict to our custom domain, "coursefinity.social"
     hostName = "localhost" if (debug) else "coursefinity.social" 
 
-    definer = f"root`@`{hostName}"
+    definer = f"coursefinity`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None, user="root")
     cur = mydb.cursor()
 
@@ -442,7 +442,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
                                 WHERE username LIKE @search_query 
-                                AND r.role_name='Student' OR r.role_name='Teacher');
+                                AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -455,7 +455,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE username LIKE @search_query AND r.role_name='Student' OR r.role_name='Teacher'
+                WHERE username LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -499,7 +499,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
                                 WHERE id LIKE @search_query
-                                AND r.role_name='Student' OR r.role_name='Teacher');
+                                AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -512,7 +512,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.id LIKE @search_query AND r.role_name='Student' OR r.role_name='Teacher'
+                WHERE u.id LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -556,7 +556,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
                                 WHERE email LIKE @search_query
-                                AND r.role_name='Student' OR r.role_name='Teacher');
+                                AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -569,7 +569,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.email LIKE @search_query AND r.role_name='Student' OR r.role_name='Teacher'
+                WHERE u.email LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info

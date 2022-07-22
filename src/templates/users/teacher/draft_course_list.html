@@ -1,14 +1,7 @@
-{% if accType == None %}
-	{% extends "guest_base.html" %}
-{% elif accType == "Admin" %}
-	{% extends "admin_base.html" %}
-{% else %}
-	{% extends "user_base.html" %}
-{% endif %}
+{% extends "user_base.html" %}
 {% block head %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_list.css') }}">
 {% endblock %}
-
 
 {% block title %}
 {% if accType == "Teacher" %}

@@ -154,11 +154,12 @@
   - Configured the session cookie to be deleted from the browser once the user closes the browser.
     - Initially, the session cookie will expire after 1 hour of inactivity (no requests to the web server).
     - However, it would be an inconvenience/bad usability as the web application is about watching educational videos which means that a user might not send a request to the web server for several minutes to possibly a few hours.
-  - After 5 hours of inactivity, the session identifier will be deleted from the database.
+  - After 3 hours of inactivity, the session identifier will be deleted from the database.
     - To invalidate the session identifier.
     - To free up space in the database.
-    - Chose 4 hours as a video can last from several minutes to several hours for this web application.
+    - Chose 3 hours as a video can last from several minutes to several hours for this web application.
       - Improve usability to avoid legitimate user from being logged out after watching a video.
+      - After an hour of inactivity, a modal message will appear to check if the user is active in order to extend the session expiry datetime.
   - Checks the session identifier in the database and compare with the session identifier in the cookie
   - Checks the user's digital fingerprint against the digital fingerprint in the database
     - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
