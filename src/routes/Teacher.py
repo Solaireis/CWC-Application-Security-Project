@@ -175,14 +175,6 @@ def videoUpload():
                 return make_response("Uploaded image is corrupted! Please try again!", 500)
             else:
                 print(f'File {file.filename} has been uploaded successfully')
-                if (platform.system() != "Darwin"):
-                    if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
-                        flash("Invalid Video!", "File Upload Error!")
-                        return redirect(url_for("teacherBP.videoUpload"))
-                    filePathToStore = Path(filePathToStore).with_suffix(".mpd")
-
-                #TODO : find a way to get javascript data (AJAX but idw use it)
-                #TODO : If use json.dumps can try secure insecure deserialization
 
                 # COMPARISON OF HASH
                 hashNum = session["video_saving"][1]
@@ -195,7 +187,12 @@ def videoUpload():
                         absFilePath.unlink(missing_ok=True)
                         session.pop("video_saving", None)
                         return make_response("Uploaded image is corrupted! Please try again!", 500)
-
+                        
+                if (platform.system() != "Darwin"):
+                    if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
+                        flash("Invalid Video!", "File Upload Error!")
+                        return redirect(url_for("teacherBP.videoUpload"))
+                    filePathToStore = Path(filePathToStore).with_suffix(".mpd")
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(
