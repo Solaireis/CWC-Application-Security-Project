@@ -1,5 +1,5 @@
 from lxml import html
-import asyncio, aiohttp, platform
+import asyncio, aiohttp, platform, sys
 
 async def fetch(url:str, session:aiohttp.ClientSession, data:aiohttp.FormData) -> tuple:
     """Does a POST request to the login page and returns the response and the status code"""
@@ -14,9 +14,13 @@ async def send_requests(urls:list) -> list:
         async with session.get(urls[0]) as r:
             if (r.status != 200):
                 print("Initial GET request failed!")
-                return []
+                sys.exit(1)
+
             cookies = session.cookie_jar.filter_cookies(urls[0].rsplit("/", 1)[0])
             csrfCookie = {k: v for k, v in cookies.items() if (k == "_csrf_token")}
+            if (not csrfCookie):
+                print("Could not find CSRF token cookie!")
+                sys.exit(1)
 
         # add the csrfToken cookie to the session
         session.cookie_jar.update_cookies(csrfCookie)
@@ -55,7 +59,31 @@ def get_result(responses:list) -> list:
     return statusArr
 
 def main() -> None:
-    urlArr = ["https://localhost:8080/login"] * 50
+    while (1):
+        print("Note: In debug mode, requests will be sent to localhost:8080 url,\notherwise it would be sent to coursefinity.social...")
+        debugMode = input("Debug Mode? (Y/n): ").lower().strip()
+        if (debugMode not in ("y", "n", "")):
+            print("Invalid input!", end="\n\n")
+            continue
+        debugMode = (debugMode != "n")
+        print()
+        break
+
+    if (debugMode):
+        url = "https://localhost:8080/login"
+    else:
+        url = "https://coursefinity.social/login"
+
+    reqNum = 0
+    while (1):
+        reqNum = input("Enter the number of requests to send: ")
+        if (reqNum.isdigit()):
+            reqNum = int(reqNum)
+            if (reqNum > 0):
+                break
+        print("Invalid input!", end="\n\n")
+
+    urlArr = [url] * reqNum
 
     if (platform.system() == "Windows"):
         # A temporary fix for ProactorBasePipeTransport issues 
@@ -107,4 +135,8 @@ def main() -> None:
         print("9. There were no unknown errors!")
 
 if (__name__ == "__main__"):
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, EOFError):
+        print("\n\nExiting...")
+        sys.exit(0)
