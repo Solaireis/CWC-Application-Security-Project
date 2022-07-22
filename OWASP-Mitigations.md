@@ -215,6 +215,9 @@
   - This is due to the complexities of the group role functionality
   - Reduce the security of SQL server to CRUD and Execute, keeping security simple 
   - Security of SQL server depends on the web application to have proper Access Control
+- Implemented simple IDOR prevention agaisnt attackers guessing for AdminId on teacher page
+  - Page will abort if id doesnt exists
+  - page will abort if the id exist but role is not a teacher
 
 ---
 
