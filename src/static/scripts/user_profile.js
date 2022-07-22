@@ -26,7 +26,7 @@ Dropzone.options.dropper = {
     acceptedFiles: ".jpeg,.jpg,.png",
     chunking: true,
     forceChunking: true,
-    url: '/user_profile',
+    url: "/user_profile",
     maxFilesize: 50, // megabytes
     chunkSize: 1000000, // bytes
     retryChunks: true,
@@ -43,13 +43,13 @@ Dropzone.options.dropper = {
         });
 
         // tells dropzone to upload the image data to the web server when the user clicks on the upload button
-        document.getElementById('submit-button').addEventListener("click", function (e) {
+        document.getElementById("submit-button").addEventListener("click", function (e) {
             e.preventDefault();
             userProfileImageDropzone.processQueue();
         });
 
         // sending the chunks of data when user clicks on the upload button
-        userProfileImageDropzone.on('sending', function(file, xhr, formData) {
+        userProfileImageDropzone.on("sending", function(file, xhr, formData) {
             /* Append inputs to FormData */
             document.querySelector(".dz-progress").classList.remove("d-none");
             formData.append("profileImage", document.getElementById('dropper').value);

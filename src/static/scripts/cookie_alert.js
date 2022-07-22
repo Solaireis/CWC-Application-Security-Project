@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var acceptCookies = document.querySelector(".acceptcookies");
 
     if (!cookieAlert) {
-       return;
+        return;
     }
 
     cookieAlert.offsetHeight; // Force browser to trigger reflow (https://stackoverflow.com/a/39451131)

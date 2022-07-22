@@ -11,51 +11,51 @@
 }
 
 h2{
-  margin-top:50px;
-  margin-bottom:50px;
+    margin-top:50px;
+    margin-bottom:50px;
 }
 
 .col-md img{
-  height:auto;
-  width:100%;
-  margin-bottom:15px;
-  border-radius:10px;
+    height:auto;
+    width:100%;
+    margin-bottom:15px;
+    border-radius:10px;
 }
 
 .col-md p{
-  margin-bottom:100px;
+    margin-bottom:100px;
 }
 
 #pfp{
-  border-radius: 50%;
+    border-radius: 50%;
 }
 
 #user-icon-setting {
-  height: 80px;
-  width: auto;
-  border-radius: 50%;
-  margin: 15px;
+    height: 80px;
+    width: auto;
+    border-radius: 50%;
+    margin: 15px;
 }
 
 #bio{
-    padding: 20px;
+        padding: 20px;
 }
 
 @media screen and (max-width: 1500px){
-  .thebutton{
-    margin-bottom:50px;
-  }
+    .thebutton{
+        margin-bottom:50px;
+    }
 }
 
 .ratings {
-  color: #FFD700;
+    color: #FFD700;
 }
 
 .headings {
-  margin-bottom: 0;
-  margin-top: 30px;
+    margin-bottom: 0;
+    margin-top: 30px;
 }
 
 .become_headings {
-  margin-top: 100px;
+    margin-top: 100px;
 }
