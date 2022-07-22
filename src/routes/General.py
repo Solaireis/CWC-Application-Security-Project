@@ -117,7 +117,7 @@ def coursePage(courseID:str):
             imageSrcPath = reviewInfo.profileImage
             reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
     else: #if there are no reviews
-        reviewList = []
+        pass # Returns the previous var, an empty list
 
     #TODO: Pagnination required.
 

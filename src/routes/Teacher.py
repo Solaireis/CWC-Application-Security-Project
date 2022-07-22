@@ -181,8 +181,17 @@ def videoUpload():
 
                 #TODO : find a way to get javascript data (AJAX but idw use it)
                 #TODO : If use json.dumps can try secure insecure deserialization
-                with open(absFilePath, 'rb') as f:
-                    print(hashlib.sha512(f.read()).hexdigest())
+
+                # COMPARISON OF HASH
+                # if (hashNum):
+                #     with open(absFilePath, 'rb') as f:
+                #         fileHash = hashlib.sha512(f.read()).hexdigest()
+                #     if (fileHash != hashNum):
+                #         print("File Hash is incorrect")
+                #         absFilePath.unlink(missing_ok=True)
+                #         session.pop("video_saving", None)
+                #         return make_response("Uploaded image is corrupted! Please try again!", 500)
+
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(

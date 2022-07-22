@@ -84,6 +84,7 @@
             paramName: "videoUpload", // The name of the uploaded file
             maxFiles: 1, // Number of files allowed to be uploaded
             acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
+            addRemoveLinks: true, // ability to remove
             autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
             init: function() {
                 // HASH IS CORRECT :D, now need send across
@@ -95,8 +96,25 @@
                     };
                     reader.readAsArrayBuffer(file);
                 });
+
+                this.on("removedfile", function(file) {
+                    console.log("File " + file.name + " removed");
+                });
+                
+                // CONFUZZLED ON HOW TO SEND JAVASCRIPT
+                // var xhr = new XMLHttpRequest();
+                // var reader = new FileReader();
+                // reader.onload = function(event) {
+                //     var hash = CryptoJS.SHA512(CryptoJS.lib.WordArray.create(event.target.result));
+                //     const finalHash = hash.toString(CryptoJS.enc.Hex)
+                //     xhr.open("POST", "/upload-video", true); // sends a GET request to the same page
+                //     xhr.setRequestHeader("Content-Type", "application/json");
+                //     xhr.send(`h=${finalHash}`);
+                // };
+                // reader.readAsArrayBuffer(file);
+
                 // comment this out when testing hash
-                this.on("success", function () {
+                this.on("success", function (file) {
                     window.location = "{{ url_for('teacherBP.draftCourseList') }}";
                 });
             }
