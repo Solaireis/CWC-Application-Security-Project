@@ -168,10 +168,11 @@ def videoUpload():
                 print(f"File {file.filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
                 # remove corrupted image
                 absFilePath.unlink(missing_ok=True) # missing_ok argument is set to True as the file might not exist (>= Python 3.8)
+                #pop to prevent further error
+                session.pop("video_saving", None)
                 return make_response("Uploaded image is corrupted! Please try again!", 500)
             else:
                 print(f'File {file.filename} has been uploaded successfully')
-                #so that can download the file, we uncomment when for other platforms it works
                 if (platform.system() != "Darwin"):
                     if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
