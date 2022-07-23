@@ -1724,4 +1724,3 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     else:
         raise ValueError("Invalid mode in the role_sql_operation function!")
-    

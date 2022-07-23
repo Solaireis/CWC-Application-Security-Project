@@ -2,11 +2,9 @@
 
 ---
 
-## Jason
+## Jason:
 
----
-
-### Functionality Of Web App
+## Functionality Of Web Application
 
 #### Implemented:
 - Home
@@ -17,8 +15,12 @@
 - Super Admin Login
 - Teacher Page
 - User Management System
+- Improvement of Calvin's pagination
 
 ---
+
+## Selected OWASP Mitigations
+
 ### Cryptographic Failures
 
 #### Implemented:
@@ -202,18 +204,17 @@
 
 ---
 
-## Eden
+## Eden:
 
----
-
-### Functionality Of Web App
+## Functionality Of Web Application
 
 #### Implemented:
 - Review Feature
 - Course Page
 - Admin Management System
 
----
+## Selected OWASP Mitigations
+
 ### Broken Access Control
 
 #### Plan
@@ -281,19 +282,20 @@
 
 ---
 
-## Wei Ren
+## Wei Ren:
 
----
-
-### Functionality Of Web App
+## Functionality Of Web Application
 
 #### Implemented:
 - Purchase History
+- Purchase details page
+  - With video player for the user to watch the purchased course video
 - Shopping Cart
 - Checkout
 - Stripe API
 
----
+## Selected OWASP Mitigations
+
 ### Insecure Design
 
 ### Plan
@@ -338,11 +340,9 @@
 
 ---
 
-## Calvin
+## Calvin:
 
----
-
-### Functionality Of Web App
+## Functionality Of Web Application
 
 #### Implemented:
 - User Profile
@@ -351,9 +351,10 @@
 - Search Bar
 - Explore Page
 - View All Course For a Particular Teacher
-- Pagination for above 4 pages (Editted By Json)
+- Pagination for above 4 pages (Edited By Jason)
+- Improvements of teacher page implemented by Jason
 
----
+## Selected OWASP Mitigations
 
 ### Injection
 
@@ -367,11 +368,11 @@
 - Best Practices Followed 
   - SQL Injection / ORM Injection (?)
     - Avoid Using Dynamic SQL (String Concatenation)
-  
+
   - Server Side Template Injection
     - Avoid using render_template_string(template)
       - render_template() is safer because users are unable to modify the template
-  
+
   - Code / Command Injection
     - Avoid using:
       - exec()
@@ -380,12 +381,12 @@
       - os.popen()
       - subprocess.popen()
       - subprocess.call()
-  
+
   - Cross Site Scripting
     - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
       - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
         - If required use Markup()
-  
+
   - CRLF Injection
     - Avoid using CRLF as a special sequence
 
@@ -393,12 +394,12 @@
   - SQL Injection
     - Implement Parameterised Queries
     - Implement Stored Procedures
-  
+
   - Server Side Template Injection
-  
+
   - Code / Command Injection
     - shell = False in subprocess_run()
-  
+
   - Cross Site Scripting
     - Implemented Flask Talisman
       - Set CSP, Perms Policy
@@ -412,7 +413,7 @@
       - frame src in csp shows all the iframes allowed to be run
       - style src in csp shows all the css allowed to run
     - Encoded The User Input for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
-  
+
   - Cross Site Request Injection(?)
     - Implemented CSRF
 
@@ -457,4 +458,5 @@
 - Planned Features
   - Data Integrity For Profile Pictures
   - Use Checksums to check for integrity (?)
+
 ---
