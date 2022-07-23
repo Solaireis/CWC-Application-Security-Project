@@ -3,6 +3,7 @@ This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
 import json
+from pathlib import Path
 from socket import inet_aton, inet_pton, AF_INET6
 from typing import Union, Optional
 from datetime import datetime, timedelta
@@ -47,17 +48,18 @@ def validate_course_video_path(courseID:str, returnUrl:bool=False) -> Optional[s
         # If course does not exist for some reason
         return None
 
-    videoPath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID)
+    videoPath:Path = current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID)
     if not videoPath.is_dir():
         # Make directory for the video to be downloaded from Google Cloud Storage API
         videoPath.mkdir(parents=True, exist_ok=True)
 
     # Join the filename from the Google Storage link with the path to the course video folder path
-    videoPath = videoPath.joinpath(videoStorageURL.rsplit("/", 1)[1])
-    if (not videoPath.is_file()):
+    videoFilename = videoStorageURL.rsplit("/", 1)[1]
+    videoFileSuffix = "." + videoFilename.rsplit(".", 1)[1]
+    if (not videoPath.joinpath(videoFilename).is_file()):
         # Download the video from Google Cloud Storage API
-        download_to_path("coursefinity-videos", get_blob_name(videoStorageURL), videoPath)
-        convert_to_mpd(courseID)
+        download_to_path("coursefinity-videos", f"videos/{courseID}{videoFileSuffix}", videoPath)
+        convert_to_mpd(courseID, videoFileSuffix)
 
     if returnUrl:
         return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")

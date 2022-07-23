@@ -40,7 +40,7 @@ def stripe_product_create(
 
             default_price_data = {
                 "currency" : "USD",
-                "unit_amount_decimal" : coursePrice
+                "unit_amount_decimal" : coursePrice * 100
             },
             images = [] if courseImagePath is None else [courseImagePath],
             url = url_for("generalBP.coursePage", _external = True, courseID = courseID)
@@ -75,7 +75,7 @@ def stripe_product_update(**kwargs) -> None:
                 courseID,
                 default_price_data = {
                     "currency" : "USD",
-                    "unit_amount_decimal" : coursePrice
+                    "unit_amount_decimal" : coursePrice * 100
                 },
             )
         if (courseImagePath):

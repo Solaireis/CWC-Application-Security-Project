@@ -368,9 +368,10 @@ def purchaseView(courseID:str):
     userPurchasedCourses = userInfo.uid
     accType = userInfo.role
     imageSrcPath = userInfo.profileImage
+    videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
     return render_template("users/user/purchase_view.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType)
+        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType, courses=courses, videoPath=videoPath)
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):

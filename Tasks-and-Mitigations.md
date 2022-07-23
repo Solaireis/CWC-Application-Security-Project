@@ -305,6 +305,7 @@
 - VirusTotal ffmpeg
 - File type policies
 - Max content length policy
+- Threading for videos
 
 ### Implemented
 - Stripe with modified JWT (no encoding/encryption method stored; no reason to)

@@ -1,12 +1,12 @@
 {% extends "user_base.html" %}
 {% block head %}
-{% from "includes/_videoHelper.html" import video_styles, video_player, video_scripts, video_link %}
+{% from "includes/_videoHelper.html" import video_styles %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/video_js.css') }}">
 {{ video_styles() }}
 {% endblock %}
 
 {% block content %}
+{% from "includes/_videoHelper.html" import video_player %}
 <div class="container-lg">
     <div class="row">
         
@@ -26,7 +26,7 @@
 
     <div class="container-lg">
         <div class="row">
-            {{ video_player() }}
+            {{ video_player(courses.courseImagePath) }}
         </div>
     </div>
 
@@ -88,6 +88,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    {% from "includes/_videoHelper.html" import video_scripts, video_link %}
     {{ video_scripts() }}
     {{ video_link(videoPath) }}
 {% endblock %}

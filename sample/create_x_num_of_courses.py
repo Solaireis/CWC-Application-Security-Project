@@ -134,8 +134,9 @@ Thanks for watching the demo course!""")
     course_price = round(i * 50.50, 2)
     course_category = "Other_Academics"
 
-    #video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
-    video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
+    # video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
+    # video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
+    video_path = f"https://storage.googleapis.com/coursefinity-videos/videos/watame{rand_choice(('', '2'))}.mp4" # Doesn't work, but shhhhh
 
     cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) VALUES (%s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s)", (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, video_path))
     try:

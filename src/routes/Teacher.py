@@ -194,7 +194,6 @@ def videoUpload():
                     if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
                         return redirect(url_for("teacherBP.videoUpload"))
-                    filePathToStore = Path(filePathToStore).with_suffix(".mpd")
 
                 # constructing a file path to see if the user has already uploaded an image and if the file exists
                 sql_operation(
