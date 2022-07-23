@@ -91,7 +91,8 @@
 
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway
 
-- Made an asymmetric signing function capable of JWT feature for authorising sensitive actions such as reset password
+- Implemented JWT for authorising sensitive actions such as reset password
+  - Not following some of the JWT's RFC standards as to account for Google Cloud Platform KMS API as it is not possible to retrieve the private key from Google Cloud Platform KMS API
   - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
     - Using Google Cloud Platform KMS (Key Management Service) API
     - 192 bits of security
@@ -232,15 +233,15 @@
 - show different UI based on the RBAC
 
 #### Implemented:
-- Role based Access Control which groups the approutes via Blueprints, access control is granted only to the specific blueprints group
-- Role Based Access Control for the SQL Server
-  - Removal of complex group based SQL based on teachers recommendations
+- Role based Access Control which groups the app routes via Blueprints, access control is granted only to the specific blueprints group
+- Role Based Access Control for the MySQL Server
+  - Removal of complex group in MySQLSQL based on teachers recommendations
   - This is due to the complexities of the group role functionality
-  - Reduce the security of SQL server to CRUD and Execute, keeping security simple 
-  - Security of SQL server depends on the web application to have proper Access Control
-- Implemented simple IDOR prevention agaisnt attackers guessing for AdminId on teacher page
-  - Page will abort if id doesnt exists
-  - page will abort if the id exist but role is not a teacher
+  - Reduce the permissions of the MySQL server to CRUD and Execute for calling stored procedures and functions, keeping security simple 
+  - Security of MySQL server depends on the web application to have proper Access Control
+- Implemented simple IDOR prevention agaisnt attackers guessing for AdminID on teacher page
+  - Page will abort 404 if id doesnt exists
+  - page will abort 404 if the id exist but role is not a teacher
 
 ---
 
@@ -270,15 +271,15 @@
   - Debug Mode must be disabled when application is set to Production
 
 - Removal of any unused ports if any
-  - Currently we are using port 8080 (web servers )
-  - To communicate with users we use port 443 which is HTTPS only
+  - Currently we are using port 8080 for the web application when hosted on Google Cloud Platform Cloud Run via gunicorn as specificied by Google Cloud Platform Cloud Run documentation
+  - The hosted server will listen on port 80 and port 443 for HTTP and HTTPS respectively
 
 - List of Files/Folders that must be disabled during production (due to possible attack surface)
   - For the sake of the technical review, they will be enabled
   - Folders that must be removed during production:
     - Sample files
     - Test files
-  - Remove any Unused HTML,CSS Files
+  - Remove any unused HTML, JavaScript, and CSS Files
 
 ---
 
@@ -312,12 +313,8 @@
 - mpd video player, randomised blob url
 
 #### Plan:
-- Flask limiter
-- implement reCAPTCHA (if you have the time to read docs :D)
-- Cloudflare!
 - Fix errors
-    - For insecure, you can allow user to buy nth num of a course
-- Decide whether to use Flask login or the old style of session management
+    - For example, fixing a bug that allowed user to buy a course multiple times instead of only once
 
 #### Implemented:
 - Added [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) on the signup page
@@ -332,7 +329,7 @@
 - Log all logins (successful and failed logins), access controls (when user tries to access a folder, etc.), server-side input failures (SQL query, etc.)
 - Implement an algorithm to detect malicious accounts (created in same IP, etc.)
 - Ensure logs can be used by log management solution software
-- Ensure logs is not vulnerable to corruption (multithreading :D, SQL injections, etc.)
+- Ensure logs is not vulnerable to corruption
 - Prevent all access except read access to admins (need to create a log page for admins)
 - Alert the security teams and/or admins in an event of a live attack (DDoS)
 
