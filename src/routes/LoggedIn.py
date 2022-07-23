@@ -3,7 +3,7 @@ Routes for logged in users (Students or Teachers or Admins)
 """
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, \
-                  Markup, abort, Blueprint, current_app, send_from_directory
+                  Markup, Blueprint, current_app
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *

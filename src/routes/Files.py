@@ -15,7 +15,6 @@ filesBP = Blueprint("filesBP", __name__, static_folder="static", template_folder
 def get_course_mpd_file(courseID):
     return send_from_directory('static', filename=f'course_videos/{courseID}.mpd')
 
-
 @filesBP.route('/test')
 def test():
     pass

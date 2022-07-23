@@ -95,7 +95,7 @@
                     reader.onload = function(event) {
                         var hash = CryptoJS.SHA512(CryptoJS.lib.WordArray.create(event.target.result));
                         const fileHash = hash.toString(CryptoJS.enc.Hex);
-                        xhr.open("POST", "/upload-video", true); // sends a GET request to the same page
+                        xhr.open("POST", "", true); // sends a GET request to the same page
                         xhr.setRequestHeader("Content-Type", "application/json");
                         const jsonData = {
                             hash: fileHash

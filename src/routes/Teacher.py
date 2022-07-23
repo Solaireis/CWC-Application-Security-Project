@@ -3,10 +3,9 @@ Routes for logged in Teachers
 """
 # import third party libraries
 from werkzeug.utils import secure_filename
-import markdown
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response, send_from_directory
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -19,7 +18,7 @@ from .RoutesSecurity import csrf
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
-import platform, hashlib
+import platform, hashlib, shutil
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -128,7 +127,10 @@ def videoUpload():
         try:
             resp = request.json
             session["video_saving"] = [courseID, resp["hash"]]
-        except:
+        except Exception as e:
+            # print(e)
+            # write_log_entry(logMessage=f"Error in videoUpload: {e}", severity="WARNING")
+            # return make_response("Unexpected error", 500)
             pass
         #TODO : Find a way to check if this was the file currently being saved or not
 
@@ -145,12 +147,12 @@ def videoUpload():
         if (Path(filename).suffix not in current_app.config["ALLOWED_VIDEO_EXTENSIONS"]):
             flash("Unsupported format!", f"Please use only the following: \n{current_app.config['ALLOWED_VIDEO_EXTENSIONS']}")
 
-        #folder creation
-        Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID).mkdir(parents=True, exist_ok=True)
+        # folder creation
+        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID).mkdir(parents=True, exist_ok=True)
 
         filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}") # path for mp4 file stored in sql
         print("Total file size:", int(request.form["dztotalfilesize"]))
-        absFilePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID, filename)
+        absFilePath = current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID, filename)
 
         try:
             with open(absFilePath, "ab") as videoData: # ab flag for opening a file for appending data in binary format
@@ -167,27 +169,27 @@ def videoUpload():
         if (currentChunk + 1 == totalChunks):
             # This was the last chunk, the file should be complete and the size we expect
             if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
-                print(f"File {file.filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
+                print(f"File {filename} was completed, but there is a size mismatch. Received {absFilePath.stat().st_size} but had expected {request.form['dztotalfilesize']}")
                 # remove corrupted image
                 absFilePath.unlink(missing_ok=True) # missing_ok argument is set to True as the file might not exist (>= Python 3.8)
                 #pop to prevent further error
                 session.pop("video_saving", None)
                 return make_response("Uploaded image is corrupted! Please try again!", 500)
             else:
-                print(f'File {file.filename} has been uploaded successfully')
+                print(f"File {filename} has been uploaded successfully")
 
                 # COMPARISON OF HASH
                 hashNum = session["video_saving"][1]
                 if (hashNum):
-                    with open(absFilePath, 'rb') as f:
+                    with open(absFilePath, "rb") as f:
                         fileHash = hashlib.sha512(f.read()).hexdigest()
-                    
+
                     if (fileHash != hashNum):
                         print("File Hash is incorrect")
                         absFilePath.unlink(missing_ok=True)
                         session.pop("video_saving", None)
                         return make_response("Uploaded image is corrupted! Please try again!", 500)
-                        
+
                 if (platform.system() != "Darwin"):
                     if (not convert_to_mpd(courseID, Path(filename).suffix)): # Error with conversion
                         flash("Invalid Video!", "File Upload Error!")
@@ -283,7 +285,7 @@ def createCourse(courseID:str):
             bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
             localFilePath=absFilePath,
             uploadDestination=f"videos"
-            # uploadDestination=f"videos/{videoFilename}" #folder created
+            # uploadDestination=f"videos/{videoFilename}" # folder created
         )
         # Delete video from storage (relying on mpd file)
         sql_operation(
@@ -315,6 +317,7 @@ def createCourse(courseID:str):
 """ End Of Course Creation """
 
 """ Start Of Course Management """
+
 """
 @teacherBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
 def rawVideo(courseID:str, videoName:str):
@@ -338,6 +341,7 @@ def rawVideo(courseID:str, videoName:str):
         )
     else:
         abort(404)
+
 """
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
@@ -353,9 +357,13 @@ def draftCourseDelete():
     if (not courseFound):
         abort(404)
 
-    # TODO : This only deletes the mp4 file & directory cannot be deleted unless empty, find way to completely clear the directory
-    Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID, courseID + Path(courseFound[2]).suffix).unlink(missing_ok=True)
-    Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID).rmdir()
+    shutil.rmtree(
+        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID),
+        ignore_errors=False,
+        onerror=lambda func, path, exc_info: write_log_entry(
+            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", severity="WARNING"
+        )
+    )
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
     print("Draft Course Deleted")
     return redirect(url_for("teacherBP.draftCourseList"))

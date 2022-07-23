@@ -1,4 +1,4 @@
-// Dropzone.js for segmenting data payload to chunks of data
+/* // Dropzone.js for segmenting data payload to chunks of data
 Dropzone.options.courseThumbnail = {
     maxFiles: 1,
     paramName: 'courseThumbnail',
@@ -33,12 +33,12 @@ Dropzone.options.courseThumbnail = {
         });
 
         myDropzone.on('sending', function(file, xhr, formData) {
-            /* Append inputs to FormData */
+            // Append inputs to FormData 
             document.querySelector(".dz-progress").classList.remove("d-none");
             formData.append("courseThumbnail", document.getElementById('courseThumbnail').value);
         });
     }
-};
+}; */
 
 function readURL(input) {
     if (input.files && input.files[0]) {
