@@ -5,7 +5,7 @@ from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes
+from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, write_log_entry
 
 # import python standard libraries
 import re, json
@@ -44,7 +44,9 @@ def before_request() -> None:
         not current_app.config["DEBUG_FLAG"] and 
         re.fullmatch(current_app.config["CONSTANTS"].CUSTOM_DOMAIN_REGEX, request.url) is None
     ):
-        return redirect("https://coursefinity.social" + request.full_path, code=301)
+        urlToRedirect = "https://coursefinity.social" + request.full_path
+        write_log_entry(logMessage=f"Redirected user from {request.url} to {urlToRedirect}")
+        return redirect(urlToRedirect, code=301)
 
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
