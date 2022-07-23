@@ -411,6 +411,8 @@ def checkout():
     userID = session["user"]
 
     cartCourseIDs = sql_operation(table='user', mode = 'get_user_cart', userID = userID)
+    if cartCourseIDs == []: # Take that, Postman users!
+        return redirect(url_for("userBP.shoppingCart"))
     email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID).email
     print(cartCourseIDs)
     print(email)

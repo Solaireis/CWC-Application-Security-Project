@@ -307,6 +307,10 @@
 - File type policies
 - Max content length policy
 - Threading for videos
+- Stripe
+   - https://stripe.com/docs/api/idempotent_requests
+   - https://stripe.com/docs/radar/rules/reference
+   - https://stripe.com/docs/api/payouts
 
 ### Implemented
 - Stripe with modified JWT (no encoding/encryption method stored; no reason to)
