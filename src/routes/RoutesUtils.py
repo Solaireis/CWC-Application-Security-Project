@@ -166,6 +166,8 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
             # Cache for 1 year for static files (except when in debug/dev mode)
             response.headers["Cache-Control"] = "public, max-age=31536000"
         else:
+            #TODO: config the cache control for security purposes
+            # cache control shld be private as we dont want our proxy to cache the response
             # Disable caching for state changing requests (if NOT in debug/dev mode)
             response.headers["Cache-Control"] = "public, max-age=0"
     return response
