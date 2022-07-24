@@ -259,6 +259,13 @@
 - seperation of privileges
 - application should fail safely
 - Ensure RBAC are not hardcoded security constants
+- ensure the configuration of cache-control is secure 
+- ensure the policies inplaced are of good security requirements
+  - password policy
+  - session policy 
+  - auto scheduler Policy
+  - Cloudflare
+  - google cloud configuration
 
 #### Sources:
 - https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-123.pdf
