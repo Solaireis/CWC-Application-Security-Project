@@ -36,7 +36,7 @@
       - Recommended by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation) to ensure higher entropy
     - Using Google Cloud Platform Key Management Service's Cloud Hardware Security Module RNG API.
 
-- Secure Flask Session Cookie
+- Securing Flask Session Cookie
   - The Flask session cookie is digitally signed using HMAC-SHA512 algorithm.
     - Although HMAC cannot be used for digital signature, in this context, it is possible as only the web application knows the secret/symmetric key used in the HMAC algorithm.
   - Configured the Flask session's default HMAC algorithm from HMAC-SHA1 to HMAC-SHA512.
@@ -142,47 +142,49 @@
     - Credential stuffing attacks
     - Brute force attacks
 
-- Minimum Password Complexity Policy using regex as recommended by [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
-  - At least 1 uppercase letter
-  - At least 1 lowercase letter
-  - At least 1 digit
-  - At least 1 special character
-  - At least 10 characters
-  - Not more than 2 repeated characters
-  - Requires user to match at least 3 of the above criteria
-- Password strength meter to help users meet the password complexity policy
-- Verification of passwords if the passwords has been leaked in the dark web using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
-  - Verified when:
-    - After a successful login
-    - Sign up
-    - Changing password
-    - Resetting password
-  - If haveibeenpwned's API is unavailable, the password must match ALL the minimum password complexity policy criteria as a fallback
+- Password Complexity Policy
+  - Requires user to match at least 3 of the criteria stated below:
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 digit
+    - At least 1 special character
+    - At least 8 characters
+    - Not more than 2 repeated characters
+  - Password strength meter to help users meet the password complexity policy
+  - Verification of passwords if the passwords has been compromised using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
+    - Verified when:
+      - After a successful login
+      - Sign up
+      - Changing password
+      - Resetting password
+    - If haveibeenpwned's API is unavailable, the password must match ALL the minimum password complexity policy criteria as a fallback
+  - As recommended by:
+    - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
+    - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
 - Maximum of 6 failed login attempts per account (will reset after 1 hour)
   - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
     - An email will be sent to the user's email with a one-time link to unlock the account
     - Link uses a digitally signed token to prevent tampering
 
-- Session Management Implementation:
+- Session Management Implementation (Mainly using Flask session):
   - Session identifier of 32 bytes (Unlikely to be guessed) stored in the database.
     - Ensured high entropy by using Google Cloud Platform Key Management Service (KMS) Cloud HSM's RNG API
   - Configured the session cookie to be deleted from the browser once the user closes the browser.
-    - Initially, the session cookie will expire after 1 hour of inactivity (no requests to the web server).
-    - However, it would be an inconvenience/bad usability as the web application is about watching educational videos which means that a user might not send a request to the web server for several minutes to possibly a few hours.
   - After 3 hours of inactivity, the session identifier will be deleted from the database.
     - To invalidate the session identifier.
     - To free up space in the database.
     - Chose 3 hours as a video can last from several minutes to several hours for this web application.
       - Improve usability to avoid legitimate user from being logged out after watching a video.
       - After an hour of inactivity, a modal message will appear to check if the user is active in order to extend the session expiry datetime.
-  - Checks the session identifier in the database and compare with the session identifier in the cookie
-  - Checks the user's digital fingerprint against the digital fingerprint in the database
-    - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
-      - If the user's digital fingerprint hash does not match the one in the database of the same session identifier, the user's session cookie will be cleared from their browser
-    - Helps to prevent session hijacking via cookie theft
-    - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
-      - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
+  - Session validations upon each request to a web page:
+    - Checks the session identifier and the userID in the database and compare with the values in the cookie
+    - Checks the user's digital fingerprint against the digital fingerprint in the database
+      - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
+        - If the user's digital fingerprint hash does not match the one in the database of the same session identifier, the user's session cookie will be cleared from their browser
+      - Helps to prevent session hijacking via cookie theft
+      - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
+        - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
