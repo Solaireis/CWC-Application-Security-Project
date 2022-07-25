@@ -303,8 +303,8 @@
   - Documentation:
     - https://developers.cloudflare.com/cache/how-to/set-caching-levels/
 
-- Ensure that sensitive and personal information pages are not index when hosted on the web 
-  - implemented no robot into the <head> tag 
+- Ensure that admin,user and error pages specific webpages are not indexed by default
+  - Only guest pages are indexed
 ---
 
 ## Wei Ren:
