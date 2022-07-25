@@ -392,6 +392,7 @@
 - Avoid Bad Coding Practices that lead to Injection Attacks
 - Remember to use multithreading for writing account info to the SQL database
 - Implement DDL Triggers (?)
+  - Basically if someone tries to drop the table, it drops but immediately rollbacks. (Need deal with concurrency)
 - Sanitisation for All input (Kind of Done, but should double check)
   - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
   - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
@@ -402,6 +403,7 @@
   - Whitelist Values(?)
     - only permit known good values, so that user cannot try to input any malicious inputs (Sanitize HTML)
   - Filter CRLF (?)
+    - I can prevent Logging's crlf injection
 - Escaping all input (?)
   - Some areas already escape need to double check and find all that are required
   - Encoding it all
@@ -411,14 +413,16 @@
 
 #### Implemented:
 - Best Practices Followed
-  - Using Development Tools Like Snyk to detect Unafe code
+  - Using Development Tools Like Snyk to detect Unsafe code
 
   - SQL Injection
     - Avoid Using Dynamic SQL (String Concatenation)
+      - If used string concat, it will accept malicious code as CODE instead of data. Because the command being run is fully made before passing into a function
 
   - Server Side Template Injection
     - Avoid using render_template_string(template)
       - render_template() is safer because users are unable to modify the template
+    - Python templates engine API mechanisms enforce the seperation between code and data (e.g. Jinja)
 
   - Code Injection
     - Avoid using:
@@ -437,10 +441,12 @@
       - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
         - If required use Markup()
     - Avoid using innerHTML, outerHTML, document.write() to stop DOM-Based XSS
+      - These Javascript functions allow attackers to write scripts into the html
     - Use JSON.parse() for Javascript and not eval()
 
   - CRLF Injection
     - Avoid using CRLF as a special sequence
+      - To avoid log poisoning et cetera
 
   - Regex Injection : Yes this exists
     - Testing of regex to ensure it returns what we want
@@ -477,10 +483,11 @@
 
   - Cross Site Request Injection(?)
     - Implemented CSRF
+      - Prevents victims from being tricked into sending a malicious request. Each request has a unique csrf token.
   
   - Host Header Injection
     - Generating Paths SAFELY
-      - Attackers can manipulate data in their headers and poison the URL
+      - Attackers can manipulate data in their headers and poison the URL.
       - Using Constants to specify the path instead of taking it from host headers et cetera for absolute paths
       - Using relative urls where Possible
   
@@ -498,6 +505,7 @@
 
 #### Implemented:
 - Best Practices Followed
+  - Code reviews to find bugs / errors
   - Usage Of HTTPS to send data from Client Side to Server Side
     - Provides encryption to ensure that it was the user that sent it
   - Usage of JSON data format, lesser chance of custom deserialisation logic
@@ -515,9 +523,12 @@
   - Infrastructure As Code Security
     - Develop & Distribute
       - Usage of Extensions such as Snyk to detect Potential Risks
+        - Static Analysis Et cetera
       - Usage of Github for Version Control
 
 - Features Implemented
+  - Flask Talisman
+    - HSTS & HTTPS Encrypt the Hashes being sent from client to server
   - Implemented MySQL
     - Fix deserialization vulnerability with pickle (shelve) by changing to SQL
   - Comparing Hashes of Packages, before pip installing them
