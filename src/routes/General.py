@@ -11,6 +11,7 @@ from flask import render_template, request, session, abort, Blueprint, Markup, r
 from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Reviews import Reviews
+from python_files.classes.Course import get_readable_category
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import limiter
 
@@ -198,7 +199,10 @@ def search():
 
     page = request.args.get("p", default=1, type=int)
     if (courseCategory):
-        listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
+        if (get_readable_category(courseCategory) != "Unknown Category"):
+            listInfo = sql_operation(table="course", mode="explore", courseCategory=searchInput, pageNum=page)
+        else: # if no such course exist, default to "Programming" category
+            return redirect(url_for("generalBP.search") + "?ct=Programming")
     else:
         listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
 
