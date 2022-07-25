@@ -201,7 +201,7 @@ def search():
     if (courseCategory):
         if (get_readable_category(courseCategory) != "Unknown Category"):
             listInfo = sql_operation(table="course", mode="explore", courseCategory=searchInput, pageNum=page)
-        else: # if no such course exist, default to "Programming" category
+        else: # if no such course category exist, default to "Programming" category
             return redirect(url_for("generalBP.search") + "?ct=Programming")
     else:
         listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
