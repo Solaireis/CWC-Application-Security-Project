@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
+# from subprocess import call as subprocess_call, PIPE, check_output
 from subprocess import run as subprocess_run, PIPE, check_output
 from os import environ
 
@@ -1693,6 +1694,7 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
     else:
         # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
         # shell = False helps prevent command injection, but idk if it messes with the code
+        # dimensions = subprocess_call(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)
         dimensions = subprocess_run(f"ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of json \"{str(videoPath)}\"", stdout=PIPE, stderr=PIPE, shell=False)
     try:
         if (platform.system() != "Darwin"):

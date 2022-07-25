@@ -390,45 +390,74 @@
 
 #### Plan:
 - Avoid Bad Coding Practices that lead to Injection Attacks
-- Prevent SQL injections
 - Remember to use multithreading for writing account info to the SQL database
-- Protect against attacks via Markdown inputs (NOT MARKUP)
+- Implement DDL Triggers (?)
+- Sanitisation for All input (Kind of Done, but should double check)
+  - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
+  - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
+    - Check that supplied fields like email addresses match a regular expression.
+    - Ensure that numeric or alphanumeric fields do not contain symbol characters.
+    - Reject (or strip) out whitespace and new line characters where they are not appropriate.
+  - List Validation (?)
+  - Whitelist Values(?)
+    - only permit known good values, so that user cannot try to input any malicious inputs (Sanitize HTML)
+  - Filter CRLF (?)
+- Escaping all input (?)
+  - Some areas already escape need to double check and find all that are required
+  - Encoding it all
+  - Output Encoding
+- Use subprocess call instead?
+  - It ensures only a single command is run, our command
 
 #### Implemented:
-- Best Practices Followed 
-  - SQL Injection / ORM Injection (?)
+- Best Practices Followed
+  - Using Development Tools Like Snyk to detect Unafe code
+
+  - SQL Injection
     - Avoid Using Dynamic SQL (String Concatenation)
 
   - Server Side Template Injection
     - Avoid using render_template_string(template)
       - render_template() is safer because users are unable to modify the template
 
-  - Code / Command Injection
+  - Code Injection
     - Avoid using:
-      - exec()
-      - eval()
+      - exec() & eval()
+        - The former expects a string representing a (single) valid Python expression, while the later can execute multiple expressions - making it able to create new module, class, and function definitions. Both functions have access to the global and local state at the point of invocation
+  
+  - Command Injection
+    -  Avoid using:
       - os.system()
       - os.popen()
-      - subprocess.popen()
-      - subprocess.call()
+      - They allow users to run commands to gain information of it
+
 
   - Cross Site Scripting
     - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
       - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
         - If required use Markup()
+    - Avoid using innerHTML, outerHTML, document.write() to stop DOM-Based XSS
+    - Use JSON.parse() for Javascript and not eval()
 
   - CRLF Injection
     - Avoid using CRLF as a special sequence
 
+  - Regex Injection : Yes this exists
+    - Testing of regex to ensure it returns what we want
+
 - Features Implemented
   - SQL Injection
     - Implement Parameterised Queries
+      -  Parameterized statements make sure that the parameters (i.e. inputs) passed into SQL statements are treated in a safe manner.
     - Implement Stored Procedures
+      - Similar logic to Parameterised queries, by creating parameterised stored procedures. The interpreter will treat the data as DATA instead of Code
 
   - Server Side Template Injection
 
   - Code / Command Injection
     - shell = False in subprocess_run()
+    - Restrict Permitted Commands - Construct shell commands using string literals, rather than user input.
+      - So that Users cannot pass in commands for the python interpreter to run
 
   - Cross Site Scripting
     - Implemented Flask Talisman
@@ -437,56 +466,64 @@
         - Set for XSS Protection
         - HTTPS configuration to redirect HTTP requests to HTTPS
         - HSTS to ensure that HTTPS is used (Done On Cloudfare)
-    - Implemented CSP, but only for scripts & frames
-      - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
-      - script src in csp shows all the scripts allowed to be taken from external sources
-      - frame src in csp shows all the iframes allowed to be run
-      - style src in csp shows all the css allowed to run
-    - Encoded The User Input for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
+    - Implemented CSP
+      - tell the browser to never execute inline JavaScript, and to lock down which domains can host JavaScript for a page. So if attacker manages to inject a script in. It still cannot run
+        - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
+        - script src in csp shows all the scripts allowed to be taken from external sources
+        - frame src in csp shows all the iframes allowed to be run
+        - style src in csp shows all the css allowed to run
+    - Escaping Dynamic Content for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
+      - This is to let the browser know it is to be treated as the contents of HTML tags, as opposed to raw HTML.
 
   - Cross Site Request Injection(?)
     - Implemented CSRF
+  
+  - Host Header Injection
+    - Generating Paths SAFELY
+      - Attackers can manipulate data in their headers and poison the URL
+      - Using Constants to specify the path instead of taking it from host headers et cetera for absolute paths
+      - Using relative urls where Possible
+  
+  - Regex Injection : Yes this exists
+    - Defined in Codebase, not generated directly from untrusted input
+      - Attackers cannot take advantage of inefficient regexes. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
-- Planned Features
-  - Implement DDL Triggers (?)
-  - Sanitisation for All input (Kind of Done, but should double check)
-    - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
-    - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
-    - List Validation (?)
-    - Filter CSRF(?)
-  - Escaping all input (?)
-    - Encoding it all
-    - Output Encoding
 ---
 
 ### Software and Data Integrity Failures
 
 #### Plan:
-- Implement hashing or digital signature whenever a user uploads something (User profile image, video upload for course creation, etc.)
-- Fix deserialization vulnerability with pickle (shelve) by changing to SQL (You may have to do this first as we need to rely on you for the accounts)
-- Ensure downloading/updating dependencies is not altered
-    (check hash between original and downloaded files)
+- Data Integrity For Profile Pictures
+- Use Checksums to check for integrity (?)
 
 #### Implemented:
 - Best Practices Followed
   - Usage Of HTTPS to send data from Client Side to Server Side
+    - Provides encryption to ensure that it was the user that sent it
   - Usage of JSON data format, lesser chance of custom deserialisation logic
+    - Lowers chance of insecure deserialisation
   - Usage of Python Modules such as JSON with built in encoders
-    - Prevents Insecure Deserialiasation
-  - Keeping Libraries Up to Date
-  - Usage Of Libraries That Have No known Vulnerabilities recorded
+    - Lowers chance of insecure deserialisation. It already encodes and decodes for the user
+  
+  - Secure Library Practices - Ensure that out libraries won't provide problems in the future
+    - Keeping Libraries Up to Date
+    - Usage Of Libraries That Have No known Vulnerabilities recorded
+    - Usage of Libraries that are Trusted
+    - Be careful Private Dependencies
+    - usage of Pip Dependency Management
 
   - Infrastructure As Code Security
     - Develop & Distribute
       - Usage of Extensions such as Snyk to detect Potential Risks
+      - Usage of Github for Version Control
 
 - Features Implemented
   - Implemented MySQL
+    - Fix deserialization vulnerability with pickle (shelve) by changing to SQL
   - Comparing Hashes of Packages, before pip installing them
+    - Ensures that there was no tampering between the files when it was being taken from the source
   - Check Hash of Video File, before saving it
-
-- Planned Features
-  - Data Integrity For Profile Pictures
-  - Use Checksums to check for integrity (?)
+    - Ensures that there was no tampering between the files when it was being taken from the source
+  - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
 
 ---
