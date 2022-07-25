@@ -131,7 +131,6 @@ class CourseInfo:
     def videoPath(self) -> str:
         return self.__videoPath
 
-
     def __repr__(self) -> str:
         """Returns a string representation of the course info object."""
         return f"\n[Course Info: {self.courseName} | " + \

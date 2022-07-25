@@ -5,7 +5,7 @@ import markdown
 # import python standard libraries
 import re
 
-@dataclass
+@dataclass(frozen=True, repr=False)
 class MarkdownRegex:
     """This class will be used to store the regex pattern for Markdown syntax."""
     ANCHOR_REGEX: re.Pattern[str] = re.compile(r"^\[(.*?)\]\((.*?)\)$")

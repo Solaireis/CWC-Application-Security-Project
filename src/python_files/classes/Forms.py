@@ -1,5 +1,5 @@
 # import third party libraries
-from wtforms import Form, validators, ValidationError, StringField, SelectField, TextAreaField, EmailField, HiddenField, IntegerField, PasswordField,RadioField
+from wtforms import Form, validators, StringField, TextAreaField, EmailField, IntegerField, PasswordField
 
 # import local python libraries
 from .Constants import CONSTANTS
@@ -71,65 +71,10 @@ class AdminRecoverForm(Form):
 class twoFAForm(Form):
     twoFATOTP = StringField("Enter the 6 Digit Code:", [validators.Length(min=6, max=6), validators.DataRequired()])
 
-def IntegerCheck(form, field):
-    try:
-        if int(field.data) - float(field.data) != 0:
-            raise ValidationError("Value must be a whole number.")
-    except:
-        raise ValidationError("Value must be a whole number.")
-
-def NoNumbers(form,field):
-    value = str(field.data)
-    for character in value:
-        if not value.isdigit():
-            raise ValidationError("Value should not contain numbers.")
-
-def NotOwnEmail(form,field):
-    if field.data.lower() == "coursefinity123@gmail.com":
-        raise ValidationError("Email should be your own.")
-
-class RemoveShoppingCartCourse(Form):
-    courseID = HiddenField("Course ID: Easter Egg Text, Now with More Easter Eggs!")
-    #courseType = HiddenField("Course Category: More Easter Eggs!")
-
-class CheckoutComplete(Form):
-    checkoutComplete = HiddenField("Check whether PayPal is complete: Extra Secret Easter Egg", [validators.DataRequired()], default = False)
-    # Internet Date & Time Format: https://datatracker.ietf.org/doc/html/rfc3339#section5.6
-    checkoutTiming = HiddenField("Timing of Transaction: The past, present, future, where Eggs are found!", [validators.DataRequired()])
-    checkoutOrderID = HiddenField("PayPal's own ID for transaction: Easter Egg to you!", [validators.DataRequired()])
-    checkoutPayerID = HiddenField("PayPal's own ID for identifying account: Easter Egg Number 4!", [validators.DataRequired()])
-
-class ContactUs(Form):
-    name = StringField("Name: Easter Egg", [validators.DataRequired()])
-    email = EmailField("Email: easter@bunny.com", [validators.DataRequired(), validators.Email()])
-    subject = SelectField("Subject: 17 April 2022", [
-        validators.DataRequired()], choices = [
-                ("","Subject"),
-                ("General","General Enquiry"),
-                ("Account", "Account Enquiry"),
-                ("Business","Business Enquiry"),
-                ("Bugs", "Bug Report"),
-                ("Jobs","Job Seeking"),
-                ("News","News Media"),
-                ("Others","Others")
-            ]
-        )
-                                                #("Value", "Label")
-    enquiry = TextAreaField("Enquiry: Easter Sunday", [validators.DataRequired()])
-
-class TicketSearchForm(Form):# Very cursed. I love lack of Checkbox Field.
-    querySearch = HiddenField([validators.Optional()])
-    checkedFilters = HiddenField([validators.DataRequired(), validators.InputRequired()])
-
-class TicketAction(Form):
-    ticketID = HiddenField("Greetings to you, the lucky finder of this Golden Ticket!",[validators.DataRequired()], default = "")
-    ticketAction = HiddenField("I shake you warmly by the hand!",[validators.DataRequired()], default = "")
-
 class CreateCourse(Form):
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
     courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
-
 
 class CreateCourseEdit(Form):
     courseTitle = StringField("Course Title: ", [validators.Length(min=3, max=100)])
@@ -137,10 +82,5 @@ class CreateCourseEdit(Form):
     coursePrice = IntegerField("Price for Course (USD$): ", [validators.NumberRange(min=0, max=500)])
 
 class CreateReview(Form):
-    '''
-    Review Description
-    Ratings
-    '''
-
     reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
     reviewTitle = TextAreaField("Title: ", [validators.DataRequired(), validators.Length(min=1, max=100)])

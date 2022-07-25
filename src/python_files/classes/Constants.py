@@ -115,10 +115,6 @@ class ConstantsConfigs:
         self.__CONFIG_FOLDER_PATH = self.ROOT_FOLDER_PATH.joinpath("config_files")
         self.__CONFIG_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
 
-        # For comparing the date on the github repo
-        self.__DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
-        self.__BLACKLIST_FILEPATH = self.ROOT_FOLDER_PATH.joinpath("config_files", "ip_blacklist.txt")
-
         # Password regex follows OWASP's recommendations
         # https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity
         self.__MIN_PASSWORD_LENGTH = 8
@@ -146,7 +142,7 @@ class ConstantsConfigs:
         self.__LENGTH_REGEX = re.compile(r"^.{8,}$")
         self.__ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
-        # For 2FA setup key regex to validate if the setup is a valid base32 setup key
+        # For 2FA setup key regex to validate if the setup key is a valid base32 string and if the TOTP is 6 digits
         self.__COMPILED_2FA_REGEX_DICT = {
             32: re.compile(r"^[A-Z2-7]{32}$")
         }
@@ -216,10 +212,10 @@ class ConstantsConfigs:
         GOOGLE_KMS_JSON = json.loads(self.get_secret_payload(secretID="google-kms"))
         self.__KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(GOOGLE_KMS_JSON)
         del GOOGLE_KMS_JSON
+
+        # For encrypting data in the database
         self.__PEPPER_KEY_ID = "pepper-key"
         self.__SENSITIVE_DATA_KEY_ID = "sensitive-data-key"
-        self.__EC_SIGNING_KEY_ID = "signing-key"
-        self.__RSA_ENCRYPTION_KEY_ID = "encrypt-decrypt-key"
 
         # During development, we will use software protected keys
         # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
@@ -231,8 +227,10 @@ class ConstantsConfigs:
         else:
             self.__APP_KEY_RING_ID = "coursefinity"
 
-        # For Google KMS asymmetric encryption and decryption
+        # For Google KMS asymmetric encryption and decryption key
+        self.__RSA_ENCRYPTION_KEY_ID = "encrypt-decrypt-key"
         self.__SESSION_COOKIE_ENCRYPTION_NAME = "rsa-session-cookie-version"
+        self.__EC_SIGNING_KEY_ID = "signing-key"
         self.__SIGNATURE_VERSION_NAME = "ec-signature-version"
 
         # For Google MySQL Cloud API
@@ -330,14 +328,6 @@ class ConstantsConfigs:
         return self.__CONFIG_FOLDER_PATH
 
     @property
-    def DATE_FORMAT(self) -> str:
-        return self.__DATE_FORMAT
-
-    @property
-    def BLACKLIST_FILEPATH(self) -> pathlib.Path:
-        return self.__BLACKLIST_FILEPATH
-
-    @property
     def MIN_PASSWORD_LENGTH(self) -> int:
         return self.__MIN_PASSWORD_LENGTH
 
@@ -384,6 +374,9 @@ class ConstantsConfigs:
     @property
     def COMPILED_2FA_REGEX_DICT(self) -> dict[int, re.Pattern[str]]:
         return self.__COMPILED_2FA_REGEX_DICT
+    @COMPILED_2FA_REGEX_DICT.setter
+    def COMPILED_2FA_REGEX_DICT(self, value: tuple[int, re.Pattern[str]]):
+        self.__COMPILED_2FA_REGEX_DICT[value[0]] = value[1]
 
     @property
     def TWO_FA_CODE_REGEX(self) -> re.Pattern[str]:

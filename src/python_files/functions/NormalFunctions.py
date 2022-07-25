@@ -1650,7 +1650,7 @@ def two_fa_token_is_valid(token:str) -> bool:
     length = len(token)
     if (length not in CONSTANTS.COMPILED_2FA_REGEX_DICT):
         # compile the regex if it has not been compiled yet
-        CONSTANTS.COMPILED_2FA_REGEX_DICT[length] = re.compile(fr"^[A-Z2-7]{{{length}}}$")
+        CONSTANTS.COMPILED_2FA_REGEX_DICT = (length, re.compile(fr"^[A-Z2-7]{{{length}}}$"))
 
     return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
 
