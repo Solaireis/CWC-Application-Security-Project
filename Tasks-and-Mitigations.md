@@ -300,7 +300,9 @@
   - Not enabling the paid services such as Web application firewall as we do not have the money
   - Documentation:
     - https://developers.cloudflare.com/cache/how-to/set-caching-levels/
-    
+
+- Ensure that sensitive and personal information pages are not index when hosted on the web 
+  - implemented no robot into the <head> tag 
 ---
 
 ## Wei Ren:

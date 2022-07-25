@@ -1,4 +1,4 @@
-{% extends "user_no_index_base.html" %}
+{% extends "user_base.html" %}
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
