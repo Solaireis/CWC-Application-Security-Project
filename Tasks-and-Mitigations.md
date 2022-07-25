@@ -460,7 +460,7 @@
 
   - Server Side Template Injection
 
-  - Code / Command Injection
+  - Command Injection
     - shell = False in subprocess_run()
     - Restrict Permitted Commands - Construct shell commands using string literals, rather than user input.
       - So that Users cannot pass in commands for the python interpreter to run
