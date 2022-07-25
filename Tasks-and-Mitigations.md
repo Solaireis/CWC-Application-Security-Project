@@ -302,7 +302,9 @@
   - Not enabling the paid services such as Web application firewall as we do not have the money
   - Documentation:
     - https://developers.cloudflare.com/cache/how-to/set-caching-levels/
-    
+
+- Ensure that admin,user and error pages specific webpages are not indexed by default
+  - Only guest pages are indexed
 ---
 
 ## Wei Ren:
