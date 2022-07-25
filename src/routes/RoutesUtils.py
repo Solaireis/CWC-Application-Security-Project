@@ -169,5 +169,5 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
             #TODO: config the cache control for security purposes
             # cache control shld be private as we dont want our proxy to cache the response
             # Disable caching for state changing requests (if NOT in debug/dev mode)
-            response.headers["Cache-Control"] = "public, max-age=0"
+            response.headers["Cache-Control"] = "no-cache='Set-Cookie', max-age=0"
     return response
