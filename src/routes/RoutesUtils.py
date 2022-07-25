@@ -161,13 +161,13 @@ def after_request(response:wrappers.Response) -> wrappers.Response:
     """
     Add headers to the response after each request.
     """
-    # it is commented out as we are still developing the web app and it is not yet ready to be hosted.
-    # will be uncommented when the web app is ready to be hosted on firebase.
     if (not current_app.config["CONSTANTS"].DEBUG_MODE):
         if (request.endpoint == "static"):
             # Cache for 1 year for static files (except when in debug/dev mode)
             response.headers["Cache-Control"] = "public, max-age=31536000"
         else:
+            #TODO: config the cache control for security purposes
+            # cache control shld be private as we dont want our proxy to cache the response
             # Disable caching for state changing requests (if NOT in debug/dev mode)
             response.headers["Cache-Control"] = "public, max-age=0"
     return response
