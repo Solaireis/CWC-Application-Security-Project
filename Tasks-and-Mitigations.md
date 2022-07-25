@@ -305,6 +305,11 @@
 
 - Ensure that admin,user and error pages specific webpages are not indexed by default
   - Only guest pages are indexed
+
+- Checked Google Cloud Platform SQL configuration settings
+  - ensure that only whitelisted users can connect to the googlecloudplatform as an administrator
+  - Only ensure the minimum amount of users connected to the server which is root and coursefinity
+  - Ensure no unused databases are in the google cloud platform
 ---
 
 ## Wei Ren:
