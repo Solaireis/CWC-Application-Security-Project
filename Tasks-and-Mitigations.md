@@ -315,7 +315,6 @@
 - Max content length policy
 - Threading for videos
 - Stripe
-   - https://stripe.com/docs/api/idempotent_requests
    - https://stripe.com/docs/radar/rules/reference
    - https://stripe.com/docs/api/payouts
 
