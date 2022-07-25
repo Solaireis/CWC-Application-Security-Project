@@ -294,7 +294,7 @@
   - "Independently of the cache policy defined by the web application, if caching web application contents is allowed, the session IDs must never be cached, so it is highly recommended to use the Cache-Control: no-cache="Set-Cookie, Set-Cookie2" directive, to allow web clients to cache everything except the session ID (see here)." -OWASP
   - response.headers["Cache-Control"] = "no-cache='Set-Cookie, Set-Cookie2', max-age=0"
 
-- Checked Security configuration of cloudflare
+- Checked Security configuration of CloudFlare
   - Edited Cloudflare DOS protection to use the browser cache ttl of our server header
   - Edited Caching level to basic, no query string, this prevents public, max-age=3156000 
   - ensure development mode is disabled
