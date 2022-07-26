@@ -113,8 +113,8 @@ def main() -> None:
             print("Invalid input", end="\n\n")
             continue
         elif (cmdOption == "1" or cmdOption == "2"):
-            noOfAdmin = 0
-            while (1):
+            noOfAdmin = 1
+            while (1 and cmdOption == "1"):
                 print()
                 print("Note: The maximum number of admins in the database is 10!")
                 noOfAdmin = input("Number of admins to create: ")
