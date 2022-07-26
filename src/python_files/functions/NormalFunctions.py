@@ -187,7 +187,7 @@ def upload_file_from_path(
     except (UploadDataCorruption):
         write_log_entry(
             logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
-            logLevel="INFO"
+            severity="INFO"
         )
         raise UploadFailedError("Data corruption detected!")
     except (InvalidResponse):
@@ -234,7 +234,7 @@ def upload_from_stream(
     except (UploadDataCorruption):
         write_log_entry(
             logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
-            logLevel="INFO"
+            severity="INFO"
         )
         raise UploadFailedError("Data corruption detected!")
     except (InvalidResponse):

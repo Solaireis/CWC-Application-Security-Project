@@ -421,7 +421,7 @@ def checkout():
         checkout_session = stripe_checkout(userID = userID, cartCourseIDs = cartCourseIDs, email = email)
     except Exception as error:
         print(str(error))
-        return redirect(url_for('userBP.cart'))
+        return redirect(url_for('userBP.addToCart', courseID=cartCourseIDs[0]))
 
     print(checkout_session)
     print(type(checkout_session))
