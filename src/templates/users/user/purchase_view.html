@@ -88,7 +88,6 @@
 {% endblock %}
 
 {% block extra_js %}
-    {% from "includes/_videoHelper.html" import video_scripts, video_link %}
-    {{ video_scripts() }}
-    {{ video_link(videoPath) }}
+    {% from "includes/_videoHelper.html" import video_scripts %}
+    {{ video_scripts(videoPath) }}
 {% endblock %}
