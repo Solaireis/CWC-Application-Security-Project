@@ -426,7 +426,7 @@ def login():
             session["temp_uid"] = userInfo[0]
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
-            write_log_entry(logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", logLevel="NOTICE")
+            write_log_entry(logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", severity="NOTICE")
             sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             return render_template("users/guest/login.html", form=loginForm)
     else:
@@ -518,7 +518,7 @@ def enterGuardTOTP():
         if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
             write_log_entry(
                 logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['user_email']}\", with the following IP address: {get_remote_address()}", 
-                logLevel="NOTICE"
+                severity="NOTICE"
             )
             flash("Please check your entries and try again!", "Danger")
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)

@@ -510,6 +510,7 @@
     - Provides encryption to ensure that it was the user that sent it
   - Usage of JSON data format, lesser chance of custom deserialisation logic
     - Lowers chance of insecure deserialisation
+  - Avoid using pickle, extremely vulnerable to insecure deserialisation
   - Usage of Python Modules such as JSON with built in encoders
     - Lowers chance of insecure deserialisation. It already encodes and decodes for the user
   
