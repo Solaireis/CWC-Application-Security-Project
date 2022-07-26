@@ -613,8 +613,10 @@ def loginCallback():
     session.clear()
 
     # assign the session accordingly based on the role of the user
-    if (returnedRole == "Admin" or returnedRole == "SuperAdmin"):
+    if (returnedRole == "Admin" ):
         session["admin"] = userID
+    elif(returnedRole == "SuperAdmin"):
+        session["superadmin"] = userID
     else:
         session["user"] = userID
 

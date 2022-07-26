@@ -16,6 +16,8 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
+    #get the role of the user
+
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -142,7 +144,7 @@ def adminManagement():
 
     # save the current URL in the session for when the admin searches and an error occurs
     session["relative_url"] = request.full_path
-    return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
+    return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm )
 
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
 def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
