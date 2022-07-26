@@ -163,35 +163,35 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
 
 @superAdminBP.route("/admin-rbac/<roleName>", methods=["GET","POST"])
 def roleManagementEdit(roleName):
+    form = UpdateRoles(request.form)
     role = sql_operation(table="role", mode="retrieve_role", roleName=roleName)
-    roleList = []
-    for role in role:
-        roleList.append(RoleInfo(role))
-
-    count = len(roleList)
-    for role in roleList:
-        print(role.roleName)
+    if (role is None):
+        flash("The role you are trying to edit does not exist.", "Error")
+        abort(404)
+    if (form.validate_on_submit()):
+        roleName = form.roleName.data
+        guestBP = form.guestBP.data
+        generalBP = form.generalBP.data
+        adminBP = form.adminBP.data
+        loggedInBP = form.loggedInBP.data
+        errorBP = form.errorBP.data
+        teacherBP = form.teacherBP.data
+        userBP = form.userBP.data
+        superAdminBP = form.superAdminBP.data
+        sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
+        flash(f"The role, {roleName}, has been updated.", "Role Updated!")
+        return redirect(url_for("superAdminBP.roleManagement"))
+    
 
     # Check if user is logged in
     return 
 
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
 def createAdmin():
-    form = CreateAdminForm()
+    form = CreateAdmin(request.form)
     if (form.validate_on_submit()):
         username = form.username.data
         email = form.email.data
-        password = form.password.data
-        confirmPassword = form.confirmPassword.data
-        if (password != confirmPassword):
-            flash("The passwords do not match.", "Error")
-            return redirect(url_for("superAdminBP.createAdmin"))
-        else:
-            try:
-                sql_operation(table="user", mode="create_admin", username=username, email=email, password=password)
-                flash(f"The user, {username}, has been created.", "User Created!")
-                return redirect(url_for("superAdminBP.adminManagement"))
-            except (ReusedUsernameError):
-                flash("The username entered is already in use...", "Error creating user!")
-                return redirect(url_for("superAdminBP.createAdmin"))
+    
+        
     return render_template("users/superadmin/admin_create.html", form=form)

@@ -1723,7 +1723,25 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT * FROM role WHERE role_name = 'admin'")
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
-        
+    
+    elif mode == "retrieve_role":
+        roleName = kwargs["roleName"]
+        cur.execute("SELECT * FROM role WHERE role_name = '%(roleName)s'", {"roleName":roleName})
+        role_list = cur.fetchone()
+        return role_list if (role_list is not None) else []
 
+    elif mode=="update_role": #updates the role of a group
+        roleName = kwargs["roleName"]
+        guestBP = kwargs["guestBP"]
+        generalBP = kwargs["generalBP"]
+        adminBP = kwargs["adminBP"]
+        loggedInBP = kwargs["loggedInBP"]
+        errorBP = kwargs["errorBP"]
+        teacherBP= kwargs["teacherBP"]
+        userBP= kwargs["userBP"]
+        superAdminBP= kwargs["superAdminBP"]
+        cur.execute("UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, error_bp = %(errorBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s, super_admin_bp = %(superAdminBP)s WHERE role_name = %(roleName)s", {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "errorBP":errorBP, "teacherBP":teacherBP, "userBP":userBP, "superAdminBP":superAdminBP})
+        connection.commit()
+    
     else:
         raise ValueError("Invalid mode in the role_sql_operation function!")
