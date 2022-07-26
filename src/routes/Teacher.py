@@ -360,7 +360,8 @@ def draftCourseDelete():
         current_app.config["COURSE_VIDEO_FOLDER"].joinpath(secure_filename(courseID)),
         ignore_errors=False,
         onerror=lambda func, path, exc_info: write_log_entry(
-            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", severity="WARNING"
+            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", 
+            severity="WARNING"
         )
     )
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
