@@ -317,14 +317,13 @@ def login():
             userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
             # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
-            if (userInfo[1]):
-                # login from new ip address
+            userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
+            if (userInfo[1] and not userHasTwoFA):
+                # login from new ip address and user did not enable 2FA
                 raise LoginFromNewIpAddressError("Login from a new IP address!")
 
             successfulLogin = True
             sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
-
-            userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
         except (UserIsNotActiveError, EmailDoesNotExistError):
             flash("Please check your entries and try again!", "Danger")
         except (IncorrectPwdError):
