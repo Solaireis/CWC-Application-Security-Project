@@ -541,10 +541,9 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, sev
             data = getframeinfo(stack()[stackLevel][0])
             if app_root not in Path(data.filename).parents: # Python packages expected to work
                 break
-            
             stackTraceback.append({
                     "stackLevel": stackLevel,
-                    "filename": data.filename.rsplit("\\", 1)[1],
+                    "filename": data.filename.rsplit("\\", 1)[1], # TODO: fix cause it gives out of index error
                     "lineNo": data.lineno,
                     "function": f"{data.function}()" if data.function != "<module>" else data.function,
                     "codeContext": [line.strip() for line in data.code_context],
@@ -1109,7 +1108,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
             # if some keys in the dict are missing, just return False by default
             return {"verified": False, "payload": data} if (getData) else False
     elif (isinstance(data, str) or isinstance(data, bytes)):
-        # TODO: Calvin's OWASP, check if the base64 encoded JWT url
+        # TODO: Calvin's OWASP, check if the base64 encoded JWT url, CHECKED if link is editted == invalid link
         # TODO: can be manipulated in the URL to the attacker's favour
         # TODO: JWT Format: <gcpKeyInfo>.<payload>.<signature>
         # TODO: Checks done: - KMS key not found in GCP, missing dict keys in the payload
