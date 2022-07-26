@@ -442,36 +442,39 @@
   - Using Development Tools Like Snyk to detect Unsafe code
 
   - SQL Injection
-    - Avoid Using Dynamic SQL (String Concatenation)
+    - Remove & Avoid Using Dynamic SQL (String Concatenation)
       - If used string concat, it will accept malicious code as CODE instead of data. Because the command being run is fully made before passing into a function
 
   - Server Side Template Injection
-    - Avoid using render_template_string(template)
+    - Remove & Avoid using render_template_string(template)
       - render_template() is safer because users are unable to modify the template
     - Python templates engine API mechanisms enforce the seperation between code and data (e.g. Jinja)
 
   - Code Injection
-    - Avoid using:
+    - Remove & Avoid using:
       - exec() & eval()
         - The former expects a string representing a (single) valid Python expression, while the later can execute multiple expressions - making it able to create new module, class, and function definitions. Both functions have access to the global and local state at the point of invocation
   
   - Command Injection
-    -  Avoid using:
+    -  Remove & Avoid using:
       - os.system()
       - os.popen()
       - They allow users to run commands to gain information of it
 
 
   - Cross Site Scripting
-    - Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
+    - Remove & Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
       - In Jinja, everything is escaped by default except for values explicitly marked with the "| safe" filter.
-        - If required use Markup()
-    - Avoid using innerHTML, outerHTML, document.write() to stop DOM-Based XSS
+        - If required use Markup() or MarkupSafe()
+        - Remove & Avoid {% autoescape false %}
+        - Remove & Avoid .jinja2 extensions
+        - Usage of url_for
+    - Remove & Avoid using innerHTML, outerHTML, document.write() to stop DOM-Based XSS
       - These Javascript functions allow attackers to write scripts into the html
     - Use JSON.parse() for Javascript and not eval()
 
   - CRLF Injection
-    - Avoid using CRLF as a special sequence
+    - Remove & Avoid using CRLF as a special sequence
       - To avoid log poisoning et cetera
 
   - Regex Injection : Yes this exists
@@ -528,6 +531,7 @@
 #### Plan:
 - Data Integrity For Profile Pictures
 - Use Checksums to check for integrity (?)
+- Digest Authentication (?)
 
 #### Implemented:
 - Best Practices Followed
@@ -536,6 +540,7 @@
     - Provides encryption to ensure that it was the user that sent it
   - Usage of JSON data format, lesser chance of custom deserialisation logic
     - Lowers chance of insecure deserialisation
+  - Removal Of Pickle due to high vulnerability in deserialization
   - Avoid using pickle, extremely vulnerable to insecure deserialisation
   - Usage of Python Modules such as JSON with built in encoders
     - Lowers chance of insecure deserialisation. It already encodes and decodes for the user
