@@ -41,7 +41,74 @@
                     <div class="modal-body">
                         <h6>
                             Update the roles permission
+                            these are the roles permissions
                         </h6>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <tr>
+                                    <td>Role Name</td>
+                                    <td>Guest Routes</td>
+                                    <td>General Routes</td>
+                                    <td>Admin Routes</td>
+                                    <td>Logged in Routes</td>
+                                    <td>Error Routes</td>
+                                    <td>Teacher Routes</td>
+                                    <td>User Routes</td>
+                                    <td>SuperAdmin Routes</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ role.roleName }}</td> 
+                                    {% if role.guestBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.generalBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.adminBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.loggedInBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.errorBP == 1 %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.teacherBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.userBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+
+                                    {% if role.superAdminBP %}
+                                        <td class="text-success">Enabled</td>
+                                    {% else %}
+                                        <td class="text-danger">Disabled</td>
+                                    {% endif %}
+                                </tr>
+                            </table>
+                        </div>
+                        <!-- Add forms to change the roles-->
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
