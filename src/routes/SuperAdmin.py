@@ -157,7 +157,7 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     for role in roleList:
         print(role.roleName)
 
-    # Check if user is logged in
+
     # TODO: Role Management do not need pagination and relative url session
     return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count)
 
@@ -183,15 +183,14 @@ def roleManagementEdit(roleName):
         return redirect(url_for("superAdminBP.roleManagement"))
     
 
-    # Check if user is logged in
-    return 
-
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
 def createAdmin():
     form = CreateAdmin(request.form)
     if (form.validate_on_submit()):
         username = form.username.data
         email = form.email.data
+    #TODO: add admin accounts
+
     
         
     return render_template("users/superadmin/admin_create.html", form=form)
