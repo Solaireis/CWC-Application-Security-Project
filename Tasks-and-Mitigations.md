@@ -273,10 +273,23 @@
 - https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-123.pdf
 
 #### Implemented:
+- Currently we are using these thirdparty resources:
+  - Docker Container 
+  - Google Cloud Storage 
+  - Fire base
+  - Amazon Web Services (unused)
+  - Cloudflare Dos protection
+
 - Seperation of user roles connecting to the mysql server
 - Seperation of user role privileges in the mysql database
 - Checked if Flask App.py uses default configuration
-  - Currently we have set the cookies to be ONLY HTTPS 
+  - Currently we have set the cookies to be ONLY HTTPS
+    - Settings in the app ensures that cookies can only be send through HTTPS
+    - Our website uses HTTPS through mkcert and when hosted on firebase and googlecloud it uses HTTPS by default
+    - supported by the configuration of CSRF Cookie settings which are set to TRUE for HTTPS 
+    - Cookies are set to lax because setting it to STRICT comes with too much restriction to obtaining "more" security
+    - https://stackoverflow.com/questions/41841880/what-is-the-benefit-of-blocking-cookie-for-clicked-link-samesite-strict
+    - We may only implement cookies strict if we are securing agaisnt CSRF via get request and timing attacks but these are low chances as the tradeoffs for the user experience is significantly much worse
   - Debug Mode must be disabled when application is set to Production
 
 - Removal of any unused ports if any
@@ -287,7 +300,9 @@
   - For the sake of the technical review, they will be enabled
   - Folders that must be removed during production:
     - Sample files
+      - Removal of demo files as they posed a security risk of default admin and unused accounts
     - Test files
+      - These test files are used to demonstrate the OWASP security
   - Remove any unused HTML, JavaScript, and CSS Files
 
 - Edited Cache Control settings such that sessionIDs are not saved in cache
@@ -302,14 +317,22 @@
   - Not enabling the paid services such as Web application firewall as we do not have the money
   - Documentation:
     - https://developers.cloudflare.com/cache/how-to/set-caching-levels/
+  - Changes the SSL/TSL security to full(STRICT) This requires the server to have a trusted Certificate authority or cloudflare Certificate on the server
 
-- Ensure that admin,user and error pages specific webpages are not indexed by default
+- Ensure that admin,user and error pages specific webpages are not indexed by default(security by obscurity)
   - Only guest pages are indexed
 
 - Checked Google Cloud Platform SQL configuration settings
   - ensure that only whitelisted users can connect to the googlecloudplatform as an administrator
   - Only ensure the minimum amount of users connected to the server which is root and coursefinity
   - Ensure no unused databases are in the google cloud platform
+
+- Use of static code analysis to check for potential misconfiguration
+  - bandit for python code analysis
+  - synk for dockerfile 
+
+- DockerFile configuration has no medium-critical severity in the configuration file
+  - currently the configuration has no available fixes for the Dockerfile
 ---
 
 ## Wei Ren:
