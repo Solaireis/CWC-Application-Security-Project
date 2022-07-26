@@ -255,6 +255,9 @@ class ConstantsConfigs:
         # For the email CSS style
         self.__EMAIL_BUTTON_STYLE = "background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;"
 
+        # For formatting dates
+        self.__DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -525,6 +528,10 @@ class ConstantsConfigs:
     @property
     def EMAIL_BUTTON_STYLE(self) -> str:
         return self.__EMAIL_BUTTON_STYLE
+
+    @property
+    def DATE_FORMAT(self) -> str:
+        return self.__DATE_FORMAT
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 
