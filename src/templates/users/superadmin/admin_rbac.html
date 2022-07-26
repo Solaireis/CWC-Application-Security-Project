@@ -78,50 +78,57 @@
                                     <td>Error Routes</td>
                                     <td>Teacher Routes</td>
                                     <td>User Routes</td>
+                                    <td>SuperAdmin Routes</td>
                                 </tr>
                                 {% for role in roleList %}
                                     <tr>
                                         <td>{{ role.roleName }}</td> 
                                         {% if role.guestBP %}
-                                            <td >Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.generalBP %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.adminBP %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.loggedInBP %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.errorBP == 1 %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.teacherBP %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
 
                                         {% if role.userBP %}
-                                            <td>Enabled</td>
+                                            <td class="text-success">Enabled</td>
                                         {% else %}
-                                            <td>Disabled</td>
+                                            <td class="text-danger">Disabled</td>
+                                        {% endif %}
+
+                                        {% if role.superAdminBP %}
+                                            <td class="text-success">Enabled</td>
+                                        {% else %}
+                                            <td class="text-danger">Disabled</td>
                                         {% endif %}
                                     </tr>
                                 {% endfor %}
