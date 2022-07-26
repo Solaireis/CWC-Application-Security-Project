@@ -626,7 +626,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 # if past the reset datetime, reset the attempts to 0
                 currentAttempts = 0
 
-            if (currentAttempts > CONSTANTS.MAX_LOGIN_ATTEMPTS):
+            if (currentAttempts >= CONSTANTS.MAX_LOGIN_ATTEMPTS):
                 # if reached max attempts per account
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
