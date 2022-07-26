@@ -266,6 +266,36 @@ class ConstantsConfigs:
         # For formatting dates
         self.__DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 
+        # Course category table for converting course category ID to a more user-friendly name
+        self.__CATEGORY_TABLE = {
+            "Programming": "Development - Programming",
+            "Web_Development": "Development - Web Development",
+            "Game_Development": "Development - Game Development",
+            "Mobile_App_Development": "Development - Mobile App Development",
+            "Software_Development": "Development - Software Development",
+            "Other_Development": "Development - Other Development",
+            "Entrepreneurship": "Business - Entrepreneurship",
+            "Project_Management": "Business - Project Management",
+            "BI_Analytics": "Business - Business Intelligence & Analytics",
+            "Business_Strategy": "Business - Business Strategy",
+            "Other_Business": "Business - Other Business",
+            "3D_Modelling": "Design - 3D Modelling",
+            "Animation": "Design - Animation",
+            "UX_Design": "Design - UX Design",
+            "Design_Tools": "Design - Design Tools",
+            "Other_Design": "Design - Other Design",
+            "Digital_Photography": "Photography/Videography - Digital Photography",
+            "Photography_Tools": "Photography/Videography - Photography Tools",
+            "Video_Production": "Photography/Videography - Video Production",
+            "Video_Design_Tools": "Photography/Videography - Video Design Tools",
+            "Other_Photography_Videography": "Photography/Videography - Other Photography/Videography",
+            "Science": "Academics - Science",
+            "Math": "Academics - Math",
+            "Language": "Academics - Language",
+            "Test_Prep": "Academics - Test Prep",
+            "Other_Academics": "Academics - Other Academics"
+        }
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -549,6 +579,10 @@ class ConstantsConfigs:
     @property
     def DATE_FORMAT(self) -> str:
         return self.__DATE_FORMAT
+
+    @property
+    def CATEGORY_TABLE(self) -> dict[str, str]:
+        return self.__CATEGORY_TABLE
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 
