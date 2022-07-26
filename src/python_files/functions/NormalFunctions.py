@@ -828,8 +828,6 @@ class JWTExpiryProperties:
     In short:
     - It is used when digitally signing a payload and to configure an active duration time in seconds.
     """
-    DATE_FORMAT = "%Y-%m-%d %H:%M:%S.%f %z"
-
     def __init__(
         self,
         activeDuration:Optional[int]=0,
