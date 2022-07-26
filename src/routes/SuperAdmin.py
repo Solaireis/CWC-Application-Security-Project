@@ -188,9 +188,9 @@ def createAdmin():
     if (request.method == "POST" and form.validate()):
         username = form.username.data
         email = form.email.data
-    #TODO: add admin accounts
-        
+        print("success")
+        sql_operation(table="user", mode="create_admin", username=username, email=email)
+        flash(f"Admin created", "Role Updated!")
+        return redirect(url_for("superAdminBP.adminManagement"))
 
-    
-        
     return render_template("users/superadmin/admin_create.html", form=form)

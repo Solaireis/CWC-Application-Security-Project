@@ -1376,6 +1376,21 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         connection.commit()
 
+    elif mode == "create_admin":
+        username = kwargs["username"]
+        email = kwargs["email"]
+        profilePic = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
+        adminID = generate_id()
+        ADMIN_ROLE_ID = None
+        cur.execute("CALL get_role_id('Admin')")
+        ADMIN_ROLE_ID = cur.fetchone()
+        ADMIN_ROLE_ID = ADMIN_ROLE_ID[0]
+        cur.execute(
+                        "INSERT INTO user (id, role, username, email, email_verified, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(profilePic)s, SGT_NOW())", \
+                        {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "profilePic": profilePic}
+                    )
+        connection.commit()
+
     else:
         raise ValueError("Invalid mode in the user_sql_operation function!")
 
