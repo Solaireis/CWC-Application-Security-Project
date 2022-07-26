@@ -25,6 +25,9 @@ markdown>=3.4.1
 # web app's payment gateway
 stripe>=3.4.0
 
+# Help with sending Stripe receipts in test mode
+css-inline>=0.8.3
+
 # .mpd player support
 python-ffmpeg-video-streaming>=0.1.15
 
