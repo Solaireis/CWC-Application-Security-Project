@@ -112,7 +112,7 @@ def recoverAccountMFA():
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
         try:
-            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="recover_account")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
             flash("Please verify that you are not a bot.")
             return render_template("users/guest/recover_account.html", form=recoverForm)
@@ -139,7 +139,7 @@ def recoverAccountMFA():
         flash("2FA has been disabled successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
-        return render_template("users/guest/request_password_reset.html", form=recoverForm)
+        return render_template("users/guest/recover_account.html", form=recoverForm)
 
 @guestBP.route("/reset-password", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
