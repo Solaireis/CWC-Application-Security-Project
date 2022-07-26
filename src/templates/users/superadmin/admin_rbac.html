@@ -30,7 +30,8 @@
 {% for role in roleList %}
     <form action="" method="POST" class="modalForm">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="update Role" value="updateRole">
+        <input type="hidden" name="updateRole" value="updateRole">
+        <input type="hidden" name="roleName" value="{{ role.roleName}}">
         <div class="modal fade" id="updateRole{{ role.roleName }}" tabindex="-1" aria-labelledby="updateRoleLabel{{ role.roleName }}" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -107,6 +108,14 @@
                                     {% endif %}
                                 </tr>
                             </table>
+                            {{ render_field(form.guestBP,  class="form-control") }}
+                            {{ render_field(form.generalBP,  class="form-control") }}
+                            {{ render_field(form.adminBP, class="form-control") }}
+                            {{ render_field(form.loggedInBP,  class="form-control") }}
+                            {{ render_field(form.errorBP, class="form-control") }}
+                            {{ render_field(form.teacherBP,  class="form-control") }}
+                            {{ render_field(form.userBP, class="form-control") }}
+                            {{ render_field(form.superAdminBP,  class="form-control") }}
                         </div>
                         <!-- Add forms to change the roles-->
                     </div>

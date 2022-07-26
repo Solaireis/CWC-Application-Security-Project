@@ -157,18 +157,10 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     for role in roleList:
         print(role.roleName)
 
-
-    # TODO: Role Management do not need pagination and relative url session
-    return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count)
-
-@superAdminBP.route("/admin-rbac/<roleName>", methods=["GET","POST"])
-def roleManagementEdit(roleName):
     form = UpdateRoles(request.form)
-    role = sql_operation(table="role", mode="retrieve_role", roleName=roleName)
-    if (role is None):
-        flash("The role you are trying to edit does not exist.", "Error")
-        abort(404)
-    if (form.validate_on_submit()):
+    if (request.method == "POST" and form.validate()):
+        #formType = request.form.get("formType", default=None, type=str)
+        
         roleName = form.roleName.data
         guestBP = form.guestBP.data
         generalBP = form.generalBP.data
@@ -181,6 +173,32 @@ def roleManagementEdit(roleName):
         sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))
+
+    # TODO: Role Management do not need pagination and relative url session
+    return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count,form=form)
+
+@superAdminBP.route("/admin-rbac/<roleName>", methods=["GET","POST"])
+def roleManagementEdit(roleName):
+    form = UpdateRoles(request.form)
+    role = sql_operation(table="role", mode="retrieve_role", roleName=roleName)
+    if (role is None):
+        flash("The role you are trying to edit does not exist.", "Error")
+        abort(404)
+    if (request.method == "POST"):
+        formType = request.form.get("formType", default=None, type=str)
+        if (form.validate_on_submit()):
+            roleName = form.roleName.data
+            guestBP = form.guestBP.data
+            generalBP = form.generalBP.data
+            adminBP = form.adminBP.data
+            loggedInBP = form.loggedInBP.data
+            errorBP = form.errorBP.data
+            teacherBP = form.teacherBP.data
+            userBP = form.userBP.data
+            superAdminBP = form.superAdminBP.data
+            sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
+            flash(f"The role, {roleName}, has been updated.", "Role Updated!")
+            return redirect(url_for("superAdminBP.roleManagement"))
     
 
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
