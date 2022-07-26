@@ -129,11 +129,17 @@
 				<li class="nav-item dropdown">
 					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="https://storage.googleapis.com/coursefinity/user-profiles/default.png" id="user_profile" alt="User profile icon"></a>
 					<ul class="dropdown-menu shadow dropdown-menu-end">
-						<li><a class="dropdown-item" href="{{ url_for('superAdminBP.adminManagement') }}"><i class="fas fa-database"></i> Dashboard</a></li>
 						<li><a class="dropdown-item" href="{{ url_for('adminBP.adminProfile') }}"><i class="fas fa-user-edit"></i> Account Settings</a></li>
-					    {{ if session['admin_logged_in'] }}
-						<li><a class="dropdown-item" href="{{ url_for('adminBP.userManagement') }}"><i class="fas fa-chalkboard-teacher"></i> User Management</a></li>
-						<li><a class="dropdown-item" href="/support_ticket_management/1"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
+					    {% if session['superAdmin'] %}
+							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.adminManagement') }}"><i class="fas fa-chalkboard-teacher"></i> Admin Management</a></li>
+							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.roleManagement') }}"><i class="fas fa-chalkboard-teacher"></i> Roles Management</a></li>
+							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.createAdmin') }}"><i class="fas fa-chalkboard-teacher"></i> Create new Admins</a></li>
+						{% endif %}
+						{%if session['admin'] %}
+							<li><a class="dropdown-item" href="{{ url_for('adminBP.userManagement') }}"><i class="fas fa-chalkboard-teacher"></i> User Management</a></li>
+							<li><a class="dropdown-item" href="/support_ticket_management/1"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
+						{% endif %}
+						
 						<li><a class="dropdown-item text-danger" href="{{ url_for('loggedInBP.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
 					</ul>
 				</li>

@@ -619,7 +619,7 @@ def loginCallback():
     if (returnedRole == "Admin" ):
         session["admin"] = userID
     elif(returnedRole == "SuperAdmin"):
-        session["superadmin"] = userID
+        session["superAdmin"] = userID
     else:
         session["user"] = userID
 

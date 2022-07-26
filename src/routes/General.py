@@ -30,7 +30,7 @@ def home():
         userPurchasedCourses = userInfo.purchasedCourses
         accType = userInfo.role
         imageSrcPath = userInfo.profileImage
-    elif ("admin" in session):
+    elif ("admin" in session or "superAdmin" in session):
         accType = "Admin"
 
     return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
