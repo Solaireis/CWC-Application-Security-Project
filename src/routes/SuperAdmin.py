@@ -17,7 +17,7 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
     #get the role of the user
-
+    
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -113,6 +113,9 @@ def adminManagement():
 
         return redirect(session["relative_url"])
 
+    
+
+        
     # Pagination starts below
     pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
@@ -177,37 +180,16 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     # TODO: Role Management do not need pagination and relative url session
     return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count,form=form)
 
-@superAdminBP.route("/admin-rbac/<roleName>", methods=["GET","POST"])
-def roleManagementEdit(roleName):
-    form = UpdateRoles(request.form)
-    role = sql_operation(table="role", mode="retrieve_role", roleName=roleName)
-    if (role is None):
-        flash("The role you are trying to edit does not exist.", "Error")
-        abort(404)
-    if (request.method == "POST"):
-        formType = request.form.get("formType", default=None, type=str)
-        if (form.validate_on_submit()):
-            roleName = form.roleName.data
-            guestBP = form.guestBP.data
-            generalBP = form.generalBP.data
-            adminBP = form.adminBP.data
-            loggedInBP = form.loggedInBP.data
-            errorBP = form.errorBP.data
-            teacherBP = form.teacherBP.data
-            userBP = form.userBP.data
-            superAdminBP = form.superAdminBP.data
-            sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
-            flash(f"The role, {roleName}, has been updated.", "Role Updated!")
-            return redirect(url_for("superAdminBP.roleManagement"))
     
 
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
 def createAdmin():
     form = CreateAdmin(request.form)
-    if (form.validate_on_submit()):
+    if (request.method == "POST" and form.validate()):
         username = form.username.data
         email = form.email.data
     #TODO: add admin accounts
+        
 
     
         
