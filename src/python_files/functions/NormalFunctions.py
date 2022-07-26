@@ -532,7 +532,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, sev
     logData["message"] = logMessage
     logData.update(kwargs)
 
-    if severity in ("NOTICE", "WARNING", "CRITICAL", "ALERT", "EMERGENCY"): # Important, include stack traceback
+    if severity in ("NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY"): # Important, include stack traceback
         app_root = Path(current_app.root_path).parent
         stackLevel = 0
         stackTraceback = []
@@ -552,6 +552,8 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, sev
                 })
             stackLevel += 1
         logData["stackTraceback"] = stackTraceback
+
+    print(logData)
     
     logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
     logger.log_struct(logMessage)

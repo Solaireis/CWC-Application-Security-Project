@@ -403,7 +403,6 @@ def shoppingCart():
             course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
             courseList.append(course)
             subtotal += course.coursePrice
-
         return render_template("users/user/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.route("/checkout", methods = ["GET", "POST"])
@@ -447,8 +446,11 @@ def purchase(jwtToken:str):
     payload = data['data']['payload']
     tokenCartCourseIDs = payload.get('cartCourseIDs') # The courses paid for,
     tokenUserID = payload.get('userID')               # To the person who generated the payment.
-
+    paymentID = payload.get('paymentID')
+    
+    send_checkout_receipt(paymentID)
     sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
+
     return redirect(url_for("userBP.purchaseHistory"))
 
 @userBP.route("/purchase-history")

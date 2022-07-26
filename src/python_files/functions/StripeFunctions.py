@@ -1,17 +1,21 @@
 # import python standard libraries
 from time import time
 from typing import Optional
+from requests import get
+from datetime import datetime
+from json import dumps
 
 # import third-party libraries
 from flask import url_for
 import stripe
 from stripe.error import InvalidRequestError
 from stripe.api_resources.checkout.session import Session as StripeCheckoutSession # Conflicts with Flask session
+from css_inline import inline, CSSInliner # Not sure why VSC doesn't register these two
 
 # import local python libraries
 from python_files.classes.Constants import CONSTANTS
-from .NormalFunctions import JWTExpiryProperties
-from .SQLFunctions import generate_limited_usage_jwt_token
+from .NormalFunctions import JWTExpiryProperties, send_email, generate_id
+from .SQLFunctions import generate_limited_usage_jwt_token, sql_operation
 
 stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
 
@@ -134,8 +138,10 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         - Probably more...
 
     """
+    paymentID = generate_id()
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
-    jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs}, expiryInfo=expiryInfo)
+    jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
+    
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = url_for("userBP.purchase", _external = True, jwtToken = jwtToken),
@@ -146,6 +152,19 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
             mode = "payment"
         )
         # print(checkoutSession)
+        paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
+
+        sql_operation(
+            table="stripe_payments", 
+            mode="create_payment_session", 
+            paymentID = paymentID,
+            stripePaymentIntent = checkoutSession.payment_intent,
+            userID = userID,
+            cartCourseIDs = dumps(cartCourseIDs),
+            createdTime = datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
+            amount = round(paymentIntent["amount"]/100, 2)
+        )
+
         return checkoutSession
 
     except Exception as error:
@@ -167,6 +186,26 @@ def expire_checkout(checkoutSession:str) -> None:
     except InvalidRequestError:
         print(f"Session {checkoutSession} has already expired.")
 
+def send_checkout_receipt(paymentID):
+    paymentIntent = sql_operation(table="stripe_payments", mode="get_payment_intent", paymentID=paymentID)
+
+    checkoutDetails = stripe.PaymentIntent.retrieve(paymentIntent)["charges"]["data"][0]
+    send_email(
+        to = checkoutDetails["receipt_email"], 
+        subject = f"Your CourseFinity receipt [#{checkoutDetails['receipt_number']}]",
+        body = CSSInliner(remove_style_tags=True).inline(get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
+        name = checkoutDetails["billing_details"]["name"]
+    )
+
+    sql_operation(
+        table = "stripe_payments", 
+        mode = "complete_payment_session", 
+        paymentID = paymentID, 
+        paymentTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        receiptEmail = checkoutDetails["receipt_email"]
+    )
+
+
 """
 Expire session:
 # print(expire_checkout('cs_test_b17DWUoKPuzeXE5h7Y4Ubd0aMPhO4K7CiDjqTxVXddouKueDfNtqoFYx5z'))
@@ -178,4 +217,7 @@ Create courses if they don't exist:
 
 Create checkout session (and print returned data):
 # print(stripe_checkout(userID = "Test_User", cartCourseIDs = [f"Test_Course_ID_{num}_v2" for num in range(1, 6)], email = "test@email.com", debug = True))
+
+Send receipt:
+send_checkout_receipt("pi_3LPmRrEQ13luXvBj0pCCIO9h")
 """

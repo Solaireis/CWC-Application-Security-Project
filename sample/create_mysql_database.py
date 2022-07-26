@@ -137,6 +137,18 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
 
+    cur.execute("""CREATE TABLE stripe_payments (
+        payment_id VARCHAR(32) PRIMARY KEY,
+        user_id VARCHAR(32) NOT NULL,
+        cart_courses JSON NOT NULL,
+        stripe_payment_intent VARCHAR(32), -- actual length 27, but may change in the future; generate_id() has 32
+        created_time DATETIME NOT NULL,
+        payment_time DATETIME,
+        amount DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
+        receipt_email VARCHAR(255),
+        FOREIGN KEY (user_id) REFERENCES user(id)
+    )""")
+
     cur.execute("""CREATE TABLE user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
         ip_address VARCHAR(32) NOT NULL, -- in hex format, length of 8 for IPv4, length of 32 for IPv6
