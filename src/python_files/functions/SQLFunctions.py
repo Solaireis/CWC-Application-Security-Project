@@ -180,7 +180,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     )
     htmlBody = [
         "Your account has been locked due to too many failed login attempts.<br>",
-        "Just in case that it was you, you can unlock your account by clicking the button below."
+        "Just in case that it was you, you can unlock your account by clicking the button below.",
         "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
         "To change password:",
         f"{url_for('loggedInBP.updatePassword', _external=True)}<br>",
