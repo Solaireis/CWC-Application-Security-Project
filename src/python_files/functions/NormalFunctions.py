@@ -1635,24 +1635,6 @@ def generate_id(sixteenBytesTimes:Optional[int]=1) -> str:
         # less than 1
         raise ValueError("The number of times to generate a 16 byte ID must be greater than 0.")
 
-def two_fa_token_is_valid(token:str) -> bool:
-    """
-    Checks if the 2FA token is valid using the regex,
-    ^[A-Z\d]{tokenLength}$
-
-    Args:
-    - token: The token to check.
-
-    Returns:
-    - True if the token is valid, False otherwise.
-    """
-    length = len(token)
-    if (length not in CONSTANTS.COMPILED_2FA_REGEX_DICT):
-        # compile the regex if it has not been compiled yet
-        CONSTANTS.COMPILED_2FA_REGEX_DICT = (length, re.compile(fr"^[A-Z2-7]{{{length}}}$"))
-
-    return True if (re.fullmatch(CONSTANTS.COMPILED_2FA_REGEX_DICT[length], token)) else False
-
 def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
     """
     Converts the video to MPD format.

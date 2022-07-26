@@ -92,7 +92,7 @@ def twoFactorAuthSetup():
         # if the secret token and the session token is equal but
         # the secret token is not base32, then the user has tampered with the session
         # and the html 2FA secretToken hidden form value
-        if (not two_fa_token_is_valid(secretToken)):
+        if (re.fullmatch(CONSTANTS.TWENTY_BYTES_2FA_REGEX, secretToken) is None):
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
