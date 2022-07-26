@@ -89,7 +89,6 @@ def before_request() -> None:
             userID = session.get("user") or session.get("admin")
             sessionID = session.get("sid")
 
-            # if the sid is not in the session cookie value
             if (
                 sessionID is not None and 
                 not sql_operation(
@@ -105,7 +104,7 @@ def before_request() -> None:
                 print("Session cleared due to invalid session ID!")
                 session.clear()
             elif (sessionID is None):
-                # if session is missing from the cookie
+                # if session ID is missing from the cookie
                 print("Session cleared due to missing session ID!")
                 session.clear()
 
