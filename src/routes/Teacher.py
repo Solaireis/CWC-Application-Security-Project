@@ -459,7 +459,7 @@ def courseUpdate():
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
 
-    videoPath = url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
+    videoPath = url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd") # Not using validate_course_video_path(), as video is not saved to Cloud yet
     return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoPath=videoPath)
 
 """ End Of Course Management """
