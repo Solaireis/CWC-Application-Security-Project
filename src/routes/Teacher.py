@@ -357,7 +357,7 @@ def draftCourseDelete():
         abort(404)
 
     shutil.rmtree(
-        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID),
+        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(secure_filename(courseID)),
         ignore_errors=False,
         onerror=lambda func, path, exc_info: write_log_entry(
             logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", severity="WARNING"

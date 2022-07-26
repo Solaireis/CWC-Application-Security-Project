@@ -3,7 +3,7 @@ Routes for users who are not logged in (Guests)
 """
 # import third party libraries
 import requests as req
-import pyotp, random
+import pyotp, random, html
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -700,7 +700,7 @@ def signup():
                 severity="ERROR",
             )
             flash(
-                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={html.escape(returnedVal)}'>me</a>!"),
                 "Danger"
             )
             return redirect(url_for("guestBP.login"))
@@ -730,7 +730,7 @@ def sendVerifyEmail():
                 severity="ERROR",
             )
             flash(
-                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={userID}'>me</a> later!"),
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={html.escape(userID)}'>me</a> later!"),
                 "Danger"
             )
         return redirect(url_for("guestBP.login"))
