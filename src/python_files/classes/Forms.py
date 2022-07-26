@@ -1,5 +1,5 @@
 # import third party libraries
-from wtforms import Form, validators, StringField, TextAreaField, EmailField, IntegerField, PasswordField, SelectField
+from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, SelectField, BooleanField, DecimalField
 
 # import local python libraries
 from .Constants import CONSTANTS
@@ -74,12 +74,16 @@ class twoFAForm(Form):
 class CreateCourse(Form):
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
     courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-    coursePrice = IntegerField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)])
+    coursePrice = DecimalField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)], places=2)
+    complyWithPolicies = BooleanField(
+        "I understand that videos uploaded must comply with CourseFinity's terms and conditions.", 
+        [validators.DataRequired()]
+    )
 
 class CreateCourseEdit(Form):
     courseTitle = StringField("Course Title: ", [validators.Length(min=3, max=100)])
     courseDescription = TextAreaField("Description: ", [validators.Length(min=1, max=5000)])
-    coursePrice = IntegerField("Price for Course (USD$): ", [validators.NumberRange(min=0, max=500)])
+    coursePrice = DecimalField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)], places=2)
 
 class CreateReview(Form):
     reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
@@ -97,5 +101,5 @@ class UpdateRoles(Form):
     superAdminBP = SelectField("Super Admin BP: ", [validators.DataRequired()], choices=[('1', 'Enable'), ('0', 'Disable')])
 
 class CreateAdmin(Form):
-    username=StringField("Enter username:", [validators.Length(min=1, max=30), validators.DataRequired()])
+    username = StringField("Enter username:", [validators.Length(min=1, max=30), validators.DataRequired()])
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])

@@ -12,6 +12,7 @@ from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
 from python_files.classes.Forms import *
+from python_files.classes.Course import get_readable_category
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import csrf
 
@@ -239,26 +240,30 @@ def createCourse(courseID:str):
     if (request.method == "POST" and courseForm.validate()):
         recaptchaToken = request.form.get("g-recaptcha-response")
         if (recaptchaToken is None):
-            flash("Please verify that you are not a bot!", "Danger")
+            flash("Please verify that you are not a bot!", "Sorry!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
         try:
             recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="create_course")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot!", "Danger")
+            flash("Please verify that you are not a bot!", "Sorry!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            flash("Please check the reCAPTCHA box and try again.", "Sorry!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
         courseTitle = courseForm.courseTitle.data
         courseDescription = courseForm.courseDescription.data
         courseTagInput = request.form.get("courseTag")
         coursePrice = float(courseForm.coursePrice.data)
+
+        if (get_readable_category(courseTagInput) == "Unknown Category"):
+            flash("Please select a valid category for your course details!", "Invalid Course Category")
+            return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoPath=courseTuple[2])
 
         file = request.files.get("courseThumbnail")
         filename = secure_filename(file.filename)

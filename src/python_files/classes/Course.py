@@ -1,6 +1,9 @@
 # import python standard libraries
 from datetime import datetime
 
+# import local python libraries
+from .Constants import CONSTANTS
+
 def get_readable_category(courseCategory:str="") -> str:
     """
     Get the readable category name from the course category.
@@ -8,40 +11,13 @@ def get_readable_category(courseCategory:str="") -> str:
     E.g. "Programming" -> "Development - Programming"
 
     Args:
-    - courseCategory (str): The course category.
+    - courseCategory (str): The course category ID.
+        - e.g. "Programming", "Test_Prep", etc.
 
     Returns:
     - str: The readable category name or "Unknown Category" if the category is not found.
     """
-    readableTagDict = {
-        "Programming": "Development - Programming",
-        "Web_Development": "Development - Web Development",
-        "Game_Development": "Development - Game Development",
-        "Mobile_App_Development": "Development - Mobile App Development",
-        "Software_Development": "Development - Software Development",
-        "Other_Development": "Development - Other Development",
-        "Entrepreneurship": "Business - Entrepreneurship",
-        "Project_Management": "Business - Project Management",
-        "BI_Analytics": "Business - Business Intelligence & Analytics",
-        "Business_Strategy": "Business - Business Strategy",
-        "Other_Business": "Business - Other Business",
-        "3D_Modelling": "Design - 3D Modelling",
-        "Animation": "Design - Animation",
-        "UX_Design": "Design - UX Design",
-        "Design_Tools": "Design - Design Tools",
-        "Other_Design": "Design - Other Design",
-        "Digital_Photography": "Photography/Videography - Digital Photography",
-        "Photography_Tools": "Photography/Videography - Photography Tools",
-        "Video_Production": "Photography/Videography - Video Production",
-        "Video_Design_Tools": "Photography/Videography - Video Design Tools",
-        "Other_Photography_Videography": "Photography/Videography - Other Photography/Videography",
-        "Science": "Academics - Science",
-        "Math": "Academics - Math",
-        "Language": "Academics - Language",
-        "Test_Prep": "Academics - Test Prep",
-        "Other_Academics": "Academics - Other Academics"
-    }
-    return readableTagDict.get(courseCategory, "Unknown Category")
+    return CONSTANTS.CATEGORY_TABLE.get(courseCategory, "Unknown Category")
 
 class CourseInfo:
     """
