@@ -282,6 +282,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "recovery_token"):
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "stripe_payments"):
+                returnValue = stripe_payments_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -308,6 +310,59 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             abort(500)
 
     return returnValue
+
+def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the stripe_payments_sql_operation function!")
+    
+    cur = connection.cursor()
+    if mode == "create_payment_session":
+        print(kwargs)
+        paymentID = kwargs["paymentID"]
+        print('tester')
+        stripePaymentIntent = kwargs["stripePaymentIntent"]
+        print('testerer')
+        userID = kwargs["userID"]
+        print('test')
+        cartcourseIDs = kwargs["cartCourseIDs"]
+        print('test2')
+        createdTime = kwargs["createdTime"]
+        print('testTime')
+        amount = kwargs["amount"]
+
+        print((
+            "INSERT INTO stripe_payments (payment_id, stripe_payment_intent, user_id, cart_courses, created_time, amount) VALUES (%(paymentID)s, %(stripePaymentIntent)s, %(userID)s, %(cartCourseIDs)s, %(createdTime)s, %(amount)s)",
+            {"paymentID": paymentID, "stripePaymentIntent": stripePaymentIntent, "userID": userID, "cartCourseIDs": cartcourseIDs, "createdTime": createdTime, "amount": amount}
+        ))
+
+        cur.execute(
+            "INSERT INTO stripe_payments (payment_id, stripe_payment_intent, user_id, cart_courses, created_time, amount) VALUES (%(paymentID)s, %(stripePaymentIntent)s, %(userID)s, %(cartCourseIDs)s, %(createdTime)s, %(amount)s)",
+            {"paymentID": paymentID, "stripePaymentIntent": stripePaymentIntent, "userID": userID, "cartCourseIDs": cartcourseIDs, "createdTime": createdTime, "amount": amount}
+        )
+        return paymentID
+
+    if mode == "complete_payment_session":
+        paymentID = kwargs["paymentID"]
+        paymentTime = kwargs["paymentTime"]
+        receiptEmail = kwargs["receiptEmail"]
+
+        cur.execute(
+            "INSERT INTO stripe_payments (payment_time, receipt_email) VALUES (%(paymentTime)s, %(receiptEmail)s) WHERE payment_id = %(paymentID)s",
+            {"paymentTime": paymentTime, "receiptEmail": receiptEmail, "paymentID": paymentID}
+        )
+
+    elif mode == "get_payment_intent":
+        paymentID = kwargs["paymentID"]
+
+        cur.execute(
+            "SELECT stripe_payment_intent FROM stripe_payments WHERE payment_id = %(paymentID)s",
+            {"paymentID": paymentID}
+        )
+        stripePaymentIntent = cur.fetchone()
+        return stripePaymentIntent
+
+    elif mode == "delete_expired_payment_sessions":
+        cur.execute("DELETE FROM stripe_payments WHERE TIMESTAMPDIFF(hour, created_time, now()) > 1 AND payment_time IS NULL")
 
 def recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
