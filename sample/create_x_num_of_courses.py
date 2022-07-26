@@ -34,7 +34,7 @@ THUMBNAILS_PRESET = [
 ]
 
 # For fun ;) totally not memes
-MARKDOWN_YOUTUBE_LINKS_PREST = [
+MARKDOWN_YOUTUBE_LINKS_PRESET = [
     "https://youtu.be/fpDdLU-nt5s",
     "https://youtube.com/shorts/w3NM3q2IA_k?feature=share",
     "https://youtu.be/5n_EnStHvq8",
@@ -148,9 +148,9 @@ Thanks for watching the demo course!
 
 More details on the algorithm here:
 
-<a href='{rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}'>Click me to go to video link</a>
+<a href='{rand_choice(MARKDOWN_YOUTUBE_LINKS_PRESET)}'>Click me to go to video link</a>
 
-If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}), you will get a lot of videos about [Data Structure and Algorithms]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}) for free!""")
+If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PRESET)}), you will get a lot of videos about [Data Structure and Algorithms]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PRESET)}) for free!""")
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
     course_category = "Other_Academics"
