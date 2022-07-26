@@ -49,6 +49,7 @@ MARKDOWN_YOUTUBE_LINKS_PREST = [
     "https://youtu.be/j_5sXtwfLCI",
     "https://youtu.be/dtVKaGpn8Gg",
     "https://youtu.be/Dn45ZY1HIco",
+    "https://youtu.be/DP3UbsHe4qI",
 ]
 
 # Get Stripe API Key
