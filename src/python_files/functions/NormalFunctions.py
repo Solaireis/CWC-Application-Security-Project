@@ -18,7 +18,9 @@ from io import IOBase, BytesIO
 from secrets import token_bytes, token_hex
 # from subprocess import call as subprocess_call, PIPE, check_output
 from subprocess import run as subprocess_run, PIPE, check_output
+from inspect import stack, getframeinfo
 from os import environ
+from pathlib import Path
 
 # import local python libraries
 if (__name__ == "__main__"):
@@ -470,7 +472,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     """
     return (threshold <= riskScore)
 
-def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, str]=None, severity:Optional[str]=None) -> None:
+def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, severity:Optional[str]=None, **kwargs) -> None:
     """
     Writes an entry to the given log location.
 
@@ -485,11 +487,8 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, s
         - Defaults to LOGGING_NAME defined in Constants.py
         - Will log to that location in the coursefinity-web-app bucket
             - I have already configured a sink to route logs with the name "coursefinity-web-app"
-    - logMessage (str|dict): The message to write to the log
-        - If str, the message is written to the log with the given severity
-        - If dict, you can define your log message together with the severity in the dict.
-            - Generally you will have a "message" key in the dict that contains the log entry
-            and a "severity" key that contains the severity of the log entry.
+    - logMessage (str): The message to write to the log
+        - The message is written to the log with the given severity
         - More details on how to write the log messages:
             - https://cloud.google.com/logging/docs/samples/logging-write-log-entry
     - severity (str, optional): The severity of the log entry
@@ -508,9 +507,18 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, s
             - EMERGENCY
         - More details on the severity type:
             - https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+    - kwargs (dict, optional)
+        - Any extra info to document
+        - Possible arguments:
+            - IP [str]
+            - Failed Attempts (Login?) [int]
+            - Data Input [dict]
+            - etc.
     """
     if (logMessage is None):
         raise ValueError("logMessage must be defined!")
+    elif not (isinstance(logMessage, str)):
+        raise ValueError("logMessage must be a str!")
 
     if (severity is None):
         severity = "DEFAULT"
@@ -519,14 +527,34 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[dict, s
     else:
         raise ValueError("severity must be a str!")
 
-    logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
+    logData = {}
+    logData["severity"] = severity
+    logData["message"] = logMessage
+    logData.update(kwargs)
 
-    if (isinstance(logMessage, dict)):
-        logger.log_struct(logMessage)
-    elif (isinstance(logMessage, str)):
-        logger.log_text(logMessage, severity=severity)
-    else:
-        raise ValueError("logMessage must be a str or dict")
+    if severity in ("NOTICE", "WARNING", "CRITICAL", "ALERT", "EMERGENCY"): # Important, include stack traceback
+        app_root = Path(current_app.root_path).parent
+        stackLevel = 0
+        stackTraceback = []
+
+        while True:
+            data = getframeinfo(stack()[stackLevel][0])
+            if app_root not in Path(data.filename).parents: # Python packages expected to work
+                break
+            
+            stackTraceback.append({
+                    "stackLevel": stackLevel,
+                    "filename": data.filename.rsplit("\\", 1)[1],
+                    "lineNo": data.lineno,
+                    "function": f"{data.function}()" if data.function != "<module>" else data.function,
+                    "codeContext": [line.strip() for line in data.code_context],
+                    "index": data.index,
+                })
+            stackLevel += 1
+        logData["stackTraceback"] = stackTraceback
+    
+    logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
+    logger.log_struct(logMessage)
 
 def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False) -> Union[bytes, str]:
     """
@@ -1412,10 +1440,8 @@ def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, 
     # get the latest secret version
     latestVer = int(response.name.split("/")[-1])
     write_log_entry(
-        logMessage={
-            "message": f"Secret {secretID} (version {latestVer}) created successfully!",
-            "details": response
-        },
+        logMessage= f"Secret {secretID} (version {latestVer}) created successfully!",
+        details = response,
         severity="INFO"
     )
 

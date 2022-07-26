@@ -425,7 +425,10 @@ def login():
             session["temp_uid"] = userInfo[0]
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
-            write_log_entry(logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", severity="NOTICE")
+            write_log_entry(
+                logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", 
+                severity="NOTICE"
+            )
             sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             return render_template("users/guest/login.html", form=loginForm)
     else:
