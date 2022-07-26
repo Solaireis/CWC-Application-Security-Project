@@ -317,28 +317,18 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
     
     cur = connection.cursor()
     if mode == "create_payment_session":
-        print(kwargs)
         paymentID = kwargs["paymentID"]
-        print('tester')
         stripePaymentIntent = kwargs["stripePaymentIntent"]
-        print('testerer')
         userID = kwargs["userID"]
-        print('test')
         cartcourseIDs = kwargs["cartCourseIDs"]
-        print('test2')
         createdTime = kwargs["createdTime"]
-        print('testTime')
         amount = kwargs["amount"]
 
-        print((
-            "INSERT INTO stripe_payments (payment_id, stripe_payment_intent, user_id, cart_courses, created_time, amount) VALUES (%(paymentID)s, %(stripePaymentIntent)s, %(userID)s, %(cartCourseIDs)s, %(createdTime)s, %(amount)s)",
-            {"paymentID": paymentID, "stripePaymentIntent": stripePaymentIntent, "userID": userID, "cartCourseIDs": cartcourseIDs, "createdTime": createdTime, "amount": amount}
-        ))
-
         cur.execute(
-            "INSERT INTO stripe_payments (payment_id, stripe_payment_intent, user_id, cart_courses, created_time, amount) VALUES (%(paymentID)s, %(stripePaymentIntent)s, %(userID)s, %(cartCourseIDs)s, %(createdTime)s, %(amount)s)",
-            {"paymentID": paymentID, "stripePaymentIntent": stripePaymentIntent, "userID": userID, "cartCourseIDs": cartcourseIDs, "createdTime": createdTime, "amount": amount}
+            "INSERT INTO stripe_payments (payment_id, user_id, cart_courses, stripe_payment_intent, created_time, amount) VALUES (%(paymentID)s, %(userID)s, %(cartCourseIDs)s, %(stripePaymentIntent)s, %(createdTime)s, %(amount)s)",
+            {"paymentID": paymentID, "userID": userID, "cartCourseIDs": cartcourseIDs, "stripePaymentIntent": stripePaymentIntent, "createdTime": createdTime, "amount": amount}
         )
+        connection.commit()
         return paymentID
 
     if mode == "complete_payment_session":
@@ -347,9 +337,10 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
         receiptEmail = kwargs["receiptEmail"]
 
         cur.execute(
-            "INSERT INTO stripe_payments (payment_time, receipt_email) VALUES (%(paymentTime)s, %(receiptEmail)s) WHERE payment_id = %(paymentID)s",
+            "UPDATE stripe_payments SET payment_time=%(paymentTime)s, receipt_email=%(receiptEmail)s WHERE payment_id = %(paymentID)s",
             {"paymentTime": paymentTime, "receiptEmail": receiptEmail, "paymentID": paymentID}
         )
+        connection.commit()
 
     elif mode == "get_payment_intent":
         paymentID = kwargs["paymentID"]
@@ -358,7 +349,7 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
             "SELECT stripe_payment_intent FROM stripe_payments WHERE payment_id = %(paymentID)s",
             {"paymentID": paymentID}
         )
-        stripePaymentIntent = cur.fetchone()
+        stripePaymentIntent = cur.fetchone()[0]
         return stripePaymentIntent
 
     elif mode == "delete_expired_payment_sessions":

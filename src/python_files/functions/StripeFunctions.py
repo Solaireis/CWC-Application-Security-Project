@@ -1,7 +1,7 @@
 # import python standard libraries
 from time import time
 from typing import Optional
-from requests import get
+import requests
 from datetime import datetime
 from json import dumps
 
@@ -193,7 +193,7 @@ def send_checkout_receipt(paymentID):
     send_email(
         to = checkoutDetails["receipt_email"], 
         subject = f"Your CourseFinity receipt [#{checkoutDetails['receipt_number']}]",
-        body = CSSInliner(remove_style_tags=True).inline(get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
+        body = CSSInliner(remove_style_tags=True).inline(requests.get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
         name = checkoutDetails["billing_details"]["name"]
     )
 
