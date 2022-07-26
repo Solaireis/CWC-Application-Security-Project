@@ -317,6 +317,10 @@ footer ul {
 
 /* ============ Others ============ */
 
+.text-primary {
+	color: #009DF8 !important;
+}
+
 .btn-primary {
 	background-color: #009DF8 !important;
 	color: #FFF !important;

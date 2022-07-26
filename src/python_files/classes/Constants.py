@@ -255,6 +255,16 @@ class ConstantsConfigs:
         # For the email CSS style
         self.__EMAIL_BUTTON_STYLE = "background-color:#4CAF50;width:min(250px,40%);border-radius:5px;color:white;padding:14px 25px;text-decoration:none;text-align:center;display:inline-block;"
 
+        # For checking if the url is a valid url
+        # Regex from https://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url
+        self.__URL_REGEX = re.compile(
+            r"^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$"
+        )
+
+        # For redirect confirmation url (since a link can be from a user's input)
+        self.__REDIRECT_CONFIRMATION_URL = "/redirect"
+        self.__REDIRECT_CONFIRMATION_PARAM_NAME = "url"
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -525,6 +535,18 @@ class ConstantsConfigs:
     @property
     def EMAIL_BUTTON_STYLE(self) -> str:
         return self.__EMAIL_BUTTON_STYLE
+
+    @property
+    def URL_REGEX(self) -> re.Pattern[str]:
+        return self.__URL_REGEX 
+
+    @property
+    def REDIRECT_CONFIRMATION_URL(self) -> str:
+        return self.__REDIRECT_CONFIRMATION_URL
+
+    @property
+    def REDIRECT_CONFIRMATION_PARAM_NAME(self) -> str:
+        return self.__REDIRECT_CONFIRMATION_PARAM_NAME
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 

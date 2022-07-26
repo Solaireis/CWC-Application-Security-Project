@@ -1,0 +1,69 @@
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}
+    <meta name="robots" content="noindex">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+{% endblock %}
+{% block title %}Redirect Confirmation | CourseFinity{% endblock %}
+
+{% block content %}
+<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+    <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+    </symbol>
+</svg>
+
+<div class="container">
+    <div class="row">
+        <div class="LSUForm col d-flex justify-content-center">
+            <div class="bg-dark p-4 rounded col-xxl-7 pt-5 ps-5 pe-5">
+                {% if isValidURL %}
+                    <div class="alert alert-warning d-flex justify-content-center" role="alert">
+                        <svg class="bi flex-shrink-0 me-2" width="30" height="30" role="img" aria-label="Warning:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                        <h4>Notice: You are leaving CourseFinity.</h4>
+                    </div>
+                    <div class="col-12">
+                        <p class="text-white text-center">
+                            <span class="text-primary">
+                                <strong>{{ redirectURL }}</strong>
+                            </span>
+                            is <em>NOT</em> an official CourseFinity URL.<br>
+                            Never enter your credentials on an untrusted website.
+                        </p>
+                    </div>
+                    <div class="col-12 pt-2 d-flex justify-content-center">
+                        <a href="{{ redirectURL }}" class="btn btn-primary btn-block">
+                            Continue to external site
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger d-flex justify-content-center" role="alert">
+                        <svg class="bi flex-shrink-0 me-2" width="30" height="30" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                        <h4>Warning: Link Blocked!</h4>
+                    </div>
+                    <div class="col-12">
+                        <p class="text-white text-center">
+                            <span class="text-primary">
+                                <strong>{{ redirectURL }}</strong>
+                            </span>
+                            is <em>NOT</em> a valid URL.<br>
+                            A link must have a valid protocol (http or https) and a domain.
+                        </p>
+                    </div>
+                    <div class="col-12 pt-2 d-flex justify-content-center">
+                        <a href="{{ url_for('generalBP.home') }}" class="btn btn-primary btn-block">
+                            Back to home
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

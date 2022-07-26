@@ -1,24 +1,43 @@
 # import third party libraries
-from dataclasses import dataclass
 import markdown
 
+# import local python libraries
+from .Constants import CONSTANTS
+
 # import python standard libraries
-import re
+import re, html
+from dataclasses import dataclass
 
 @dataclass(frozen=True, repr=False)
-class MarkdownRegex:
-    """This class will be used to store the regex pattern for Markdown syntax."""
-    ANCHOR_REGEX: re.Pattern[str] = re.compile(r"^\[(.*?)\]\((.*?)\)$")
+class UsefulRegexForMarkdown:
+    """This class will be used to store the regex pattern for Markdown syntax and HTML tags."""
+    MARKDOWN_ANCHOR_REGEX: re.Pattern[str] = re.compile(r"\[(.*?)\]\((.*?)\)")
+    HTML_ANCHOR_REGEX: re.Pattern[str] = re.compile(r"(<a.*?)(href=)('|\")(.*?)('|\")(.*?)(>)(.*?)(</a>)")
 
 class AnchorTagPreprocessor(markdown.preprocessors.Preprocessor):
     """Add attributes to the anchor html tag or the anchor markdown syntax."""
     def run(self, lines):
         newLines = []
         for line in lines:
-            if (line.startswith("<a")):
-                line = line.replace("<a", "<a rel='nofollow'")
-            elif (re.fullmatch(MarkdownRegex.ANCHOR_REGEX, line)):
-                line = re.sub(MarkdownRegex.ANCHOR_REGEX, r"<a rel='nofollow' href='\2'>\1</a>", line)
+            htmlAnchorTagArray = UsefulRegexForMarkdown.HTML_ANCHOR_REGEX.findall(html.unescape(line))
+            if (len(htmlAnchorTagArray) > 0):
+                for htmlAnchorTag in htmlAnchorTagArray:
+                    line = html.unescape(line).replace(
+                        "".join(htmlAnchorTag),
+                        fr"<a rel='nofollow' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={htmlAnchorTag[3]}'>{htmlAnchorTag[-2]}</a>"
+                    )
+
+            markdownAnchorTagArray = UsefulRegexForMarkdown.MARKDOWN_ANCHOR_REGEX.findall(html.unescape(line))
+            if (len(markdownAnchorTagArray) > 0):
+                for markdownAnchorTag in markdownAnchorTagArray:
+                    hrefURL = markdownAnchorTag[1]
+                    line = re.sub(
+                        pattern=UsefulRegexForMarkdown.MARKDOWN_ANCHOR_REGEX,
+                        repl=fr"<a rel='nofollow' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={hrefURL}'>\1</a>",
+                        string=line,
+                        count=1 # max number of pattern occurrences before replacement
+                    )
+
             newLines.append(line)
         return newLines
 

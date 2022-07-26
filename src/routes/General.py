@@ -15,6 +15,9 @@ from python_files.classes.Course import get_readable_category
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import limiter
 
+# import python standard libraries
+import re
+
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
 limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(generalBP)
 
@@ -33,10 +36,31 @@ def home():
     elif ("admin" in session):
         accType = "Admin"
 
-    return render_template("users/general/home.html", imageSrcPath=imageSrcPath,
+    return render_template(
+        "users/general/home.html", imageSrcPath=imageSrcPath,
         userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
-        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType
+    )
+
+@generalBP.route(current_app.config["CONSTANTS"].REDIRECT_CONFIRMATION_URL)
+def redirectConfirmation():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    redirectURL = request.args.get(
+        CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME, default=None, type=str
+    )
+    if (redirectURL is None):
+        return redirect(url_for("generalBP.home"))
+
+    isValidURL = re.fullmatch(CONSTANTS.URL_REGEX, redirectURL)
+    return render_template("users/general/redirect_confirmation.html", imageSrcPath=imageSrcPath, accType=accType, redirectURL=html.escape(redirectURL), isValidURL=isValidURL)
 
 @generalBP.route("/teacher/<string:teacherID>")
 def teacherPage(teacherID:str):
@@ -87,13 +111,13 @@ def allCourses(teacherID:str):
 
     return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False, paginationArr=paginationArr, userID=userID)
 
-
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
     # print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courses): #raise exception
         abort(404)
+
     #create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
@@ -135,27 +159,6 @@ def coursePage(courseID:str):
         imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
-
-# @generalBP.route("/explore/<string:courseCategory>")
-# def exploreCategory(courseCategory:str):
-#     page = request.args.get("p", default=1, type=int)
-#     listInfo = sql_operation(table="course", mode="explore", courseCategory=courseCategory, pageNum=page)
-#     if (listInfo):
-#         foundResults, maxPage = listInfo[0], listInfo[1]
-#         if (page > maxPage):
-#             abort(404)
-
-#         if ("user" in session or "admin" in session):
-#             userInfo = get_image_path(session["user"], returnUserInfo=True)
-#             return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role)
-
-#         return render_template("users/general/search.html", searchInput=courseCategory, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None)
-
-#     if ("user" in session or "admin" in session):
-#         userInfo = get_image_path(session["user"], returnUserInfo=True)
-#         return render_template("users/general/search.html", searchInput=courseCategory, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
-#     return render_template("users/general/search.html", searchInput=courseCategory, foundResults=None, foundResultsLen=0, accType=None)
 
 @generalBP.route("/search")
 def search():

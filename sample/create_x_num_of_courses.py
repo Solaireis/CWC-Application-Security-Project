@@ -26,11 +26,26 @@ spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
 THUMBNAILS_PRESET = [
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp",
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp",
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_3.webp",
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_4.webp",
-"https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_5.webp"
+    "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp",
+    "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp",
+    "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_3.webp",
+    "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_4.webp",
+    "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_5.webp"
+]
+
+# For fun ;) totally not memes
+MARKDOWN_YOUTUBE_LINKS_PREST = [
+    "https://youtu.be/fpDdLU-nt5s",
+    "https://youtube.com/shorts/w3NM3q2IA_k?feature=share",
+    "https://youtu.be/5n_EnStHvq8",
+    "https://youtu.be/dQw4w9WgXcQ",
+    "https://youtu.be/2irjZwV9Cm4",
+    "https://youtu.be/10xIOSlNaiM",
+    "https://youtu.be/UIp6_0kct_U",
+    "https://youtu.be/BnwJp4OKhL8",
+    "https://youtu.be/8-LHdsfyDL4",
+    "https://youtu.be/I-E_HZiS8aQ",
+    "https://youtube.com/shorts/QA3NV8asphQ?feature=share"
 ]
 
 # Get Stripe API Key
@@ -129,7 +144,13 @@ In this course you will learn about the following topics:
 11. Searching
 12. Pattern Defeating QuickSort
 
-Thanks for watching the demo course!""")
+Thanks for watching the demo course!
+
+More details on the algorithm here:
+
+<a href='{rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}'>Click me to go to video link</a>
+
+If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}), you will get a lot of videos about [Data Structure and Algorithms]({rand_choice(MARKDOWN_YOUTUBE_LINKS_PREST)}) for free!""")
     course_image_path = rand_choice(THUMBNAILS_PRESET)
     course_price = round(i * 50.50, 2)
     course_category = "Other_Academics"
