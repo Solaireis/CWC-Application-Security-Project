@@ -30,7 +30,7 @@
                     {% endif %}
                 {% endwith %}
                 <form action="" method="POST" class="row g-3" id="recoverAccountForm">
-                    <h4 class="text-white">Request Reset Password.</h4>
+                    <h4 class="text-white">Recover Account.</h4>
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 text-white">
                         {{ render_field(form.email, class="form-control") }}

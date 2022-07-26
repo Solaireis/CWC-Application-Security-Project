@@ -1,12 +1,15 @@
 {% extends "user_base.html" %}
 {% block head %}
+{% from "includes/_videoHelper.html" import video_styles %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
 <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
+{{ video_styles() }}
 {% endblock %}
 
 {% block title %}Create Course | CourseFinity{% endblock %}
 
 {% block content %}
+{% from "includes/_videoHelper.html" import video_player %}
 {% from "includes/_formHelper.html" import render_field %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -41,10 +44,11 @@
                     <input type="hidden" name="submittedForm" value="courseDetails">
                     <h4 class="text-white">Course Edit</h4>
                     <div class="col-md-4 border-end border-white">
-                        <video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
+                        {{ video_player(imagePath) }}
+                        <!--<video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
                             <source src="{{ videoPath }}" type="video/mp4">
                             Your browser does not support the video tag.
-                        </video>
+                        </video>-->
                         <hr class="text-white">
                         <h6 class="text-white">Thumbnail:</h6>
                         <img id="thumbnail"
@@ -138,6 +142,7 @@
 {% endblock %}
 
 {% block extra_js %}
+    {% from "includes/_videoHelper.html" import video_scripts %}
     <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
     <script nonce="{{ csp_nonce() }}">
         document.getElementById("formFile").onchange = function() {readURL(this);};
@@ -155,4 +160,5 @@
             </script>
         {% endif %}
     {% endwith %}
+    {{ video_scripts(videoPath) }}
 {% endblock %}

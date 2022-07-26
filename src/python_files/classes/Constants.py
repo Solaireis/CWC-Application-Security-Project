@@ -143,9 +143,7 @@ class ConstantsConfigs:
         self.__ALLOWED_CHAR_REGEX = re.compile(r"^[A-Za-z\d!@#$&\\()\|\-\?`.+,/\"\' \[\]{}=<>;:~%*_^]{1,}$")
 
         # For 2FA setup key regex to validate if the setup key is a valid base32 string and if the TOTP is 6 digits
-        self.__COMPILED_2FA_REGEX_DICT = {
-            32: re.compile(r"^[A-Z2-7]{32}$")
-        }
+        self.__TWENTY_BYTES_2FA_REGEX = re.compile(r"^[A-Z2-7]{32}$")
         self.__TWO_FA_CODE_REGEX = re.compile(r"^\d{6}$")
 
         # Configured Argon2id default configurations so that it will take 
@@ -265,6 +263,9 @@ class ConstantsConfigs:
         self.__REDIRECT_CONFIRMATION_URL = "/redirect"
         self.__REDIRECT_CONFIRMATION_PARAM_NAME = "url"
 
+        # For formatting dates
+        self.__DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
+
     """------------------------ END OF DEFINING CONSTANTS ------------------------"""
 
     """------------------------ START OF DEFINING GETTERS ------------------------"""
@@ -382,11 +383,8 @@ class ConstantsConfigs:
         return self.__ALLOWED_CHAR_REGEX
 
     @property
-    def COMPILED_2FA_REGEX_DICT(self) -> dict[int, re.Pattern[str]]:
-        return self.__COMPILED_2FA_REGEX_DICT
-    @COMPILED_2FA_REGEX_DICT.setter
-    def COMPILED_2FA_REGEX_DICT(self, value: tuple[int, re.Pattern[str]]):
-        self.__COMPILED_2FA_REGEX_DICT[value[0]] = value[1]
+    def TWENTY_BYTES_2FA_REGEX(self) -> re.Pattern[str]:
+        return self.__TWENTY_BYTES_2FA_REGEX
 
     @property
     def TWO_FA_CODE_REGEX(self) -> re.Pattern[str]:
@@ -547,6 +545,10 @@ class ConstantsConfigs:
     @property
     def REDIRECT_CONFIRMATION_PARAM_NAME(self) -> str:
         return self.__REDIRECT_CONFIRMATION_PARAM_NAME
+
+    @property
+    def DATE_FORMAT(self) -> str:
+        return self.__DATE_FORMAT
 
     """------------------------ END OF DEFINING GETTERS ------------------------"""
 

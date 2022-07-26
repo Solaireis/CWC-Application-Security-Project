@@ -145,7 +145,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    {% from "includes/_videoHelper.html" import video_scripts, video_link %}
+    {% from "includes/_videoHelper.html" import video_scripts %}
     <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
     <script nonce="{{ csp_nonce() }}">
         document.getElementById("formFile").onchange = function() {readURL(this);};
@@ -163,6 +163,5 @@
             </script>
         {% endif %}
     {% endwith %}
-    {{ video_scripts() }}
-    {{ video_link(videoPath) }}
+    {{ video_scripts(videoPath) }}
 {% endblock %}

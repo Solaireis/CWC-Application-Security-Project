@@ -180,12 +180,13 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     )
     htmlBody = [
         "Your account has been locked due to too many failed login attempts.<br>",
-        "Please click the link below to unlock your account:",
-        f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>"
-        "<br>Note that this link will expire in 30 minutes as the account locked timeout will last for 30 minutes.",
-        "<br>We suggest that you consider changing your password as well just in case after logging in.",
+        "Just in case that it was you, you can unlock your account by clicking the button below.",
+        "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
         "To change password:",
-        f"<a href={url_for('loggedInBP.updatePassword', _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Change Password</a>"
+        f"{url_for('loggedInBP.updatePassword', _external=True)}<br>",
+        "Please click the link below to unlock your account:",
+        f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
+        "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     ]
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
@@ -626,7 +627,7 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 # if past the reset datetime, reset the attempts to 0
                 currentAttempts = 0
 
-            if (currentAttempts > CONSTANTS.MAX_LOGIN_ATTEMPTS):
+            if (currentAttempts >= CONSTANTS.MAX_LOGIN_ATTEMPTS):
                 # if reached max attempts per account
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 

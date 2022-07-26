@@ -3,7 +3,7 @@ Routes for users who are not logged in (Guests)
 """
 # import third party libraries
 import requests as req
-import pyotp, random
+import pyotp, random, html
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -112,7 +112,7 @@ def recoverAccountMFA():
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
         try:
-            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="recover_account")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
             flash("Please verify that you are not a bot.")
             return render_template("users/guest/recover_account.html", form=recoverForm)
@@ -139,7 +139,7 @@ def recoverAccountMFA():
         flash("2FA has been disabled successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
-        return render_template("users/guest/request_password_reset.html", form=recoverForm)
+        return render_template("users/guest/recover_account.html", form=recoverForm)
 
 @guestBP.route("/reset-password", methods=["GET", "POST"])
 @limiter.limit("60 per minute")
@@ -317,14 +317,13 @@ def login():
             userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
             # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
 
-            if (userInfo[1]):
-                # login from new ip address
+            userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
+            if (userInfo[1] and not userHasTwoFA):
+                # login from new ip address and user did not enable 2FA
                 raise LoginFromNewIpAddressError("Login from a new IP address!")
 
             successfulLogin = True
             sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
-
-            userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
         except (UserIsNotActiveError, EmailDoesNotExistError):
             flash("Please check your entries and try again!", "Danger")
         except (IncorrectPwdError):
@@ -426,7 +425,10 @@ def login():
             session["temp_uid"] = userInfo[0]
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
-            write_log_entry(logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", logLevel="NOTICE")
+            write_log_entry(
+                logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", 
+                severity="NOTICE"
+            )
             sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             return render_template("users/guest/login.html", form=loginForm)
     else:
@@ -518,7 +520,7 @@ def enterGuardTOTP():
         if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
             write_log_entry(
                 logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['user_email']}\", with the following IP address: {get_remote_address()}", 
-                logLevel="NOTICE"
+                severity="NOTICE"
             )
             flash("Please check your entries and try again!", "Danger")
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
@@ -614,8 +616,10 @@ def loginCallback():
     session.clear()
 
     # assign the session accordingly based on the role of the user
-    if (returnedRole == "Admin" or returnedRole == "SuperAdmin"):
+    if (returnedRole == "Admin" ):
         session["admin"] = userID
+    elif(returnedRole == "SuperAdmin"):
+        session["superAdmin"] = userID
     else:
         session["user"] = userID
 
@@ -700,7 +704,7 @@ def signup():
                 severity="ERROR",
             )
             flash(
-                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={returnedVal}'>me</a>!"),
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={html.escape(returnedVal)}'>me</a>!"),
                 "Danger"
             )
             return redirect(url_for("guestBP.login"))
@@ -730,7 +734,7 @@ def sendVerifyEmail():
                 severity="ERROR",
             )
             flash(
-                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={userID}'>me</a> later!"),
+                Markup(f"Failed to send email! Please try again by clicking <a href='{url_for('guestBP.sendVerifyEmail')}?user={html.escape(userID)}'>me</a> later!"),
                 "Danger"
             )
         return redirect(url_for("guestBP.login"))

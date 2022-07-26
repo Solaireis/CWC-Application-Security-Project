@@ -16,6 +16,8 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
+    #get the role of the user
+
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -142,7 +144,7 @@ def adminManagement():
 
     # save the current URL in the session for when the admin searches and an error occurs
     session["relative_url"] = request.full_path
-    return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm)
+    return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm )
 
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
 def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
@@ -158,3 +160,38 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
     # Check if user is logged in
     # TODO: Role Management do not need pagination and relative url session
     return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count)
+
+@superAdminBP.route("/admin-rbac/<roleName>", methods=["GET","POST"])
+def roleManagementEdit(roleName):
+    role = sql_operation(table="role", mode="retrieve_role", roleName=roleName)
+    roleList = []
+    for role in role:
+        roleList.append(RoleInfo(role))
+
+    count = len(roleList)
+    for role in roleList:
+        print(role.roleName)
+
+    # Check if user is logged in
+    return 
+
+@superAdminBP.route("/admin-create", methods=["GET","POST"])
+def createAdmin():
+    form = CreateAdminForm()
+    if (form.validate_on_submit()):
+        username = form.username.data
+        email = form.email.data
+        password = form.password.data
+        confirmPassword = form.confirmPassword.data
+        if (password != confirmPassword):
+            flash("The passwords do not match.", "Error")
+            return redirect(url_for("superAdminBP.createAdmin"))
+        else:
+            try:
+                sql_operation(table="user", mode="create_admin", username=username, email=email, password=password)
+                flash(f"The user, {username}, has been created.", "User Created!")
+                return redirect(url_for("superAdminBP.adminManagement"))
+            except (ReusedUsernameError):
+                flash("The username entered is already in use...", "Error creating user!")
+                return redirect(url_for("superAdminBP.createAdmin"))
+    return render_template("users/superadmin/admin_create.html", form=form)

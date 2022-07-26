@@ -92,11 +92,11 @@ def twoFactorAuthSetup():
         # if the secret token and the session token is equal but
         # the secret token is not base32, then the user has tampered with the session
         # and the html 2FA secretToken hidden form value
-        if (not two_fa_token_is_valid(secretToken)):
+        if (re.fullmatch(CONSTANTS.TWENTY_BYTES_2FA_REGEX, secretToken) is None):
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
-                logLocation="coursefinity-web-app",
+                logName="coursefinity-web-app",
                 logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.",
                 severity="ALERT"
             )
@@ -421,7 +421,7 @@ def checkout():
         checkout_session = stripe_checkout(userID = userID, cartCourseIDs = cartCourseIDs, email = email)
     except Exception as error:
         print(str(error))
-        return redirect(url_for('userBP.cart'))
+        return redirect(url_for('userBP.addToCart', courseID=cartCourseIDs[0]))
 
     print(checkout_session)
     print(type(checkout_session))

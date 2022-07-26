@@ -225,7 +225,7 @@ def createCourse(courseID:str):
     videoFilename = courseID + Path(courseTuple[2]).suffix
     absFilePath = videoFilePath.joinpath(videoFilename)
 
-    videoPath = url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
+    videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
     if (not courseTuple):
         flash("No Course Found", "Course Not Found!")
@@ -357,10 +357,11 @@ def draftCourseDelete():
         abort(404)
 
     shutil.rmtree(
-        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(courseID),
+        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(secure_filename(courseID)),
         ignore_errors=False,
         onerror=lambda func, path, exc_info: write_log_entry(
-            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", severity="WARNING"
+            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}", 
+            severity="WARNING"
         )
     )
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
@@ -458,6 +459,7 @@ def courseUpdate():
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
 
-    return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoPath=courseFound.videoPath)
+    videoPath = url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd") # Not using validate_course_video_path(), as video is not saved to Cloud yet
+    return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoPath=videoPath)
 
 """ End Of Course Management """
