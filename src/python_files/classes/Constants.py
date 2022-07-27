@@ -167,7 +167,7 @@ class Constants:
     SESSION_COOKIE_ENCRYPTION_NAME: str = "rsa-session-cookie-version"
     EC_SIGNING_KEY_ID: str = "signing-key"
     SIGNATURE_VERSION_NAME: str = "ec-signature-version"
-    AVAILABLE_KEY_IDS: tuple = ("rsa-session-cookie-version", "ec-signature-version")
+    AVAILABLE_KEY_IDS: tuple = ("encrypt-decrypt-key", "signing-key")
 
     # For Google MySQL Cloud API
     SQL_INSTANCE_LOCATION: str = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
