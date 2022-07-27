@@ -165,7 +165,7 @@ app.jinja_env.lstrip_blocks = True
 app.jinja_env.globals.update(get_readable_category=get_readable_category)
 
 # Maximum file size for uploading anything to the web app's server
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024 # 200MiB
+app.config["MAX_CONTENT_LENGTH"] = 75 * 1024 * 1024 # 75MiB
 
 # for image uploads file path
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_IMAGE_EXTENSIONS

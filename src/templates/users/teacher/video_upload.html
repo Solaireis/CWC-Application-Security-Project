@@ -77,10 +77,10 @@
             url: "/upload-video", // Determines where to reroute after submission
             chunking: true, // Enable chunking
             forceChunking: true, // Force chunking to happen
-            chunkSize: 2000000, // Size of each chunk in bytes (Need to clarify this, default:2mb)
+            chunkSize: 50000000, // Size of each chunk in bytes (Need to clarify this, default:50mb)
             retryChunks: true, // Retry chunk uploads
             retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
-            maxFilesize: 10000, // Maximum size of each file in MB (current: 10GB)
+            maxFilesize: 500, // Maximum size of each file in MB (current: 500mb)
             paramName: "videoUpload", // The name of the uploaded file
             maxFiles: 1, // Number of files allowed to be uploaded
             acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
@@ -109,7 +109,7 @@
                     console.log("File " + file.name + " removed");
                 });
                 
-                
+
                 // Testing something
                 // this.on("queuecomplete", function(file) {
                 //     var xhr = new XMLHttpRequest();

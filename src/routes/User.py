@@ -285,6 +285,7 @@ def uploadPic():
 
 #TODO: Doing dropzone, just realised we dont download the file locally. So need ask if i shld store file locally first check then delete, then upload to bucket. Code already in place for it, just need approval.
 # TODO : If approved test if working, if not delete
+# TODO: Looks like upload file from path already uses CRC32C checksum, clarify if need to do here also
 # @csrf.exempt
 # @userBP.post("/upload-profile-picture")
 # def uploadPic():

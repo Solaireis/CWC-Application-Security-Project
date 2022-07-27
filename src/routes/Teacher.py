@@ -62,61 +62,7 @@ def draftCourseList():
 
 """ Start Of Course Creation """
 
-# @csrf.exempt
-# @teacherBP.route("/upload-video", methods=["GET", "POST"])
-# def videoUpload():
-#     if ("user" in session): #TODO: DELETE IF USER IN SESSION IF UNCOMMENTED
-#         userInfo = get_image_path(session["user"], returnUserInfo=True)
-#         if (userInfo.role != "Teacher"):
-#             abort(404)
-
-#         if (request.method == "POST"):
-#             # recaptchaToken = request.form.get("g-recaptcha-response")
-#             # if (recaptchaToken is None):
-#             #     flash("Please verify that you are not a bot!", "Danger")
-#             #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
-#             # try:
-#             #     recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="upload")
-#             # except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-#             #     flash("Please verify that you are not a bot!", "Danger")
-#             #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-
-#             # if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
-#             #     # if the score is not within the acceptable threshold
-#             #     # then the user is likely a bot
-#             #     # hence, we will flash an error message
-#             #     flash("Please check the reCAPTCHA box and try again.", "Danger")
-#             #     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-#             print(request.files["videoUpload"])
-#             if (request.files["courseVideo"].filename == ""):
-#                 flash("Please Upload a Video", "File Upload Error!")
-#                 return redirect(url_for("teacherBP.videoUpload"))
-
-#             file = request.files.get("courseVideo")
-#             filename = secure_filename(file.filename)
-
-#             print(f"This is the ORIGINAL filename for the inputted file : {filename}")
-
-#             courseID = generate_id()
-#             filePath = Path(current_app.config["COURSE_VIDEO_FOLDER"]).joinpath(courseID)
-#             print(f"This is the folder for the inputted file: {filePath}")
-#             filePath.mkdir(parents=True, exist_ok=True)
-
-#             filePathToStore  = url_for("static", filename=f"course_videos/{courseID}/{filename}")
-#             file.save(Path(filePath).joinpath(filename))
-
-#             """
-#             Create a row inside the database to store the video info.
-#             Display this row in the teachers course list
-#             """
-#             sql_operation(table="course", mode="insert_draft",courseID=courseID, teacherID=userInfo.uid,videoPath=filePathToStore)
-#             return redirect(url_for("teacherBP.createCourse", courseID=courseID))
-#         else:
-#             return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
-#     else:
-#         return redirect(url_for("guestBP.login"))
-
+#TODO: Ask if need do CRC32C checksum
 @csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
@@ -166,7 +112,7 @@ def videoUpload():
         except:
             print("Unexpected error.")
             return make_response("Unexpected error", 500)
-            
+
         if (currentChunk + 1 == totalChunks):
             # This was the last chunk, the file should be complete and the size we expect
             if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):

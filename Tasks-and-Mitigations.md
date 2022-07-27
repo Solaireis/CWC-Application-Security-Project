@@ -416,9 +416,7 @@
 
 #### Plan:
 - Avoid Bad Coding Practices that lead to Injection Attacks
-- Remember to use multithreading for writing account info to the SQL database
-- Implement DDL Triggers (?)
-  - Basically if someone tries to drop the table, it drops but immediately rollbacks. (Need deal with concurrency)
+- Remember to use multithreading for writing account info to the SQL database (?)
 - Sanitisation for All input (Kind of Done, but should double check)
   - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
   - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
@@ -434,8 +432,7 @@
   - Some areas already escape need to double check and find all that are required
   - Encoding it all
   - Output Encoding
-- Use subprocess call instead?
-  - It ensures only a single command is run, our command
+- Logging Of SQL Commands
 
 #### Implemented:
 - Best Practices Followed
@@ -493,6 +490,7 @@
     - shell = False in subprocess_run()
     - Restrict Permitted Commands - Construct shell commands using string literals, rather than user input.
       - So that Users cannot pass in commands for the python interpreter to run
+    - Uses subprocess_call() because it only runs one command when passed in a string
 
   - Cross Site Scripting
     - Implemented Flask Talisman
@@ -524,13 +522,16 @@
     - Defined in Codebase, not generated directly from untrusted input
       - Attackers cannot take advantage of inefficient regexes. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
+- Dropped Features (& Why):
+  - Implement DDL Triggers (?)
+    - It drops but immediately rollbacks. (Need deal with concurrency)
 ---
 
 ### Software and Data Integrity Failures
 
 #### Plan:
-- Data Integrity For Profile Pictures
 - Use Checksums to check for integrity (?)
+- Logging of Deserialization (?)
 
 #### Implemented:
 - Best Practices Followed
@@ -569,5 +570,13 @@
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
   - Digest Authentication
     - Authenticating the user and server so that it is sent to the correct person
+  
+  Requires Approval:
+  - Data Integrity For Profile Pictures (Code Done, Untested)
+
+- Dropped Features (& why?):
+  - Digital Signatures
+    - Not really necessary due to HTTPS & HSTS to ensure request is sent across HTTPS will already provide encryption
+    - Redundant and may incur more errors
 
 ---
