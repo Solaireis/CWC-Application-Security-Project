@@ -39,7 +39,7 @@ def before_first_request() -> None:
     - None
     """
     # load google client id from credentials.json
-    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
+    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["SECRET_CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
 
     # get Google oauth flow object
     current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
@@ -55,7 +55,7 @@ def recoverAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
 
@@ -182,7 +182,7 @@ def resetPasswordRequest():
                 f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{url_for('guestBP.login', _external=True)}' target='_blank'>login to CourseFinity</a> using your Google account.",
             ]
             # send email to the user to remind them to login using Google account
-            send_email(to=emailInput, subject="Reset Password", htmlBody="<br><br>".join(htmlBody))
+            send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
@@ -221,7 +221,7 @@ def resetPassword(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
 
@@ -345,9 +345,9 @@ def login():
             # to avoid unexpected behaviour when verifying the TOTP
             # https://github.com/pyauth/pyotp/issues/115
             generatedTOTPSecretToken = pyotp.random_base32(length=128)
-            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
+            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=480).now() # 8 mins
 
-            ipDetails = current_app.config["CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
+            ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
             # utc+8 time (SGT)
             currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
             currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
@@ -445,9 +445,10 @@ def unlockAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
+
     if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         flash("Unlock account url is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))

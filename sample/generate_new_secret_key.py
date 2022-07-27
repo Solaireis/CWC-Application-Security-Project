@@ -28,9 +28,10 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
+SECRET_CONSTANTS = NormalFunctions.SECRET_CONSTANTS
 
 # Create an authorised Google Cloud Secret Manager API service instance.
-SM_CLIENT = CONSTANTS.SM_CLIENT
+SM_CLIENT = SECRET_CONSTANTS.SM_CLIENT
 
 MENU = """
 -------------------------- Flask Secret Key Menu --------------------------
@@ -116,7 +117,7 @@ def main() -> None:
 
         elif (prompt == "2"):
             # construct the resource name of the secret version
-            secretPayload = CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
+            secretPayload = SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False)
 
             # print the secret payload (Not ideal but for demo)
             while (1):

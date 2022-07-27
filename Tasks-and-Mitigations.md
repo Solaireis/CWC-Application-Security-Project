@@ -69,9 +69,9 @@
     - Argon2id
     - On average, the time taken to hash a password is about 0.05+- seconds.
   - Manually tweaked Argon2 configurations (Meets the minimum requirements):
-    - 80MiB of memory
-    - 6 count of iterations
-    - 6 degrees of parallelism
+    - 128MiB of memory
+    - 8 count of iterations
+    - 16 degrees of parallelism
     - 64 bytes salt, `os.urandom(64)`
     - 64 bytes hash
     - Argon2id

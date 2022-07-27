@@ -112,7 +112,7 @@ def before_request() -> None:
     if ("admin" in session):
         if (not current_app.config["DEBUG_FLAG"]):
             adminWhitelistedIP = json.loads(
-                current_app.config["CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
+                current_app.config["SECRET_CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
             )
         else:
             adminWhitelistedIP = ["127.0.0.1"]

@@ -27,6 +27,7 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
+SECRET_CONSTANTS = NormalFunctions.SECRET_CONSTANTS
 
 # If modifying these scopes, delete the file token.json.
 # Scopes details: https://developers.google.com/gmail/api/auth/scopes
@@ -52,11 +53,11 @@ def create_token() -> None:
     creds = None
 
     GOOGLE_TOKEN = json.loads(
-        CONSTANTS.get_secret_payload(
+        SECRET_CONSTANTS.get_secret_payload(
             secretID=CONSTANTS.GOOGLE_TOKEN_NAME
         )
     )
-    GOOGLE_CREDENTIALS = CONSTANTS.GOOGLE_CREDENTIALS
+    GOOGLE_CREDENTIALS = SECRET_CONSTANTS.GOOGLE_CREDENTIALS
 
     # The file google-token.json stores the user's access and refresh tokens,
     # and is stored in Google Secret Manager API.
@@ -75,7 +76,7 @@ def create_token() -> None:
         if (creds and creds.expired and creds.refresh_token):
             print("Token is valid but might expire soon, refreshing token instead...", end="")
             creds.refresh(Request())
-            print("\rRefreshed token!\n")
+            print("\r\033[KRefreshed token!\n")
         else:
             print("Token is expired or invalid!\n")
             flow = InstalledAppFlow.from_client_config(GOOGLE_CREDENTIALS, SCOPES)
@@ -86,7 +87,7 @@ def create_token() -> None:
 
         # Save the credentials for the next run to Google Secret Manager API
         # construct the secret path to the secret key ID
-        secretPath = CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.GOOGLE_TOKEN_NAME)
+        secretPath = SECRET_CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.GOOGLE_TOKEN_NAME)
 
         # encode the credentials token to bytes
         secretData = creds.to_json().encode("utf-8")
@@ -95,7 +96,7 @@ def create_token() -> None:
         crc32cPayload = NormalFunctions.crc32c(secretData)
 
         # Now add the secret version and send to Google Secret Management API
-        response = CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData, "data_crc32c": crc32cPayload})
+        response = SECRET_CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secretData, "data_crc32c": crc32cPayload})
         print(f"\rNew secret version, {CONSTANTS.GOOGLE_TOKEN_NAME}, created:", response.name, "\n")
 
         while (1):
@@ -115,13 +116,13 @@ def create_token() -> None:
             latestVer = int(response.name.split("/")[-1])
 
             for version in range(latestVer - 1, 0, -1):
-                secretVersionPath = CONSTANTS.SM_CLIENT.secret_version_path(
+                secretVersionPath = SECRET_CONSTANTS.SM_CLIENT.secret_version_path(
                     CONSTANTS.GOOGLE_PROJECT_ID, 
                     CONSTANTS.GOOGLE_TOKEN_NAME, 
                     version
                 )
                 try:
-                    CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
+                    SECRET_CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
                 except (FailedPrecondition):
                     # key is already destroyed
                     break # assuming that all the previous has been destroyed

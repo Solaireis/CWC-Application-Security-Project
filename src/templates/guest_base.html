@@ -21,6 +21,27 @@
         {% include "includes/_guest_navbar.html" %}
     {% endblock %}
 
+    <div class="modal fade" id="importantModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="importantModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-center">
+                    <h5 class="modal-title" id="importantModalLabel">Important Notice</h5>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        Please note that this website is not intended for real world use as it is created for Nanyang Polytechnic's Application Security Project module.
+                    </p>
+                    <p>
+                        We, CourseFinity, are not responsible for any damage caused by using this website.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="importantModalButton">I understand and accept the risks</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <a id="topbutton"><i class="fas fa-chevron-up"></i></a>
     <div class="content">
         {% block content %}

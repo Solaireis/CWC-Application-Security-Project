@@ -26,13 +26,13 @@ from pathlib import Path
 if (__name__ == "__main__"):
     from sys import path as sys_path
     sys_path.append(str(pathlib.Path(__file__).parent.parent.parent.absolute()))
-    from python_files.classes.Constants import CONSTANTS
+    from python_files.classes.Constants import CONSTANTS, SECRET_CONSTANTS
     from python_files.classes.Errors import *
 elif (__package__ is None or __package__ == ""):
-    from classes.Constants import CONSTANTS
+    from classes.Constants import CONSTANTS, SECRET_CONSTANTS
     from classes.Errors import *
 else:
-    from python_files.classes.Constants import CONSTANTS
+    from python_files.classes.Constants import CONSTANTS, SECRET_CONSTANTS
     from python_files.classes.Errors import *
 
 # import third party libraries
@@ -137,7 +137,7 @@ def download_to_path(
     - downloadPath (pathlib.Path): The folder path to download the file to
         - Defaults to a temp folder created in the running python script directory
     """
-    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
 
     blob = bucket.blob(blobName)
     if (isinstance(downloadPath, str)):
@@ -175,7 +175,7 @@ def upload_file_from_path(
     Returns:
     - str: The public URL of the uploaded file.
     """
-    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
 
     uploadDestination = "/".join([uploadDestination, localFilePath.name])
 
@@ -224,7 +224,7 @@ def upload_from_stream(
     Returns:
     - str: The public URL of the uploaded file.
     """
-    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
 
     blob = bucket.blob(uploadDestination)
     try:
@@ -258,7 +258,7 @@ def delete_blob(bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, destinati
     Raises:
     - FileNotFoundError: If the file to delete does not exist in the bucket.
     """
-    bucket = CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
+    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
     blob = bucket.blob(destinationURL)
     try:
         blob.delete()
@@ -289,12 +289,12 @@ def get_mysql_connection(
     if (debug and user == "root"):
         password = environ.get("LOCAL_SQL_PASS")
     elif (not debug and user == "root"):
-        password = CONSTANTS.get_secret_payload(secretID="sql-root-password")
+        password = SECRET_CONSTANTS.get_secret_payload(secretID="sql-root-password")
     elif (user == "coursefinity"):
-        password = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
+        password = SECRET_CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
     else: # if the user parameter is not "root" or "coursefinity"
         user = "coursefinity" # defaults to coursefinity MySQL account instead
-        password = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
+        password = SECRET_CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
 
     if (debug):
         LOCAL_SQL_CONFIG = {"host": "localhost", "user": user, "password": password}
@@ -302,7 +302,7 @@ def get_mysql_connection(
             LOCAL_SQL_CONFIG["database"] = database
         connection = pymysql.connect(**LOCAL_SQL_CONFIG)
     else:
-        connection: pymysql.connections.Connection = CONSTANTS.SQL_CLIENT.connect(
+        connection: pymysql.connections.Connection = SECRET_CONSTANTS.SQL_CLIENT.connect(
             instance_connection_string=CONSTANTS.SQL_INSTANCE_LOCATION,
             driver="pymysql",
             user=user,
@@ -387,7 +387,7 @@ def get_google_flow() -> Flow:
     - https://developers.google.com/identity/protocols/oauth2/scopes
     """
     flow = Flow.from_client_config(
-        CONSTANTS.GOOGLE_CREDENTIALS,
+        SECRET_CONSTANTS.GOOGLE_CREDENTIALS,
         [
             # for retrieving the user's public personal information
             "https://www.googleapis.com/auth/userinfo.profile",
@@ -434,7 +434,7 @@ def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToke
     request.assessment = assessment
 
     # send to Google reCAPTCHA API
-    response = CONSTANTS.RECAPTCHA_CLIENT.create_assessment(request)
+    response = SECRET_CONSTANTS.RECAPTCHA_CLIENT.create_assessment(request)
 
     # check if the response is valid
     if (not response.token_properties.valid):
@@ -472,7 +472,7 @@ def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> boo
     """
     return (threshold <= riskScore)
 
-def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, severity:Optional[str]=None, **kwargs) -> None:
+def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, dict]=None, severity:Optional[str]=None) -> None:
     """
     Writes an entry to the given log location.
 
@@ -487,7 +487,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, sev
         - Defaults to LOGGING_NAME defined in Constants.py
         - Will log to that location in the coursefinity-web-app bucket
             - I have already configured a sink to route logs with the name "coursefinity-web-app"
-    - logMessage (str): The message to write to the log
+    - logMessage (str|dict): The message to write to the log
         - The message is written to the log with the given severity
         - More details on how to write the log messages:
             - https://cloud.google.com/logging/docs/samples/logging-write-log-entry
@@ -507,55 +507,47 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:str=None, sev
             - EMERGENCY
         - More details on the severity type:
             - https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
-    - kwargs (dict, optional)
-        - Any extra info to document
-        - Possible arguments:
-            - IP [str]
-            - Failed Attempts (Login?) [int]
-            - Data Input [dict]
-            - etc.
     """
     if (logMessage is None):
         raise ValueError("logMessage must be defined!")
-    elif not (isinstance(logMessage, str)):
-        raise ValueError("logMessage must be a str!")
 
     if (severity is None):
         severity = "DEFAULT"
-    elif (isinstance(severity, str)):
+    elif (isinstance(severity, str) and severity in CONSTANTS.LOGGING_SEVERITY_TUPLE):
         severity = severity.upper()
     else:
-        raise ValueError("severity must be a str!")
+        raise ValueError("severity must be a str or a valid severity!")
 
-    logData = {}
-    logData["severity"] = severity
-    logData["message"] = logMessage
-    logData.update(kwargs)
+    app_root = Path(current_app.root_path).parent
+    stackLevel = 0
+    stackTraceback = []
 
-    if severity in ("NOTICE", "WARNING", "ERROR", "CRITICAL", "ALERT", "EMERGENCY"): # Important, include stack traceback
-        app_root = Path(current_app.root_path).parent
-        stackLevel = 0
-        stackTraceback = []
+    while True:
+        data = getframeinfo(stack()[stackLevel][0])
+        if app_root not in Path(data.filename).parents: # Python packages expected to work
+            break
 
-        while True:
-            data = getframeinfo(stack()[stackLevel][0])
-            if app_root not in Path(data.filename).parents: # Python packages expected to work
-                break
-            stackTraceback.append({
-                    "stackLevel": stackLevel,
-                    "filename": data.filename.rsplit("\\", 1)[1], # TODO: fix cause it gives out of index error
-                    "lineNo": data.lineno,
-                    "function": f"{data.function}()" if data.function != "<module>" else data.function,
-                    "codeContext": [line.strip() for line in data.code_context],
-                    "index": data.index,
-                })
-            stackLevel += 1
-        logData["stackTraceback"] = stackTraceback
+        stackTraceback.append({
+            "stackLevel": stackLevel,
+            "filename": data.filename.rsplit("\\", 1)[1], # TODO: fix cause it gives out of index error
+            "lineNo": data.lineno,
+            "function": f"{data.function}()" if data.function != "<module>" else data.function,
+            "codeContext": [line.strip() for line in data.code_context],
+            "index": data.index
+        })
+        stackLevel += 1
 
-    print(logData)
-    
-    logger = CONSTANTS.LOGGING_CLIENT.logger(logName)
-    logger.log_struct(logMessage)
+    logger = SECRET_CONSTANTS.LOGGING_CLIENT.logger(logName)
+    if (isinstance(logMessage, dict)):
+        if ("severity" not in logMessage):
+            logMessage["severity"] = severity
+        logMessage["stack_traceback"] = stackTraceback
+        logger.log_struct(logMessage)
+    elif (isinstance(logMessage, str)):
+        logMessage = {"message": logMessage, "severity": severity, "stack_traceback": stackTraceback}
+        logger.log_struct(logMessage)
+    else:
+        raise ValueError("logMessage must be a str or dict")
 
 def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False) -> Union[bytes, str]:
     """
@@ -583,7 +575,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         return token_hex(nBytes) if (returnHex) else token_bytes(nBytes)
 
     # Construct the location name
-    locationName = CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
+    locationName = SECRET_CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
 
     # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes.
     if (nBytes < 8):
@@ -597,7 +589,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         numOfMaxBytes = nBytes // maxBytes
         for _ in range(numOfMaxBytes):
             bytesArr.append(
-                CONSTANTS.KMS_CLIENT.generate_random_bytes(
+                SECRET_CONSTANTS.KMS_CLIENT.generate_random_bytes(
                     request={
                         "location": locationName,
                         "length_bytes": maxBytes,
@@ -609,7 +601,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         remainder = nBytes % maxBytes
         if (remainder > 0):
             bytesArr.append(
-                CONSTANTS.KMS_CLIENT.generate_random_bytes(
+                SECRET_CONSTANTS.KMS_CLIENT.generate_random_bytes(
                     request={
                         "location": locationName,
                         "length_bytes": remainder,
@@ -620,7 +612,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         randomBytes = b"".join(bytesArr)
     else:
         # Call the Google Cloud Platform API to generate a random byte string.
-        randomBytesResponse = CONSTANTS.KMS_CLIENT.generate_random_bytes(
+        randomBytesResponse = SECRET_CONSTANTS.KMS_CLIENT.generate_random_bytes(
             request={"location": locationName, "length_bytes": nBytes, "protection_level": kms.ProtectionLevel.HSM}
         )
         randomBytes = randomBytesResponse.data
@@ -639,10 +631,10 @@ def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     - keyInfo (google.cloud.kms_v1.types.resources.CryptoKey): the key information
     """
     # Construct the key name
-    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
+    keyName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # call Google Cloud KMS API to get the key's information
-    response = CONSTANTS.KMS_CLIENT.get_crypto_key(request={"name": keyName})
+    response = SECRET_CONSTANTS.KMS_CLIENT.get_crypto_key(request={"name": keyName})
     return response
 
 def crc32c(data:Union[bytes, str]) -> int:
@@ -677,10 +669,10 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID,
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
-    response = CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
+    response = SECRET_CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
 
     # Perform some integrity checks on the encrypted data that Google Cloud KMS API returned
     # details: https://cloud.google.com/kms/docs/data-integrity-guidelines
@@ -718,14 +710,14 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING
         raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
 
     # Construct the key version name
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     cipherTextCRC32C = crc32c(ciphertext)
 
     # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
     try:
-        response = CONSTANTS.KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
+        response = SECRET_CONSTANTS.KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
         print("Error caught while decrypting (symmetric):")
         print(e)
@@ -755,10 +747,10 @@ def update_key_set_primary(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str=
     - None
     """
     # Construct the parent key name
-    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
+    keyName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # call the Google Cloud KMS API
-    CONSTANTS.KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
+    SECRET_CONSTANTS.KMS_CLIENT.update_crypto_key_primary_version(request={"name": keyName, "crypto_key_version_id": versionID})
 
 def create_new_key_version(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str="", setNewKeyAsPrimary:bool=False) -> None:
     """
@@ -781,13 +773,13 @@ def create_new_key_version(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str=
     - None
     """
     # Construct the parent key name
-    keyName = CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
+    keyName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyName)
 
     # build the key version
     version = {}
 
     # call the Google Cloud KMS API
-    response = CONSTANTS.KMS_CLIENT.create_crypto_key_version(request={"parent": keyName, "crypto_key_version": version})
+    response = SECRET_CONSTANTS.KMS_CLIENT.create_crypto_key_version(request={"parent": keyName, "crypto_key_version": version})
 
     if (setNewKeyAsPrimary):
         # get the latest version from the response
@@ -809,7 +801,7 @@ def create_symmetric_key(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str=""
     - None
     """
     # Construct the parent key ring name
-    keyRingName = CONSTANTS.KMS_CLIENT.key_ring_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID)
+    keyRingName = SECRET_CONSTANTS.KMS_CLIENT.key_ring_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID)
 
     # construct the key
     purpose = kms.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT
@@ -832,7 +824,7 @@ def create_symmetric_key(keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyName:str=""
 
     # call Google Cloud KMS API to create the key
     try:
-        CONSTANTS.KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
+        SECRET_CONSTANTS.KMS_CLIENT.create_crypto_key(request={"parent": keyRingName, "crypto_key": key, "crypto_key_id": keyName})
     except (GoogleErrors.AlreadyExists):
         create_new_key_version(keyRingID=keyRingID, keyName=keyName, setNewKeyAsPrimary=True)
 
@@ -960,13 +952,13 @@ def EC_sign(
                 "key_id" : key name used,
                 "key_ring_id" : key ring name used,
                 "version_id" : key version used
-                "token_id" : token ID generated outside of this function if defined
             },
             "data": {
                 "payload" : the payload,
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
                 "limit" : the maximum number of allowed usage of the token if defined
+                "token_id" : token ID generated outside of this function if defined
             },
             "signature": The signature of the data (bytes)
         }
@@ -976,12 +968,12 @@ def EC_sign(
     # Get the version defined in Google Cloud Platfrom Secret Manager API if versionID is not defined
     if (versionID is None):
         if (purpose == "sensitive-actions"):
-            versionID = int(CONSTANTS.get_secret_payload(secretID=CONSTANTS.SIGNATURE_VERSION_NAME))
+            versionID = int(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.SIGNATURE_VERSION_NAME))
         else:
             raise ValueError(f"versionID must be defined as there is no such purpose, {purpose}, in the web application.")
 
     # Construct the key version name
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # Convert the payload to bytes
     if (isinstance(payload, dict)):
@@ -1015,7 +1007,7 @@ def EC_sign(
 
     # If tokenID is defined, set the tokenID in the data
     if (tokenID is not None):
-        header["token_id"] = tokenID
+        data["token_id"] = tokenID
 
     # Create the data to be signed and encode it to bytes
     dataToSign = {"header": header, "data": data}
@@ -1029,7 +1021,7 @@ def EC_sign(
     digestCRC32C = crc32c(hash_)
 
     # Sign the digest by sending it to Google Cloud KMS API
-    response = CONSTANTS.KMS_CLIENT.asymmetric_sign(
+    response = SECRET_CONSTANTS.KMS_CLIENT.asymmetric_sign(
         request={"name": keyVersionName, "digest": {"sha384": hash_}, "digest_crc32c": digestCRC32C}
     )
 
@@ -1081,6 +1073,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
                 "limit" : the maximum number of allowed usage of the token if defined
+                "token_id" : token ID generated outside of this function if defined
             },
             "signature": The signature of the data (bytes)
             "verified": Whether the signature is valid or not (bool)
@@ -1138,7 +1131,13 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
             # get the key info
             keyInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
             keyID = keyInfo["key_id"]
+            if (keyID not in CONSTANTS.AVAILABLE_KEY_IDS):
+                raise KeyError("key not found in GCP KMS")
+
             keyRingID = keyInfo["key_ring_id"]
+            if (keyRingID not in CONSTANTS.AVAILABLE_KEY_RINGS):
+                raise KeyError("key ring not found in GCP KMS")
+
             versionID = keyInfo["version_id"]
             newData["header"] = keyInfo
         except:
@@ -1149,11 +1148,11 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
         raise ValueError("data must be either a dict or bytes")
 
     # Construct the key version name
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # Get the public key
     try:
-        publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+        publicKey = SECRET_CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
     except (GoogleErrors.NotFound, GoogleErrors.PermissionDenied):
         # If the key version does not exist or has invalid key path, return False by default
         return {"verified": False, "data": data} if (getData) else False
@@ -1171,10 +1170,11 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
         sha384_ = hashes.SHA384()
         ecKey.verify(signature, hash_, ec.ECDSA(utils.Prehashed(sha384_)))
         verified = True
-    except (InvalidSignature):
-        # If the signature is invalid or
+    except (InvalidSignature, TypeError):
+        # If the signature is invalid,
         # the payload has been tampered with,
-        # return false
+        # or the public key is not a valid EC key, 
+        # it is not valid
         verified = False
 
     # Check if the token has an expiry key defined in the json
@@ -1229,15 +1229,15 @@ def RSA_encrypt(
     # Get the version defined in Google Cloud Platfrom Secret Manager API if versionID is not defined
     if (versionID is None):
         if (purpose == "session"):
-            versionID = int(CONSTANTS.get_secret_payload(secretID=CONSTANTS.SESSION_COOKIE_ENCRYPTION_NAME))
+            versionID = int(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.SESSION_COOKIE_ENCRYPTION_NAME))
         else:
             raise ValueError(f"versionID must be defined as there is no such purpose, {purpose}, in the web application.")
 
     # Build the key version name.
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # get the public key
-    publicKey = CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
+    publicKey = SECRET_CONSTANTS.KMS_CLIENT.get_public_key(request={"name": keyVersionName})
 
     # Extract and parse the public key as a PEM-encoded RSA key
     pem = publicKey.pem.encode("utf-8")
@@ -1295,7 +1295,7 @@ def RSA_decrypt(cipherData:dict=None) -> str:
         raise RSACiphertextIsNotValidFormatError("The RSA ciphertext is missing some keys!")
 
     # Build the key version name.
-    keyVersionName = CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_version_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID, versionID)
 
     # encode it to bytes if the ciphertext is of string type
     if (isinstance(ciphertext, str)):
@@ -1306,7 +1306,7 @@ def RSA_decrypt(cipherData:dict=None) -> str:
 
     # construct and send the request to Google Cloud KMS API to decrypt the ciphertext
     try:
-        response = CONSTANTS.KMS_CLIENT.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
+        response = SECRET_CONSTANTS.KMS_CLIENT.asymmetric_decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
         print("Error caught:")
         print(e)
@@ -1426,7 +1426,7 @@ def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, 
                 - new version: active
     """
     # construct the secret path to the secret key ID
-    secretPath = CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID)
+    secretPath = SECRET_CONSTANTS.SM_CLIENT.secret_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID)
 
     # encode the secret to bytes if secret is in string format
     if (isinstance(secret, str)):
@@ -1436,22 +1436,24 @@ def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, 
     crc32cChecksum = crc32c(secret)
 
     # Add the secret version and send to Google Secret Management API
-    response = CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secret, "data_crc32c": crc32cChecksum})
+    response = SECRET_CONSTANTS.SM_CLIENT.add_secret_version(parent=secretPath, payload={"data": secret, "data_crc32c": crc32cChecksum})
 
     # get the latest secret version
     latestVer = int(response.name.split("/")[-1])
     write_log_entry(
-        logMessage= f"Secret {secretID} (version {latestVer}) created successfully!",
-        details = response,
+        logMessage={
+            "message": f"Secret {secretID} (version {latestVer}) created successfully!",
+            "details": response
+        },
         severity="INFO"
     )
 
     # disable all past versions if destroyPastVer is True
     if (destroyPastVer):
         for version in range(latestVer - 1, 0, -1):
-            secretVersionPath = CONSTANTS.SM_CLIENT.secret_version_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID, version)
+            secretVersionPath = SECRET_CONSTANTS.SM_CLIENT.secret_version_path(CONSTANTS.GOOGLE_PROJECT_ID, secretID, version)
             try:
-                CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
+                SECRET_CONSTANTS.SM_CLIENT.destroy_secret_version(request={"name": secretVersionPath})
             except (GoogleErrors.FailedPrecondition):
                 # key is already destroyed
                 if (destroyOptimise):
@@ -1537,7 +1539,7 @@ def get_gmail_client() -> Resource:
     SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
     # get the token.json file from Google Cloud Secret Manager API
-    GOOGLE_TOKEN = json.loads(CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
+    GOOGLE_TOKEN = json.loads(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
 
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 
