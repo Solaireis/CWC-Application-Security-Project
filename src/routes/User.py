@@ -96,7 +96,6 @@ def twoFactorAuthSetup():
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
-                logName="coursefinity-web-app",
                 logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.",
                 severity="ALERT"
             )

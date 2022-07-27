@@ -39,7 +39,7 @@ def before_first_request() -> None:
     - None
     """
     # load google client id from credentials.json
-    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
+    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["SECRET_CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
 
     # get Google oauth flow object
     current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
@@ -347,7 +347,7 @@ def login():
             generatedTOTPSecretToken = pyotp.random_base32(length=128)
             generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
 
-            ipDetails = current_app.config["CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
+            ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
             # utc+8 time (SGT)
             currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
             currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")

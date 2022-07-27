@@ -10,7 +10,7 @@ from flask_talisman import Talisman
 from google.cloud import logging as gcp_logging
 
 # import local python libraries
-from python_files.classes.Constants import CONSTANTS
+from python_files.classes.Constants import SECRET_CONSTANTS, CONSTANTS
 from python_files.classes.Course import get_readable_category
 from python_files.functions.SQLFunctions import sql_operation
 
@@ -24,8 +24,9 @@ import logging, hashlib
 
 app = Flask(__name__)
 
-# Add the constant object to the flask app
+# Add the constants objects to the Flask web app
 app.config["CONSTANTS"] = CONSTANTS
+app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
 
 # Flask session cookie configurations
 # Change the default FLask session default
@@ -39,7 +40,7 @@ app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
 
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
-app.config["SECRET_KEY"] = app.config["CONSTANTS"].get_secret_payload(
+app.config["SECRET_KEY"] = app.config["SECRET_CONSTANTS"].get_secret_payload(
     secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
 )
 
@@ -51,9 +52,9 @@ with (app.app_context()):
 limiter.init_app(app)
 
 # Integrate Google CLoud Logging to the Flask app
-gcp_logging.handlers.setup_logging(app.config["CONSTANTS"].GOOGLE_LOGGING_HANDLER)
+gcp_logging.handlers.setup_logging(app.config["SECRET_CONSTANTS"].GOOGLE_LOGGING_HANDLER)
 logging.getLogger().setLevel(logging.INFO)
-app.logger.addHandler(app.config["CONSTANTS"].GOOGLE_LOGGING_HANDLER)
+app.logger.addHandler(app.config["SECRET_CONSTANTS"].GOOGLE_LOGGING_HANDLER)
 
 # Add gunicorn logger to the Flask app (when in production)
 if (not app.config["CONSTANTS"].DEBUG_MODE):
@@ -271,7 +272,7 @@ def check_for_new_flask_secret_key() -> None:
     Google Cloud Platform Secret Manager, 
     update the secret key in the web application to the new key.
     """
-    retrievedKeyFromGCPSecretManager = CONSTANTS.get_secret_payload(
+    retrievedKeyFromGCPSecretManager = app.config["SECRET_CONSTANTS"].get_secret_payload(
         secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
     )
     if (retrievedKeyFromGCPSecretManager != app.config["SECRET_KEY"]):

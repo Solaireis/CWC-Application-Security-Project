@@ -13,11 +13,11 @@ from stripe.api_resources.checkout.session import Session as StripeCheckoutSessi
 from css_inline import inline, CSSInliner # Not sure why VSC doesn't register these two
 
 # import local python libraries
-from python_files.classes.Constants import CONSTANTS
+from python_files.classes.Constants import SECRET_CONSTANTS
 from .NormalFunctions import JWTExpiryProperties, send_email, generate_id
 from .SQLFunctions import generate_limited_usage_jwt_token, sql_operation
 
-stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
+stripe.api_key = SECRET_CONSTANTS.STRIPE_SECRET_KEY
 
 def stripe_product_create(
     courseID:str, courseName:str, courseDescription:str, coursePrice: float, courseImagePath:str=None
@@ -91,14 +91,14 @@ def stripe_product_update(**kwargs) -> None:
     except:
         print("There was an Error in updating")
 
-def stripe_product_deactivate(courseID:str):
+def stripe_product_deactivate(courseID:str) -> None:
     try:
         stripe.Product.modify(courseID, active = False)
     except InvalidRequestError as error:
         print(error)
 
 #TODO: THIS
-def stripe_product_edit(courseName=None, courseDescription = None, coursePrice = None, courseImagePath = None):
+def stripe_product_edit(courseName=None, courseDescription = None, coursePrice = None, courseImagePath = None) -> None:
     pass
 
 def stripe_product_check(courseID:str) -> Optional[str]:
@@ -141,7 +141,6 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     paymentID = generate_id()
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
     jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
-    
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = url_for("userBP.purchase", _external = True, jwtToken = jwtToken),
@@ -168,8 +167,8 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         return checkoutSession
 
     except Exception as error:
-         print("Checkout: " + str(error))
-         return None
+        print("Checkout: " + str(error))
+        return None
 
 def expire_checkout(checkoutSession:str) -> None:
     """
@@ -186,7 +185,7 @@ def expire_checkout(checkoutSession:str) -> None:
     except InvalidRequestError:
         print(f"Session {checkoutSession} has already expired.")
 
-def send_checkout_receipt(paymentID):
+def send_checkout_receipt(paymentID:str) -> None:
     paymentIntent = sql_operation(table="stripe_payments", mode="get_payment_intent", paymentID=paymentID)
 
     checkoutDetails = stripe.PaymentIntent.retrieve(paymentIntent)["charges"]["data"][0]

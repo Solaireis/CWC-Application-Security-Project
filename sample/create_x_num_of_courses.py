@@ -25,6 +25,8 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
+SECRET_CONSTANTS = NormalFunctions.SECRET_CONSTANTS
+
 THUMBNAILS_PRESET = [
     "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_1.webp",
     "https://storage.googleapis.com/coursefinity/course-thumbnails/demo/demo_thumbnail_2.webp",
@@ -53,7 +55,7 @@ MARKDOWN_YOUTUBE_LINKS_PRESET = [
 ]
 
 # Get Stripe API Key
-stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
+stripe.api_key = SECRET_CONSTANTS.STRIPE_SECRET_KEY
 
 while (1):
     debugPrompt = input("Debug mode? (Y/n): ").lower().strip()

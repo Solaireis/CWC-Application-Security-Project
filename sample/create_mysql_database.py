@@ -7,7 +7,7 @@ import stripe
 from stripe.error import InvalidRequestError
 
 # import python standard libraries
-import pathlib, sys, json
+import pathlib, sys
 from importlib.util import spec_from_file_location, module_from_spec
 
 # import local python libraries
@@ -25,7 +25,8 @@ sys.modules[spec.name] = NormalFunctions
 spec.loader.exec_module(NormalFunctions)
 
 CONSTANTS = NormalFunctions.CONSTANTS
-stripe.api_key = CONSTANTS.STRIPE_SECRET_KEY
+SECRET_CONSTANTS = NormalFunctions.SECRET_CONSTANTS
+stripe.api_key = SECRET_CONSTANTS.STRIPE_SECRET_KEY
 
 def deactivate_stripe_courses(debug:bool=False) -> None:
     """
@@ -682,7 +683,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"DROP USER IF EXISTS {coursefinityName}")
 
     # create the users
-    coursefinitySQLPass = CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
+    coursefinitySQLPass = SECRET_CONSTANTS.get_secret_payload(secretID="sql-coursefinity-password")
     cur.execute(f"CREATE USER {coursefinityName} IDENTIFIED BY '{coursefinitySQLPass}'")
 
     # grant the coursefinity web app MySQL account 
