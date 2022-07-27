@@ -3,6 +3,7 @@ Run this file to download all dependencies with integrity checks.
 """
 # import third party libraries
 import requests
+from requests.auth import HTTPDigestAuth
 
 # import python standard libraries
 import hashlib, shutil, platform, sys
@@ -22,6 +23,10 @@ headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
 }
 
+#setting up authentication
+auth=HTTPDigestAuth('user', 'pass')
+
+# initialising variables
 rootDir = Path(__file__).absolute().parent.parent
 dirname = rootDir.joinpath("requirements.txt")
 packagedir = rootDir.joinpath("python_packages")
@@ -42,7 +47,7 @@ for lib in dependencies:
     except:
         pass
 
-    datafile = (requests.get(f"https://pypi.org/pypi/{name}/json", stream=True, headers=headers, timeout=10)).json()
+    datafile = (requests.get(f"https://pypi.org/pypi/{name}/json", auth=auth, stream=True, headers=headers, timeout=10)).json()
     file = datafile["releases"]
     versions = list(file)
 

@@ -12,6 +12,7 @@ email-validator>=1.1.3
 # the Flask web app
 flask-talisman>=1.0.0
 flask-seasurf>=1.1.1
+requests-kerberos>=0.14.0
 
 # Other useful dependencies
 # used in the Flask web app
