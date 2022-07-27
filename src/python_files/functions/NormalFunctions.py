@@ -952,13 +952,13 @@ def EC_sign(
                 "key_id" : key name used,
                 "key_ring_id" : key ring name used,
                 "version_id" : key version used
-                "token_id" : token ID generated outside of this function if defined
             },
             "data": {
                 "payload" : the payload,
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
                 "limit" : the maximum number of allowed usage of the token if defined
+                "token_id" : token ID generated outside of this function if defined
             },
             "signature": The signature of the data (bytes)
         }
@@ -1007,7 +1007,7 @@ def EC_sign(
 
     # If tokenID is defined, set the tokenID in the data
     if (tokenID is not None):
-        header["token_id"] = tokenID
+        data["token_id"] = tokenID
 
     # Create the data to be signed and encode it to bytes
     dataToSign = {"header": header, "data": data}
@@ -1073,6 +1073,7 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
                 "data_type" : the type of the data,
                 "expiry" : the expiry date of the signature/token if defined
                 "limit" : the maximum number of allowed usage of the token if defined
+                "token_id" : token ID generated outside of this function if defined
             },
             "signature": The signature of the data (bytes)
             "verified": Whether the signature is valid or not (bool)
@@ -1169,10 +1170,11 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
         sha384_ = hashes.SHA384()
         ecKey.verify(signature, hash_, ec.ECDSA(utils.Prehashed(sha384_)))
         verified = True
-    except (InvalidSignature):
-        # If the signature is invalid or
+    except (InvalidSignature, TypeError):
+        # If the signature is invalid,
         # the payload has been tampered with,
-        # return false
+        # or the public key is not a valid EC key, 
+        # it is not valid
         verified = False
 
     # Check if the token has an expiry key defined in the json

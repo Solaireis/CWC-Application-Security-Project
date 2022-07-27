@@ -433,7 +433,7 @@ def purchase(jwtToken:str):
     if not data.get("verified"):
         abort(400)
 
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
 

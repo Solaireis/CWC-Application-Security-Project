@@ -55,7 +55,7 @@ def recoverAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
 
@@ -221,7 +221,7 @@ def resetPassword(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
 
@@ -445,9 +445,10 @@ def unlockAccount(token:str):
         return redirect(url_for("guestBP.login"))
 
     # check if jwt exists in database
-    tokenID = data["header"].get("token_id")
+    tokenID = data["data"].get("token_id")
     if (tokenID is None):
         abort(404)
+
     if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
         flash("Unlock account url is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
