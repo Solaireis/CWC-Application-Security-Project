@@ -531,7 +531,6 @@
 #### Plan:
 - Data Integrity For Profile Pictures
 - Use Checksums to check for integrity (?)
-- Digest Authentication (?)
 
 #### Implemented:
 - Best Practices Followed
@@ -568,5 +567,7 @@
   - Check Hash of Video File, before saving it
     - Ensures that there was no tampering between the files when it was being taken from the source
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
+  - Digest Authentication
+    - Authenticating the user and server so that it is sent to the correct person
 
 ---

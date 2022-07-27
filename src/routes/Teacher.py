@@ -166,7 +166,7 @@ def videoUpload():
         except:
             print("Unexpected error.")
             return make_response("Unexpected error", 500)
-
+            
         if (currentChunk + 1 == totalChunks):
             # This was the last chunk, the file should be complete and the size we expect
             if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
