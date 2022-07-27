@@ -345,7 +345,7 @@ def login():
             # to avoid unexpected behaviour when verifying the TOTP
             # https://github.com/pyauth/pyotp/issues/115
             generatedTOTPSecretToken = pyotp.random_base32(length=128)
-            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=900).now() # 15 mins
+            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=480).now() # 8 mins
 
             ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
             # utc+8 time (SGT)
