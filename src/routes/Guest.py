@@ -182,7 +182,7 @@ def resetPasswordRequest():
                 f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{url_for('guestBP.login', _external=True)}' target='_blank'>login to CourseFinity</a> using your Google account.",
             ]
             # send email to the user to remind them to login using Google account
-            send_email(to=emailInput, subject="Reset Password", htmlBody="<br><br>".join(htmlBody))
+            send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
