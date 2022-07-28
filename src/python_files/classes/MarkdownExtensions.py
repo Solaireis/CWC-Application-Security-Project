@@ -5,29 +5,29 @@ import markdown
 from .Constants import CONSTANTS
 
 # import python standard libraries
-import re, html
+import re
 from dataclasses import dataclass
 
 @dataclass(frozen=True, repr=False)
 class UsefulRegexForMarkdown:
     """This class will be used to store the regex pattern for Markdown syntax and HTML tags."""
     MARKDOWN_ANCHOR_REGEX: re.Pattern[str] = re.compile(r"\[(.*?)\]\((.*?)\)")
-    HTML_ANCHOR_REGEX: re.Pattern[str] = re.compile(r"(<a.*?)(href=)('|\")(.*?)('|\")(.*?)(>)(.*?)(</a>)")
+    HTML_ANCHOR_REGEX: re.Pattern[str] = re.compile(r"(&lt;a.*?)(href=)(&#x27;|&quot;)(.*?)(&#x27;|&quot;)(.*?)(&gt;)(.*?)(&lt;/a&gt;)")
 
 class AnchorTagPreprocessor(markdown.preprocessors.Preprocessor):
     """Add attributes to the anchor html tag or the anchor markdown syntax."""
     def run(self, lines):
         newLines = []
         for line in lines:
-            htmlAnchorTagArray = UsefulRegexForMarkdown.HTML_ANCHOR_REGEX.findall(html.unescape(line))
+            htmlAnchorTagArray = UsefulRegexForMarkdown.HTML_ANCHOR_REGEX.findall(line)
             if (len(htmlAnchorTagArray) > 0):
                 for htmlAnchorTag in htmlAnchorTagArray:
-                    line = html.unescape(line).replace(
+                    line = line.replace(
                         "".join(htmlAnchorTag),
                         fr"<a rel='nofollow' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={htmlAnchorTag[3]}'>{htmlAnchorTag[-2]}</a>"
                     )
 
-            markdownAnchorTagArray = UsefulRegexForMarkdown.MARKDOWN_ANCHOR_REGEX.findall(html.unescape(line))
+            markdownAnchorTagArray = UsefulRegexForMarkdown.MARKDOWN_ANCHOR_REGEX.findall(line)
             if (len(markdownAnchorTagArray) > 0):
                 for markdownAnchorTag in markdownAnchorTagArray:
                     hrefURL = markdownAnchorTag[1]
