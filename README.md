@@ -59,7 +59,6 @@ Jason
 Wei Ren
 > 1. [A04:2021 – Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
 > 2. [A09:2021 – Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
-> 3. [A11:2021 - CSRF (Cheow-Suwako Reimu Fumos)](https://youtu.be/GHMjD0Lp5DY)
 
 Calvin
 > 1. [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
