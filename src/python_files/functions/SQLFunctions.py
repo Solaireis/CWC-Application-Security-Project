@@ -1326,10 +1326,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         cartCourseIDs = json.loads(cur.fetchone()[0])
 
+        cur.execute("SELECT teacher_id FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
+        isSameTeacher = (cur.fetchone()[0] == userID)
+
         cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
         purchasedCourseIDs = json.loads(cur.fetchone()[0])
 
-        if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs:
+        if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs and not isSameTeacher:
             cartCourseIDs.append(courseID)
             cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
             connection.commit()
