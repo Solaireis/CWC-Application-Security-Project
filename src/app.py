@@ -171,7 +171,7 @@ app.config["MAX_CONTENT_LENGTH"] = 75 * 1024 * 1024 # 75MiB
 app.config["ALLOWED_IMAGE_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_IMAGE_EXTENSIONS
 
 # for course video uploads file path
-app.config["USER_IMAGE_VOLDER"] = Path(app.root_path).joinpath("static", "user_profiles")
+app.config["USER_IMAGE_FOLDER"] = Path(app.root_path).joinpath("static", "user_profiles")
 app.config["COURSE_VIDEO_FOLDER"] = Path(app.root_path).joinpath("static", "course_videos")
 app.config["ALLOWED_VIDEO_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_VIDEO_EXTENSIONS
 

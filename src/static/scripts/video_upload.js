@@ -1,47 +1,57 @@
 // For Dropzone
 // https://github.com/dropzone/dropzone/blob/main/src/options.js
 
-// Dropzone.options.dropper = {
-//     url: "/upload-video", // Determines where to reroute after submission
-//     chunking: true, // Enable chunking
-//     forceChunking: true, // Force chunking to happen
-//     chunkSize: 2000000, // Size of each chunk in bytes (Need to clarify this, default:2mb)
-//     retryChunks: true, // Retry chunk uploads
-//     retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
-//     maxFilesize: 10000, // Maximum size of each file in MB (current: 10GB)
-//     paramName: "videoUpload", // The name of the uploaded file
-//     maxFiles: 1, // Number of files allowed to be uploaded
-//     acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
-//     autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
-//     init: function() {
-//         //function will remove older video if one is already uploaded
-//         this.on("addedfile", function() {
-//             document.querySelector(".dz-progress").classList.add("d-none");
-//             if (this.files[1] == null) 
-//                 return;
-//             this.removeFile(this.files[0]);
-//         });
-//         this.on("success", function () {
-//             window.location = "";
-//         });
-//     }
-// };
+Dropzone.options.dropper = {
+    url: "/upload-video", // Determines where to reroute after submission
+    chunking: true, // Enable chunking
+    forceChunking: true, // Force chunking to happen
+    chunkSize: 50000000, // Size of each chunk in bytes (Need to clarify this, default:50mb)
+    retryChunks: true, // Retry chunk uploads
+    retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
+    maxFilesize: 500, // Maximum size of each file in MB (current: 500mb)
+    paramName: "videoUpload", // The name of the uploaded file
+    maxFiles: 1, // Number of files allowed to be uploaded
+    acceptedFiles: ".mp4, .mov, .wmv, .avi, .webm", //allowed file extensions (clarify with waffles)
+    addRemoveLinks: true, // ability to remove
+    autoProcessQueue: true, // whether to automatically process the queue after adding a file (set to false jic)
+    init: function() {
+        // var fileHash;
+        // HASH IS CORRECT :D, now need send across
+        this.on("addedfile", function(file) {
+            var reader = new FileReader();
+            var xhr = new XMLHttpRequest();
+            reader.onload = function(event) {
+                var hash = CryptoJS.SHA512(CryptoJS.lib.WordArray.create(event.target.result));
+                const fileHash = hash.toString(CryptoJS.enc.Hex);
+                xhr.open("POST", "", true); // sends a GET request to the same page
+                xhr.setRequestHeader("Content-Type", "application/json");
+                const jsonData = {
+                    hash: fileHash
+                }
+                xhr.send(JSON.stringify(jsonData));
+            };
+            reader.readAsArrayBuffer(file);
+        });
 
-//For video upload
+        this.on("removedfile", function(file) {
+            console.log("File " + file.name + " removed");
+        });
+        
 
-// var input = document.getElementById( 'upload' );
-// var infoArea = document.getElementById( 'file-upload-filename' );
+        // Testing something
+        // this.on("queuecomplete", function(file) {
+        //     var xhr = new XMLHttpRequest();
+        //     xhr.open("POST", "/upload-video", true); // sends a GET request to the same page
+        //     xhr.setRequestHeader("Content-Type", "application/json");
+        //     const jsonData = {
+        //         hash: fileHash
+        //     }
+        //     xhr.send(JSON.stringify(jsonData));
+        // });
 
-// input.addEventListener( 'change', showFileName );
-
-// function showFileName( event ) {
-
-// // the change event gives us the input it occurred in 
-// var input = event.srcElement;
-
-// // the input has an array of files in the `files` property, each one has a name that you can use. We're just using the name here.
-// var fileName = input.files[0].name;
-
-// // use fileName however fits your app best, i.e. add it into a div
-// infoArea.textContent = 'File name: ' + fileName;
-// }
+        // comment this out when testing hash
+        this.on("success", function (file) {
+            window.location = "/draft-course-video-list";
+        });
+    }
+};

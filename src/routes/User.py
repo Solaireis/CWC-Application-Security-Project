@@ -351,7 +351,6 @@ def uploadPic():
 #             if (hashNum):
 #                 with open(absFilePath, "rb") as f:
 #                     fileHash = hashlib.sha512(f.read()).hexdigest()
-
 #                 if (fileHash != hashNum):
 #                     print("File Hash is incorrect")
 #                     absFilePath.unlink(missing_ok=True)
@@ -360,9 +359,13 @@ def uploadPic():
 
 #                 try:
 #                     imageUrlToStore = compress_and_resize_image(
-#                         imageData=imageData, imagePath=filePath, dimensions=(500, 500), 
+#                         imageData=imageData, uploadToGoogleStorage=False, imagePath=filePath, dimensions=(500, 500), 
 #                         folderPath=f"user-profiles"
 #                     )
+#                     imageUrlToStore = upload_file_from_path(
+#                           localFilePath=Path(absFilePath).with_suffix(".webp"), uploadDestination=f"user-profiles"
+#                     )
+#                     Path(absFilePath).with_suffix(".webp").unlink(missing_ok=True) # delete the webp file
 #                 except (InvalidProfilePictureError):
 #                     flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
 #                     return redirect(url_for("userBP.userProfile"))
