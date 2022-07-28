@@ -15,7 +15,7 @@ This project consists of us making a SECURE web application using Flask as its f
 **Group Members:**
 >1. Eden (Group Leader)
 >2. Jason
->3. Waffles
+>3. Wei Ren
 >4. Calvin
 
 **Project Situation:** 
