@@ -5,10 +5,6 @@
 {% else %}
 	{% extends "user_base.html" %}
 {% endif %}
-{% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_list.css') }}">
-{% endblock %}
-
 
 {% block title %}
 {% if accType == "Teacher" %}
@@ -45,146 +41,151 @@
 {% endwith %}
 
 <div class="container">
-{% if accType == "Teacher" %}
-    <h4 class="display-5">Courses Made</h4>
-{% else %}
-    <h4 class="display-5">Courses Found</h4>
-{% endif %}
-{% if courseListLen < 1 %}
     <div class="row">
-        <div class="col">
-            <h4 class="display-5">No Courses Uploaded</h4>
-            {% if accType == "Teacher" %}
-            <a class="btn btn-primary" href="{{ url_for('teacherBP.videoUpload') }}">Upload a Course!</a>
-            <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
-            {% endif %}
-            <!-- Add button to redirect  -->
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('generalBP.teacherPage', teacherID=teacherID) }}">{{ teacherName }}</a></li>
+                    <li class="breadcrumb-item active">All Courses</li>
+                </ol>
+            </nav>
         </div>
     </div>
-{% else %}
-    {% if accType == "Teacher" %}
-    <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
-    {% endif %}
-    {% for course in courseList %}
-        <div class="card mb-3">
-            <div class="row g-0">
-                <div class="col-md-4">
-                    {% if (course.courseImagePath == None) %}
-                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% else %}
-                        <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
-                    {% endif %}
-                </div>
-                <div class="col-md-8">
-                    <div class="card-body">
-                        <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
-                        <p class="card-text">{{ course.courseDescription }}</p>
-                        {% if accType != "Teacher" or userID != teacherID %}
-                        <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
-                        <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+    {% if courseListLen < 1 %}
+        <div class="row">
+            <div class="col">
+                <h4 class="display-5">No Courses Uploaded</h4>
+                {% if accType == "Teacher" %}
+                <a class="btn btn-primary" href="{{ url_for('teacherBP.videoUpload') }}">Upload a Course!</a>
+                <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
+                {% endif %}
+                <!-- Add button to redirect  -->
+            </div>
+        </div>
+    {% else %}
+        {% if accType == "Teacher" %}
+        <a class="btn btn-danger" href="{{ url_for('teacherBP.draftCourseList') }}">View Drafts</a>
+        {% endif %}
+        {% for course in courseList %}
+            <div class="card mb-3">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if (course.courseImagePath == None) %}
+                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                        {% else %}
+                            <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% endif %}
-                        <p class="card-text">
-                            <small class="text-muted">
-                                {% if (course.averageRating > 0) %}
-                                <div class="ratings">
-                                    {% with remainingStars = 5 - course.averageRating %}
-                                        {% for _ in range(course.averageRating) %}
-                                            <span class="fas fa-star"></span>
-                                        {% endfor %}
-                                        {% for _ in range(remainingStars) %}
-                                            <span class="far fa-star"></span>
-                                        {% endfor %}
-                                    {% endwith %}
-                                </div>
-                                {% else  %}
-                                <p class="card-text text-danger">No ratings yet...</p>
-                                {% endif %}
-                            </small>
-                        </p>
-                        {% if accType == "Teacher" and userID == teacherID %}
-                        <span><a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">Edit Course</a></span>
-                        <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
-                            data-bs-target="#deleteCourse">Delete Course</a></span>
-                        <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
-                        data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
-                        aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="deleteCourseLabel">Delete this course?</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
+                            <p class="card-text">{{ course.courseDescription }}</p>
+                            {% if accType != "Teacher" or userID != teacherID %}
+                            <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
+                            <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+                            {% endif %}
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    {% if (course.averageRating > 0) %}
+                                    <div class="ratings">
+                                        {% with remainingStars = 5 - course.averageRating %}
+                                            {% for _ in range(course.averageRating) %}
+                                                <span class="fas fa-star"></span>
+                                            {% endfor %}
+                                            {% for _ in range(remainingStars) %}
+                                                <span class="far fa-star"></span>
+                                            {% endfor %}
+                                        {% endwith %}
                                     </div>
-                                    <div class="modal-body">
-                                        <p>Are you sure that you would like to delete this course from the database</p>
-                                        <p class="text-danger">Warning: Deletion of Course is IRREVERSIBLE</p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">Back</button>
-                                        <form action="{{ url_for('teacherBP.courseDelete') }}?cid={{course.courseID}}" method="POST">
-                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-danger">Delete Course!</button>
-                                        </form>
+                                    {% else  %}
+                                    <p class="card-text text-danger">No ratings yet...</p>
+                                    {% endif %}
+                                </small>
+                            </p>
+                            {% if accType == "Teacher" and userID == teacherID %}
+                            <span><a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">Edit Course</a></span>
+                            <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
+                                data-bs-target="#deleteCourse">Delete Course</a></span>
+                            <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
+                            data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
+                            aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteCourseLabel">Delete this course?</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure that you would like to delete this course from the database</p>
+                                            <p class="text-danger">Warning: Deletion of Course is IRREVERSIBLE</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">Back</button>
+                                            <form action="{{ url_for('teacherBP.courseDelete') }}?cid={{course.courseID}}" method="POST">
+                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="btn btn-danger">Delete Course!</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
-    {% endfor %}
-    <nav aria-label="Page navigation" class="d-flex justify-content-center">
-        <ul class="pagination">
-            {% with urlPath = url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" %}
-                {% if isOwnself %}
-                    {% set urlPath = url_for("teacherBP.courseList") + "?p=" %}
-                {% endif %}
-                {% if currentPage != 1 %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
-                        <span aria-hidden="true">&laquo;</span>
-                        <span class="sr-only">First Page</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="{{ urlPath }}{{ currentPage - 1 }}" aria-label="Previous">
-                            <span aria-hidden="true">&lt;</span>
-                            <span class="sr-only">Previous</span>
-                        </a>
-                    </li>
-                {% endif %}
-                {% for pageNum in paginationArr %}
-                    {% if pageNum == currentPage %}
-                        <li class="page-item active" aria-current="page">
-                            <a class="page-link" href="{{ urlPath }}{{ currentPage }}">{{ currentPage }}</a>
-                        </li>
-                    {% else %}
+        {% endfor %}
+        <nav aria-label="Page navigation" class="d-flex justify-content-center">
+            <ul class="pagination">
+                {% with urlPath = url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" %}
+                    {% if isOwnself %}
+                        {% set urlPath = url_for("teacherBP.courseList") + "?p=" %}
+                    {% endif %}
+                    {% if currentPage != 1 %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ urlPath }}{{ pageNum }}">{{ pageNum }}</a>
+                            <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">First Page</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ currentPage - 1 }}" aria-label="Previous">
+                                <span aria-hidden="true">&lt;</span>
+                                <span class="sr-only">Previous</span>
+                            </a>
                         </li>
                     {% endif %}
-                {% endfor %}
-                {% if currentPage != maxPage %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ urlPath }}{{ currentPage + 1 }}" aria-label="Next">
-                            <span aria-hidden="true">&gt;</span>
-                            <span class="sr-only">Next</span>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="{{ urlPath }}{{ maxPage }}" aria-label="Last Page">
-                        <span aria-hidden="true">&raquo;</span>
-                        <span class="sr-only">Last Page</span>
-                        </a>
-                    </li>
-                {% endif %}
-            {% endwith %}
-        </ul>
-    </nav>
-{% endif %}
+                    {% for pageNum in paginationArr %}
+                        {% if pageNum == currentPage %}
+                            <li class="page-item active" aria-current="page">
+                                <a class="page-link" href="{{ urlPath }}{{ currentPage }}">{{ currentPage }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ urlPath }}{{ pageNum }}">{{ pageNum }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if currentPage != maxPage %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ currentPage + 1 }}" aria-label="Next">
+                                <span aria-hidden="true">&gt;</span>
+                                <span class="sr-only">Next</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ maxPage }}" aria-label="Last Page">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Last Page</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endwith %}
+            </ul>
+        </nav>
+    {% endif %}
 </div>
 {% endblock %}
 

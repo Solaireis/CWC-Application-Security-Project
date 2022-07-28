@@ -87,7 +87,7 @@ def teacherPage(teacherID:str):
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
 
-@generalBP.route("/all-courses/<string:teacherID>")
+@generalBP.route("/teacher/<string:teacherID>/courses")
 def allCourses(teacherID:str):
     accType = imageSrcPath = userID = None
     if ("user" in session):
@@ -99,17 +99,18 @@ def allCourses(teacherID:str):
             return redirect(url_for("teacherBP.courseList"))
 
     page = request.args.get("p", default=1, type=int)
-    allCourses = sql_operation(table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID)
-    maxPage = 0
-    if (len(allCourses) != 0):
-        courseList, maxPage = allCourses[0], allCourses[1]         
+    courseList, maxPage, teacherName = sql_operation(
+        table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID, getTeacherName=True
+    )
+    paginationArr = []
+    if (len(courseList) != 0):      
         if (page > maxPage):
             return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" + str(maxPage))
 
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False, paginationArr=paginationArr, userID=userID)
+    return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False, paginationArr=paginationArr, userID=userID, teacherName=teacherName)
 
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):

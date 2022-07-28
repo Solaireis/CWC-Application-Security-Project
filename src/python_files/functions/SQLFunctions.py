@@ -1524,20 +1524,33 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "get_all_courses_by_teacher"):
         teacherID = kwargs["teacherID"]
+        if (len(teacherID) > 32):
+            teacherID = teacherID[:32]
+
         pageNum = kwargs["pageNum"]
+        getTeacherName = kwargs.get("getTeacherName", False)
         if (pageNum > 2147483647):
             pageNum = 2147483647
-        # Not using offset as it will get noticeably slower with more courses
+
         cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":1})
         try:
             maxPage = cur.fetchone()[-1]
             if (pageNum > maxPage):
-                return (False , maxPage)
+                return ([] , maxPage, "") if (getTeacherName) else ([], maxPage)
         except:
-            return []
+            return ([], 1, "") if (getTeacherName) else ([], 1)
+
         cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
+
+        teacherName = ""
+        if (getTeacherName):
+            cur.execute("SELECT username FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
+            teacherName = cur.fetchone()
+            if (teacherName is None):
+                return ([], 1, "")
+            teacherName = teacherName[0]
 
         # Get the teacher's profile image from the first tuple
         teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
@@ -1550,7 +1563,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
             )
 
-        return (courseList, maxPage)
+        return (courseList, maxPage, teacherName) if (getTeacherName) else (courseList, maxPage)
 
     elif (mode == "get_all_draft_courses"):
         teacherID = kwargs["teacherID"]

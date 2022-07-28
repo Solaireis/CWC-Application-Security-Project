@@ -15,33 +15,15 @@
 {% block content %}
 <div class="container-lg">
     <div class="row">
-        
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ url_for('generalBP.teacherPage', teacherID=courses.teacherID) }}">{{ courses.teacherUsername }}</a></li>
-                <li class="breadcrumb-item active"><a href="">All Courses</a></li>
-                <li class="breadcrumb-item active" aria-current="page"> {{ courses.courseName }}</li>
-            </ol>
-        </nav>
-
-        <div class="table-responsive-lg">
-            <table class="table table-borderless">
-                <tr></tr>
-            </table>
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('generalBP.teacherPage', teacherID=courses.teacherID) }}">{{ courses.teacherUsername }}</a></li>
+                    <li class="breadcrumb-item active"><a href="{{ url_for('generalBP.allCourses', teacherID=courses.teacherID) }}">All Courses</a></li>
+                    <li class="breadcrumb-item active" aria-current="page"> {{ courses.courseName }}</li>
+                </ol>
+            </nav>
         </div>
-    </div>
-</div>
-<div class="container-lg">
-    <!-- 
-    <div class="row">
-            <iframe width="1200" height="600" frameborder="0" src="{{ courseVideoPath }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen   >
-            </iframe>
-    </div>
-    -->
-</div>
-
-<div class="container-lg">
-    <div class="row">
         <div class="col-lg-8">
             <h1>{{ courses.courseName }}</h1>
             <hr>
