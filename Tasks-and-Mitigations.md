@@ -80,14 +80,14 @@
 
 - Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
   - For layered security on top of HTTPS.
-  - Using RSAES-OAEP 4096 bit key with a SHA-512 digest (Asymmetric Encryption)
-    - 156 bits of security
+  - Using Google Cloud Platform KMS.
+  - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
   - Preventing sensitive data from being sniffed and exposed such as the session identifier
+
 - Encrypting the sensitive data in the database using Google Cloud Platform KMS symmetric encryption service
   - Using Google Cloud Platform KMS (Key Management Service) API
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
-  - Each user has a unique symmetric key for encryption and decryption
-  - Encrypted the Argon2 hash of the password
+  - Encrypted the Argon2 hash of the password as pepper
 
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway
 

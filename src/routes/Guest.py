@@ -394,7 +394,9 @@ def login():
                 session["password_compromised"] = passwordCompromised
             session["temp_uid"] = userInfo[0]
             session["username"] = userInfo[2]
-            session["token"] = RSA_encrypt(generatedTOTPSecretToken)
+            session["token"] = symmetric_encrypt(
+                plaintext=generatedTOTPSecretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+            )
             flash("An email has been sent to you with your special access code!", "Success")
             return redirect(url_for("guestBP.enterGuardTOTP"))
 
@@ -517,7 +519,9 @@ def enterGuardTOTP():
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
         totpInput = guardAuthForm.twoFATOTP.data
-        totpSecretToken = RSA_decrypt(session["token"])
+        totpSecretToken = symmetric_decrypt(
+            ciphertext=session["token"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+        )
         if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
             write_log_entry(
                 logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['user_email']}\", with the following IP address: {get_remote_address()}", 
@@ -559,7 +563,9 @@ def loginViaGoogle():
     )
 
     # Store the state so the callback can verify the auth server response
-    session["state"] = RSA_encrypt(state)
+    session["state"] = symmetric_encrypt(
+        plaintext=state, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+    )
     return redirect(authorisationUrl)
 
 @guestBP.route("/login-callback")
@@ -573,7 +579,10 @@ def loginCallback():
         flash("An error occurred while trying to login via Google!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    if (RSA_decrypt(session["state"]) != request.args.get("state", default="", type=str)):
+    decryptedState = symmetric_decrypt(
+        ciphertext=session["state"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+    )
+    if (decryptedState != request.args.get("state", default="", type=str)):
         abort(500) # when state does not match (protect against CSRF attacks)
 
     credentials = current_app.config["GOOGLE_OAUTH_FLOW"].credentials

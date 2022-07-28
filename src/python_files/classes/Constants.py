@@ -150,10 +150,6 @@ class Constants:
     # For Google Key Management Service API
     LOCATION_ID: str = "asia-southeast1"
 
-    # For encrypting data in the database
-    PEPPER_KEY_ID: str = "pepper-key"
-    SENSITIVE_DATA_KEY_ID: str = "sensitive-data-key"
-
     # During development, we will use software protected keys
     # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
     # Lastly, cryptographic operations will be cheaper 
@@ -162,12 +158,15 @@ class Constants:
     APP_KEY_RING_ID: str = "dev-key-ring" if (DEBUG_MODE) else "coursefinity"
     AVAILABLE_KEY_RINGS: tuple = ("dev-key-ring") if (DEBUG_MODE) else ("coursefinity")
 
-    # For Google KMS asymmetric encryption and decryption key
-    RSA_ENCRYPTION_KEY_ID: str = "encrypt-decrypt-key"
-    SESSION_COOKIE_ENCRYPTION_NAME: str = "rsa-session-cookie-version"
+    # For encrypting data in the database
+    PEPPER_KEY_ID: str = "pepper-key"
+    SENSITIVE_DATA_KEY_ID: str = "sensitive-data-key"
+
+    # For encrypting data that will be shared with the client (e.g. the JWT signature)
+    COOKIE_ENCRYPTION_KEY_ID: str = "cookie-key"
     EC_SIGNING_KEY_ID: str = "signing-key"
     SIGNATURE_VERSION_NAME: str = "ec-signature-version"
-    AVAILABLE_KEY_IDS: tuple = ("encrypt-decrypt-key", "signing-key")
+    AVAILABLE_KEY_IDS: tuple = ("cookie-key", "signing-key")
 
     # For Google MySQL Cloud API
     SQL_INSTANCE_LOCATION: str = "coursefinity-339412:asia-southeast1:coursefinity-mysql"

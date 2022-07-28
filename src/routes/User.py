@@ -57,9 +57,13 @@ def twoFactorAuthSetup():
         # for google authenticator setup key (20 byte)
         if ("2fa_token" not in session):
             secretToken = pyotp.random_base32() # MUST be kept secret
-            session["2fa_token"] = RSA_encrypt(plaintext=secretToken)
+            session["2fa_token"] = symmetric_encrypt(
+                plaintext=secretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+            )
         else:
-            secretToken = RSA_decrypt(cipherData=session["2fa_token"])
+            secretToken = symmetric_decrypt(
+                ciphertext=session["2fa_token"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+            )
 
         # generate a QR code for the user to scan
         totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo.username, issuer_name="CourseFinity")
@@ -86,7 +90,10 @@ def twoFactorAuthSetup():
 
         twoFATOTP = twoFactorAuthForm.twoFATOTP.data
         secretToken = request.form.get("secretToken")
-        if (secretToken is None or secretToken != RSA_decrypt(cipherData=session["2fa_token"])):
+        decryptedToken = symmetric_decrypt(
+            ciphertext=session["2fa_token"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+        )
+        if (secretToken is None or secretToken != decryptedToken):
             flash("Please check your entry and try again!")
             return redirect(url_for("userBP.twoFactorAuthSetup"))
 
