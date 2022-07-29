@@ -302,3 +302,92 @@ def verifyEmail(token:str):
     else:
         flash("Your email has been verified!", "Success")
         return redirect(url_for("guestBP.login"))
+
+@generalBP.route("/about-us")
+def aboutUs():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/about_us.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/terms-and-conditions")
+def tos():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/terms_and_conditions.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/privacy-policy")
+def privacyPolicy():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/privacy_policy.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/cookie-policy")
+def cookiePolicy():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/cookie_policy.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/faq")
+def faq():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/faq.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/contact-us", methods=["GET", "POST"])
+def contactUs():
+    # TODO: Wei Ren to do the contact us page and form
+    return "Work in progress"
+
+@generalBP.route("/community-guidelines")
+def communityGuidelines():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/community_guidelines.html", accType=accType, imageSrcPath=imageSrcPath)
+
+@generalBP.route("/teacher-handbook")
+def teacherHandBook():
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    return render_template("users/general/teacher_handbook.html", accType=accType, imageSrcPath=imageSrcPath)
