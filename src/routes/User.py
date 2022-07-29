@@ -227,7 +227,17 @@ def updateEmail():
         if (not changed):
             return render_template("users/user/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
         else:
-            print(f"old email:{oldEmail}, new email:{updatedEmail}")
+            emailBody = [
+                f"Your email has been changed recently from {oldEmail} to {updatedEmail}<br>",
+                "If you did not update your email recently, it is likely your account has been compromised.",
+                f"please either <a href='{url_for('loggedInBP.updatePassword', _external=True)}' target='_blank'>change your password</a> or <a href='{url_for('guestBP.resetPasswordRequest', _external=True)}' target='_blank'>reset your password</a> immediately.<br>",
+                f"If you require further assistance with recovering your account, please either contact us on the <a href='{url_for('generalBP.contactUs', _external=True)}' target='_blank'>contact us page</a> or email us at coursefinity123@gmail.com"
+            ]
+            send_email(
+                to=oldEmail,
+                subject="Change of Email Notice",
+                body="<br>".join(emailBody)
+            )
             flash(
                 "Your email has been successfully changed. However, a link has been sent to your new email to verify your new email!",
                 "Account Details Updated!"

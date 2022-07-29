@@ -1236,16 +1236,18 @@ def upload_new_secret_version(secretID:Union[str, bytes]=None, secret:str=None, 
             severity="INFO"
         )
 
-def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:str="", message:str="", name:str=None) -> dict:
+def create_message(
+    sender:str="coursefinity123@gmail.com", to:str="", subject:str="", message:str="", name:Optional[str]=None
+) -> dict:
     """
     Create a message for an email.
 
     Args:
-    - sender: Email address of the sender.
-    - to: Email address of the receiver.
-    - subject: The subject of the email message.
-    - message: The text of the email message. (Can be HTML)
-    - name: The name of the recipient.
+    - sender (str): Email address of the sender.
+    - to (str): Email address of the receiver.
+    - subject (str): The subject of the email message.
+    - message (str): The text of the email message. (Can be HTML)
+    - name (str, Optional): The name of the recipient.
 
     Returns:
     A dictionary containing a base64url encoded email object.
@@ -1268,15 +1270,15 @@ def create_message(sender:str="coursefinity123@gmail.com", to:str="", subject:st
     htmlMessage["Subject"] = " ".join(["[CourseFinity]", subject])
     return {"raw": urlsafe_b64encode(htmlMessage.as_string().encode()).decode()}
 
-def send_email(to:str="", subject:str="", body:str="", name:str=None) -> Union[dict, None]:
+def send_email(to:str="", subject:str="", body:str="", name:Optional[str]=None) -> Union[dict, None]:
     """
     Create and send an email message.
 
     Args:
-    - to: Email address of the receiver.
-    - subject: The subject of the email message.
-    - body: The text of the email message. (Can be HTML)
-    - name: The name of the recipient.
+    - to (str): Email address of the receiver.
+    - subject (str): The subject of the email message.
+    - body (str): The text of the email message. (Can be HTML)
+    - name (str, Optional): The name of the recipient.
 
     Returns:
     Message object, including message id or None if there was an error.
@@ -1324,8 +1326,8 @@ def pwd_is_strong(password:str, strict:bool=False) -> bool:
     Checks if the password is strong against the password regex.
 
     Args:
-    - password: The password to check.
-    - strict: Whether to match all minimum requirements.
+    - password (str): The password to check.
+    - strict (bool): Whether to match all minimum requirements.
         - Used when haveibeenpwned's API is unavailable.
 
     Returns:
@@ -1377,7 +1379,7 @@ def pwd_has_been_pwned(password:str) -> bool:
     leaked in the dark web through breaches from other services/websites.
 
     Args:
-    - password: The password to check
+    - password (str): The password to check
 
     Returns:
     - True if the password is in the database, False otherwise.
@@ -1502,6 +1504,5 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
         return False
         #TODO: Log
 
-    # Commented it out as I'm not sure why you would want to delete the original video
     # videoPath.unlink(missing_ok=True)
     return True
