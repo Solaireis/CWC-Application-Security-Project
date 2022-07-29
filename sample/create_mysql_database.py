@@ -220,13 +220,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     mydb.commit()
 
     # Stored Procedures
-    """Template"""
-    # cur.execute("""
-    #     CREATE DEFINER=%(definer)s PROCEDURE `procedurename`(arguments)
-    #     BEGIN
-    #         query statement;
-    #     END
-    # """, {"definer":definer})
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `delete_user`(IN user_id_input VARCHAR(32))
         BEGIN
