@@ -453,11 +453,27 @@ def courseReview(courseID:str):
         return render_template("users/user/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
 
 @userBP.route("/purchase-view/<string:courseID>")
-def purchaseView(courseID:str):
+def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
     # TODO: Make the argument based on the purchaseID instead of courseID
+    userPurchasedCourses = {}
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    userPurchasedCourses = userInfo.uid
+    accType = userInfo.role
     print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+
     print(courses)
+
+    if (accType == "3" or accType == "4"):
+        return abort(403)
+    if ( courses.teacherID == userInfo.uid):
+        pass
+    elif(courseID in userPurchasedCourses):
+        pass
+    else:
+        return abort(404)
+
+    
     #courseName = courses[0][1]
     if (not courses): #raise 404 error
         abort(404)
@@ -478,10 +494,8 @@ def purchaseView(courseID:str):
     print(teacherRecords)
 
     accType = imageSrcPath = None
-    userPurchasedCourses = {}
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    userPurchasedCourses = userInfo.uid
-    accType = userInfo.role
+
+    
     imageSrcPath = userInfo.profileImage
     videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
