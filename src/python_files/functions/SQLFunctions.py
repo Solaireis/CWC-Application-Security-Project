@@ -1414,7 +1414,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         videoPath = kwargs["videoPath"]
 
         cur.execute(
-            "INSERT INTO course VALUES (%(courseID)s, %(teacherID)s, %(courseName)s, %(courseDescription)s, %(courseImagePath)s, %(coursePrice)s, %(courseCategory)s, SGT_NOW(), %(videoPath)s)",
+            "INSERT INTO course VALUES (%(courseID)s, %(teacherID)s, %(courseName)s, %(courseDescription)s, %(courseImagePath)s, %(coursePrice)s, %(courseCategory)s, SGT_NOW(), %(videoPath)s, 1)",
             {"courseID":courseID, "teacherID":teacherID, "courseName":courseName, "courseDescription":courseDescription, "courseImagePath":courseImagePath, "coursePrice":coursePrice, "courseCategory":courseCategory, "videoPath":videoPath}
         )
         connection.commit()
@@ -1448,7 +1448,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("CALL get_course_data(%(courseID)s)", {"courseID":courseID})
         matched = cur.fetchone()
         print("Matched:", matched)
-        if (matched is None):
+        if (matched is None) or (not matched[-1]):
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
         return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False, getReadableCategory=True)
@@ -1519,7 +1519,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "delete"):
         courseID = kwargs["courseID"]
-        cur.execute("DELETE FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
+        cur.execute("UPDATE course SET active=0 WHERE course_id=%(courseID)s", {"courseID":courseID})
+        # cur.execute("DELETE FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         connection.commit()
 
     elif (mode == "get_all_courses_by_teacher"):
@@ -1617,6 +1618,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
+                    WHERE c.active=1
                     GROUP BY c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
@@ -1634,7 +1636,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
-                    WHERE c.teacher_id=%(teacherID)s
+                    WHERE c.teacher_id=%(teacherID)s AND c.active=1
                     GROUP BY c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
@@ -1654,6 +1656,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
+                    WHERE c.active=1
                     GROUP BY c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
@@ -1671,7 +1674,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ON c.course_id = r.course_id
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
-                    WHERE c.teacher_id=%(teacherID)s
+                    WHERE c.teacher_id=%(teacherID)s AND c.active=1
                     GROUP BY c.course_id, c.teacher_id, 
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created

@@ -124,6 +124,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_category VARCHAR(255) NOT NULL,
         date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL,
+        active BOOL NOT NULL DEFAULT TRUE,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
     cur.execute("CREATE INDEX course_course_name_idx ON course(course_name)")
@@ -284,7 +285,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             c.course_id, c.teacher_id, 
             u.username, u.profile_image, c.course_name, c.course_description,
             c.course_image_path, c.course_price, c.course_category, c.date_created, 
-            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
+            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path, c.active
             FROM course AS c
             LEFT OUTER JOIN review AS r
             ON c.course_id = r.course_id
@@ -325,7 +326,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.teacher_id=teacherID
+                WHERE c.teacher_id=teacherID AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS teacher_course_info
@@ -375,7 +376,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.course_name LIKE @search_query
+                WHERE c.course_name LIKE @search_query AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
@@ -400,7 +401,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.course_category=course_tag
+                WHERE c.course_category=course_tag AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
