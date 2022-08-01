@@ -220,7 +220,7 @@ def get_image_path(userID:str, returnUserInfo:bool=False, getCart:Optional[bool]
     imageSrcPath = userInfo.profileImage
     return imageSrcPath if (not returnUserInfo) else userInfo
 
-def format_user_info(userInfo:tuple, offset:int=0, hasCartAndPurchased:bool=True) -> UserInfo:
+def format_user_info(userInfo:tuple, offset:int=0, includeCart:bool=True) -> UserInfo:
     """
     Format the user's information to be returned to the client.
 
@@ -229,13 +229,13 @@ def format_user_info(userInfo:tuple, offset:int=0, hasCartAndPurchased:bool=True
     - offset (int): The offset of the user's tuple.
         - Used when there's extra attribute at the start of the user's tuple queried from the database.
         - Default: 0, no offset.
-    - hasCartAndPurchased (bool): If True, it will include the cart information and purchased courses in the user's info.
+    - includeCart (bool): If True, it will include the cart information in the user's info.
 
     Returns:
     - UserInfo object with the formatted user information.
     """
     userProfile = get_dicebear_image(userInfo[2 + offset]) if (userInfo[6 + offset] is None) else userInfo[6 + offset]
-    return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset, hasCartAndPurchased=hasCartAndPurchased)
+    return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset, includeCart=includeCart)
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
