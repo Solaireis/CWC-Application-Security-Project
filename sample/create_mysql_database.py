@@ -124,11 +124,24 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_category VARCHAR(255) NOT NULL,
         date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL,
+        active BOOL NOT NULL DEFAULT TRUE,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
     cur.execute("CREATE INDEX course_course_name_idx ON course(course_name)")
     cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
+
+    cur.execute("""CREATE TABLE deleted_user_courses (
+        course_id CHAR(32) PRIMARY KEY,
+        teacher_name VARCHAR(255) NOT NULL,
+        course_name VARCHAR(255) NOT NULL,
+        course_description VARCHAR(2000) DEFAULT NULL,
+        course_image_path VARCHAR(255) DEFAULT NULL,
+        course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
+        course_category VARCHAR(255) NOT NULL,
+        date_created DATETIME NOT NULL,
+        video_path VARCHAR(255) NOT NULL
+    )""")
 
     cur.execute("""CREATE TABLE draft_course (
         course_id CHAR(32) PRIMARY KEY,
@@ -223,12 +236,23 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `delete_user`(IN user_id_input VARCHAR(32))
         BEGIN
+            DELETE FROM stripe_payments WHERE user_id = user_id_input;
+            DELETE FROM draft_course WHERE teacher_id = user_id_input;
+            DELETE FROM review WHERE user_id = user_id_input;
+            DELETE FROM review WHERE course_id IN (SELECT course_id FROM course WHERE teacher_id = user_id_input);
+
+            INSERT INTO deleted_user_courses 
+            (course_id, teacher_name, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) 
+            SELECT c.course_id, u.username, c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category, c.date_created, c.video_path
+            FROM course AS c
+            INNER JOIN user AS u ON c.teacher_id = u.id
+            WHERE c.teacher_id = user_id_input;
             DELETE FROM course WHERE teacher_id = user_id_input;
+
             DELETE FROM user_ip_addresses WHERE user_id = user_id_input;
             DELETE FROM twofa_token WHERE user_id = user_id_input;
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
-            DELETE FROM review WHERE user_id = user_id_input;
             DELETE FROM recovery_token WHERE user_id = user_id_input;
             DELETE FROM user WHERE id = user_id_input;
         END
@@ -261,7 +285,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             c.course_id, c.teacher_id, 
             u.username, u.profile_image, c.course_name, c.course_description,
             c.course_image_path, c.course_price, c.course_category, c.date_created, 
-            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
+            ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path, c.active
             FROM course AS c
             LEFT OUTER JOIN review AS r
             ON c.course_id = r.course_id
@@ -302,7 +326,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.teacher_id=teacherID
+                WHERE c.teacher_id=teacherID AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS teacher_course_info
@@ -352,7 +376,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.course_name LIKE @search_query
+                WHERE c.course_name LIKE @search_query AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
@@ -377,7 +401,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 FROM course AS c
                 LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.course_category=course_tag
+                WHERE c.course_category=course_tag AND c.active=1
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
