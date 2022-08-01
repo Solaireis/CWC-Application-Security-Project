@@ -464,7 +464,7 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
 
     print(courses)
 
-    if (accType == "3" or accType == "4"):
+    if (accType != "2" or accType != "1"):
         return abort(403)
     if ( courses.teacherID == userInfo.uid):
         pass
