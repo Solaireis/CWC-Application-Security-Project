@@ -168,7 +168,7 @@
                                             <td>
                                                 <h6>Password:</h6>
                                             </td>
-                                            <td><a href="{{ url_for('loggedInBP.updatePassword') }}">Change Password</a></td>
+                                            <td><a href="{{ url_for('userBP.updatePassword') }}">Change Password</a></td>
                                         </tr>
                                     {% endif %}
                                     {% if loginViaGoogle != True %}
@@ -207,8 +207,8 @@
                                             </div>
                                             <div class="modal-body">
                                                 <p>Are you sure that you would like to become a teacher in CourseFinity?</p>
-                                                <p>If so, please read the <a href="#" target="_blank">Teacher's Handbook</a>
-                                                    and any failure to comply with the rules written in the <a href="#"
+                                                <p>If so, please read the <a href="{{ url_for('generalBP.teacherHandBook') }}" target="_blank">Teacher's Handbook</a>
+                                                    and any failure to comply with the rules written in the <a href="{{ url_for('generalBP.teacherHandBook') }}"
                                                         target="_blank">Teacher's Handbook</a> will result in <span
                                                         class="text-danger">termination</span> of your account.</p>
                                                 <p class="text-danger">Warning: Changing of account type from teacher to

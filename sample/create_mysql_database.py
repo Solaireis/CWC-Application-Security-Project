@@ -130,6 +130,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX course_course_name_idx ON course(course_name)")
     cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
+    cur.execute("CREATE INDEX course_teacher_idx ON course(teacher_id)")
 
     cur.execute("""CREATE TABLE deleted_user_courses (
         course_id CHAR(32) PRIMARY KEY,
@@ -150,6 +151,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         date_created DATETIME NOT NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX draft_course_teacher_idx ON draft_course(teacher_id)")
 
     cur.execute("""CREATE TABLE stripe_payments (
         payment_id VARCHAR(32) PRIMARY KEY,
@@ -162,6 +164,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         receipt_email VARCHAR(255),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX stripe_payments_user_idx ON stripe_payments(user_id)")
 
     cur.execute("""CREATE TABLE user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
@@ -171,9 +174,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         PRIMARY KEY (user_id, ip_address),
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
-    cur.execute("CREATE INDEX ip_address_idx ON user_ip_addresses(ip_address)")
-    cur.execute("CREATE INDEX last_accessed_idx ON user_ip_addresses(last_accessed)")
-    cur.execute("CREATE INDEX is_ipv4_idx ON user_ip_addresses(is_ipv4)")
+    cur.execute("CREATE INDEX user_ip_addresses_ip_address_idx ON user_ip_addresses(ip_address)")
+    cur.execute("CREATE INDEX user_ip_addresses_last_accessed_idx ON user_ip_addresses(last_accessed)")
+    cur.execute("CREATE INDEX user_ip_addresses_is_ipv4_idx ON user_ip_addresses(is_ipv4)")
+    cur.execute("CREATE INDEX user_ip_addresses_user_id_idx ON user_ip_addresses(user_id)")
 
     cur.execute("""CREATE TABLE limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
@@ -215,7 +219,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         fingerprint_hash CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
         FOREIGN KEY (user_id) REFERENCES user(id)
     )""")
+    cur.execute("CREATE INDEX session_user_id_idx ON session(user_id)")
     cur.execute("CREATE INDEX session_expiry_date_idx ON session(expiry_date)")
+    cur.execute("CREATE INDEX session_fingerprint_hash_idx ON session(fingerprint_hash)")
 
     cur.execute("""CREATE TABLE review (
         user_id VARCHAR(32),
@@ -223,11 +229,15 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_rating INTEGER UNSIGNED,
         course_review VARCHAR(255),
         review_date DATETIME NOT NULL,
+
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id),
         FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
+    cur.execute("CREATE INDEX review_user_id_idx ON review(user_id)")
+    cur.execute("CREATE INDEX review_course_id_idx ON review(course_id)")
     cur.execute("CREATE INDEX review_course_rating_idx ON review(course_rating)")
+    cur.execute("CREATE INDEX review_review_date_idx ON review(review_date)")
 
     # end of table creation
     mydb.commit()

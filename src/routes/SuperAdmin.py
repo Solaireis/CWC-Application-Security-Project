@@ -16,8 +16,6 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
-    #get the role of the user
-    
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -113,9 +111,6 @@ def adminManagement():
 
         return redirect(session["relative_url"])
 
-    
-
-        
     # Pagination starts below
     pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
@@ -162,8 +157,8 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
 
     form = UpdateRoles(request.form)
     if (request.method == "POST" and form.validate()):
-        #formType = request.form.get("formType", default=None, type=str)
-        
+        # formType = request.form.get("formType", default=None, type=str)
+
         roleName = form.roleName.data
         guestBP = form.guestBP.data
         generalBP = form.generalBP.data
@@ -173,14 +168,38 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         teacherBP = form.teacherBP.data
         userBP = form.userBP.data
         superAdminBP = form.superAdminBP.data
-        sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
+
+        guestBP1 = request.form.get("guestBP1", default="off", type=str)
+        generalBP1 = request.form.get("generalBP1", default="off", type=str)
+        adminBP1 = request.form.get("adminBP1", default="off", type=str)
+        loggedInBP1 = request.form.get("loggedInBP1", default="off", type=str)
+        errorBP1 = request.form.get("errorBP1", default="off", type=str)
+        teacherBP1 = request.form.get("teacherBP1", default="off", type=str)
+        userBP1 = request.form.get("userBP1", default="off", type=str)
+        superAdminBP1 = request.form.get("superAdminBP1", default="off", type=str)
+        print(guestBP1, generalBP1, adminBP1, loggedInBP1, errorBP1, teacherBP1, userBP1, superAdminBP1)
+
+        # TODO: create input validations for the form
+
+        guestBP = True if (guestBP.lower() == "on") else False
+        generalBP = True if (generalBP.lower() == "on") else False
+        adminBP = True if (adminBP.lower() == "on") else False
+        loggedInBP = True if (loggedInBP.lower() == "on") else False
+        errorBP = True if (errorBP.lower() == "on") else False # TODO: Remove later
+        teacherBP = True if (teacherBP.lower() == "on") else False
+        userBP = True if (userBP.lower() == "on") else False
+        superAdminBP = True if (superAdminBP.lower() == "on") else False # TODO: Remove later
+
+        sql_operation(
+            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
+            adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, 
+            userBP=userBP, superAdminBP=superAdminBP
+        )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))
 
     # TODO: Role Management do not need pagination and relative url session
     return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count,form=form)
-
-    
 
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
 def createAdmin():
