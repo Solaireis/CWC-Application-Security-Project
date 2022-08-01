@@ -529,7 +529,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
 
         stackTraceback.append({
             "stackLevel": stackLevel,
-            "filename": data.filename.rsplit("\\", 1)[1], # TODO: fix cause it gives out of index error
+            "filename": Path(data.filename).name,
             "lineNo": data.lineno,
             "function": f"{data.function}()" if data.function != "<module>" else data.function,
             "codeContext": [line.strip() for line in data.code_context],
