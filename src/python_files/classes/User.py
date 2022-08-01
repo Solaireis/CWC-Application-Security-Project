@@ -7,7 +7,7 @@ class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""
     def __init__(
         self, tupleData:tuple=None, userProfile:str="",
-        offset:Optional[int]=0, hasCartAndPurchased:Optional[bool]=True
+        offset:Optional[int]=0, hasCartAndPurchased:Optional[bool]=False
     ):
         """
         Constructor for user object.
@@ -19,7 +19,7 @@ class UserInfo:
             - Default: 0
             - E.g. offset=1 to account for the row number at the start of the tuple.
         - hasCartAndPurchased (bool, Optional): Whether or not the tuple has a cart and purchased courses index.
-            - Default: True
+            - Default: False
         """
         self.__uid = tupleData[0 + offset]
         self.__role = tupleData[1 + offset]

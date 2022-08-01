@@ -13,7 +13,7 @@
 {% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
 
 {% block content %}
-<div class="container-lg">
+<div class="container-md course-container">
     <div class="row">
         <div class="col-12">
             <nav aria-label="breadcrumb">
@@ -78,7 +78,7 @@
                 {% endif %}
             </div>
         </div>
-        <div class="col-lg-8">
+        <div class="col-lg-8 pt-3">
             <h1>Reviews</h1>
             {% for review in reviewList %}
                 <div class="card">

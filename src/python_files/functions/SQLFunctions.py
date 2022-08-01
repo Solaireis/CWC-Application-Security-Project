@@ -190,7 +190,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     ]
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
-def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo]:
+def get_image_path(userID:str, returnUserInfo:bool=False, getCartAndPurchased:Optional[bool]=False) -> Union[str, UserInfo]:
     """
     Returns the image path for the user.
 
@@ -202,12 +202,13 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo
     Args:
     - userID: The user's ID
     - returnUserInfo: If True, it will return a tuple of the user's record.
+    - getCartAndPurchased: If True, it will also return the user's cart and purchased items.
 
     Returns:
     - The image path (str) only if returnUserInfo is False
     - The UserInfo object with the profile image path in the object if returnUserInfo is True
     """
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID, getCartAndPurchased=getCartAndPurchased)
 
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
@@ -285,6 +286,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "stripe_payments"):
                 returnValue = stripe_payments_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "cart"):
+                returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -312,10 +315,30 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     return returnValue
 
+def cart_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+
+    cur = connection.cursor()
+    if (mode == "check_if_purchased_or_in_cart"):
+        courseID = kwargs["courseID"]
+        userID = kwargs["userID"]
+
+        cur.execute("SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s", {"courseID":courseID, "userID":userID})
+        isInCart = (cur.fetchone() is not None)
+
+        cur.execute("SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s", {"courseID":courseID, "userID":userID})
+        isPurchased = (cur.fetchone() is not None)
+
+        return (isInCart, isPurchased)
+
+    else:
+        raise ValueError("Invalid mode in cart_sql_operation function!")
+
 def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
         raise ValueError("You must specify a mode in the stripe_payments_sql_operation function!")
-    
+
     cur = connection.cursor()
     if mode == "create_payment_session":
         paymentID = kwargs["paymentID"]
@@ -1049,7 +1072,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
         matched = cur.fetchone()
-        return format_user_info(matched) if (matched is not None) else None
+        return format_user_info(matched, hasCartAndPurchased=kwargs.get("getCartAndPurchased", False)) if (matched is not None) else None
 
     elif (mode == "change_profile_picture"):
         userID = kwargs["userID"]
@@ -1538,10 +1561,26 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                                                                else resultsList[0][4]
 
         courseList = []
+        loggedInUserID = kwargs.get("userID")
         for tupleInfo in resultsList:
             foundResultsTuple = tupleInfo[1:]
+
+            purchased = isInCart = False
+            if (loggedInUserID is not None):
+                cur.execute(
+                    "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                    {"courseID":foundResultsTuple[0], "userID":loggedInUserID}
+                )
+                purchased = True if (cur.fetchone() is not None) else False
+                cur.execute(
+                    "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                    {"courseID":foundResultsTuple[0], "userID":loggedInUserID}
+                )
+                isInCart = True if (cur.fetchone() is not None) else False
+
             courseList.append(
-                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
+                (CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True),
+                {"purchased":purchased, "isInCart":isInCart})
             )
 
         return (courseList, maxPage, teacherName) if (getTeacherName) else (courseList, maxPage)
@@ -1661,6 +1700,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ORDER BY avg_rating DESC LIMIT 3;
                 """, {"teacherID":teacherID})
 
+        loggedInUserID = kwargs.get("userID")
         matchedList = cur.fetchall()
         if (not matchedList):
             return []
@@ -1674,8 +1714,23 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     res = cur.fetchone()
                     teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                         else res[1]
+
+                    purchased = isInCart = False
+                    if (loggedInUserID is not None):
+                        cur.execute(
+                            "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":matchedList[i][0], "userID":loggedInUserID}
+                        )
+                        purchased = True if (cur.fetchone() is not None) else False
+                        cur.execute(
+                            "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":matchedList[i][0], "userID":loggedInUserID}
+                        )
+                        isInCart = True if (cur.fetchone() is not None) else False
+
                     courseInfoList.append(
-                        CourseInfo(matchedList[i], profilePic=teacherProfile, truncateData=True)
+                        (CourseInfo(matchedList[i], profilePic=teacherProfile, truncateData=True),
+                        {"purchased":purchased, "isInCart":isInCart})
                     )
                 return courseInfoList
             else:
@@ -1684,8 +1739,22 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                     else res[1]
                 for tupleInfo in matchedList:
+                    purchased = isInCart = False
+                    if (loggedInUserID is not None):
+                        cur.execute(
+                            "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":tupleInfo[0], "userID":loggedInUserID}
+                        )
+                        purchased = True if (cur.fetchone() is not None) else False
+                        cur.execute(
+                            "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":tupleInfo[0], "userID":loggedInUserID}
+                        )
+                        isInCart = True if (cur.fetchone() is not None) else False
+
                     courseInfoList.append(
-                        CourseInfo( tupleInfo, profilePic=teacherProfile, truncateData=True)
+                        (CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True),
+                        {"purchased":purchased, "isInCart":isInCart})
                     )
 
                 if (kwargs.get("getTeacherUsername")):

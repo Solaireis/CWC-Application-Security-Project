@@ -3,6 +3,19 @@
     background-color: rgba(0, 0, 0, 0.03);
 }
 
+@media screen and (max-width: 778px) {
+    .course-container {
+        padding: 0px 50px 50px;
+    }
+}
+
+@media screen and (max-width: 350px) {
+    .course-container {
+        padding: 0px 10px 10px;
+    }
+}
+
+
 .no_padding {
     padding-left: 0 !important;
     padding-right: 0 !important;

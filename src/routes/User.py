@@ -510,7 +510,7 @@ def courseReview(courseID:str):
 def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
     # TODO: Make the argument based on the purchaseID instead of courseID
     userPurchasedCourses = {}
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    userInfo = get_image_path(session["user"], returnUserInfo=True, getCartAndPurchased=True)
     userPurchasedCourses = userInfo.uid
     accType = userInfo.role
     print(courseID)
@@ -571,7 +571,7 @@ def shoppingCart():
         sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
         return redirect(url_for("userBP.shoppingCart"))
     else:
-        userInfo = get_image_path(userID, returnUserInfo=True)
+        userInfo = get_image_path(userID, returnUserInfo=True, getCartAndPurchased=True)
         # print(userInfo)
         cartCourseIDs = userInfo.cartCourses
 
@@ -636,9 +636,11 @@ def purchase(jwtToken:str):
 
 @userBP.route("/purchase-history")
 def purchaseHistory():
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    userInfo = get_image_path(session["user"], returnUserInfo=True, getCartAndPurchased=True)
     print(userInfo)
-    purchasedCourseIDs = userInfo.purchasedCourses
+
+    # TODO: Might need to paginate from MySQL query instead of retrieving all courses purchased by the user
+    purchasedCourseIDs = userInfo.purchasedCourses 
     courseList = []
 
     # TODO: Could have used Course.py's class instead of
