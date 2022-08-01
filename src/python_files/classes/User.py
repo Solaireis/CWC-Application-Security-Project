@@ -74,10 +74,10 @@ class UserInfo:
     def dateJoined(self) -> datetime:
         return self.__dateJoined
     @property
-    def cartCourses(self) -> dict:
+    def cartCourses(self) -> list:
         return self.__cartCourses
     @property
-    def purchasedCourses(self) -> dict:
+    def purchasedCourses(self) -> list:
         return self.__purchasedCourses
     @property
     def status(self) -> str:

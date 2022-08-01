@@ -148,16 +148,17 @@ def coursePage(courseID:str):
     #TODO: Pagnination required.
 
     accType = imageSrcPath = None
-    userPurchasedCourses = {}
+    purchased = isInCart = False
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         imageSrcPath = userInfo.profileImage
-        userPurchasedCourses = userInfo.purchasedCourses
+        purchased = True if (courseID in userInfo.purchasedCourses) else False
+        isInCart = True if (courseID in userInfo.cartCourses) else False
         accType = userInfo.role
 
     return render_template(
         "users/general/course_page.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
+        imageSrcPath=imageSrcPath, purchased=purchased, isInCart=isInCart, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 

@@ -61,11 +61,21 @@
             <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
             <hr>
             <div>
-                <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    <input name="courseID" type="hidden" value="{{ courses.courseID }}">
-                    <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-                </form>
+                {% if purchased %}
+                    <a href="{{ url_for('userBP.purchaseView', courseID=courses.courseID) }}" class="btn btn-success">
+                        <i class="fa-solid fa-bag-shopping"></i> View purchased course
+                    </a>
+                {% elif isInCart %}
+                    <a href="{{ url_for('userBP.shoppingCart') }}" class="btn btn-success">
+                        <i class="fas fa-shopping-cart"></i> View in cart
+                    </a>
+                {% else %}
+                    <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input name="courseID" type="hidden" value="{{ courses.courseID }}">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+                    </form>
+                {% endif %}
             </div>
         </div>
         <div class="col-lg-8">
@@ -93,6 +103,7 @@
                     </div>
                 </div>
             {% endfor %}
+        </div>
     </div> 
 </div>
 {% endblock %}
