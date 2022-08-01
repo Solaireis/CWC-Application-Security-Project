@@ -569,9 +569,7 @@ def shoppingCart():
         # Remove item from cart
         courseID = request.form.get("courseID")
         sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
-
         return redirect(url_for("userBP.shoppingCart"))
-
     else:
         userInfo = get_image_path(userID, returnUserInfo=True)
         # print(userInfo)

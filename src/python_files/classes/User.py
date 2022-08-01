@@ -1,43 +1,25 @@
 # import python standard libraries
 from datetime import datetime
 import json
+from typing import Optional
 
 class UserInfo:
-    """
-    This class is used to store the user info for code readability in jinja2 templates.
-
-    tupleInfo Tuple format (13 elements):
-    (
-        row_num,
-        u.id, r.role_name, u.username, 
-        u.email, u.email_verified, u.password, 
-        u.profile_image, u.date_joined, u.cart_courses, 
-        u.purchased_courses, u.status, t.token AS has_two_fa
-    )
-    """
-    def __init__(self, tupleData:tuple=None, userProfile:str="", offset:int=0):
+    """This class is used to store the user info for code readability in jinja2 templates."""
+    def __init__(
+        self, tupleData:tuple=None, userProfile:str="",
+        offset:Optional[int]=0, hasCartAndPurchased:Optional[bool]=True
+    ):
         """
         Constructor for user object.
 
         Args:
         - tupleInfo (tuple): Tuple retrieved from the sql query using the stored procedure, "get_user_data".
-            - Tuple format (12 elements): (\n
-                    u.id, r.role_name, u.username,\n
-                    u.email, u.email_verified, u.password,\n
-                    u.profile_image, u.date_joined, u.cart_courses,\n
-                    u.purchased_courses, u.status, t.token AS has_two_fa
-                )
         - userProfile (str): The dicebear url or the path to the user's profile picture
-        - offset (int): The offset for indexing to get the correct user's data for each attribute.
+        - offset (int, Optional): The offset for indexing to get the correct user's data for each attribute.
             - Default: 0
             - E.g. offset=1 to account for the row number at the start of the tuple.
-                - Tuple format (13 elements): (\n
-                    row_num, # IMPORTANT THAT THIS EXTRA ATTRIBUTE MUST BE AT THE START\n
-                    u.id, r.role_name, u.username,\n
-                    u.email, u.email_verified, u.password,\n
-                    u.profile_image, u.date_joined, u.cart_courses,\n
-                    u.purchased_courses, u.status, t.token AS has_two_fa
-                )
+        - hasCartAndPurchased (bool, Optional): Whether or not the tuple has a cart and purchased courses index.
+            - Default: True
         """
         self.__uid = tupleData[0 + offset]
         self.__role = tupleData[1 + offset]
@@ -48,10 +30,18 @@ class UserInfo:
         self.__profileImage = userProfile # Note: Use get_dicebear_image() on the username if the profile image is Nonew
         self.__hasProfilePic = False if (tupleData[6 + offset] is None) else True
         self.__dateJoined = tupleData[7 + offset]
-        self.__cartCourses = json.loads(tupleData[8 + offset]) if (tupleData[8 + offset] is not None) else []
-        self.__purchasedCourses = json.loads(tupleData[9 + offset]) if (tupleData[9 + offset] is not None) else []
-        self.__status = tupleData[10 + offset]
-        self.__hasTwoFA = True if (tupleData[11 + offset] is not None) else False
+        idx = 8
+
+        if (hasCartAndPurchased):
+            self.__cartCourses = json.loads(tupleData[idx + offset]) \
+                                            if (tupleData[idx + offset] is not None) else []
+            idx += 1
+            self.__purchasedCourses = json.loads(tupleData[idx + offset]) \
+                                            if (tupleData[idx + offset] is not None) else []
+            idx += 1
+
+        self.__status = tupleData[idx + offset]
+        self.__hasTwoFA = True if (tupleData[idx + offset] is not None) else False
 
     @property
     def uid(self) -> str:

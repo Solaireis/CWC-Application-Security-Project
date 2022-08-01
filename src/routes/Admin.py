@@ -87,7 +87,7 @@ def userManagement():
                 flash("The user's account is not in the process of being recovered.", "Error Revoking Recovery Process!")
 
         elif (formType == "deleteUser"):
-            sql_operation(table="user", mode="delete_user", userID=userID)
+            sql_operation(table="user", mode="delete_user_data", userID=userID)
             flash(f"The user, {userID}, has been deleted.", "User Deleted!")
 
         elif (formType == "changeUsername"):
@@ -128,9 +128,12 @@ def userManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(
+            table="user", mode="paginate_users", pageNum=pageNum, 
+            userInput=unquote_plus(userInput), filterType=filterInput, role="User"
+        )
     else:
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="User")
 
     if (pageNum > maxPage):
         if (userInput is not None):

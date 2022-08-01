@@ -121,10 +121,13 @@ def adminManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(
+            table="user", mode="paginate_users", pageNum=pageNum, 
+            userInput=unquote_plus(userInput), filterType=filterInput, role="Admin"
+        )
     else:
-        print(sql_operation(table="user", mode="paginate_admins", pageNum=pageNum))
-        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", pageNum=pageNum)
+        # print(sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="Admin"))
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="Admin")
 
     if (pageNum > maxPage):
         if (userInput is not None):
