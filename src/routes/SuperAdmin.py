@@ -5,6 +5,8 @@ Routes for admin users
 from flask import Blueprint, render_template, redirect, url_for, session, request, current_app
 from urllib.parse import quote_plus, unquote_plus
 
+from sqlalchemy import null
+
 # import local python libraries
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
@@ -162,7 +164,7 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
 
     form = UpdateRoles(request.form)
     if (request.method == "POST" and form.validate()):
-        #formType = request.form.get("formType", default=None, type=str)
+        # formType = request.form.get("formType", default=None, type=str)
         
         roleName = form.roleName.data
         guestBP = form.guestBP.data
@@ -173,6 +175,76 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         teacherBP = form.teacherBP.data
         userBP = form.userBP.data
         superAdminBP = form.superAdminBP.data
+
+        guestBP1 = request.form.get("guestBP1")
+        generalBP1 = request.form.get("generalBP1")
+        adminBP1 = request.form.get("adminBP1")
+        loggedInBP1 = request.form.get("loggedInBP1")
+        errorBP1 = request.form.get("errorBP1")
+        teacherBP1 = request.form.get("teacherBP1")
+        userBP1 = request.form.get("userBP1")
+        superAdminBP1 = request.form.get("superAdminBP1")
+        print(guestBP1, generalBP1, adminBP1, loggedInBP1, errorBP1, teacherBP1, userBP1, superAdminBP1)
+        
+        #TODO create input validations for the form
+
+        if (guestBP is null):
+            guestBP = 0
+        elif (guestBP.lower() == "on"):
+            guestBP = 1
+        else:
+            guestBP = 0
+        
+        if (generalBP is null):
+            generalBP = 0
+        elif (generalBP.lower() == "on"):
+            generalBP = 1
+        else:
+            generalBP = 0
+            
+        if (adminBP is null):
+            adminBP = 0
+        elif (adminBP.lower() == "on"):
+            adminBP = 1
+        else:
+            adminBP = 0
+
+        if (loggedInBP is null):
+            loggedInBP = 0
+        elif (loggedInBP.lower() == "on"):
+            loggedInBP = 1
+        else:
+            loggedInBP = 0
+
+        if (errorBP is null):
+            errorBP = 0
+        elif (errorBP.lower() == "on"):
+            errorBP = 1
+        else:
+            errorBP = 0
+
+        if (teacherBP is null):
+            teacherBP = 0
+        elif (teacherBP.lower() == "on"):
+            teacherBP = 1
+        else:
+            teacherBP = 0
+
+        if (userBP is null):
+            userBP = 0
+        elif (userBP.lower() == "on"):
+            userBP = 1
+        else:
+            userBP = 0
+
+        if (superAdminBP is null):
+            superAdminBP = 0
+        elif (superAdminBP.lower() == "on"):
+            superAdminBP = 1
+        else:
+            superAdminBP = 0
+            
+
         sql_operation(table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, userBP=userBP, superAdminBP=superAdminBP)
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))
