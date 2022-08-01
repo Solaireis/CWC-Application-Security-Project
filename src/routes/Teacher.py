@@ -293,6 +293,10 @@ def rawVideo(courseID:str, videoName:str):
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     courseID = request.args.get("cid", default="test", type=str)
+    courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if (not courseFound) or (not courseFound.status):
+        abort(404)
+
     sql_operation(table="course", mode="delete", courseID=courseID)
     print("Course Deleted")
     return redirect(url_for("teacherBP.courseList"))
@@ -320,21 +324,7 @@ def draftCourseDelete():
 def courseUpdate():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if (not courseFound):
-        abort(404)
-
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    courseForm = CreateCourseEdit(request.form)
-    updated = ""
-
-    if (request.method == "POST"):
-        recaptchaToken = request.form.get("g-recaptcha-response")
-        if (recaptchaToken is None):
-            flash("Please verify that you are not a bot!", "Danger")
-
-    courseID = request.args.get("cid", default="test", type=str)
-    courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if (not courseFound):
+    if (not courseFound) or (not courseFound.status):
         abort(404)
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
