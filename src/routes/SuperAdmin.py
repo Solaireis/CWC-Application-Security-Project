@@ -16,8 +16,6 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
-    #get the role of the user
-    
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -113,9 +111,6 @@ def adminManagement():
 
         return redirect(session["relative_url"])
 
-    
-
-        
     # Pagination starts below
     pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
@@ -184,47 +179,16 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         superAdminBP1 = request.form.get("superAdminBP1", default="off", type=str)
         print(guestBP1, generalBP1, adminBP1, loggedInBP1, errorBP1, teacherBP1, userBP1, superAdminBP1)
 
-        #TODO create input validations for the form
+        # TODO: create input validations for the form
 
-        if (guestBP.lower() == "on"):
-            guestBP = 1
-        else:
-            guestBP = 0
-
-        if (generalBP.lower() == "on"):
-            generalBP = 1
-        else:
-            generalBP = 0
-
-        if (adminBP.lower() == "on"):
-            adminBP = 1
-        else:
-            adminBP = 0
-
-        if (loggedInBP.lower() == "on"):
-            loggedInBP = 1
-        else:
-            loggedInBP = 0
-
-        if (errorBP.lower() == "on"):
-            errorBP = 1
-        else:
-            errorBP = 0
-
-        if (teacherBP.lower() == "on"):
-            teacherBP = 1
-        else:
-            teacherBP = 0
-
-        if (userBP.lower() == "on"):
-            userBP = 1
-        else:
-            userBP = 0
-
-        if (superAdminBP.lower() == "on"):
-            superAdminBP = 1
-        else:
-            superAdminBP = 0
+        guestBP = True if (guestBP.lower() == "on") else False
+        generalBP = True if (generalBP.lower() == "on") else False
+        adminBP = True if (adminBP.lower() == "on") else False
+        loggedInBP = True if (loggedInBP.lower() == "on") else False
+        errorBP = True if (errorBP.lower() == "on") else False # TODO: Remove later
+        teacherBP = True if (teacherBP.lower() == "on") else False
+        userBP = True if (userBP.lower() == "on") else False
+        superAdminBP = True if (superAdminBP.lower() == "on") else False # TODO: Remove later
 
         sql_operation(
             table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
