@@ -183,7 +183,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         "Just in case that it was you, you can unlock your account by clicking the button below.",
         "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
         "To change password:",
-        f"{url_for('loggedInBP.updatePassword', _external=True)}<br>",
+        f"{url_for('userBP.updatePassword', _external=True)}<br>",
         "Please click the link below to unlock your account:",
         f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
         "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
