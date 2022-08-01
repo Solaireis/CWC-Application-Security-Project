@@ -190,7 +190,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     ]
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
-def get_image_path(userID:str, returnUserInfo:bool=False, getCartAndPurchased:Optional[bool]=False) -> Union[str, UserInfo]:
+def get_image_path(userID:str, returnUserInfo:bool=False, getCart:Optional[bool]=False) -> Union[str, UserInfo]:
     """
     Returns the image path for the user.
 
@@ -200,15 +200,16 @@ def get_image_path(userID:str, returnUserInfo:bool=False, getCartAndPurchased:Op
     If returnUserInfo is True, it will return a tuple of the user's record.
 
     Args:
-    - userID: The user's ID
-    - returnUserInfo: If True, it will return a tuple of the user's record.
-    - getCartAndPurchased: If True, it will also return the user's cart and purchased items.
+    - userID (str): The user's ID
+    - returnUserInfo (bool): If True, it will return a tuple of the user's record.
+    - getCart (bool, Optional): If True, it will also return the user's cart items.
+        - Default: False, will not return the user's cart items.
 
     Returns:
     - The image path (str) only if returnUserInfo is False
     - The UserInfo object with the profile image path in the object if returnUserInfo is True
     """
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID, getCartAndPurchased=getCartAndPurchased)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID, getCart=getCart)
 
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
@@ -1072,7 +1073,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
         matched = cur.fetchone()
-        return format_user_info(matched, hasCartAndPurchased=kwargs.get("getCartAndPurchased", False)) if (matched is not None) else None
+        return format_user_info(matched, includeCart=kwargs.get("getCart", False)) if (matched is not None) else None
 
     elif (mode == "change_profile_picture"):
         userID = kwargs["userID"]
@@ -1309,11 +1310,39 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         return courseArr, maxPage
 
-    elif (mode == "get_user_purchases"):
+    # elif (mode == "get_user_purchases"):
+    #     userID = kwargs["userID"]
+    #     cur.execute("SELECT JSON_ARRAYAGG(course_id) FROM purchased_courses WHERE user_id=%(userID)s", {"userID":userID})
+    #     return json.loads(cur.fetchone()[0])
+
+    elif (mode == "paginate_user_purchases"):
         userID = kwargs["userID"]
-        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        cur.execute("SELECT JSON_ARRAY('userID', %(userID)s) FROM user", {"userID":userID})
-        return json.loads(cur.fetchone()[0])
+        pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
+
+        cur.execute("CALL paginate_purchased_courses(%(userID)s, %(pageNum)s)", {"userID":userID, "pageNum":pageNum})
+        matched = cur.fetchall() or []
+        maxPage = 1
+        if (len(matched) > 0):
+            maxPage = ceil(matched[0][-1] / 10)
+
+        # To prevent infinite redirects
+        if (maxPage <= 0):
+            maxPage = 1
+
+        if (pageNum > maxPage):
+            return [], maxPage
+
+        courseArr = []
+        for data in matched:
+            data = data[1:]
+            # Get the teacher's profile image from the first tuple
+            teacherProfile = get_dicebear_image(data[2]) if (data[3] is None) \
+                                                         else data[3]
+            courseArr.append(CourseInfo(data, porfilePic=teacherProfile, truncateData=False, getReadableCategory=True))
+
+        return courseArr, maxPage
 
     elif mode == "get_user_cart":
         userID = kwargs["userID"]

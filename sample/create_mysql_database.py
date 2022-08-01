@@ -321,8 +321,34 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             WHERE u.id=user_id_input;
         END
     """)
-    
-    """Pagination Functions"""
+
+    # Pagination Functions
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_purchased_courses` (IN user_id_input VARCHAR(32), IN page_number INT)
+        BEGIN
+            SET @total_course_num := (SELECT COUNT(*) FROM purchased_courses WHERE user_id=user_id);
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num,
+            course_info.* FROM (
+                SELECT c.course_id, c.teacher_id, 
+                u.username, u.profile_image, c.course_name, c.course_description, 
+                c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
+                FROM course AS c
+                LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
+                INNER JOIN user AS u ON c.teacher_id=u.id
+                INNER JOIN purchased_courses AS pc ON pc.course_id=c.course_id
+                WHERE pc.user_id=user_id_input
+                GROUP BY c.course_id
+                ORDER BY c.date_created DESC -- show most recent courses first
+            ) AS course_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+    """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
@@ -348,7 +374,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
 
-    #For Drafting
+    # For Drafting
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_draft_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN

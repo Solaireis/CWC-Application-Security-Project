@@ -450,7 +450,6 @@ def uploadPic():
 #     flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
 #     return redirect(url_for("userBP.userProfile"))
 
-
 @userBP.route("/course-review/<string:courseID>", methods=["GET","POST"]) #writing of review
 def courseReview(courseID:str):
     reviewForm = CreateReview(request.form)
@@ -462,13 +461,7 @@ def courseReview(courseID:str):
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
-    purchasedCourseIDs = userInfo.purchasedCourses
-    print(purchasedCourseIDs)
-
-    for purchases in purchasedCourseIDs:
-        if (purchases == courseID):
-            purchased = True
-            break
+    purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
 
     if (not purchased):
         print("user has not purchased this course")
@@ -509,52 +502,35 @@ def courseReview(courseID:str):
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
     # TODO: Make the argument based on the purchaseID instead of courseID
-    userPurchasedCourses = {}
-    userInfo = get_image_path(session["user"], returnUserInfo=True, getCartAndPurchased=True)
-    userPurchasedCourses = userInfo.uid
-    accType = userInfo.role
-    print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
-    print(courses)
-    #TODO Test the RBAC 
-    if (accType != "2" or accType != "1"): # check if user is either user or teacher role
-        return abort(403)
-    if ( courses.teacherID == userInfo.uid): # check if the teacher id is the owner of the course
-        pass
-    elif(courseID in userPurchasedCourses): # check if the user has the course purchased 
-        pass
-    else:
-        return abort(404)
-
-    
-    #courseName = courses[0][1]
-    if (not courses): #raise 404 error
+    if (not courses): # raise 404 error
         abort(404)
 
-    # TODO: Could have used Course.py's class instead of
-    # TODO: manually retrieving the data from the tuple
-    # TODO: Prevent iframes from being loaded in the course description
-    #create variable to store these values
+    purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
+    if (not purchased):
+        return redirect(url_for("generalBP.coursePage", courseID=courseID))
+
+    # create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
             html.escape(courses.courseDescription),
             extensions=[AnchorTagExtension()], 
         )
     )
-
     courseVideoPath = None
     teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
-    print(teacherRecords)
 
-    accType = imageSrcPath = None
-
-    
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
     videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
     return render_template("users/user/purchase_view.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType, courses=courses, videoPath=videoPath)
+        imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
+        teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, 
+        courseVideoPath=courseVideoPath, accType=userInfo.role, 
+        courses=courses, videoPath=videoPath
+    )
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):
@@ -571,7 +547,7 @@ def shoppingCart():
         sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
         return redirect(url_for("userBP.shoppingCart"))
     else:
-        userInfo = get_image_path(userID, returnUserInfo=True, getCartAndPurchased=True)
+        userInfo = get_image_path(userID, returnUserInfo=True, getCart=True)
         # print(userInfo)
         cartCourseIDs = userInfo.cartCourses
 
@@ -636,19 +612,11 @@ def purchase(jwtToken:str):
 
 @userBP.route("/purchase-history")
 def purchaseHistory():
-    userInfo = get_image_path(session["user"], returnUserInfo=True, getCartAndPurchased=True)
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
 
-    # TODO: Might need to paginate from MySQL query instead of retrieving all courses purchased by the user
-    purchasedCourseIDs = userInfo.purchasedCourses 
-    courseList = []
+    pageNum = request.args.get("p", default=1, type=int)
+    purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
+    # TODO: Complete the pagination for purchase history
 
-    # TODO: Could have used Course.py's class instead of
-    # TODO: manually retrieving the data from the tuple
-    for courseID in purchasedCourseIDs:
-        course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-        print(course)
-        if course != False:
-            courseList.append(course)
-
-    return render_template("users/user/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role)

@@ -7,7 +7,7 @@ class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""
     def __init__(
         self, tupleData:tuple=None, userProfile:str="",
-        offset:Optional[int]=0, hasCartAndPurchased:Optional[bool]=False
+        offset:Optional[int]=0, includeCart:Optional[bool]=False
     ):
         """
         Constructor for user object.
@@ -18,7 +18,7 @@ class UserInfo:
         - offset (int, Optional): The offset for indexing to get the correct user's data for each attribute.
             - Default: 0
             - E.g. offset=1 to account for the row number at the start of the tuple.
-        - hasCartAndPurchased (bool, Optional): Whether or not the tuple has a cart and purchased courses index.
+        - includeCart (bool, Optional): Whether or not the tuple has a cart index.
             - Default: False
         """
         self.__uid = tupleData[0 + offset]
@@ -32,11 +32,8 @@ class UserInfo:
         self.__dateJoined = tupleData[7 + offset]
         idx = 8
 
-        if (hasCartAndPurchased):
+        if (includeCart):
             self.__cartCourses = json.loads(tupleData[idx + offset]) \
-                                            if (tupleData[idx + offset] is not None) else []
-            idx += 1
-            self.__purchasedCourses = json.loads(tupleData[idx + offset]) \
                                             if (tupleData[idx + offset] is not None) else []
             idx += 1
 
@@ -77,9 +74,6 @@ class UserInfo:
     def cartCourses(self) -> list:
         return self.__cartCourses
     @property
-    def purchasedCourses(self) -> list:
-        return self.__purchasedCourses
-    @property
     def status(self) -> str:
         return self.__status
     @property
@@ -96,6 +90,4 @@ class UserInfo:
                f"| Google OAuth: {self.googleOAuth} " + \
                f"| Profile Image: {self.profileImage} " + \
                f"| Date Joined: {self.dateJoined} " + \
-               f"| Cart Courses: {self.cartCourses} " + \
-               f"| Purchased Courses: {self.purchasedCourses} " + \
                f"| Status: {self.status}"
