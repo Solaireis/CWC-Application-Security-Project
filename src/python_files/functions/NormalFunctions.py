@@ -337,11 +337,11 @@ def send_change_password_alert_email(email:str="") -> None:
     """
     htmlBody = [
         f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
-        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('loggedInBP.updatePassword', _external=True)}"
+        f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('userBP.updatePassword', _external=True)}"
     ]
     send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
     flash(
-        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('loggedInBP.updatePassword')}'>change your password</a> immediately!"),
+        Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('userBP.updatePassword')}'>change your password</a> immediately!"),
         "Security Alert!"
     )
 

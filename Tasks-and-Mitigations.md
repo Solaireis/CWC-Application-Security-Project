@@ -171,10 +171,10 @@
   - Session identifier of 32 bytes (Unlikely to be guessed) stored in the database.
     - Ensured high entropy by using Google Cloud Platform Key Management Service (KMS) Cloud HSM's RNG API
   - Configured the session cookie to be deleted from the browser once the user closes the browser.
-  - After 3 hours of inactivity, the session identifier will be deleted from the database.
+  - After 1.5 hours of inactivity, the session identifier will be deleted from the database.
     - To invalidate the session identifier.
     - To free up space in the database.
-    - Chose 3 hours as a video can last from several minutes to several hours for this web application.
+    - Chose 1.5 hours as a video can last from several minutes to several hours for this web application.
       - Improve usability to avoid legitimate user from being logged out after watching a video.
       - After an hour of inactivity, a modal message will appear to check if the user is active in order to extend the session expiry datetime.
   - Session validations upon each request to a web page:

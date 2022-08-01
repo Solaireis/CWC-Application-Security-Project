@@ -58,9 +58,9 @@ class Constants:
     # For Flask's session cookie key length
     SESSION_NUM_OF_BYTES: int = 512
 
-    # For removing session identifiers that has no activity for more than x hours 
+    # For removing session identifiers that has no activity for more than x mins 
     # (Expiry date will be updated per request to the web application)
-    SESSION_EXPIRY_INTERVALS: int = 3 # 3 hours
+    SESSION_EXPIRY_INTERVALS: int = 90 # 1 hour and 30 mins
 
     # Duration (in minutes) for locked accounts
     # before user can try to login again
