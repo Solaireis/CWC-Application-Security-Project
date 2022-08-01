@@ -102,7 +102,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
-        cart_courses JSON DEFAULT NULL, -- can be null for admin user
+        cart_courses JSON DEFAULT NULL, -- will be deleted soon
         purchased_courses JSON DEFAULT NULL, -- can be null for admin user
         status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned')) DEFAULT 'Active',
         FOREIGN KEY (role) REFERENCES role(role_id)
@@ -132,9 +132,18 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
     cur.execute("CREATE INDEX course_teacher_idx ON course(teacher_id)")
 
-    cur.execute("""CREATE TABLE deleted_user_courses (
+    cur.execute("""CREATE TABLE cart(
+        user_id VARCHAR(32) NOT NULL,
+        course_id CHAR(32) NOT NULL,
+        PRIMARY KEY (user_id, course_id),
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
+    )""")
+
+    cur.execute("""CREATE TABLE deleted_teacher_courses (
         course_id CHAR(32) PRIMARY KEY,
         teacher_name VARCHAR(255) NOT NULL,
+        teacher_email VARCHAR(255) NOT NULL,
         course_name VARCHAR(255) NOT NULL,
         course_description VARCHAR(2000) DEFAULT NULL,
         course_image_path VARCHAR(255) DEFAULT NULL,
@@ -143,13 +152,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         date_created DATETIME NOT NULL,
         video_path VARCHAR(255) NOT NULL
     )""")
+    cur.execute("CREATE INDEX deleted_teacher_courses_teacher_name_idx ON deleted_teacher_courses(teacher_name)")
 
     cur.execute("""CREATE TABLE draft_course (
         course_id CHAR(32) PRIMARY KEY,
         teacher_id VARCHAR(32) NOT NULL,
         video_path VARCHAR(255) NOT NULL,
         date_created DATETIME NOT NULL,
-        FOREIGN KEY (teacher_id) REFERENCES user(id)
+        FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX draft_course_teacher_idx ON draft_course(teacher_id)")
 
@@ -166,13 +176,26 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
     cur.execute("CREATE INDEX stripe_payments_user_idx ON stripe_payments(user_id)")
 
+    cur.execute("""CREATE TABLE deleted_user_stripe_payments (
+        payment_id VARCHAR(32) PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        cart_courses JSON NOT NULL,
+        stripe_payment_intent VARCHAR(32), -- actual length 27, but may change in the future; generate_id() has 32
+        created_time DATETIME NOT NULL,
+        payment_time DATETIME,
+        amount DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
+        receipt_email VARCHAR(255)  
+    )""")
+    cur.execute("CREATE INDEX deleted_user_stripe_payments_username_idx ON deleted_user_stripe_payments(username)")
+
     cur.execute("""CREATE TABLE user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
         ip_address VARCHAR(32) NOT NULL, -- in hex format, length of 8 for IPv4, length of 32 for IPv6
         last_accessed DATETIME NOT NULL,
         is_ipv4 BOOL NOT NULL DEFAULT TRUE,
         PRIMARY KEY (user_id, ip_address),
-        FOREIGN KEY (user_id) REFERENCES user(id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX user_ip_addresses_ip_address_idx ON user_ip_addresses(ip_address)")
     cur.execute("CREATE INDEX user_ip_addresses_last_accessed_idx ON user_ip_addresses(last_accessed)")
@@ -192,7 +215,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
         token_id CHAR(64) NOT NULL,
         old_user_email VARCHAR(255) NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES user(id),
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
         FOREIGN KEY (token_id) REFERENCES limited_use_jwt(id)
     )""")
 
@@ -200,14 +223,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) PRIMARY KEY,
         token VARBINARY(1024),
         backup_codes_json VARBINARY(1024) DEFAULT NULL, -- Holds at most 8 64 bits hexadecimal (e.g. 'e7b1-4215-89b6-655e') codes that are encrypted as a whole
-        FOREIGN KEY (user_id) REFERENCES user(id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
 
     cur.execute("""CREATE TABLE login_attempts (
         user_id VARCHAR(32) PRIMARY KEY,
         attempts INTEGER UNSIGNED NOT NULL,
         reset_date DATETIME NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES user(id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX login_attempts_attempts_idx ON login_attempts(attempts)")
     cur.execute("CREATE INDEX login_attempts_reset_date_idx ON login_attempts(reset_date)")
@@ -217,7 +240,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME NOT NULL,
         fingerprint_hash CHAR(128) NOT NULL, -- Will be a SHA512 hash of the user IP address and user agent
-        FOREIGN KEY (user_id) REFERENCES user(id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX session_user_id_idx ON session(user_id)")
     cur.execute("CREATE INDEX session_expiry_date_idx ON session(expiry_date)")
@@ -231,8 +254,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         review_date DATETIME NOT NULL,
 
         PRIMARY KEY (user_id, course_id),
-        FOREIGN KEY (user_id) REFERENCES user(id),
-        FOREIGN KEY (course_id) REFERENCES course(course_id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX review_user_id_idx ON review(user_id)")
     cur.execute("CREATE INDEX review_course_id_idx ON review(course_id)")
@@ -246,24 +269,22 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `delete_user`(IN user_id_input VARCHAR(32))
         BEGIN
-            DELETE FROM stripe_payments WHERE user_id = user_id_input;
-            DELETE FROM draft_course WHERE teacher_id = user_id_input;
-            DELETE FROM review WHERE user_id = user_id_input;
-            DELETE FROM review WHERE course_id IN (SELECT course_id FROM course WHERE teacher_id = user_id_input);
-
-            INSERT INTO deleted_user_courses 
-            (course_id, teacher_name, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) 
-            SELECT c.course_id, u.username, c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category, c.date_created, c.video_path
+            INSERT INTO deleted_teacher_courses 
+            (course_id, teacher_name, email, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) 
+            SELECT c.course_id, u.username, u.email, c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category, c.date_created, c.video_path
             FROM course AS c
             INNER JOIN user AS u ON c.teacher_id = u.id
             WHERE c.teacher_id = user_id_input;
             DELETE FROM course WHERE teacher_id = user_id_input;
 
-            DELETE FROM user_ip_addresses WHERE user_id = user_id_input;
-            DELETE FROM twofa_token WHERE user_id = user_id_input;
-            DELETE FROM login_attempts WHERE user_id = user_id_input;
-            DELETE FROM session WHERE user_id = user_id_input;
-            DELETE FROM recovery_token WHERE user_id = user_id_input;
+            INSERT INTO deleted_user_stripe_payments
+            (payment_id, username, email, cart_courses, stripe_payment_intent, created_time, payment_time, amount, receipt_email)
+            SELECT s.payment_id, u.username, u.email, s.cart_courses, s.stripe_payment_intent, s.created_time, s.payment_time, s.amount, s.receipt_email
+            FROM stripe_payments AS s
+            INNER JOIN user AS u ON s.user_id = u.id
+            WHERE s.user_id = user_id_input;
+            DELETE FROM stripe_payments WHERE user_id = user_id_input;
+
             DELETE FROM user WHERE id = user_id_input;
         END
     """)
