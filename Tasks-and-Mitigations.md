@@ -417,6 +417,7 @@
 #### Plan:
 - Avoid Bad Coding Practices that lead to Injection Attacks
 - Remember to use multithreading for writing account info to the SQL database (?)
+- jsonschema to limit the JSON format
 - Sanitisation for All input (Kind of Done, but should double check)
   - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
   - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)

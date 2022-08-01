@@ -453,11 +453,27 @@ def courseReview(courseID:str):
         return render_template("users/user/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
 
 @userBP.route("/purchase-view/<string:courseID>")
-def purchaseView(courseID:str):
+def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
     # TODO: Make the argument based on the purchaseID instead of courseID
+    userPurchasedCourses = {}
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    userPurchasedCourses = userInfo.uid
+    accType = userInfo.role
     print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+
     print(courses)
+    #TODO Test the RBAC 
+    if (accType != "2" or accType != "1"): # check if user is either user or teacher role
+        return abort(403)
+    if ( courses.teacherID == userInfo.uid): # check if the teacher id is the owner of the course
+        pass
+    elif(courseID in userPurchasedCourses): # check if the user has the course purchased 
+        pass
+    else:
+        return abort(404)
+
+    
     #courseName = courses[0][1]
     if (not courses): #raise 404 error
         abort(404)
@@ -478,10 +494,8 @@ def purchaseView(courseID:str):
     print(teacherRecords)
 
     accType = imageSrcPath = None
-    userPurchasedCourses = {}
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    userPurchasedCourses = userInfo.uid
-    accType = userInfo.role
+
+    
     imageSrcPath = userInfo.profileImage
     videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
