@@ -116,6 +116,112 @@
                             {{ render_field(form.teacherBP,  class="form-control") }}
                             {{ render_field(form.userBP, class="form-control") }}
                             {{ render_field(form.superAdminBP,  class="form-control") }}
+
+                            {% if role.guestBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck1" checked name="guestBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck1">Guest BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck1" name="guestBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck1">Guest BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.generalBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck2" checked name="generalBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck2">General BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck2" name="generalBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck2">General BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.adminBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck3" checked name="adminBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck3">Admin BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck3" name="adminBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck3">Admin BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.loggedInBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck4" checked name="loggedInBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck4">LoggedIn BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck4" name="loggedInBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck4">LoggedIn BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.errorBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck5" checked disabled name="errorBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck5">Error BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck5" disabled name="errorBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck5">Error BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.teacherBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck6" checked name="teacherBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck6">Teacher BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck6" name="teacherBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck6">Teacher BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.userBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck7" checked name="userBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck7">User BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck7" name="userBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck7">User BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+                            {% if role.superAdminBP == 1 %} <!-- if guest blueprints is set to on-->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck8" checked disabled name="superAdminBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck8">Super Admin BluePrints Access Control</label>
+                                </div>
+                            {% else %}
+                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
+                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck8" disabled name="superAdminBP1">
+                                    <label class="form-check-label" for="flexSwitchCheck8">Super Admin BluePrints Access Control</label>
+                                </div>
+                            {% endif %}
+
+
+
                         </div>
                         <!-- Add forms to change the roles-->
                     </div>
@@ -185,7 +291,7 @@
                                 {% for role in roleList %}
                                     <tr>
                                         <td>{{ role.roleName }}</td> 
-                                        {% if role.guestBP %}
+                                        {% if role.guestBP == 1%}
                                             <td class="text-success">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                         <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -200,7 +306,7 @@
                                             </td>
                                         {% endif %}
 
-                                        {% if role.generalBP %}
+                                        {% if role.generalBP == 1 %}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -214,7 +320,7 @@
                                         </td>
                                         {% endif %}
 
-                                        {% if role.adminBP %}
+                                        {% if role.adminBP == 1 %}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -228,7 +334,7 @@
                                         </td>
                                         {% endif %}
 
-                                        {% if role.loggedInBP %}
+                                        {% if role.loggedInBP == 1 %}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -256,7 +362,7 @@
                                         </td>
                                         {% endif %}
 
-                                        {% if role.teacherBP %}
+                                        {% if role.teacherBP == 1 %}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -270,7 +376,7 @@
                                         </td>
                                         {% endif %}
 
-                                        {% if role.userBP %}
+                                        {% if role.userBP == 1 %}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
@@ -284,7 +390,7 @@
                                         </td>
                                         {% endif %}
 
-                                        {% if role.superAdminBP %}
+                                        {% if role.superAdminBP == 1%}
                                             <td class="text-success">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-check2" viewBox="0 0 16 16">
                                                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
