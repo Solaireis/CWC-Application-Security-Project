@@ -225,7 +225,7 @@ def remove_unverified_users_for_more_than_30_days() -> None:
 
     >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
     """
-    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+    sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
 
 def remove_expired_jwt() -> None:
     """
@@ -233,7 +233,7 @@ def remove_expired_jwt() -> None:
 
     >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
     """
-    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
 
 def remove_expired_sessions() -> None:
     """
@@ -241,7 +241,7 @@ def remove_expired_sessions() -> None:
 
     >>> sql_operation(table="session", mode="delete_expired_sessions")
     """
-    return sql_operation(table="session", mode="delete_expired_sessions")
+    sql_operation(table="session", mode="delete_expired_sessions")
 
 def reset_expired_login_attempts() -> None:
     """
@@ -249,7 +249,7 @@ def reset_expired_login_attempts() -> None:
 
     >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
     """
-    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+    sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
 
 def remove_last_accessed_more_than_10_days() -> None:
     """
@@ -257,7 +257,7 @@ def remove_last_accessed_more_than_10_days() -> None:
 
     >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
     """
-    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+    sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
 
 def re_encrypt_data_in_db() -> None:
     """
@@ -265,7 +265,7 @@ def re_encrypt_data_in_db() -> None:
 
     >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
     """
-    return sql_operation(table="user", mode="re-encrypt_data_in_database")
+    sql_operation(table="user", mode="re-encrypt_data_in_database")
 
 def check_for_new_flask_secret_key() -> None:
     """
