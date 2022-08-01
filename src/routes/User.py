@@ -463,12 +463,12 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
     print(courses)
-
-    if (accType != "2" or accType != "1"):
+    #TODO Test the RBAC 
+    if (accType != "2" or accType != "1"): # check if user is either user or teacher role
         return abort(403)
-    if ( courses.teacherID == userInfo.uid):
+    if ( courses.teacherID == userInfo.uid): # check if the teacher id is the owner of the course
         pass
-    elif(courseID in userPurchasedCourses):
+    elif(courseID in userPurchasedCourses): # check if the user has the course purchased 
         pass
     else:
         return abort(404)
