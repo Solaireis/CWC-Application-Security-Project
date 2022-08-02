@@ -306,6 +306,7 @@ def changeAccountType():
     if (request.form["changeAccountType"] == "changeToTeacher"):
         try:
             sql_operation(table="user", mode="update_to_teacher", userID=userID)
+            session["isTeacher"] = True
             flash("Your account has been successfully upgraded to a Teacher.", "Account Details Updated!")
         except (IsAlreadyTeacherError):
             flash("You are already a teacher!", "Failed to Update!")
@@ -619,4 +620,11 @@ def purchaseHistory():
     purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
     # TODO: Complete the pagination for purchase history
 
-    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    if (pageNum > maxPage):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p={maxPage}")
+    elif (pageNum < 1):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p=1")
+
+    paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage) if (purchasedCourseArr) else []
+
+    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role, paginationArr=paginationArr)

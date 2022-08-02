@@ -23,6 +23,9 @@ def adminProfile():
 
 @adminBP.route("/user-management", methods=["GET","POST"])
 def userManagement():
+    if (session.get("isSuperAdmin")):
+        return redirect(url_for("superAdminBP.adminManagement"))
+
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):

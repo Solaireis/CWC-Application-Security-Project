@@ -694,35 +694,35 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("INSERT INTO role (role_name) VALUES ('SuperAdmin')")
     cur.execute("INSERT INTO role (role_name) VALUES ('Guest')")
 
-    #insert into student role the rbac
+    # insert into student role the rbac
     cur.execute("""
         UPDATE role SET 
-        guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0
+        guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=1 , super_admin_bp=0
         WHERE role_id = 1;
     """)
 
-    #insert into Teacher role the rbac
+    # insert into Teacher role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=1, user_bp=1 , super_admin_bp=0
         WHERE role_id = 2;
     """)
 
-    #insert into Admin role the rbac
+    # insert into Admin role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=0, general_bp=1, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0
         WHERE role_id = 3;
     """)
 
-    #insert into Super Admin role the rbac
+    # insert into Super Admin role the rbac
     cur.execute("""
         UPDATE role SET 
-        guest_bp=0, general_bp=0, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=1
+        guest_bp=0, general_bp=1, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=1
         WHERE role_id = 4;
     """)
 
-    #insert into Guest role the rbac
+    # insert into Guest role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=1, general_bp=1, admin_bp=0, logged_in_bp=0, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0

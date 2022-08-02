@@ -1341,7 +1341,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             # Get the teacher's profile image from the first tuple
             teacherProfile = get_dicebear_image(data[2]) if (data[3] is None) \
                                                          else data[3]
-            courseArr.append(CourseInfo(data, porfilePic=teacherProfile, truncateData=False, getReadableCategory=True))
+            courseArr.append(CourseInfo(data, profilePic=teacherProfile, truncateData=False, getReadableCategory=True))
 
         return courseArr, maxPage
 
@@ -1494,7 +1494,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         print("Matched:", matched)
         if (matched is None):
             return False
-        
+
         return matched
 
     # Added just in case want to do updating
@@ -1578,6 +1578,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
 
+        if (maxPage <= 0):
+            maxPage = 1
+
         teacherName = ""
         if (getTeacherName):
             cur.execute("SELECT username FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1625,12 +1628,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         try:
             maxPage = cur.fetchone()[-1]
             if (pageNum > maxPage):
-                return (False , maxPage)
+                return ([] , maxPage)
         except:
-            return []
+            return ([], 1)
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
+
+        if (maxPage <= 0):
+            maxPage = 1
+
         teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
                                                                else resultsList[0][4]
 

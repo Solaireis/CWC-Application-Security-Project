@@ -55,19 +55,7 @@
 
 <div class="container container_margin">
     <div class="row">
-        <div class="col-lg-3 merge-boxes">
-            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
-                <h4><span class="fs-4">My Account</span></h4>
-                <hr>
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="{{ url_for('userBP.userProfile') }}" class="nav-link text-white active-custom">
-                            Profile
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+        {% include "includes/_user_sidebar.html" %}
         <div class="col-lg-9 merge-boxes">
             <div id="right-user">
                 <div class="container res_padding_remove">

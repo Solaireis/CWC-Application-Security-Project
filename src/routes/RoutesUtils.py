@@ -142,13 +142,13 @@ def before_request() -> None:
             pass # allow the user to access the page
 
         elif ("user" in session and requestBlueprint in roleTable["Teacher"]):
-            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-            if (userInfo.role != "Teacher"):
-                return abort(404) # allow the teacher to access the page
-            pass
+            if (session.get("isTeacher", False)):
+                pass # allow the teacher to access the page
+            else:
+                return abort(404)
 
         elif ("admin" in session):
-            isSuperAdmin = sql_operation(table="user", mode="check_if_superadmin", userID=session["admin"])
+            isSuperAdmin = session.get("isSuperAdmin", False)
             if (not isSuperAdmin and requestBlueprint in roleTable["Admin"]):
                 pass # allow the admin to access the page
             elif (isSuperAdmin and requestBlueprint in roleTable["SuperAdmin"]):

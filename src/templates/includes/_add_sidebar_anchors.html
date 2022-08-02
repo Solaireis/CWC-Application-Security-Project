@@ -1,0 +1,12 @@
+{% macro add_sidebar_anchors(linkUrl, linkText) %}
+    {% with cssClass = "nav-link text-white" %}
+        {% if linkUrl == url_for(request.endpoint, **request.view_args) %}
+            {% set cssClass = cssClass + " active-custom" %}
+        {% endif %}
+        <li class="nav-item">
+            <a href="{{ linkUrl }}" class="{{ cssClass }} ">
+                {{ linkText }}
+            </a>
+        </li>
+    {% endwith %}
+{% endmacro %}
