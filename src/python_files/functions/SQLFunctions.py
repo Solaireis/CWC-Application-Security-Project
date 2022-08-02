@@ -1301,7 +1301,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            userInfo = format_user_info(data, offset=1, hasCartAndPurchased=False)
+            userInfo = format_user_info(data, offset=1, includeCart=False)
             if (paginationRole != "Admin"):
                 isInRecovery = recovery_token_sql_operation(
                     connection=connection, mode="check_if_recovering", userID=userInfo.uid
