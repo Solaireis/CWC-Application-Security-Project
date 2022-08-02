@@ -69,32 +69,37 @@
                 ) }}
             </div>
         </div>
+        <hr class="mt-3">
         <div class="col-lg-8 pt-3">
-            <h1>Reviews</h1>
-            {% for review in reviewList %}
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
-                            {{review.username}}
-                            <div class="ratings">
-                                {% with remainingStars = 5 - review.rating %}
-                                    {% for _ in range(review.rating) %}
-                                        <span class="fas fa-star"></span>
-                                    {% endfor %}
-                                    {% for _ in range(remainingStars) %}
-                                        <span class="far fa-star"></span>
-                                    {% endfor %}
-                                {% endwith %}
-                            </div>
-                        </h5>
-                        <p class="card-text">
-                            {{ review.review }}
-                        </p>
+            {% if reviewList %}
+                <h3>Reviews</h3>
+                {% for review in reviewList %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                                {{review.username}}
+                                <div class="ratings">
+                                    {% with remainingStars = 5 - review.rating %}
+                                        {% for _ in range(review.rating) %}
+                                            <span class="fas fa-star"></span>
+                                        {% endfor %}
+                                        {% for _ in range(remainingStars) %}
+                                            <span class="far fa-star"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                            </h5>
+                            <p class="card-text">
+                                {{ review.review }}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h3>There are currently no reviews...</h3>
+        {% endif %}
     </div> 
 </div>
 {% endblock %}
