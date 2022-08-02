@@ -257,6 +257,10 @@
 - RBAC will make Different roles  see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
+- RBAC Console 
+  - super admin can change the approute group based access controls
+  - Super admin can create google accounts
+  - Super admin can edit and modify the admin users
 
 ---
 
