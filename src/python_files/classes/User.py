@@ -2,6 +2,9 @@
 from datetime import datetime
 import json
 
+# import third-party libraries
+from jsonschema import validate
+
 class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""
     def __init__(self, tupleData:tuple=None, userProfile:str=""):

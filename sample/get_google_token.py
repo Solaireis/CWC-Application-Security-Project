@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
 from google.api_core.exceptions import FailedPrecondition
+from jsonschema import validate
 
 # import python standard libraries
 from sys import exit as sysExit

@@ -18,6 +18,7 @@ from flask import url_for, current_app, abort
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
+from jsonschema import validate
 
 # import local python files
 from python_files.classes.Course import CourseInfo

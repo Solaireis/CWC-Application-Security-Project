@@ -40,6 +40,7 @@ import PIL, pymysql, shlex, platform
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
+from jsonschema import validate
 
 # import Flask libraries
 from flask import url_for, flash, Markup, current_app

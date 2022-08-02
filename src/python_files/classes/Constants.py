@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
 from dicebear import DOptions
+from jsonschema import validate
 
 # For ipinfo.io to get details about a user's IP address
 import ipinfo
