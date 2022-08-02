@@ -312,8 +312,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             u.id, r.role_name, u.username, 
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, 
-            (SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=user_id_input) AS cart_courses, 
-            (SELECT JSON_ARRAYAGG(course_id) FROM purchased_courses WHERE user_id=user_id_input) AS purchased_courses,
+            (SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=user_id_input) AS cart_courses,
             u.status, t.token AS has_two_fa
             FROM user AS u
             LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id

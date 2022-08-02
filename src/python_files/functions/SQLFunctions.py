@@ -1306,7 +1306,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 isInRecovery = recovery_token_sql_operation(
                     connection=connection, mode="check_if_recovering", userID=userInfo.uid
                 )
-            courseArr.append((userInfo, isInRecovery))
+                courseArr.append((userInfo, isInRecovery))
+            else:
+                courseArr.append(userInfo)
 
         return courseArr, maxPage
 
