@@ -5,6 +5,10 @@ import json
 # import third-party libraries
 from jsonschema import validate
 
+schema = {
+    
+}
+
 class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""
     def __init__(self, tupleData:tuple=None, userProfile:str=""):
@@ -26,6 +30,11 @@ class UserInfo:
         self.__dateJoined = tupleData[7]
         self.__cartCourses = json.loads(tupleData[8]) \
                                         if (tupleData[8] is not None) else []
+        # try:
+        #     validate(instance=self.__cartCourses, schema=schema)
+        # except:
+        #     self.__cartCourses = []
+
         self.__status = tupleData[9]
         self.__hasTwoFA = True if (tupleData[10] is not None) else False
 

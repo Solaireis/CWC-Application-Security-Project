@@ -12,6 +12,10 @@ from python_files.classes.Roles import RoleInfo
 # import python standard libraries
 import re, json
 
+schema = {
+    
+}
+
 def update_secret_key() -> None:
     """
     Update Flask's secret key for the web app session cookie by generating a new one
@@ -116,6 +120,10 @@ def before_request() -> None:
             adminWhitelistedIP = json.loads(
                 current_app.config["SECRET_CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
             )
+            # try:
+            #     validate(instance=adminWhitelistedIP, schema=schema)
+            # except:
+            #     print("Error in JSON Schema")
         else:
             adminWhitelistedIP = ["127.0.0.1"]
 

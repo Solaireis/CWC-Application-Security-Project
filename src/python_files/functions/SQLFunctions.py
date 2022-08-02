@@ -29,6 +29,10 @@ from .NormalFunctions import JWTExpiryProperties, convert_to_mpd, download_to_pa
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
 
+schema = {
+    
+}
+
 def validate_course_video_path(courseID:str, returnUrl:bool=False) -> Optional[str]:
     """
     Gets the path to the course video by querying the database.
@@ -642,6 +646,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
         validFlag, idx = False, 0
         backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
+        # try:
+        #     validate(instance=backupCodes, schema=schema)
+        # except:
+        #     print("Error in Json schema")
         for idx, codeTuple in enumerate(backupCodes):
             if (codeTuple[0] == kwargs["backupCode"] and codeTuple[1] == "Active"):
                 validFlag = True
