@@ -148,7 +148,7 @@ def adminManagement():
     return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm )
 
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
-def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
+def roleManagement(): 
     role = sql_operation(table="role", mode="retrieve_all")
     roleList = []
     for role in role:
@@ -160,7 +160,6 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
 
     form = UpdateRoles(request.form)
     if (request.method == "POST" ):
-        # formType = request.form.get("formType", default=None, type=str)
 
         roleName = form.roleName.data
         guestBP = request.form.get("guestBP1", default="off", type=str)

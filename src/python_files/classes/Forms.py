@@ -91,15 +91,7 @@ class CreateReview(Form):
 
 class UpdateRoles(Form):
     roleName = StringField("Role Name: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
-    guestBP = SelectField("Guest BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    generalBP = SelectField("General BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    adminBP = SelectField("Admin BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    loggedInBP = SelectField("Logged In BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    errorBP=SelectField("Error BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    teacherBP = SelectField("Teacher BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    userBP = SelectField("Student BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    superAdminBP = SelectField("Super Admin BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-
+    
 class CreateAdmin(Form):
     username = StringField("Enter username:", [validators.Length(min=1, max=30), validators.DataRequired()])
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
