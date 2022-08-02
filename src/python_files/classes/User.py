@@ -5,40 +5,27 @@ from typing import Optional
 
 class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""
-    def __init__(
-        self, tupleData:tuple=None, userProfile:str="",
-        offset:Optional[int]=0, includeCart:Optional[bool]=False
-    ):
+    def __init__(self, tupleData:tuple=None, userProfile:str=""):
         """
         Constructor for user object.
 
         Args:
         - tupleInfo (tuple): Tuple retrieved from the sql query using the stored procedure, "get_user_data".
         - userProfile (str): The dicebear url or the path to the user's profile picture
-        - offset (int, Optional): The offset for indexing to get the correct user's data for each attribute.
-            - Default: 0
-            - E.g. offset=1 to account for the row number at the start of the tuple.
-        - includeCart (bool, Optional): Whether or not the tuple has a cart index.
-            - Default: False
         """
-        self.__uid = tupleData[0 + offset]
-        self.__role = tupleData[1 + offset]
-        self.__username = tupleData[2 + offset]
-        self.__email = tupleData[3 + offset]
-        self.__emailVerified = tupleData[4 + offset]
-        self.__googleOAuth = True if (tupleData[5 + offset] is None) else False
-        self.__profileImage = userProfile # Note: Use get_dicebear_image() on the username if the profile image is Nonew
-        self.__hasProfilePic = False if (tupleData[6 + offset] is None) else True
-        self.__dateJoined = tupleData[7 + offset]
-        idx = 8
-
-        if (includeCart):
-            self.__cartCourses = json.loads(tupleData[idx + offset]) \
-                                            if (tupleData[idx + offset] is not None) else []
-            idx += 1
-
-        self.__status = tupleData[idx + offset]
-        self.__hasTwoFA = True if (tupleData[idx + offset] is not None) else False
+        self.__uid = tupleData[0]
+        self.__role = tupleData[1]
+        self.__username = tupleData[2]
+        self.__email = tupleData[3]
+        self.__emailVerified = tupleData[4]
+        self.__googleOAuth = True if (tupleData[5] is None) else False
+        self.__profileImage = userProfile # Note: Use get_dicebear_image() on the username if the profile image is None
+        self.__hasProfilePic = False if (tupleData[6] is None) else True
+        self.__dateJoined = tupleData[7]
+        self.__cartCourses = json.loads(tupleData[8]) \
+                                        if (tupleData[8] is not None) else []
+        self.__status = tupleData[9]
+        self.__hasTwoFA = True if (tupleData[10] is not None) else False
 
     @property
     def uid(self) -> str:

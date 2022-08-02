@@ -306,13 +306,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id_input VARCHAR(32))
+        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id_input VARCHAR(32), IN get_cart_data BOOLEAN)
         BEGIN
             SELECT
             u.id, r.role_name, u.username, 
             u.email, u.email_verified, u.password, 
             u.profile_image, u.date_joined, 
-            (SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=user_id_input) AS cart_courses,
+            IF(get_cart_data, (SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=user_id_input), NULL) AS cart_courses,
             u.status, t.token AS has_two_fa
             FROM user AS u
             LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id

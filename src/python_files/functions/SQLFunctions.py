@@ -220,22 +220,18 @@ def get_image_path(userID:str, returnUserInfo:bool=False, getCart:Optional[bool]
     imageSrcPath = userInfo.profileImage
     return imageSrcPath if (not returnUserInfo) else userInfo
 
-def format_user_info(userInfo:tuple, offset:int=0, includeCart:bool=True) -> UserInfo:
+def format_user_info(userInfo:tuple) -> UserInfo:
     """
     Format the user's information to be returned to the client.
 
     Args:
     - userInfo (tuple): The user's tuple matched from a database query.
-    - offset (int): The offset of the user's tuple.
-        - Used when there's extra attribute at the start of the user's tuple queried from the database.
-        - Default: 0, no offset.
-    - includeCart (bool): If True, it will include the cart information in the user's info.
 
     Returns:
     - UserInfo object with the formatted user information.
     """
-    userProfile = get_dicebear_image(userInfo[2 + offset]) if (userInfo[6 + offset] is None) else userInfo[6 + offset]
-    return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset, includeCart=includeCart)
+    userProfile = get_dicebear_image(userInfo[2]) if (userInfo[6] is None) else userInfo[6]
+    return UserInfo(tupleData=userInfo, userProfile=userProfile)
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
@@ -1071,9 +1067,12 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "get_user_data"):
         userID = kwargs["userID"]
-        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
+        cur.execute(
+            "CALL get_user_data(%(userID)s, %(getCart)s)", 
+            {"userID":userID, "getCart":kwargs.get("getCart", False)}
+        )
         matched = cur.fetchone()
-        return format_user_info(matched, includeCart=kwargs.get("getCart", False)) if (matched is not None) else None
+        return format_user_info(matched) if (matched is not None) else None
 
     elif (mode == "change_profile_picture"):
         userID = kwargs["userID"]
@@ -1241,7 +1240,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "update_to_teacher"):
         userID = kwargs["userID"]
 
-        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
+        cur.execute("CALL get_user_data(%(userID)s, 0)", {"userID":userID})
         currentRole = cur.fetchone()[0][1]
 
         isTeacher = False if (currentRole != "Teacher") else True
@@ -1301,7 +1300,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            userInfo = format_user_info(data, offset=1, includeCart=False)
+            userInfo = format_user_info(data[1:])
             if (paginationRole != "Admin"):
                 isInRecovery = recovery_token_sql_operation(
                     connection=connection, mode="check_if_recovering", userID=userInfo.uid
