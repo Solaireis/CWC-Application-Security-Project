@@ -155,7 +155,7 @@ def videoUpload():
     else:
         return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
-#TODO: Hash Video data, implement dropzone to encrpyt video data
+
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
     if ("video_saving" in session):
