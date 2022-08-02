@@ -179,35 +179,33 @@ app.config["ALLOWED_VIDEO_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_VIDEO_E
 with app.app_context():
     from routes.RoutesUtils import update_secret_key
 
-# Register all app routes
-from routes.SuperAdmin import superAdminBP
-app.register_blueprint(superAdminBP)
+    # Register all app routes
+    from routes.SuperAdmin import superAdminBP
+    app.register_blueprint(superAdminBP)
 
-from routes.Admin import adminBP
-app.register_blueprint(adminBP)
+    from routes.Admin import adminBP
+    app.register_blueprint(adminBP)
 
-from routes.Errors import errorBP
-app.register_blueprint(errorBP)
+    from routes.Errors import errorBP
+    app.register_blueprint(errorBP)
 
-with app.app_context():
     from routes.General import generalBP
     app.register_blueprint(generalBP)
 
-with app.app_context():
     from routes.Guest import guestBP
     app.register_blueprint(guestBP)
 
-from routes.LoggedIn import loggedInBP
-app.register_blueprint(loggedInBP)
+    from routes.LoggedIn import loggedInBP
+    app.register_blueprint(loggedInBP)
 
-from routes.User import userBP
-app.register_blueprint(userBP)
+    from routes.User import userBP
+    app.register_blueprint(userBP)
 
-from routes.Teacher import teacherBP
-app.register_blueprint(teacherBP)
+    from routes.Teacher import teacherBP
+    app.register_blueprint(teacherBP)
 
-from routes.Files import filesBP
-app.register_blueprint(filesBP)
+    from routes.Files import filesBP
+    app.register_blueprint(filesBP)
 
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 

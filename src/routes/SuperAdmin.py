@@ -11,7 +11,6 @@ from python_files.functions.NormalFunctions import *
 from python_files.classes.Roles import RoleInfo
 from python_files.classes.Forms import *
 
-
 superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", template_folder="template")
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])

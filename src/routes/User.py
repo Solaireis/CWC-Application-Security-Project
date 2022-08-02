@@ -4,10 +4,10 @@ Routes for logged in normal users (Students or Teachers)
 # import third party libraries
 from werkzeug.utils import secure_filename
 from flask_limiter.util import get_remote_address
-import markdown, pyotp, qrcode, html, hashlib
+import markdown, pyotp, qrcode, html
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, make_response
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -100,7 +100,7 @@ def twoFactorAuthSetup():
         # if the secret token and the session token is equal but
         # the secret token is not base32, then the user has tampered with the session
         # and the html 2FA secretToken hidden form value
-        if (re.fullmatch(CONSTANTS.TWENTY_BYTES_2FA_REGEX, secretToken) is None):
+        if (re.fullmatch(current_app.config["CONSTANTS"].TWENTY_BYTES_2FA_REGEX, secretToken) is None):
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
