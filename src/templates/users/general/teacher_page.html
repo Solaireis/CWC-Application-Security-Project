@@ -11,6 +11,7 @@
 {% endblock %}
 
 {% block title %}{{ teacherUsername }}'s Page | CourseFinity{% endblock %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
 {% block content %}
 <div class="container">
@@ -70,29 +71,11 @@
 								{% endif %}
 							</div>
 							<div class="card-footer">
-								{% if (accType == None) %}
-									<a href="{{ url_for('guestBP.login') }}" class="btn btn-success float-end">
-										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
-									</a>
-								{% elif (accType == "Admin") %}
-									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
-								{% else %}
-									{% if (courseUserState["purchased"]) %}
-										<a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="btn btn-success float-end">
-											<i class="fas fa-shopping-bag"></i> View Purchase
-										</a>
-									{% elif (courseUserState["isInCart"]) %}
-										<a href="{{ url_for('userBP.shoppingCart') }}" class="btn btn-success float-end">
-											<i class="fas fa-shopping-cart"></i> View in cart
-										</a>
-									{% else %}
-										<form action="{{ url_for('userBP.addToCart', courseID=course.courseID) }}" method="POST">
-											<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-											<input name="courseID" type="hidden" value="{{ course.courseID }}">
-											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-										</form>
-									{% endif %}
-								{% endif %}
+								{{ add_to_cart_btn(
+									course=course,
+									courseUserState=courseUserState, 
+									accType=accType
+								) }}
 							</div>
 						</div>
 					</div>
@@ -143,7 +126,11 @@
 								{% endif %}
 							</div>
 							<div class="card-footer">
-								{% include "includes/_add_to_cart_btn.html" %}
+								{{ add_to_cart_btn(
+									course=course,
+									courseUserState=courseUserState, 
+									accType=accType
+								) }}
 							</div>
 						</div>
 					</div>

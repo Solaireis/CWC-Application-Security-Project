@@ -11,6 +11,7 @@
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
 {% endblock %}
 {% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
 {% block content %}
 <div class="container-md course-container">
@@ -61,21 +62,12 @@
             <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
             <hr>
             <div>
-                {% if purchased %}
-                    <a href="{{ url_for('userBP.purchaseView', courseID=courses.courseID) }}" class="btn btn-success">
-                        <i class="fa-solid fa-bag-shopping"></i> View purchased course
-                    </a>
-                {% elif isInCart %}
-                    <a href="{{ url_for('userBP.shoppingCart') }}" class="btn btn-success">
-                        <i class="fas fa-shopping-cart"></i> View in cart
-                    </a>
-                {% else %}
-                    <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                        <input name="courseID" type="hidden" value="{{ courses.courseID }}">
-                        <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-                    </form>
-                {% endif %}
+                {{ add_to_cart_btn(
+                    course=courses,
+                    courseUserState={"purchased": purchased, "isInCart": isInCart}, 
+                    accType=accType,
+                    alignBtn=None
+                ) }}
             </div>
         </div>
         <div class="col-lg-8 pt-3">

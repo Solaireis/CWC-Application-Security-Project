@@ -16,6 +16,7 @@
 
 {% block content %}
 {% from "includes/_formHelper.html" import render_field %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -85,7 +86,11 @@
                             <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
                             {% endif %}
                             {% if userID != teacherID %}
-                                {% include "includes/_add_to_cart_btn.html" %}
+                                {{ add_to_cart_btn(
+                                    course=course,
+                                    courseUserState=courseUserState, 
+                                    accType=accType
+                                ) }}
                             {% endif %}
                             <p class="card-text">
                                 <small class="text-muted">
