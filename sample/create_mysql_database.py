@@ -347,6 +347,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             HAVING row_num > @page_offset
             ORDER BY row_num
             LIMIT 10;
+        END
     """)
 
     cur.execute(f"""
@@ -762,7 +763,6 @@ if (__name__ == "__main__"):
     except pymysql.err.ProgrammingError:
         pass
 
-    mysql_init_tables(debug=debugFlag)
     try:
         mysql_init_tables(debug=debugFlag)
         print("Successfully initialised database, \"coursefinity\"!")
