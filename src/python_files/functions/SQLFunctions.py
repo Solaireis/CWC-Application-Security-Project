@@ -1894,11 +1894,9 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         generalBP = kwargs["generalBP"]
         adminBP = kwargs["adminBP"]
         loggedInBP = kwargs["loggedInBP"]
-        errorBP = kwargs["errorBP"]
         teacherBP= kwargs["teacherBP"]
         userBP= kwargs["userBP"]
-        superAdminBP= kwargs["superAdminBP"]
-        cur.execute("UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, error_bp = %(errorBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s, super_admin_bp = %(superAdminBP)s WHERE role_name = %(roleName)s", {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "errorBP":errorBP, "teacherBP":teacherBP, "userBP":userBP, "superAdminBP":superAdminBP})
+        cur.execute("UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s", {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP})
         connection.commit()
     
     else:
