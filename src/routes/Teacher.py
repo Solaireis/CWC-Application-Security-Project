@@ -173,11 +173,6 @@ def createCourse(courseID:str):
     absFilePath = videoFilePath.joinpath(videoFilename)
 
     videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
-
-    if (not courseTuple):
-        flash("No Course Found", "Course Not Found!")
-        return redirect(url_for("teacherBP.draftCourseList"))
-
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     if (userInfo.role != "Teacher"):
         abort(500)
