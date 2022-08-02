@@ -164,33 +164,6 @@ def before_request() -> None:
             # If the user is not allowed to access the page, abort 404
             return abort(404)
 
-        #TODO* transitioning to new RBAC controls, bugs will appear pls let me know
-        # if ("user" in session and requestBlueprint in current_app.config["CONSTANTS"].USER_BLUEPRINTS):
-        #     pass # allow the user to access the page
-
-        # elif("user" in session and requestBlueprint in current_app.config["CONSTANTS"].TEACHER_BLUEPRINTS):
-        #     userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-        #     if (userInfo.role != "Teacher"):
-        #         return abort(404) # allow the teacher to access the page
-        #     pass
-
-        # elif ("admin" in session):
-        #     isSuperAdmin = sql_operation(table="user", mode="check_if_superadmin", userID=session["admin"])
-        #     if (not isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].ADMIN_BLUEPRINTS):
-        #         pass # allow the admin to access the page
-        #     elif (isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].SUPER_ADMIN_BLUEPRINTS):
-        #         pass # allow the superadmin to access the page
-        #     else:
-        #         # if the admin is not allowed to access the page, abort 404
-        #         return abort(404)
-
-        # elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in current_app.config["CONSTANTS"].GUEST_BLUEPRINTS):
-        #     pass # allow the guest user to access the page
-
-        # else:
-        #     # If the user is not allowed to access the page, abort 404
-        #     return abort(404)
-
 @current_app.after_request # called after each request to the application
 def after_request(response:wrappers.Response) -> wrappers.Response:
     """

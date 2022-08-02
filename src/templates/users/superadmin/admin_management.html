@@ -28,7 +28,7 @@
     {% endif %}
 {% endwith %}
 
-{% for user, isInRecovery in userArr %}
+{% for user in userArr %}
     <form action="" method="POST" class="modalForm">
         <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="formType" value="deleteUser">
@@ -379,7 +379,7 @@
                                     <td>Email</td>
                                     <td colspan="3">Status</td>
                                 </tr>
-                                {% for user, isInRecovery in userArr %}
+                                {% for user in userArr %}
                                     <tr>
                                         <td>
                                             {{ user.uid }}
