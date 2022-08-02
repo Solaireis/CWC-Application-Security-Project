@@ -305,29 +305,7 @@
 
 <div class="container container_margin">
     <div class="row">
-        <div class="col-lg-3 merge-boxes">
-            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
-                <h4><span class="fs-4">Admin Dashboard</span></h4>
-                <hr>
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white">
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('adminBP.adminProfile') }}" class="nav-link text-white">
-                            Account Settings
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('adminBP.userManagement') }}" class="nav-link text-white active-custom">
-                            User Management
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+        {% include "includes/_admin_sidebar.html" %}
         <div class="col-lg-9 merge-boxes">
             <div id="right-user">
                 <div class="container">

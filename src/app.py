@@ -35,13 +35,16 @@ app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
 # https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
 # https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
 FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
+FLASK_SESSION_COOKIE_INTERFACE.salt = app.config["SECRET_CONSTANTS"].get_secret_payload(
+    secretID=app.config["CONSTANTS"].FLASK_SALT_KEY_NAME, decodeSecret=False
+)
 FLASK_SESSION_COOKIE_INTERFACE.digest_method = staticmethod(hashlib.sha512)
 app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
 
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
 app.config["SECRET_KEY"] = app.config["SECRET_CONSTANTS"].get_secret_payload(
-    secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+    secretID=app.config["CONSTANTS"].FLASK_SECRET_KEY_NAME, decodeSecret=False
 )
 
 # Import security related functions/objects
@@ -153,10 +156,6 @@ app.config["DEBUG_FLAG"] = app.config["CONSTANTS"].DEBUG_MODE
 # Maintenance mode flag
 app.config["MAINTENANCE_MODE"] = False
 
-# for other scheduled tasks such as deleting expired session id from the database
-# Uses threading to run the task in a separate thread
-scheduler = BackgroundScheduler()
-
 # Remove Jinja2 whitespace
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
@@ -180,35 +179,33 @@ app.config["ALLOWED_VIDEO_EXTENSIONS"] = app.config["CONSTANTS"].ALLOWED_VIDEO_E
 with app.app_context():
     from routes.RoutesUtils import update_secret_key
 
-# Register all app routes
-from routes.SuperAdmin import superAdminBP
-app.register_blueprint(superAdminBP)
+    # Register all app routes
+    from routes.SuperAdmin import superAdminBP
+    app.register_blueprint(superAdminBP)
 
-from routes.Admin import adminBP
-app.register_blueprint(adminBP)
+    from routes.Admin import adminBP
+    app.register_blueprint(adminBP)
 
-from routes.Errors import errorBP
-app.register_blueprint(errorBP)
+    from routes.Errors import errorBP
+    app.register_blueprint(errorBP)
 
-with app.app_context():
     from routes.General import generalBP
     app.register_blueprint(generalBP)
 
-with app.app_context():
     from routes.Guest import guestBP
     app.register_blueprint(guestBP)
 
-from routes.LoggedIn import loggedInBP
-app.register_blueprint(loggedInBP)
+    from routes.LoggedIn import loggedInBP
+    app.register_blueprint(loggedInBP)
 
-from routes.User import userBP
-app.register_blueprint(userBP)
+    from routes.User import userBP
+    app.register_blueprint(userBP)
 
-from routes.Teacher import teacherBP
-app.register_blueprint(teacherBP)
+    from routes.Teacher import teacherBP
+    app.register_blueprint(teacherBP)
 
-from routes.Files import filesBP
-app.register_blueprint(filesBP)
+    from routes.Files import filesBP
+    app.register_blueprint(filesBP)
 
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 
@@ -225,7 +222,7 @@ def remove_unverified_users_for_more_than_30_days() -> None:
 
     >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
     """
-    return sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
+    sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
 
 def remove_expired_jwt() -> None:
     """
@@ -233,7 +230,7 @@ def remove_expired_jwt() -> None:
 
     >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
     """
-    return sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
 
 def remove_expired_sessions() -> None:
     """
@@ -241,7 +238,7 @@ def remove_expired_sessions() -> None:
 
     >>> sql_operation(table="session", mode="delete_expired_sessions")
     """
-    return sql_operation(table="session", mode="delete_expired_sessions")
+    sql_operation(table="session", mode="delete_expired_sessions")
 
 def reset_expired_login_attempts() -> None:
     """
@@ -249,7 +246,7 @@ def reset_expired_login_attempts() -> None:
 
     >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
     """
-    return sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
+    sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
 
 def remove_last_accessed_more_than_10_days() -> None:
     """
@@ -257,7 +254,7 @@ def remove_last_accessed_more_than_10_days() -> None:
 
     >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
     """
-    return sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+    sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
 
 def re_encrypt_data_in_db() -> None:
     """
@@ -265,27 +262,34 @@ def re_encrypt_data_in_db() -> None:
 
     >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
     """
-    return sql_operation(table="user", mode="re-encrypt_data_in_database")
+    sql_operation(table="user", mode="re-encrypt_data_in_database")
 
-def check_for_new_flask_secret_key() -> None:
+def check_for_new_session_configs() -> None:
     """
-    Check for new flask secret key and if there is a new key in 
-    Google Cloud Platform Secret Manager, 
-    update the secret key in the web application to the new key.
+    Check for any value updates in Google Cloud Platform Secret Manager API
+    if the Flask secret key or the session cookie salt has changed.
+
+    If there are changes, update the Flask session cookie configurations.
     """
-    retrievedKeyFromGCPSecretManager = app.config["SECRET_CONSTANTS"].get_secret_payload(
-        secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+    retrievedKey = app.config["SECRET_CONSTANTS"].get_secret_payload(
+        secretID=app.config["CONSTANTS"].FLASK_SECRET_KEY_NAME, decodeSecret=False
     )
-    if (retrievedKeyFromGCPSecretManager != app.config["SECRET_KEY"]):
-        app.config["SECRET_KEY"] = retrievedKeyFromGCPSecretManager
+    if (retrievedKey != app.config["SECRET_KEY"]):
+        app.config["SECRET_KEY"] = retrievedKey
+
+    retrievedSessionSalt = app.config["SECRET_CONSTANTS"].get_secret_payload(
+        secretID=app.config["CONSTANTS"].FLASK_SALT_KEY_NAME, decodeSecret=False
+    )
+    if (retrievedSessionSalt != app.session_interface.salt):
+        app.session_interface.salt = retrievedSessionSalt
 
 """------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
 if (__name__ == "__main__"):
     # APScheduler docs:
     # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
-    # configure timezone to always follow Singapore's timezone
-    scheduler.configure(timezone="Asia/Singapore") 
+    scheduler = BackgroundScheduler() # Uses threading to run the task in a separate thread
+    scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
 
     # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
@@ -324,8 +328,8 @@ if (__name__ == "__main__"):
     )
     # For checking if the Flask secret key has been manually changed every 30 minutes
     scheduler.add_job(
-        check_for_new_flask_secret_key,
-        trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
+        check_for_new_session_configs,
+        trigger="interval", minutes=30, id="checkForNewSessionConfigs"
     )
     # Start all the scheduled jobs
     scheduler.start()

@@ -130,7 +130,7 @@
 					<a class="nav-link dropdown-toggle text-white" href="#" onclick="return false;" data-bs-toggle="dropdown"><img src="https://storage.googleapis.com/coursefinity/user-profiles/default.png" id="user_profile" alt="User profile icon"></a>
 					<ul class="dropdown-menu shadow dropdown-menu-end">
 						<li><a class="dropdown-item" href="{{ url_for('adminBP.adminProfile') }}"><i class="fas fa-user-edit"></i> Account Settings</a></li>
-						{% if session.get("isSuperAdmin") %}
+						{% if session.get("isSuperAdmin", False) %}
 							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.adminManagement') }}"><i class="fas fa-chalkboard-teacher"></i> Admin Management</a></li>
 							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.roleManagement') }}"><i class="fas fa-chalkboard-teacher"></i> Roles Management</a></li>
 							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.createAdmin') }}"><i class="fas fa-chalkboard-teacher"></i> Create new Admins</a></li>

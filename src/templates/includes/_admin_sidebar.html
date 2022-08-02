@@ -1,0 +1,29 @@
+{% from "includes/_add_sidebar_anchors.html" import add_sidebar_anchors %}
+
+{% with isSuperAdmin = session.get("isSuperAdmin", False) %}
+    <div class="col-lg-3 merge-boxes">
+        <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
+            <h4>
+                {% with sideBarTitle = "" %}
+                    {% if isSuperAdmin %}
+                        {% set sideBarTitle = "Super Admin" %}
+                    {% else %}
+                        {% set sideBarTitle = "Admin" %}
+                    {% endif %}
+                    <span class="fs-4">{{ sideBarTitle }} Dashboard</span>
+                {% endwith %}
+            </h4>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                {{ add_sidebar_anchors(url_for('adminBP.adminProfile'), "Account Settings") }}
+                {% if isSuperAdmin %}
+                    {{ add_sidebar_anchors(url_for('superAdminBP.adminManagement'), "Admin Management") }}
+                    {{ add_sidebar_anchors(url_for('superAdminBP.roleManagement'), "Role Management") }}
+                    {{ add_sidebar_anchors(url_for('superAdminBP.createAdmin'), "Create Admin") }}
+                {% else %}
+                    {{ add_sidebar_anchors(url_for('adminBP.userManagement'), "User Management") }}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+{% endwith %}

@@ -1,17 +1,15 @@
 {% macro render_field(field, labelFirst=True) %}
+    {% if labelFirst %}
+        {{ field.label(class="form-label") }}
+        {{ field(**kwargs)|safe }}
+    {% else %}
+        {{ field(**kwargs)|safe }}
+        {{ field.label(class="form-label") }}
+    {% endif %}
 
-{% if labelFirst %}
-    {{ field.label(class="form-label") }}
-    {{ field(**kwargs)|safe }}
-{% else %}
-    {{ field(**kwargs)|safe }}
-    {{ field.label(class="form-label") }}
-{% endif %}
-
-{% if field.errors %}
-    {% for error in field.errors %}
-        <div class="text-danger"><strong>{{ error }}</strong></div>
-    {% endfor %}
-{% endif %}
-
+    {% if field.errors %}
+        {% for error in field.errors %}
+            <div class="text-danger"><strong>{{ error }}</strong></div>
+        {% endfor %}
+    {% endif %}
 {% endmacro %}

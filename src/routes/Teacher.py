@@ -30,8 +30,11 @@ def courseList():
     paginationArr = []
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
 
-    if (not courseList):
+    if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
+    elif (page < 1):
+        return redirect(url_for("teacherBP.courseList") + "?p=1")
+
     if (len(courseList) != 0) :
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
@@ -43,17 +46,17 @@ def draftCourseList():
     #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     page = request.args.get("p", default=1, type=int)
-    maxPage, paginationArr = 0, []
-    courseList = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
-    try:
-        if (not courseList[0]):
-            return redirect(url_for("teacherBP.draftCourseList") + f"?p={courseList[1]}")
-        if (len(courseList) != 0) :
-            courseList, maxPage = courseList[0], courseList[1]
-            # Compute the buttons needed for pagination
-            paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
-    except:
-        courseList = []
+    paginationArr = []
+    courseList, maxPage = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
+
+    if (page > maxPage):
+        return redirect(url_for("teacherBP.draftCourseList") + f"?p={maxPage}")
+    elif (page < 1):
+        return redirect(url_for("teacherBP.draftCourseList") + "?p=1")
+
+    if (len(courseList) != 0) :
+        # Compute the buttons needed for pagination
+        paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
     return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
 

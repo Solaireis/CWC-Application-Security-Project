@@ -43,20 +43,15 @@ class Constants:
     # For redirecting user to the custom domain which is protected by Cloudflare
     CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
 
-    GUEST_BLUEPRINTS: tuple = ("guestBP", "generalBP","errorBP")
-    USER_BLUEPRINTS: tuple = ("generalBP", "userBP", "loggedInBP", "errorBP")
-    ADMIN_BLUEPRINTS: tuple = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-    SUPER_ADMIN_BLUEPRINTS: tuple = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP","adminBP")
-    TEACHER_BLUEPRINTS: tuple = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
+    # Follows the MySQL columns in the database
+    BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
+    ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
 
     # Request limit
     REQUEST_LIMIT: str = "120 per minute"
 
     # For lockout policy
     MAX_LOGIN_ATTEMPTS: int = 6
-
-    # For Flask's session cookie key length
-    SESSION_NUM_OF_BYTES: int = 512
 
     # For removing session identifiers that has no activity for more than x mins 
     # (Expiry date will be updated per request to the web application)
@@ -133,6 +128,11 @@ class Constants:
     # For the Flask secret key when retrieving the secret key
     # from Google Secret Manager API
     FLASK_SECRET_KEY_NAME: str = "flask-secret-key"
+    FLASK_SALT_KEY_NAME: str = "flask-session-salt"
+
+    # For Flask session cookie
+    SESSION_NUM_OF_BYTES: int = 512
+    SALT_NUM_OF_BYTES: int = 64
 
     # For Stripe API
     STRIPE_PUBLIC_KEY: str = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"

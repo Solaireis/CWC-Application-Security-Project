@@ -28,9 +28,9 @@ This helps prevent circular imports.
 Refer to docs: https://flask-limiter.readthedocs.io/en/stable/
 Usage example below:
 
-from python_files.Constants import CONSTANTS
+from flask import current_app
 from .RoutesSecurity import limiter
-limiter.limit(limit_value=CONSTANTS.REQUEST_LIMIT)(blueprintObj)
+limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(blueprintObj)
 
 @blueprintObj.route("/demo")
 @limiter.limit("10 per second")

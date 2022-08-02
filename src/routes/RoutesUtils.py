@@ -6,6 +6,7 @@ from flask_limiter.util import get_remote_address
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
 from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, write_log_entry
+from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
 import re, json
@@ -127,28 +128,36 @@ def before_request() -> None:
         session.clear()
 
     if (request.endpoint != "static"):
+        # Retrieve the roles database, there could be a better way to do this
+        roles = sql_operation(table="role", mode="retrieve_all")
+        roleTable = {}
+        for idx, role in enumerate(roles): # iterate through each role and append the information to a list
+            currentRoleName = current_app.config["CONSTANTS"].ROLE_NAME_ORDER_TUPLE[idx]
+            roleTable[currentRoleName] = RoleInfo(role).format_blueprints_for_checking()
+
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
         print("Request Endpoint:", request.endpoint)
-        if ("user" in session and requestBlueprint in current_app.config["CONSTANTS"].USER_BLUEPRINTS):
+        print("Request Blueprint:", requestBlueprint)
+        if ("user" in session and requestBlueprint in roleTable["Student"]):
             pass # allow the user to access the page
 
-        elif("user" in session and requestBlueprint in current_app.config["CONSTANTS"].TEACHER_BLUEPRINTS):
-            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-            if (userInfo.role != "Teacher"):
-                return abort(404) # allow the teacher to access the page
-            pass
+        elif ("user" in session and requestBlueprint in roleTable["Teacher"]):
+            if (session.get("isTeacher", False)):
+                pass # allow the teacher to access the page
+            else:
+                return abort(404)
 
         elif ("admin" in session):
-            isSuperAdmin = sql_operation(table="user", mode="check_if_superadmin", userID=session["admin"])
-            if (not isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].ADMIN_BLUEPRINTS):
+            isSuperAdmin = session.get("isSuperAdmin", False)
+            if (not isSuperAdmin and requestBlueprint in roleTable["Admin"]):
                 pass # allow the admin to access the page
-            elif (isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].SUPER_ADMIN_BLUEPRINTS):
+            elif (isSuperAdmin and requestBlueprint in roleTable["SuperAdmin"]):
                 pass # allow the superadmin to access the page
             else:
                 # if the admin is not allowed to access the page, abort 404
                 return abort(404)
 
-        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in current_app.config["CONSTANTS"].GUEST_BLUEPRINTS):
+        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in roleTable["Guest"]):
             pass # allow the guest user to access the page
 
         else:

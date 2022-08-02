@@ -44,12 +44,22 @@
     - References:
       - [SHATTERED](https://shattered.it/)
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
-    - Using Google Cloud Platform KMS API RNG in the Cloud HSM (4096 bits) for the symmetric key used in the HMAC algorithm.
+    - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
       - Ensures high entropy
+        - Generated key will have a high entropy as it is generated using a cryptographically secure random number generator (RNG) in the Cloud HSM.
+        - Since the max cookie size is 4093 bits, specified in Flask's default configuration, a key size must be at least 4093 bits will be needed to ensure high entropy as the key size must match the message size.
+          - If the key size is less than 4093 bits, the key will be padded with zeros to match the message size.
+            - Wil reduce the entropy of the key.
+          - If the key size is greater than 4093 bits, the key will be truncated to match the message size.
+            - No effect on the entropy of the key.
+          - If the key size is equal to 4093 bits, the key will be used as is.
+            - No effect on the entropy of the key.
       - Unlikely to be guessed ($2^{4096}$ possible keys)
       - Prevent session cookie from being tampered with
       - Automatically rotated at the end of each month
-      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
+      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)1
+  - Changing the default salt from "cookie-session" to something more secure using Google Cloud Platform KMS API RNG in the Cloud HSM
+    - The randomly generated 64 bytes salt will be stored in Google Cloud Platform Secret Manager API.
 
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
@@ -247,6 +257,10 @@
 - RBAC will make Different roles  see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
+- RBAC Console 
+  - super admin can change the approute group based access controls
+  - Super admin can create google accounts
+  - Super admin can edit and modify the admin users
 
 ---
 

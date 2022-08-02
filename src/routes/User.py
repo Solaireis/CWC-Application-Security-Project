@@ -4,10 +4,10 @@ Routes for logged in normal users (Students or Teachers)
 # import third party libraries
 from werkzeug.utils import secure_filename
 from flask_limiter.util import get_remote_address
-import markdown, pyotp, qrcode, html, hashlib
+import markdown, pyotp, qrcode, html
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, make_response
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -100,7 +100,7 @@ def twoFactorAuthSetup():
         # if the secret token and the session token is equal but
         # the secret token is not base32, then the user has tampered with the session
         # and the html 2FA secretToken hidden form value
-        if (re.fullmatch(CONSTANTS.TWENTY_BYTES_2FA_REGEX, secretToken) is None):
+        if (re.fullmatch(current_app.config["CONSTANTS"].TWENTY_BYTES_2FA_REGEX, secretToken) is None):
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
@@ -306,6 +306,7 @@ def changeAccountType():
     if (request.form["changeAccountType"] == "changeToTeacher"):
         try:
             sql_operation(table="user", mode="update_to_teacher", userID=userID)
+            session["isTeacher"] = True
             flash("Your account has been successfully upgraded to a Teacher.", "Account Details Updated!")
         except (IsAlreadyTeacherError):
             flash("You are already a teacher!", "Failed to Update!")
@@ -450,7 +451,6 @@ def uploadPic():
 #     flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
 #     return redirect(url_for("userBP.userProfile"))
 
-
 @userBP.route("/course-review/<string:courseID>", methods=["GET","POST"]) #writing of review
 def courseReview(courseID:str):
     reviewForm = CreateReview(request.form)
@@ -462,13 +462,7 @@ def courseReview(courseID:str):
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
-    purchasedCourseIDs = userInfo.purchasedCourses
-    print(purchasedCourseIDs)
-
-    for purchases in purchasedCourseIDs:
-        if (purchases == courseID):
-            purchased = True
-            break
+    purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
 
     if (not purchased):
         print("user has not purchased this course")
@@ -509,52 +503,35 @@ def courseReview(courseID:str):
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
     # TODO: Make the argument based on the purchaseID instead of courseID
-    userPurchasedCourses = {}
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    userPurchasedCourses = userInfo.uid
-    accType = userInfo.role
-    print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
-    print(courses)
-    #TODO Test the RBAC 
-    if (accType != "2" or accType != "1"): # check if user is either user or teacher role
-        return abort(403)
-    if ( courses.teacherID == userInfo.uid): # check if the teacher id is the owner of the course
-        pass
-    elif(courseID in userPurchasedCourses): # check if the user has the course purchased 
-        pass
-    else:
-        return abort(404)
-
-    
-    #courseName = courses[0][1]
-    if (not courses): #raise 404 error
+    if (not courses): # raise 404 error
         abort(404)
 
-    # TODO: Could have used Course.py's class instead of
-    # TODO: manually retrieving the data from the tuple
-    # TODO: Prevent iframes from being loaded in the course description
-    #create variable to store these values
+    purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
+    if (not purchased):
+        return redirect(url_for("generalBP.coursePage", courseID=courseID))
+
+    # create variable to store these values
     courseDescription = Markup(
         markdown.markdown(
             html.escape(courses.courseDescription),
             extensions=[AnchorTagExtension()], 
         )
     )
-
     courseVideoPath = None
     teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
-    print(teacherRecords)
 
-    accType = imageSrcPath = None
-
-    
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
     videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
     return render_template("users/user/purchase_view.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherRecords.username, teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, courseVideoPath=courseVideoPath, accType=accType, courses=courses, videoPath=videoPath)
+        imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
+        teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, 
+        courseVideoPath=courseVideoPath, accType=userInfo.role, 
+        courses=courses, videoPath=videoPath
+    )
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):
@@ -569,11 +546,9 @@ def shoppingCart():
         # Remove item from cart
         courseID = request.form.get("courseID")
         sql_operation(table="user", mode="remove_from_cart", userID=userID, courseID=courseID)
-
         return redirect(url_for("userBP.shoppingCart"))
-
     else:
-        userInfo = get_image_path(userID, returnUserInfo=True)
+        userInfo = get_image_path(userID, returnUserInfo=True, getCart=True)
         # print(userInfo)
         cartCourseIDs = userInfo.cartCourses
 
@@ -640,15 +615,16 @@ def purchase(jwtToken:str):
 def purchaseHistory():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
-    purchasedCourseIDs = userInfo.purchasedCourses
-    courseList = []
 
-    # TODO: Could have used Course.py's class instead of
-    # TODO: manually retrieving the data from the tuple
-    for courseID in purchasedCourseIDs:
-        course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-        print(course)
-        if course != False:
-            courseList.append(course)
+    pageNum = request.args.get("p", default=1, type=int)
+    purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
+    # TODO: Complete the pagination for purchase history
 
-    return render_template("users/user/purchase_history.html", courseList=courseList, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+    if (pageNum > maxPage):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p={maxPage}")
+    elif (pageNum < 1):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p=1")
+
+    paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage) if (purchasedCourseArr) else []
+
+    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role, paginationArr=paginationArr)

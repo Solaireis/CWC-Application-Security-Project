@@ -311,11 +311,13 @@ def login():
         requestIPAddress = get_remote_address()
         emailInput = loginForm.email.data
         passwordInput = loginForm.password.data
-        userInfo = successfulLogin = userHasTwoFA = False
+        userInfo = successfulLogin = isTeacher = userHasTwoFA = False
         try:
             # returns the userID, boolean if user logged in from a new IP address, username, role
             userInfo = sql_operation(table="user", mode="login", email=emailInput, password=passwordInput, ipAddress=requestIPAddress)
+
             # raise LoginFromNewIpAddressError("test") # for testing the guard authentication process
+            isTeacher = True if (userInfo[3] == "Teacher") else False
 
             userHasTwoFA = sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userInfo[0])
             if (userInfo[1] and not userHasTwoFA):
@@ -394,6 +396,7 @@ def login():
                 session["password_compromised"] = passwordCompromised
             session["temp_uid"] = userInfo[0]
             session["username"] = userInfo[2]
+            session["isTeacher"] = isTeacher
             session["token"] = symmetric_encrypt(
                 plaintext=generatedTOTPSecretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
             )
@@ -414,6 +417,7 @@ def login():
         if (successfulLogin and not userHasTwoFA):
             session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
             session["user"] = userInfo[0]
+            session["isTeacher"] = isTeacher
 
             if (passwordCompromised):
                 send_change_password_alert_email(email=emailInput)
@@ -425,6 +429,7 @@ def login():
             session["user_email"] = emailInput
             session["password_compromised"] = passwordCompromised
             session["temp_uid"] = userInfo[0]
+            session["isTeacher"] = isTeacher
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
             write_log_entry(
@@ -482,7 +487,8 @@ def enterGuardTOTP():
         "password_compromised" not in session or 
         "temp_uid" not in session or
         "username" not in session or
-        "token" not in session
+        "token" not in session or
+        "isTeacher" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -631,6 +637,7 @@ def loginCallback():
         session["isSuperAdmin"] = True
     else:
         session["user"] = userID
+        session["isTeacher"] = True if (returnedRole == "Teacher") else False
 
     session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
     return redirect(url_for("generalBP.home"))
@@ -760,7 +767,8 @@ def enter2faTOTP():
     if (
         "user_email" not in session or
         "password_compromised" not in session or
-        "temp_uid" not in session
+        "temp_uid" not in session or
+        "isTeacher" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))

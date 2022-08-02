@@ -1,0 +1,33 @@
+{% macro add_to_cart_btn(course=None, courseUserState={}, accType=None, alignBtn="Right") %}
+    {% if course != None %}
+        {% with btnClass = "btn btn-success" %}
+            {% if alignBtn == "Right" %}
+                {% set btnClass = btnClass + " float-end" %}
+            {% endif %}
+
+            {% if accType == None %}
+                <a href="{{ url_for('guestBP.login') }}" class="{{ btnClass }}">
+                    <i class="fas fa-cart-plus fa-lg"></i> Add to Cart
+                </a>
+            {% elif accType == "Admin" %}
+                <button type="button" class="{{ btnClass }}">Admin cannot add to cart!</button>
+            {% else %}
+                {% if courseUserState.get("purchased") %}
+                    <a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="{{ btnClass }}">
+                        <i class="fas fa-shopping-bag"></i> View Purchase
+                    </a>
+                {% elif courseUserState.get("isInCart") %}
+                    <a href="{{ url_for('userBP.shoppingCart') }}" class="{{ btnClass }}">
+                        <i class="fas fa-shopping-cart"></i> View in cart
+                    </a>
+                {% else %}
+                    <form data="{{ accType }}" action="{{ url_for('userBP.addToCart', courseID=course.courseID) }}" method="POST">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                        <input name="courseID" type="hidden" value="{{ course.courseID }}">
+                        <button type="submit" class="{{ btnClass }}"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        {% endwith %}
+    {% endif %}
+{% endmacro %}

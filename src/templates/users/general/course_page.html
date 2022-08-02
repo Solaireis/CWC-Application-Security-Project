@@ -11,9 +11,10 @@
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
 {% endblock %}
 {% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
 {% block content %}
-<div class="container-lg">
+<div class="container-md course-container">
     <div class="row">
         <div class="col-12">
             <nav aria-label="breadcrumb">
@@ -28,7 +29,6 @@
             <h1>{{ courses.courseName }}</h1>
             <hr>
             <p>{{ courseDescription }}</p>
-            <p>Course Structure</p>
         </div>
         <div class="col-lg-4">
             </button>
@@ -61,38 +61,45 @@
             <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
             <hr>
             <div>
-                <form action="{{ url_for('userBP.addToCart', courseID = courses.courseID) }}" method="POST">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                    <input name="courseID" type="hidden" value="{{ courses.courseID }}">
-                    <button type="submit" class="btn btn-success"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-                </form>
+                {{ add_to_cart_btn(
+                    course=courses,
+                    courseUserState={"purchased": purchased, "isInCart": isInCart}, 
+                    accType=accType,
+                    alignBtn=None
+                ) }}
             </div>
         </div>
-        <div class="col-lg-8">
-            <h1>Reviews</h1>
-            {% for review in reviewList %}
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
-                            {{review.username}}
-                            <div class="ratings">
-                                {% with remainingStars = 5 - review.rating %}
-                                    {% for _ in range(review.rating) %}
-                                        <span class="fas fa-star"></span>
-                                    {% endfor %}
-                                    {% for _ in range(remainingStars) %}
-                                        <span class="far fa-star"></span>
-                                    {% endfor %}
-                                {% endwith %}
-                            </div>
-                        </h5>
-                        <p class="card-text">
-                            {{ review.review }}
-                        </p>
+        <hr class="mt-3">
+        <div class="col-lg-8 pt-3">
+            {% if reviewList %}
+                <h3>Reviews</h3>
+                {% for review in reviewList %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                                {{review.username}}
+                                <div class="ratings">
+                                    {% with remainingStars = 5 - review.rating %}
+                                        {% for _ in range(review.rating) %}
+                                            <span class="fas fa-star"></span>
+                                        {% endfor %}
+                                        {% for _ in range(remainingStars) %}
+                                            <span class="far fa-star"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                            </h5>
+                            <p class="card-text">
+                                {{ review.review }}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <h3>There are currently no reviews...</h3>
+        {% endif %}
     </div> 
 </div>
 {% endblock %}
