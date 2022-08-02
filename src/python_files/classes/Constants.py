@@ -43,11 +43,9 @@ class Constants:
     # For redirecting user to the custom domain which is protected by Cloudflare
     CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
 
-    GUEST_BLUEPRINTS: tuple = ("guestBP", "generalBP","errorBP")
-    USER_BLUEPRINTS: tuple = ("generalBP", "userBP", "loggedInBP", "errorBP")
-    ADMIN_BLUEPRINTS: tuple = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-    SUPER_ADMIN_BLUEPRINTS: tuple = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP","adminBP")
-    TEACHER_BLUEPRINTS: tuple = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
+    # Follows the MySQL columns in the database
+    BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
+    ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
 
     # Request limit
     REQUEST_LIMIT: str = "120 per minute"

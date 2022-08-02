@@ -1,7 +1,6 @@
 # import python standard libraries
 from datetime import datetime
 import json
-from typing import Optional
 
 class UserInfo:
     """This class is used to store the user info for code readability in jinja2 templates."""

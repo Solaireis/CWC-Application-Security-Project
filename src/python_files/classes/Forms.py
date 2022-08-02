@@ -1,5 +1,5 @@
 # import third party libraries
-from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, SelectField, BooleanField, DecimalField
+from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, BooleanField, DecimalField
 
 # import local python libraries
 from .Constants import CONSTANTS

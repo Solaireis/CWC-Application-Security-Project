@@ -1873,32 +1873,34 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     cur = connection.cursor()
 
     if mode == "retrieve_all":
-        cur.execute("SELECT * FROM role")
+        cur.execute("SELECT * FROM role ORDER BY role_id")
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
 
-    
     elif mode == "retrieve_admin":
-        cur.execute("SELECT * FROM role WHERE role_name = 'admin'")
+        cur.execute("SELECT * FROM role WHERE role_name = 'Admin'")
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
-    
+
     elif mode == "retrieve_role":
-        roleName = kwargs["roleName"]
+        roleName = kwargs["roleName"].title()
         cur.execute("SELECT * FROM role WHERE role_name = '%(roleName)s'", {"roleName":roleName})
         role_list = cur.fetchone()
         return role_list if (role_list is not None) else []
 
-    elif mode=="update_role": #updates the role of a group
-        roleName = kwargs["roleName"]
+    elif mode == "update_role": #updates the role of a group
+        roleName = kwargs["roleName"].title()
         guestBP = kwargs["guestBP"]
         generalBP = kwargs["generalBP"]
         adminBP = kwargs["adminBP"]
         loggedInBP = kwargs["loggedInBP"]
         teacherBP= kwargs["teacherBP"]
         userBP= kwargs["userBP"]
-        cur.execute("UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s", {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP})
+        cur.execute(
+            "UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s",
+            {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP}
+        )
         connection.commit()
-    
+
     else:
         raise ValueError("Invalid mode in the role_sql_operation function!")
