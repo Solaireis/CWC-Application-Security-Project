@@ -291,7 +291,7 @@ if (__name__ == "__main__"):
     # APScheduler docs:
     # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
     scheduler = BackgroundScheduler() # Uses threading to run the task in a separate thread
-    scheduler.configure(timezone="Asia/Singapore")  # configure timezone to always follow Singapore's timezone
+    scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
 
     # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
