@@ -169,7 +169,6 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         loggedInBP = request.form.get("loggedInBP1", default="off", type=str)
         teacherBP = request.form.get("teacherBP1", default="off", type=str)
         userBP = request.form.get("userBP1", default="off", type=str)
-        print(guestBP, generalBP, adminBP, loggedInBP,  teacherBP, userBP)
 
         # TODO: create input validations for the form
 
@@ -180,7 +179,6 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
         
-        print(guestBP, generalBP, adminBP, loggedInBP,  teacherBP, userBP)
         sql_operation(
             table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
             adminBP=adminBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
