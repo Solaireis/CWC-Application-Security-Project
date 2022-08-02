@@ -35,13 +35,16 @@ app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
 # https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
 # https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
 FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
+FLASK_SESSION_COOKIE_INTERFACE.salt = app.config["SECRET_CONSTANTS"].get_secret_payload(
+    secretID=app.config["CONSTANTS"].FLASK_SALT_KEY_NAME, decodeSecret=False
+)
 FLASK_SESSION_COOKIE_INTERFACE.digest_method = staticmethod(hashlib.sha512)
 app.session_interface = FLASK_SESSION_COOKIE_INTERFACE
 
 # Secret key mainly for digitally signing the session cookie
 # it will retrieve the secret key from Google Secret Manager API
 app.config["SECRET_KEY"] = app.config["SECRET_CONSTANTS"].get_secret_payload(
-    secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+    secretID=app.config["CONSTANTS"].FLASK_SECRET_KEY_NAME, decodeSecret=False
 )
 
 # Import security related functions/objects
@@ -267,17 +270,24 @@ def re_encrypt_data_in_db() -> None:
     """
     sql_operation(table="user", mode="re-encrypt_data_in_database")
 
-def check_for_new_flask_secret_key() -> None:
+def check_for_new_session_configs() -> None:
     """
-    Check for new flask secret key and if there is a new key in 
-    Google Cloud Platform Secret Manager, 
-    update the secret key in the web application to the new key.
+    Check for any value updates in Google Cloud Platform Secret Manager API
+    if the Flask secret key or the session cookie salt has changed.
+
+    If there are changes, update the Flask session cookie configurations.
     """
-    retrievedKeyFromGCPSecretManager = app.config["SECRET_CONSTANTS"].get_secret_payload(
-        secretID=CONSTANTS.FLASK_SECRET_KEY_NAME, decodeSecret=False
+    retrievedKey = app.config["SECRET_CONSTANTS"].get_secret_payload(
+        secretID=app.config["CONSTANTS"].FLASK_SECRET_KEY_NAME, decodeSecret=False
     )
-    if (retrievedKeyFromGCPSecretManager != app.config["SECRET_KEY"]):
-        app.config["SECRET_KEY"] = retrievedKeyFromGCPSecretManager
+    if (retrievedKey != app.config["SECRET_KEY"]):
+        app.config["SECRET_KEY"] = retrievedKey
+
+    retrievedSessionSalt = app.config["SECRET_CONSTANTS"].get_secret_payload(
+        secretID=app.config["CONSTANTS"].FLASK_SALT_KEY_NAME, decodeSecret=False
+    )
+    if (retrievedSessionSalt != app.session_interface.salt):
+        app.session_interface.salt = retrievedSessionSalt
 
 """------------------------------------- END OF WEB APP SCHEDULED JOBS -------------------------------------"""
 
@@ -324,8 +334,8 @@ if (__name__ == "__main__"):
     )
     # For checking if the Flask secret key has been manually changed every 30 minutes
     scheduler.add_job(
-        check_for_new_flask_secret_key,
-        trigger="interval", minutes=30, id="checkForNewFlaskSecretKey"
+        check_for_new_session_configs,
+        trigger="interval", minutes=30, id="checkForNewSessionConfigs"
     )
     # Start all the scheduled jobs
     scheduler.start()

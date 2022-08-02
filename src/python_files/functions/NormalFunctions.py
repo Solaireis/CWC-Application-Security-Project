@@ -571,15 +571,16 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
     - A random byte string of length nBytes if returnHex is False.
     - A random hex string of length nBytes if returnHex is True.
     """
-    if (not generateFromHSM):
+    if (nBytes < 1):
+        raise ValueError("nBytes must be greater than 0!")
+
+    # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes, 
+    # fallback to secrets library if nBytes is less than 8
+    if (not generateFromHSM or nBytes < 8):
         return token_hex(nBytes) if (returnHex) else token_bytes(nBytes)
 
     # Construct the location name
     locationName = SECRET_CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
-
-    # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes.
-    if (nBytes < 8):
-        nBytes = 8
 
     # Check if the number of bytes exceeds GCP KMS RNG Cloud HSM limit
     if (nBytes > 1024):

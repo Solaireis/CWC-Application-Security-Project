@@ -55,9 +55,6 @@ class Constants:
     # For lockout policy
     MAX_LOGIN_ATTEMPTS: int = 6
 
-    # For Flask's session cookie key length
-    SESSION_NUM_OF_BYTES: int = 512
-
     # For removing session identifiers that has no activity for more than x mins 
     # (Expiry date will be updated per request to the web application)
     SESSION_EXPIRY_INTERVALS: int = 90 # 1 hour and 30 mins
@@ -133,6 +130,11 @@ class Constants:
     # For the Flask secret key when retrieving the secret key
     # from Google Secret Manager API
     FLASK_SECRET_KEY_NAME: str = "flask-secret-key"
+    FLASK_SALT_KEY_NAME: str = "flask-session-salt"
+
+    # For Flask session cookie
+    SESSION_NUM_OF_BYTES: int = 512
+    SALT_NUM_OF_BYTES: int = 64
 
     # For Stripe API
     STRIPE_PUBLIC_KEY: str = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
