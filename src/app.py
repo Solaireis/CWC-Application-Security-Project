@@ -156,10 +156,6 @@ app.config["DEBUG_FLAG"] = app.config["CONSTANTS"].DEBUG_MODE
 # Maintenance mode flag
 app.config["MAINTENANCE_MODE"] = False
 
-# for other scheduled tasks such as deleting expired session id from the database
-# Uses threading to run the task in a separate thread
-scheduler = BackgroundScheduler()
-
 # Remove Jinja2 whitespace
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
@@ -294,8 +290,8 @@ def check_for_new_session_configs() -> None:
 if (__name__ == "__main__"):
     # APScheduler docs:
     # https://apscheduler.readthedocs.io/en/latest/modules/triggers/cron.html
-    # configure timezone to always follow Singapore's timezone
-    scheduler.configure(timezone="Asia/Singapore") 
+    scheduler = BackgroundScheduler() # Uses threading to run the task in a separate thread
+    scheduler.configure(timezone="Asia/Singapore")  # configure timezone to always follow Singapore's timezone
 
     # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
