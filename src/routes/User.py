@@ -13,6 +13,7 @@ from flask import render_template, request, redirect, url_for, session, flash, a
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.functions.StripeFunctions import *
+from python_files.functions.VideoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import csrf
@@ -519,18 +520,15 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
             extensions=[AnchorTagExtension()], 
         )
     )
-    courseVideoPath = None
     teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-    videoPath = validate_course_video_path(courseID=courseID, returnUrl=True)
 
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
-        teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription, 
-        courseVideoPath=courseVideoPath, accType=userInfo.role, 
-        courses=courses, videoPath=videoPath
+        teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
+        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath)
     )
 
 @userBP.post("/add_to_cart/<string:courseID>")

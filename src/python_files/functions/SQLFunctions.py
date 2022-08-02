@@ -431,6 +431,7 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
         tokenID = kwargs["tokenID"]
         expiryDate = kwargs.get("expiryDate")
         limit = kwargs.get("limit")
+        print(limit)
         cur.execute(
             "INSERT INTO limited_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
             {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
@@ -1465,10 +1466,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         teacherID = kwargs["teacherID"]
         videoPath = kwargs["videoPath"]
+        print("INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())" % 
+            {"courseID": courseID, "teacherID": teacherID, "videoPath": videoPath})
 
         cur.execute(
             "INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())", 
-            {"courseID":courseID, "teacherID":teacherID, "videoPath":videoPath}
+            {"courseID": courseID, "teacherID": teacherID, "videoPath": videoPath}
         )
         connection.commit()
 

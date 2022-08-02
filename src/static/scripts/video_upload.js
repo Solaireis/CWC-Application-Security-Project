@@ -1,6 +1,47 @@
 // For Dropzone
 // https://github.com/dropzone/dropzone/blob/main/src/options.js
 
+function getClientPayload() {
+    fetch(url).then((response) => {
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+        return JSON.parse(response.text());
+};
+
+
+Dropzone.autoDiscover = false;
+var myDropzone = new Dropzone("#dropper", {
+    url: "#",
+    maxFilesize: 5120, // MB
+    acceptedFiles: 'video/*',
+    /*accept: function(file) {
+        this.awsOptions = uploadCreds;
+        this.options.url = this.awsOptions.uploadLink;
+    },*/
+    init: function() {
+        this.options.url = uploadCredentials['uploadLink'],
+        this.url = '#/sdfjsldf'
+
+        this.on("sending", function(file, xhr, formData) {
+            uploadCredentials = getClientPayload()
+            formData.append("x-amz-credential", uploadCredentials['x-amz-credential']);
+            formData.append("x-amz-algorithm", uploadCredentials['x-amz-algorithm']);
+            formData.append("x-amz-date ", uploadCredentials['x-amz-date']);
+            formData.append("x-amz-signature", uploadCredentials['x-amz-signature']);
+            formData.append("key", uploadCredentials['key']);
+            formData.append("policy", uploadCredentials['policy']);
+            formData.append("success_action_status", 201);
+            formData.append("success_action_redirect", "");
+        });
+        this.on("success", function (file) {
+            window.location = uploadCredentials['successUrl'];
+        });
+    }
+}
+);
+
+/*
 Dropzone.options.dropper = {
     url: "/upload-video", // Determines where to reroute after submission
     chunking: true, // Enable chunking
@@ -55,3 +96,5 @@ Dropzone.options.dropper = {
         });
     }
 };
+
+*/

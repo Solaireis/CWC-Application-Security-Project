@@ -304,6 +304,9 @@ class SecretConstants:
         # For Stripe API
         self.__STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
 
+        # For VdoCipher API
+        self.__VDOCIPHER_SECRET = self.get_secret_payload(secretID="vdocipher-secret")
+
         # For Google Cloud Logging API
         self.__LOGGING_CLIENT = gcp_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
         # try:
@@ -368,6 +371,10 @@ class SecretConstants:
     @property
     def STRIPE_SECRET_KEY(self) -> str:
         return self.__STRIPE_SECRET_KEY
+
+    @property
+    def VDOCIPHER_SECRET(self) -> str:
+        return self.__VDOCIPHER_SECRET
 
     @property
     def LOGGING_CLIENT(self) -> gcp_logging.Client:
