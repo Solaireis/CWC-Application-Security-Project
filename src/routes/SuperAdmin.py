@@ -159,28 +159,17 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         print(role.roleName)
 
     form = UpdateRoles(request.form)
-    if (request.method == "POST" and form.validate()):
+    if (request.method == "POST" ):
         # formType = request.form.get("formType", default=None, type=str)
 
         roleName = form.roleName.data
-        guestBP = form.guestBP.data
-        generalBP = form.generalBP.data
-        adminBP = form.adminBP.data
-        loggedInBP = form.loggedInBP.data
-        errorBP = form.errorBP.data
-        teacherBP = form.teacherBP.data
-        userBP = form.userBP.data
-        superAdminBP = form.superAdminBP.data
-
-        guestBP1 = request.form.get("guestBP1", default="off", type=str)
-        generalBP1 = request.form.get("generalBP1", default="off", type=str)
-        adminBP1 = request.form.get("adminBP1", default="off", type=str)
-        loggedInBP1 = request.form.get("loggedInBP1", default="off", type=str)
-        errorBP1 = request.form.get("errorBP1", default="off", type=str)
-        teacherBP1 = request.form.get("teacherBP1", default="off", type=str)
-        userBP1 = request.form.get("userBP1", default="off", type=str)
-        superAdminBP1 = request.form.get("superAdminBP1", default="off", type=str)
-        print(guestBP1, generalBP1, adminBP1, loggedInBP1, errorBP1, teacherBP1, userBP1, superAdminBP1)
+        guestBP = request.form.get("guestBP1", default="off", type=str)
+        generalBP = request.form.get("generalBP1", default="off", type=str)
+        adminBP = request.form.get("adminBP1", default="off", type=str)
+        loggedInBP = request.form.get("loggedInBP1", default="off", type=str)
+        teacherBP = request.form.get("teacherBP1", default="off", type=str)
+        userBP = request.form.get("userBP1", default="off", type=str)
+        print(guestBP, generalBP, adminBP, loggedInBP,  teacherBP, userBP)
 
         # TODO: create input validations for the form
 
@@ -188,15 +177,14 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         generalBP = True if (generalBP.lower() == "on") else False
         adminBP = True if (adminBP.lower() == "on") else False
         loggedInBP = True if (loggedInBP.lower() == "on") else False
-        errorBP = True if (errorBP.lower() == "on") else False # TODO: Remove later
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
-        superAdminBP = True if (superAdminBP.lower() == "on") else False # TODO: Remove later
-
+        
+        print(guestBP, generalBP, adminBP, loggedInBP,  teacherBP, userBP)
         sql_operation(
             table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
-            adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, 
-            userBP=userBP, superAdminBP=superAdminBP
+            adminBP=adminBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
+            userBP=userBP
         )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))
