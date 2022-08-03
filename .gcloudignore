@@ -31,3 +31,4 @@ res/**
 res
 sample/**
 sample
+!sample/download_dependencies.py
