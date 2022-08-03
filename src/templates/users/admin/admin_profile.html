@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block head %}<link nonce= "{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block head %}<link nonce= "{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/user_profile.css') }}">{% endblock %}
 {% block title %}Admin Profile Settings | CourseFinity{% endblock %}
 
 {% block content %}
@@ -86,6 +86,6 @@
         document.getElementById("tooltipValueEmail").onclick = function() {copyToClipBoard('Email')};
         document.getElementById("tooltipValueUsername").onclick = function() {copyToClipBoard('Username')};
     </script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

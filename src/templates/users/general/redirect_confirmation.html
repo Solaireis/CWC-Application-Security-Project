@@ -8,7 +8,7 @@
 
 {% block head %}
     <meta name="robots" content="noindex">
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">
 {% endblock %}
 {% block title %}Redirect Confirmation | CourseFinity{% endblock %}
 

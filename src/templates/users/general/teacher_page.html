@@ -7,7 +7,7 @@
 {% endif %}
 
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/teacher_page.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/teacher_page.css') }}">
 {% endblock %}
 
 {% block title %}{{ teacherUsername }}'s Page | CourseFinity{% endblock %}
@@ -34,7 +34,7 @@
 			{% if (threeHighlyRatedCoursesLen < 1) %}
 				<div class="col">
 					<div class="card text-dark bg-light h-100">
-						<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+						<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 						<div class="card-body">
 							<h4 class="card-title">No Course Available</h4>
 							<p class="card-text">Sorry, there are currently no courses available.</p>
@@ -46,7 +46,7 @@
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
-								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
 								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
@@ -89,7 +89,7 @@
 			{% if (latestThreeCoursesLen < 1) %}
 				<div class="col">
 					<div class="card text-dark bg-light h-100">
-						<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+						<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 						<div class="card-body">
 							<h4 class="card-title">No Course Available</h4>
 							<p class="card-text">Sorry, there are currently no courses available.</p>
@@ -101,7 +101,7 @@
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
-								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
 								<img src="{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}

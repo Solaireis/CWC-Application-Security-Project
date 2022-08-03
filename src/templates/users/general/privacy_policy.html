@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/policy.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/policy.css') }}">{% endblock %}
 {% block title %}Privacy Policy | CourseFinity{% endblock %}
 
 {% block content %}

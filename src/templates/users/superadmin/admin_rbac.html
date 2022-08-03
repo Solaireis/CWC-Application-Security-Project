@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block head %}<link nonce= "{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">{% endblock %}
+{% block head %}<link nonce= "{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/user_profile.css') }}">{% endblock %}
 {% block title %}Role Access Management | CourseFinity{% endblock %}
 
 {% block content %}
@@ -300,5 +300,5 @@
         </script>
         {% endif %}
     {% endwith %}
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script src="{{ url_for('webAsset', filename='scripts/bootstrap_util.js') }}"></script>
 {% endblock %}

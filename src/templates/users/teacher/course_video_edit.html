@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/create_course.css') }}">
 <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 
@@ -141,7 +141,7 @@
 
 {% block extra_js %}
     {% from "includes/_videoHelper.html" import video_scripts %}
-    <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/create_course.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{url_for('webAsset', filename='scripts/create_course.js')}}"></script>
     <script nonce="{{ csp_nonce() }}">
         document.getElementById("formFile").onchange = function() {readURL(this);};
     </script>

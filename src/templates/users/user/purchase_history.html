@@ -1,8 +1,8 @@
 {% extends "user_base.html" %}
 
 {% block head %}
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/purchase_history.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/user_profile.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/purchase_history.css') }}">
 {% endblock %}
 
 {% block title %}Purchase History | CourseFinity{% endblock %}
@@ -42,7 +42,7 @@
             <div class="row g-0 casing mx-auto border">
                 <div class="col-5">            
                     {% if (course.courseImagePath == None) %}
-                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                        <img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
                     {% else %}
                         <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
                     {% endif %}
