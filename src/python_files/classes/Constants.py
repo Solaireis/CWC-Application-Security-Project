@@ -112,17 +112,14 @@ class Constants:
     TWENTY_BYTES_2FA_REGEX: re.Pattern[str] = re.compile(r"^[A-Z2-7]{32}$")
     TWO_FA_CODE_REGEX: re.Pattern[str] = re.compile(r"^\d{6}$")
 
-    # Configured Argon2id default configurations so that it will take 
-    # at least +-200ms/0.2s to hash a plaintext password 
-    # on a decent Desktop PC (Ryzen 5 3600X + RTX2070 Super)
-    # i.e. around 5 hashes per minute
+    # Argon2id configurations
     PH: PasswordHasher = PasswordHasher(
-        time_cost=8,          # 8 count of iterations
-        salt_len=64,          # 64 bytes salt
-        hash_len=64,          # 64 bytes hash
-        parallelism=16,       # 16 threads
-        memory_cost=128*1024, # 128MiB
-        type=Argon2Type.ID    # using hybrids of Argon2i and Argon2d
+        time_cost=4,         # 4 count of iterations
+        salt_len=64,         # 64 bytes salt
+        hash_len=64,         # 64 bytes hash
+        parallelism=4,       # 4 threads
+        memory_cost=64*1024, # 64MiB
+        type=Argon2Type.ID   # using hybrids of Argon2i and Argon2d
     )
     # More helpful details on choosing the parameters for argon2id:
     # https://www.ory.sh/choose-recommended-argon2-parameters-password-hashing/#argon2s-cryptographic-password-hashing-parameters
