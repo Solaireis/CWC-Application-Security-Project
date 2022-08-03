@@ -3,12 +3,11 @@
 src/config_files/*
 !src/config_files/google-sm.json
 
-# Ignore all pycache files.
+# Ignore all pycache files
 *.pyc
 
-# Ignore all markdown and json files
+# Ignore all markdown files
 *.md
-*.json
 
 # Ignore uploaded files for course videos
 src/static/course_videos/**
@@ -31,6 +30,8 @@ test/**
 *.bin
 node_modules
 .firebaserc
+firebase.json
+package-lock.json
 .gitignore
 .dccache
 res/**
