@@ -32,9 +32,6 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-# TODO: Change debug mode below ONLY!
-DEBUG_MODE = True
-
 #TODO: Ask what the secret payload json returns
 schema = {
     
@@ -44,7 +41,7 @@ schema = {
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Debug flag
-    DEBUG_MODE: bool = DEBUG_MODE 
+    DEBUG_MODE: bool = True 
 
     # For redirecting user to the custom domain which is protected by Cloudflare
     CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
@@ -61,7 +58,7 @@ class Constants:
     REQUEST_LIMIT: str = "120 per minute"
 
     # For lockout policy
-    MAX_LOGIN_ATTEMPTS: int = 6
+    MAX_LOGIN_ATTEMPTS: int = 8
 
     # For removing session identifiers that has no activity for more than x mins 
     # (Expiry date will be updated per request to the web application)
@@ -158,15 +155,15 @@ class Constants:
     COURSEFINITY_SITE_KEY: str = "6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"
 
     # For Google Key Management Service API
-    LOCATION_ID: str = "asia-southeast1"
+    LOCATION_ID: str = "global"
 
     # During development, we will use software protected keys
     # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
     # Lastly, cryptographic operations will be cheaper 
     # ($0.03 per 10k operations vs $0.03-$0.15 per 10k operations)
     # More details: https://cloud.google.com/kms/pricing
-    APP_KEY_RING_ID: str = "dev-key-ring" if (DEBUG_MODE) else "coursefinity"
-    AVAILABLE_KEY_RINGS: tuple = ("dev-key-ring") if (DEBUG_MODE) else ("coursefinity")
+    APP_KEY_RING_ID: str = "coursefinity-global"
+    AVAILABLE_KEY_RINGS: tuple = ("coursefinity-global",)
 
     # For encrypting data in the database
     PEPPER_KEY_ID: str = "pepper-key"

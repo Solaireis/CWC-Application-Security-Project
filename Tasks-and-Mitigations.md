@@ -172,7 +172,7 @@
     - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
-- Maximum of 6 failed login attempts per account (will reset after 1 hour)
+- Maximum of 8 failed login attempts per account (will reset after 1 hour)
   - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
     - An email will be sent to the user's email with a one-time link to unlock the account
     - Link uses a digitally signed token to prevent tampering
