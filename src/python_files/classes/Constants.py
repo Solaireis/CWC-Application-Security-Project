@@ -43,10 +43,6 @@ class Constants:
     # Debug flag
     DEBUG_MODE: bool = True 
 
-    # For blob names
-    BLOB_NAME_REGEX: re.Pattern[str] = re.compile(r"^[/.\w-]+$")
-    STATIC_ENDPOINT:tuple = ("static", "webAsset")
-
     # For redirecting user to the custom domain which is protected by Cloudflare
     CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
 

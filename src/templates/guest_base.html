@@ -7,14 +7,14 @@
     <title>{% block title %}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/cookie_alert.css') }}">
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/common.css') }}">
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/font_size.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/cookie_alert.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/common.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/font_size.css') }}">
     {% block head %}
     {% endblock %}
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('webAsset', filename='common/favicon_180x180.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('webAsset', filename='common/favicon_180x180.png') }}">
-    <script nonce="{{ csp_nonce() }}"src="{{ url_for('webAsset', filename='scripts/cookie_alert.js') }}"></script>
+    <link rel="apple-touch-icon" sizes="180x180" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_180x180.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_180x180.png">
+    <script nonce="{{ csp_nonce() }}"src="{{ url_for('static', filename='scripts/cookie_alert.js') }}"></script>
 </head>
 <body>
     {% block navbar %}
@@ -60,7 +60,7 @@
     {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/common.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/common.js') }}"></script>
 
     {% block extra_js %}
     {% endblock %}

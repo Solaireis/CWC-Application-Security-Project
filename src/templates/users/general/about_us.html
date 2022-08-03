@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/about_us.css') }}"><link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/breadcrumb.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}"><link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}">{% endblock %}
 {% block title %}About Us | CourseFinity{% endblock %}
 
 {% block content %}
@@ -19,7 +19,7 @@
 	</ul>
 	<div class="row g-0 casing mx-auto border">
 		<div class="col-5">
-			<img src="{{ url_for('webAsset', filename='about_us/about.jpg') }}" alt="">
+			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/about.jpg" alt="">
 		</div>
 		<div class="col-7">
 			<h2>An Introduction To The Website</h2>
@@ -37,7 +37,7 @@
 			<h3>We intend to expand our services to a large amount of areas in the world. We expect to see thousands of teachers from acrosss the world, helping out students from anywhere and anytime. Student will also no longer be restricted to physical materials, and have access to thousands of courses that might just be the thing that they need.</h3>
 		</div>
 		<div class="col-7">
-			<img src="{{ url_for('webAsset', filename='about_us/vision.jpg') }}" alt="">
+			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/vision.jpg" alt="">
 		</div>
 	</div>
 	<br>
@@ -45,7 +45,7 @@
 	<br>
 	<div class="row g-0 casing mx-auto border">
 		<div class="col-5">
-			<img src="{{ url_for('webAsset', filename='about_us/mission.jpg') }}" alt="">
+			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/mission.jpg" alt="">
 		</div>
 		<div class="col-7">
 			<h2>Our Mission</h2>

@@ -2,7 +2,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # import flask libraries (Third-party libraries)
-from flask import Flask, abort, redirect
+from flask import Flask
 from flask.sessions import SecureCookieSessionInterface
 from flask_talisman import Talisman
 
@@ -18,7 +18,7 @@ from python_files.functions.SQLFunctions import sql_operation
 from pathlib import Path
 from os import environ
 from datetime import timedelta
-import logging, hashlib, re
+import logging, hashlib
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
 
@@ -27,13 +27,6 @@ app = Flask(__name__)
 # Add the constants objects to the Flask web app
 app.config["CONSTANTS"] = CONSTANTS
 app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
-
-@app.route("/web-assets/<path:filename>")
-def webAsset(filename:str):
-    if (re.fullmatch(app.config["CONSTANTS"].BLOB_NAME_REGEX, filename) is not None):
-        return redirect(f"https://storage.googleapis.com/coursefinity/web-assets/{filename}")
-    else:
-        abort(404)
 
 # Flask session cookie configurations
 # Configure the default FLask session default
@@ -88,7 +81,6 @@ CSP = {
         "'self'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
-        "https://storage.googleapis.com/coursefinity/web-assets/**",
         # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
         # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js \'unsafe-inline\'",
         # "https://unpkg.com/@videojs/themes@1/dist/forest/index.css",
@@ -108,7 +100,6 @@ CSP = {
         "https://www.google.com/recaptcha/enterprise.js",
         "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js",
         "https://player.vdocipher.com/v2/api.js",
-        "https://storage.googleapis.com/coursefinity/web-assets/**",
         # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js blob:",
         # "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
         # "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",

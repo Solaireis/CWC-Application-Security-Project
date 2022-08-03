@@ -1,5 +1,6 @@
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, current_app, redirect, wrappers
+from flask import render_template, request, session, abort, current_app, redirect
+from flask import wrappers
 from flask_limiter.util import get_remote_address
 from jsonschema import validate
 
@@ -69,11 +70,7 @@ def before_request() -> None:
         # meaning the css, js, and images are also checked when a user request the webpage
         # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
         # hence, adding allowing if the request endpoint is pointing to a static file
-        if (
-            request.endpoint and 
-            request.endpoint not in current_app.config["CONSTANTS"].STATIC_ENDPOINT and 
-            request.endpoint.split(".")[-1] != "twoFactorAuthSetup"
-        ):
+        if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "twoFactorAuthSetup"):
             session.pop("2fa_token", None)
 
     # check if relative_url key is in session
@@ -86,13 +83,13 @@ def before_request() -> None:
         # hence, adding allowing if the request endpoint is pointing to a static file
         if (
             request.endpoint and 
-            request.endpoint not in current_app.config["CONSTANTS"].STATIC_ENDPOINT and 
+            request.endpoint != "static" and 
             request.endpoint.split(".")[-1] not in ("userManagement", "adminManagement")
         ):
             session.pop("relative_url", None)
 
     # Validate the user's session for every request that is not to the static files
-    if (request.endpoint not in current_app.config["CONSTANTS"].STATIC_ENDPOINT):
+    if (request.endpoint != "static"):
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value (but not both)
             userID = session.get("user") or session.get("admin")
@@ -139,7 +136,7 @@ def before_request() -> None:
         # clear the session as it should not be possible to have both session
         session.clear()
 
-    if (request.endpoint not in current_app.config["CONSTANTS"].STATIC_ENDPOINT):
+    if (request.endpoint != "static"):
         # Retrieve the roles database, there could be a better way to do this
         roles = sql_operation(table="role", mode="retrieve_all")
         roleTable = {}

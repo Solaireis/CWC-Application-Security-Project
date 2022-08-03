@@ -67,7 +67,7 @@ def validate_course_video_path(courseID:str, returnUrl:bool=False) -> Optional[s
         convert_to_mpd(courseID, videoFileSuffix)
 
     if returnUrl:
-        return f"{current_app.root_path}/static/course_videos/{courseID}/{courseID}.mpd"
+        return url_for("static", filename=f"course_videos/{courseID}/{courseID}.mpd")
 
 def get_blob_name(url:str="") -> str:
     """

@@ -7,8 +7,8 @@
 {% endif %}
 
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/course_page.css') }}">
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/rating.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
 {% endblock %}
 {% block title %} {{ courses.courseName }} | CourseFinity{% endblock %}
 {% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}

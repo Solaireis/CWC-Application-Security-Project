@@ -7,7 +7,7 @@
 {% endif %}
 
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/contact_us.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/contact_us.css') }}">
 {% endblock %}
 {% block title %}Contact Us | CourseFinity{% endblock %}
 {% from "includes/_formHelper.html" import render_field %}

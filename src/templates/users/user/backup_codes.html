@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
     <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Backup Codes | CourseFinity{% endblock %}
@@ -133,5 +133,5 @@
             document.getElementById("generateCodesForm").submit();
         }
     </script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/backup_codes.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/backup_codes.js') }}"></script>
 {% endblock %}

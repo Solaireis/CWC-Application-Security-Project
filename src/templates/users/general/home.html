@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/home.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/home.css') }}">{% endblock %}
 {% block title %}Home | CourseFinity{% endblock %}
 {% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
@@ -54,7 +54,7 @@
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
-								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
 								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
@@ -109,7 +109,7 @@
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
-								<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
 							{% else %}
 								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
 							{% endif %}
@@ -149,7 +149,7 @@
 	{% if (accType == None or accType == "Student") %}
 	<div class="row become_headings">
 		<div class="col-md">
-			<img src="{{ url_for('webAsset', filename='home/home_teacher_banner.webp') }}" alt="Become a Teacher Promo Image" class="thumbnails rounded">
+			<img src="https://storage.googleapis.com/coursefinity/web-assets/home/home_teacher_banner.webp" alt="Become a Teacher Promo Image" class="thumbnails rounded">
 		</div>
 		<div class="col-md text-center">
 			<h2>Become A Teacher Today!</h2>

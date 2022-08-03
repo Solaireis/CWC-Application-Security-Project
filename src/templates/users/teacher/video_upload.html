@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/video_upload.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/video_upload.css') }}">
 <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 {% endblock %}
@@ -57,7 +57,7 @@
 {% block extra_js %}
     <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{url_for('webAsset', filename='scripts/video_upload.js')}}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{url_for('static', filename='scripts/video_upload.js')}}"></script>
     <script nonce="{{ csp_nonce() }}">
         function onSubmit(token) {
             document.getElementById("dropper").submit();

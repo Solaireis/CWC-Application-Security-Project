@@ -1,7 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/user_profile.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/user_profile.css') }}">
 {% endblock %}
 {% block title %}Profile Settings | CourseFinity{% endblock %}
 
@@ -242,7 +242,7 @@
 {% block extra_js %}
     <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/user_profile.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/user_profile.js') }}"></script>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
         <script nonce="{{ csp_nonce() }}">
@@ -251,6 +251,6 @@
         </script>
         {% endif %}
     {% endwith %}
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

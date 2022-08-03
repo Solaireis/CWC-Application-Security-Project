@@ -72,7 +72,7 @@
                 <div class="row g-0">
                     <div class="col-md-4">
                         {% if (course.courseImagePath == None) %}
-                            <img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% else %}
                             <img src="{{ course.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% endif %}

@@ -7,7 +7,7 @@
 {% endif %}
 
 {% block head %}
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/teacher_courses.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/teacher_courses.css') }}">
 {% endblock %}
 
 {% block title %}Teacher Courses | CourseFinity{% endblock %}

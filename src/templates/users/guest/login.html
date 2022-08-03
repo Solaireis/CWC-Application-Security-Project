@@ -1,6 +1,6 @@
 {% extends "guest_base.html" %}
 {% block head %}
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
     <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Login | CourseFinity{% endblock %}
@@ -59,7 +59,7 @@
                 </form>
                 <hr class="mt-4 text-white">
                 <div class="col-12 d-flex justify-content-center">
-                    <a class="btn btn-light text-dark" href="{{ url_for('guestBP.loginViaGoogle') }}"><img src="{{ url_for('webAsset', filename='logos/google-logo.png') }}"> Login with Google!</a>
+                    <a class="btn btn-light text-dark" href="{{ url_for('guestBP.loginViaGoogle') }}"><img src="https://storage.googleapis.com/coursefinity/web-assets/logos/google-logo.png"> Login with Google!</a>
                 </div>
                 <br>
                 <div class="col-12">

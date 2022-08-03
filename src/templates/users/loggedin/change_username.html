@@ -1,5 +1,5 @@
 {% extends "user_base.html" %}
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
 {% block title %}Change Username | CourseFinity{% endblock %}
 
 {% block content %}

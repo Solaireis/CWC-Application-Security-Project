@@ -1,5 +1,5 @@
 {% extends "user_base.html" %}
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">{% endblock %}
 {% block title %}Setup 2FA | CourseFinity{% endblock %}
 
 {% block content %}
@@ -59,6 +59,6 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

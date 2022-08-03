@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/search.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/search.css') }}">{% endblock %}
 {% block title %}Search | CourseFinity{% endblock %}
 
 {% block content %}
@@ -28,7 +28,7 @@
                 <div class="row g-0">
                     <div class="col-md-4">
                         {% if (results.courseImagePath == None) %}
-                            <img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
+                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% else %}
                             <img src="{{ results.courseImagePath }}" class="resize img-fluid rounded float-start" alt="Course Thumbnail">
                         {% endif %}

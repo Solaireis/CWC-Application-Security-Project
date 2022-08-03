@@ -6,7 +6,7 @@
 	{% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link rel="stylesheet" href="{{ url_for('webAsset', filename='styles/policy.css') }}">{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/policy.css') }}">{% endblock %}
 {% block title %}Cookie Policy | CourseFinity{% endblock %}
 
 {% block content %}

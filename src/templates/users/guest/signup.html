@@ -1,6 +1,6 @@
 {% extends "guest_base.html" %}
 {% block head %}
-    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('webAsset', filename='styles/login_sign_up.css') }}">
+    <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/login_sign_up.css') }}">
     <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Sign Up | CourseFinity{% endblock %}
@@ -72,7 +72,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('webAsset', filename='scripts/password_req.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/password_req.js') }}"></script>
     <script nonce="{{ csp_nonce() }}">
         function onSubmit(token) {
             document.getElementById("signupForm").submit();
