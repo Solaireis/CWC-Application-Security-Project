@@ -177,10 +177,10 @@ def resetPasswordRequest():
         if (userInfo[1] is None):
             # if user has signed up using Google OAuth2
             # but is requesting for a password reset
-            htmlBody = [
+            htmlBody = (
                 "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
                 f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{url_for('guestBP.login', _external=True)}' target='_blank'>login to CourseFinity</a> using your Google account.",
-            ]
+            )
             # send email to the user to remind them to login using Google account
             send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
@@ -199,10 +199,10 @@ def resetPasswordRequest():
         )
 
         # send the token to the user's email
-        htmlBody = [
+        htmlBody = (
             "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
             f"You can change the password on your account by clicking the button below.<br><a href='{url_for('guestBP.resetPassword', token=token, _external=True)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
-        ]
+        )
         send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
 
         flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
@@ -375,13 +375,13 @@ def login():
             else:
                 locationString += ", Unknown country"
 
-            messagePartList = [
+            messagePartList = (
                 f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
                 f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
                 "* Location is approximate based on the login's IP address.",
                 f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
                 f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('userBP.updatePassword', _external=True)}"
-            ]
+            )
             send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
 
             session["user_email"] = emailInput

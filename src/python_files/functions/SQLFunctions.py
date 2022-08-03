@@ -158,11 +158,11 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
         expiryInfo=expiryInfo,
         limit=1
     )
-    htmlBody = [
+    htmlBody = (
         f"Welcome to CourseFinity!<br>",
         "Please click the link below to verify your email address:",
         f"<a href={url_for('generalBP.verifyEmail', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
-    ]
+    )
     send_email(to=email, subject="Please verify your email!", body="<br>".join(htmlBody), name=username)
 
 def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
@@ -183,7 +183,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         expiryInfo=expiryInfo,
         limit=1
     )
-    htmlBody = [
+    htmlBody = (
         "Your account has been locked due to too many failed login attempts.<br>",
         "Just in case that it was you, you can unlock your account by clicking the button below.",
         "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
@@ -192,7 +192,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         "Please click the link below to unlock your account:",
         f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
         "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
-    ]
+    )
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
 def get_image_path(userID:str, returnUserInfo:bool=False, getCart:Optional[bool]=False) -> Union[str, UserInfo]:

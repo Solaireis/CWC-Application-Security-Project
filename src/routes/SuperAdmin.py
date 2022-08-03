@@ -54,14 +54,14 @@ def adminManagement():
                     token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
                     sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
 
-                    htmlBody = [
+                    htmlBody = (
                         "Great news! Your account has been recovered by an administrator on our side.<br>",
                         f"Your account email address has been changed to {newEmail} during the account recovery process.",
                         "However, you still need to reset your password by clicking the link below.<br>",
                         "Please click the link below to reset your password.",
                         f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
                         "Note: This link will ONLY expire upon usage."
-                    ]
+                    )
                     send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))
                 except (SameAsOldEmailError):
                     flash("The new email entered is the same as the old email...", "Error recovering user's account!")

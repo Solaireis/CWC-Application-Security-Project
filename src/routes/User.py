@@ -228,12 +228,12 @@ def updateEmail():
         if (not changed):
             return render_template("users/user/change_email.html", form=create_update_email_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
         else:
-            emailBody = [
+            emailBody = (
                 f"Your email has been changed recently from {oldEmail} to {updatedEmail}<br>",
                 "If you did not update your email recently, it is likely your account has been compromised.",
                 f"please either <a href='{url_for('userBP.updatePassword', _external=True)}' target='_blank'>change your password</a> or <a href='{url_for('guestBP.resetPasswordRequest', _external=True)}' target='_blank'>reset your password</a> immediately.<br>",
                 f"If you require further assistance with recovering your account, please either contact us on the <a href='{url_for('generalBP.contactUs', _external=True)}' target='_blank'>contact us page</a> or email us at coursefinity123@gmail.com"
-            ]
+            )
             send_email(
                 to=oldEmail,
                 subject="Change of Email Notice",
@@ -283,12 +283,12 @@ def updatePassword():
                 )
 
             if (changed):
-                emailBody = [
+                emailBody = (
                     "Your password has been changed recently.<br>"
                     "If you did not update your password recently, it is likely your account has been compromised.",
                     f"please <a href='{url_for('guestBP.resetPasswordRequest', _external=True)}' target='_blank'>reset your password</a> immediately.<br>",
                     f"If you require further assistance with recovering your account, please either contact us on the <a href='{url_for('generalBP.contactUs', _external=True)}' target='_blank'>contact us page</a> or email us at coursefinity123@gmail.com"
-                ]
+                )
                 send_email(
                     to=userInfo.email,
                     subject="Change of Password Notice",
