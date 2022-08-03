@@ -29,11 +29,14 @@ app.config["CONSTANTS"] = CONSTANTS
 app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
 
 # Flask session cookie configurations
-# Change the default FLask session default
-# HMAC algorithm from HMAC-SHA1 to HMAC-SHA512
+# Configure the default FLask session default
+# salt and HMAC algorithm to something more secure
 # Source Codes Reference: 
-# https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
-# https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
+#   - Salt:
+#       - https://github.com/pallets/flask/blob/main/src/flask/sessions.py#L333
+#   - HMAC-SHA1:
+#       - https://github.com/pallets/flask/blob/96726f6a04251bde39ec802080c9008060e0b5b9/src/flask/sessions.py#L316
+#       - https://github.com/pallets/itsdangerous/blob/484d5e6d3c613160cb6c9336b9454f3204702e74/src/itsdangerous/signer.py#L67
 FLASK_SESSION_COOKIE_INTERFACE = SecureCookieSessionInterface()
 FLASK_SESSION_COOKIE_INTERFACE.salt = app.config["SECRET_CONSTANTS"].get_secret_payload(
     secretID=app.config["CONSTANTS"].FLASK_SALT_KEY_NAME, decodeSecret=False
