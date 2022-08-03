@@ -31,10 +31,9 @@ WORKDIR $APP_HOME
 # Set PORT env for flask app to Listen on port 8080
 ENV PORT 8080
 
-# Run the web service on container startup. Here we use the gunicorn
-# webserver, with 8 worker process and 16 threads.
+# Run the web service on container startup. Here we use the gunicorn webserver.
 # For environments with multiple CPU cores, increase the number of workers
 # to be equal to the cores available.
 # Timeout is set to 0 to disable the timeouts of the workers to allow Cloud Run to handle instance scaling
 # <filename>:<flask app variable name> which in this case is app:app
-CMD exec gunicorn --bind :$PORT --workers 8 --threads 16 --timeout 0 app:app
+CMD exec gunicorn --bind :$PORT --workers 4 --threads 8 --timeout 0 app:app
