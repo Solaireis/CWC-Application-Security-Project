@@ -86,11 +86,13 @@
                                             <tr>
                                                 <th scope="row" class="price-column">
                                                     <div class="d-flex align-items-center">
-                                                        {% if (course.courseImagePath == None) %}
-                                                            <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="rounded course-thumbnail" alt="Course Thumbnail">
-                                                        {% else %}
-                                                            <img src= "{{ course.courseImagePath }}" class="rounded course-thumbnail" alt="Course Thumbnail">
-                                                        {% endif %}
+                                                        <a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">
+                                                            {% if (course.courseImagePath == None) %}
+                                                                <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="rounded course-thumbnail" alt="Course Thumbnail">
+                                                            {% else %}
+                                                                <img src= "{{ course.courseImagePath }}" class="rounded course-thumbnail" alt="Course Thumbnail">
+                                                            {% endif %}
+                                                        </a>
                                                         <div class="flex-column ms-4 rounded">
                                                             <h5>
                                                                 <a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">

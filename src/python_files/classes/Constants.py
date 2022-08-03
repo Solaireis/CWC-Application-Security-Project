@@ -49,9 +49,13 @@ class Constants:
     # For redirecting user to the custom domain which is protected by Cloudflare
     CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
 
-    # Follows the MySQL columns in the database
+    # For RBAC checks (Follows the sequence of the MySQL columns in the database)
     BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
     ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
+
+    # For the contact us form checks
+    COURSEFINITY_SUPPORT_EMAILS: tuple = ("coursefinity123@gmail.com",)
+    SUPPORT_ENQUIRY_TYPE: tuple = ("General", "Account", "Business", "Bugs", "Jobs", "News", "Others")
 
     # Request limit
     REQUEST_LIMIT: str = "120 per minute"
