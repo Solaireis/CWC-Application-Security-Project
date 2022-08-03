@@ -118,7 +118,7 @@
 - Enabled HSTS for the Flask web application to be hosted using [Flask-Talisman](https://pypi.org/project/flask-talisman/)
   - Flask-Talisman was originally created by Google but has not been maintained, hence, using a forked repository that is being maintained by [Winterbloom](https://github.com/wntrblm) and supported by other developers.
   - Since the web application will be hosted using [gunicorn](https://gunicorn.org/), I have configured the HTTP redirects to HTTPS and enabled HSTS to prevent MITM attacks.
-    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls before being redirected to the custom domain.
+    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls
       - Firebase's default domains that cannot be disabled:
         - [https://coursefinity-339412.firebaseapp.com/](https://coursefinity-339412.firebaseapp.com/)
         - [https://coursefinity-339412.web.app/](https://coursefinity-339412.web.app/)
