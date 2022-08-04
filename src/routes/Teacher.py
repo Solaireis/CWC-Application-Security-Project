@@ -62,18 +62,22 @@ def draftCourseList():
 
     return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
 
-""" Start Of Course Creation """
+""" Start of Course Creation API Calls """
 
-@teacherBP.route("/video-uploaded/<string:jwtToken>")
-def uploadSuccess(jwtToken):
+
+
+""" Start of Course Creation API Calls """
+
+@teacherBP.route("/client-payload/<string:jwtToken>")
+def clientPayload(jwtToken):
+    print(request.data)
     data = EC_verify(jwtToken, getData = True)
     if not data.get("verified"):
         abort(400)
 
-    tokenID = data["data"].get("token_id")
+    tokenID = data["data"]["token_id"]
     if (tokenID is None):
         abort(404)
-    print("test")
 
     if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
         abort(400)
@@ -81,6 +85,41 @@ def uploadSuccess(jwtToken):
     sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
 
     payload = data['data']['payload']
+    teacherID = payload.get("teacherID")
+    courseID = payload.get("courseID")
+
+    clientPayload = get_upload_credentials(courseID, teacherID)
+
+    if clientPayload is None:
+        abort(404)
+
+    return clientPayload
+
+@teacherBP.route("/video-uploaded/<string:jwtToken>")
+def uploadSuccess(jwtToken):
+    data = EC_verify(jwtToken, getData = True)
+    if not data.get("verified"):
+        abort(400)
+    print("Token valid")
+
+    tokenID = data["data"].get("token_id")
+    
+    if (tokenID is None):
+        abort(404)
+    print("Token has no token ID")
+    
+    if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
+        abort(400)
+    print("Token in database")
+
+    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
+
+    # Check video really has been uploaded
+    payload = data['data']['payload']
+    if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
+        #TODO: Delete video
+        abort(400)
+
     sql_operation(
         table="course",
         mode="insert_draft",
@@ -90,14 +129,32 @@ def uploadSuccess(jwtToken):
     )
     return redirect(url_for("teacherBP.draftCourseList"))
 
+""" End of Course Creation API Calls """
+
+
+
+""" Start Of Course Creation """
+
 #TODO: Ask if need do CRC32C checksum
 @csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
-    return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role, uploadCredentials = get_upload_credentials(userInfo.uid))
 
+    expiryInfo = JWTExpiryProperties(activeDuration=300)
+    jwtToken = generate_limited_usage_jwt_token(
+        payload = {
+            "teacherID": userInfo.uid,
+            "courseID": generate_id(),
+            "dateCreated":  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }, 
+        expiryInfo=expiryInfo,
+        limit = 1
+    )
+    payloadUrl = url_for("teacherBP.clientPayload", jwtToken=jwtToken)
+
+    return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role, payloadUrl=payloadUrl)
 
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
@@ -109,6 +166,9 @@ def createCourse(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     videoData=get_video(videoPath)
+    print(videoData)
+    if videoData.get("message") == "Queued":
+        videoData = None
 
     if (userInfo.role != "Teacher"):
         abort(500)
@@ -198,6 +258,8 @@ def createCourse(courseID:str):
         return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
 """ End Of Course Creation """
+
+
 
 """ Start Of Course Management """
 

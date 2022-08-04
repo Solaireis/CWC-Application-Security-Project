@@ -371,12 +371,10 @@
 
 ### Plan
 - DRM (Maybe https://www.vdocipher.com)
-- receipt generator
 - contact us form for issues
-- VirusTotal ffmpeg
 - File type policies
 - Max content length policy
-- Threading for videos
+- Logging stack (app.py)
 - Stripe
    - https://stripe.com/docs/radar/rules/reference
    - https://stripe.com/docs/api/payouts
