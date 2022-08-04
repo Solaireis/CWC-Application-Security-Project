@@ -61,9 +61,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     Returns:
     - The connection to the database (mysql connection object)
     """
-    # Restrict connections to be made from localhost if in debug mode
-    # else if not in debug mode, restrict to our cloud run domain, "https://coursefinity-o3rc5pl4fa-uc.a.run.app
-    hostName = "localhost" if (debug) else "%" # TODO: Fix hostname restriction issue
+    hostName = "localhost" if (debug) else "%"
 
     definer = f"coursefinity`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None, user="root")
