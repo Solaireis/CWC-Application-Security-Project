@@ -527,20 +527,23 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
     stackLevel = 0
     stackTraceback = []
 
-    while True:
-        data = getframeinfo(stack()[stackLevel][0])
-        if app_root not in Path(data.filename).parents: # Python packages expected to work
-            break
+    try:
+        while True:
+            data = getframeinfo(stack()[stackLevel][0])
+            if app_root not in Path(data.filename).parents: # Python packages expected to work
+                break
 
-        stackTraceback.append({
-            "stackLevel": stackLevel,
-            "filename": Path(data.filename).name,
-            "lineNo": data.lineno,
-            "function": f"{data.function}()" if data.function != "<module>" else data.function,
-            "codeContext": [line.strip() for line in data.code_context],
-            "index": data.index
-        })
-        stackLevel += 1
+            stackTraceback.append({
+                "stackLevel": stackLevel,
+                "filename": Path(data.filename).name,
+                "lineNo": data.lineno,
+                "function": f"{data.function}()" if data.function != "<module>" else data.function,
+                "codeContext": [line.strip() for line in data.code_context],
+                "index": data.index
+            })
+            stackLevel += 1
+    except (IndexError):
+        stackTraceback.append("No stack trace available!")
 
     logger = SECRET_CONSTANTS.LOGGING_CLIENT.logger(logName)
     if (isinstance(logMessage, dict)):
