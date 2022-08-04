@@ -47,7 +47,7 @@ class Constants:
     DEBUG_MODE: bool = DEBUG_MODE 
 
     # custom domain
-    CUSTOM_DOMAIN: str = "https://coursefinity.social" if (not DEBUG_MODE) else "https://127.0.0.1:8080"
+    CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" # if ( DEBUG_MODE) else "coursefinity.social"
 
     # For RBAC checks (Follows the sequence of the MySQL columns in the database)
     BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")

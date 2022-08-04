@@ -152,8 +152,7 @@ app.config["SESSION_PERMANENT"] = False # Session cookie will be deleted when th
 # Since secure cookie is disabled in debug mode by Flask-Talisman,
 if (app.config["CONSTANTS"].DEBUG_MODE):
     # Override the session cookie secure configuration
-    # if in debug mode to enable secure cookie as
-    # 
+    # if in debug mode to enable secure cookie
     app.config["SESSION_COOKIE_SECURE"] = True 
 
 # Debug flag (will be set to false when deployed)
@@ -340,14 +339,9 @@ if (__name__ == "__main__"):
     # Start all the scheduled jobs
     scheduler.start()
 
-    if (app.config["DEBUG_FLAG"]):
-        hostName = None
-        SSL_CONTEXT = (
-            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
-            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
-        )
-    else:
-        hostName = "0.0.0.0"
-        SSL_CONTEXT = None
+    SSL_CONTEXT = (
+        CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
+        CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
+    )
 
-    app.run(debug=app.config["DEBUG_FLAG"], host=hostName, port=int(environ.get("PORT", 8080)), ssl_context=SSL_CONTEXT)
+    app.run(debug=app.config["DEBUG_FLAG"], port=int(environ.get("PORT", 8080)), ssl_context=SSL_CONTEXT)

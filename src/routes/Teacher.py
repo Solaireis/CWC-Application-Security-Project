@@ -126,11 +126,11 @@ def createCourse(courseID:str):
             flash("Please verify that you are not a bot!", "Sorry!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
-        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please check the reCAPTCHA box and try again.", "Sorry!")
+            flash("Please verify that you are not a bot!", "Sorry!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
         courseTitle = courseForm.courseTitle.data
@@ -278,11 +278,11 @@ def courseUpdate():
             flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
 
-        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory)
 
         if (courseForm.courseTitle.data):

@@ -518,7 +518,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
 
     if (severity is None):
         severity = "DEFAULT"
-    elif (isinstance(severity, str) and severity in CONSTANTS.LOGGING_SEVERITY_TUPLE):
+    elif (isinstance(severity, str) and severity.upper() in CONSTANTS.LOGGING_SEVERITY_TUPLE):
         severity = severity.upper()
     else:
         raise ValueError("severity must be a str or a valid severity!")

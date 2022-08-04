@@ -2,13 +2,13 @@
 // https://github.com/dropzone/dropzone/blob/main/src/options.js
 
 function getClientPayload() {
-    fetch(url).then((response) => {
+    fetch(url).then(response => {
         if (!response.ok) {
             throw new Error(`HTTP error: ${response.status}`);
         }
         return JSON.parse(response.text());
-};
-
+    })
+}
 
 Dropzone.autoDiscover = false;
 var myDropzone = new Dropzone("#dropper", {

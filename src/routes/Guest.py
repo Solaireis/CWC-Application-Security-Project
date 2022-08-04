@@ -12,7 +12,7 @@ from google.oauth2 import id_token
 from google.auth.exceptions import GoogleAuthError
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
+from flask import make_response, render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
@@ -117,7 +117,7 @@ def recoverAccountMFA():
             flash("Please verify that you are not a bot.")
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
-        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
@@ -159,7 +159,7 @@ def resetPasswordRequest():
             flash("Please verify that you are not a bot.")
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
-        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
@@ -301,11 +301,11 @@ def login():
             flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
-        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.75)):
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please check the reCAPTCHA box and try again.", "Danger")
+            flash("Please verify that you are not a bot!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
         requestIPAddress = get_remote_address()
@@ -573,7 +573,7 @@ def loginViaGoogle():
         plaintext=state, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
     )
     print("google oauth redirect url:", authorisationUrl)
-    return redirect(authorisationUrl)
+    return make_response(redirect(authorisationUrl))
 
 @guestBP.route("/login-callback")
 def loginCallback():
@@ -582,7 +582,12 @@ def loginCallback():
 
     try:
         current_app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
-    except (Exception):
+    except (Exception) as e:
+        write_log_entry(
+            logMessage=f"Error with Google OAuth2 token: {e}",
+            severity="NOTICE"
+        )
+        print("Error with Google OAuth2 token:", e)
         flash("An error occurred while trying to login via Google!", "Danger")
         return redirect(url_for("guestBP.login"))
 
