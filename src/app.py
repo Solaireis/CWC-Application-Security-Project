@@ -68,6 +68,7 @@ if (not app.config["CONSTANTS"].DEBUG_MODE):
     app.logger.addHandler(gunicornLogger)
 
 # Flask SeaSurf to prevents cross-site request forgery
+app.config["CSRF_COOKIE_NAME"] = "csrf_token"
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
 app.config["CSRF_COOKIE_SAMESITE"] = "Lax"

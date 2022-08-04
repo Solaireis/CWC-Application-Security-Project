@@ -33,7 +33,7 @@ def main() -> None:
     pyMajorVer = sys.version_info[0]
     pyMinorVer = sys.version_info[1]
     pyVer = str(pyMajorVer) + str(pyMinorVer) # will get 39, 310, etc.
-    print(f"Your Python version is: {pyVer}. Your using a {platformType} system.")
+    print(f"Your Python version is: {pyVer}. You're using a {platformType} system.")
 
     # initialising variables
     rootDir = Path(__file__).absolute().parent.parent
@@ -53,9 +53,9 @@ def main() -> None:
         sha256 = hashlib.sha256()
 
         name = lib.split(">")[0]
-        version = (lib.split("=")[-1]).strip()
+        version = lib.split("=")[-1].strip()
         try:
-            version = (version.split(",")[1]).strip()
+            version = version.split(",")[1].strip()
             maximum = True
         except:
             pass
