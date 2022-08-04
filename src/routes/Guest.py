@@ -572,6 +572,7 @@ def loginViaGoogle():
     session["state"] = symmetric_encrypt(
         plaintext=state, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
     )
+    print("google oauth redirect url:", authorisationUrl)
     return redirect(authorisationUrl)
 
 @guestBP.route("/login-callback")

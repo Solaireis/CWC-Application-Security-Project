@@ -10,7 +10,7 @@ from python_files.functions.NormalFunctions import upload_new_secret_version, ge
 from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
-import re, json
+import json
 
 schema = {
     
@@ -77,6 +77,7 @@ def before_request() -> None:
         ):
             session.pop("relative_url", None)
 
+    print(f"Session cookie: {session}")
     # Validate the user's session for every request that is not to the static files
     if (request.endpoint != "static"):
         if (("user" in session) ^ ("admin" in session)):
