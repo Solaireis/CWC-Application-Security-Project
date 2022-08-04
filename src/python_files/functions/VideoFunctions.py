@@ -14,7 +14,17 @@ from python_files.classes.Constants import SECRET_CONSTANTS
 """ Get Video Data """
 
 def get_video(videoID:str) -> Optional[dict]:
+    """
+    Creates an OTP and playback info for a video.
+    Supply to a VdoCipher video player.
 
+    Inputs:
+    - videoID, stored in MySQL video_path (str)
+
+    Outputs:
+    - {"otp": ..., "playbackInfo": ...} (dict) -> Video Ready
+    - {"message": ...} (dict) -> Video not ready
+    """
     # Check if course exists
     videoData = check_video(videoID)
     if videoData is None:
@@ -46,7 +56,17 @@ def get_video(videoID:str) -> Optional[dict]:
         
     return data
 
+# Currently not in use due to ability to set video thumbnails not existing.
 def get_video_thumbnail(videoID:str) -> tuple:
+    """
+    Get thumbnail for a video, for display purposes.
+
+    Inputs:
+    - videoID, stored in MySQL video_path (str)
+    
+    Outputs:
+    - (thumbnailLink, ...) (tuple)
+    """
     data = get(
         url = f"https://dev.vdocipher.com/api/meta/{videoID}",
         headers = {
@@ -59,7 +79,18 @@ def get_video_thumbnail(videoID:str) -> tuple:
 def check_video(videoID:str) -> Optional[dict]:
     """
     Get data on the video, e.g. thumbnails, status, etc.
-    
+    Possible statuses:
+    - PRE-Upload (VERIFYING UPLOAD)
+    - Queued (Processing)
+    - Ready (READY)
+    - Encoding error (Encoding error) -> gif files (image with frames, but not a proper video)
+    - Not a media file (Not a media file) -> other files
+
+    Inputs:
+    - videoID, stored in MySQL video_path (str)
+
+    Outputs:
+    - data (dict)
     """
     data = loads(get(
         url = f"https://dev.vdocipher.com/api/videos/{videoID}",
@@ -68,23 +99,34 @@ def check_video(videoID:str) -> Optional[dict]:
             'Accept': "application/json"
         }
     )
-    .text)
+    .text) 
     if data.get("message") is not None: 
     # E.g. {'message': 'Video not found'}
         print(data.get("message"))
         #TODO: Log error
         return None
-
+    print(data)
     return data #.get("status")
+    
+# Testing
+# check_video("146ad54bd1804f1a9d19ac3f197ba8e2")
 
 """ End of Get Video Data """
 
-
 """ Video Upload/Edit """
-
 # ERROR: Currently, the server in charge of this appears to be 
 # suffering severe internal server error, which is always fun.
-def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]):
+def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Optional[dict]:
+    """
+    Updates the video thumbnail of a video, given its video ID
+
+    Inputs:
+    - videoID, stored in MySQL video_path (str)
+    - thumbnailFilePath (str|Path)
+
+    Outputs:
+    data (dict, probably)
+    """
     if isinstance(thumbnailFilePath, Path):
         thumbnailFilePath = str(thumbnailFilePath)
 
@@ -111,23 +153,32 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]):
 
     return data
 
-def get_upload_credentials(teacherID:str) -> Optional[dict]:
+def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     """
+    Send a request to VdoCipher to prepare to receive a video.
+    Returns the proper credentials to connect with VdoCipher to receive said video.
+    Passed to Dropzone as an API call.
+
+    Uses input values derived from a JWT.
+    Creates another JWT with videoID, to be passed to server when upload successful (for MySQL).
+
+    Inputs:
+    - courseID (str)
+    - teacherID (str)
+
+    Outputs (dict):
     {
         'clientPayload': {
-            'policy': 'eyJleHBpcmF0aW9uIjoiMjAyMi0wOC0wMlQwODoyMjo0Mi43NTJaIiwiY29uZGl0aW9ucyI6W3siYnVja2V0IjoidmRvLWFwLXNvdXRoZWFzdCJ9LHsia2V5Ijoib3JpZy9jMVIwN2hHSjdyRUo1In0seyJ4LWFtei1jcmVkZW50aWFsIjoiQUtJQUoyUzJMQldLR04zVzMzR1EvMjAyMjA4MDEvYXAtc291dGhlYXN0LTEvczMvYXdzNF9yZXF1ZXN0In0seyJ4LWFtei1hbGdvcml0aG0iOiJBV1M0LUhNQUMtU0hBMjU2In0seyJ4LWFtei1kYXRlIjoiMjAyMjA4MDFUMDAwMDAwWiJ9LFsic3RhcnRzLXdpdGgiLCIkc3VjY2Vzc19hY3Rpb25fc3RhdHVzIiwiIl0sWyJzdGFydHMtd2l0aCIsIiRzdWNjZXNzX2FjdGlvbl9yZWRpcmVjdCIsIiJdXX0=', 
-            'key': 'orig/c1R07hGJ7rEJ5', 
-            'x-amz-signature': '1333a36a1f91777ffb88b336aa430a5bcfbe89f32855800dc863a8b9874e3e1f', 
-            'x-amz-algorithm': 'AWS4-HMAC-SHA256', 
-            'x-amz-date': '20220801T000000Z', 
-            'x-amz-credential': 'AKIAJ2S2LBWKGN3W33GQ/20220801/ap-southeast-1/s3/aws4_request', 
-            'uploadLink': 'https://vdo-ap-southeast.s3-accelerate.amazonaws.com'
-        }, 
-        'videoId': 'c64f0cdfff0d4632a610bb53973e6d24'
+            'policy': ... (str),
+            'key': ... (str), 
+            'x-amz-signature': ... (str), 
+            'x-amz-algorithm': ... (str), 
+            'x-amz-date': ... (str), 
+            'x-amz-credential': ... (str), 
+            'uploadLink': ... (str), 
+            'successUrl': ... (str)
     }
     """
-
-    courseID = generate_id()
     data = loads(put(
         url = "https://dev.vdocipher.com/api/videos",
         headers = {
