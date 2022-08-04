@@ -412,7 +412,7 @@ def contactUs():
         bodyHtml = (
             "Thanks for contacting CourseFinity Support! We have received your contact form enquiry and will respond back as soon as we are able to.",
             "For the fastest resolution to your enquiry, please provide the Support Team with as much information as possible and keep it contained to a this email instead of creating a new one.",
-            f"While you are waiting, you can check our FAQ page at {url_for('generalBP.faq', _external=True)} for solutions to common problems.",
+            f"While you are waiting, you can check our FAQ page at {current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('generalBP.faq')} for solutions to common problems.",
             f"Below is a copy of your enquiry:<br>{enquiry}"
         )
         send_email(to=email, subject=enquiryType, body="<br><br>".join(bodyHtml), name=name)

@@ -87,12 +87,12 @@ if (inacitivityModalEl) {
 
 /* --------------- Start of client-side redirect to the custom domain Javascript --------------- */
 
-if (window.location.hostname !== "coursefinity.social") {
-    currentUrl = new URL(window.location.href);
-    currentUrl.protocol = "https";
-    currentUrl.hostname = "coursefinity.social";
-    currentUrl.port = "";
-    window.location.href = currentUrl.href;
-}
+// if (window.location.hostname !== "coursefinity.social") {
+//     currentUrl = new URL(window.location.href);
+//     currentUrl.protocol = "https";
+//     currentUrl.hostname = "coursefinity.social";
+//     currentUrl.port = "";
+//     window.location.href = currentUrl.href;
+// }
 
 /* --------------- End of client-side redirect to the custom domain Javascript --------------- */

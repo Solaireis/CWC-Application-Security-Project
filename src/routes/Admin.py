@@ -70,7 +70,7 @@ def userManagement():
                         f"Your account email address has been changed to {newEmail} during the account recovery process.",
                         "However, you still need to reset your password by clicking the link below.<br>",
                         "Please click the link below to reset your password.",
-                        f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
+                        f"<a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.recoverAccount', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
                         "Note: This link will ONLY expire upon usage."
                     )
                     send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))

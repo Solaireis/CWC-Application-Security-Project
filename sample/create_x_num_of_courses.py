@@ -178,7 +178,7 @@ If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDO
                 "unit_amount_decimal" : course_price*100
             },
             images = [course_image_path],
-            url = None # url_for("generalBP.coursePage", _external = True, courseID = courseID)
+            url = None # f"{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('generalBP.coursePage', courseID = courseID)}"
         )
 
         # print(courseData)

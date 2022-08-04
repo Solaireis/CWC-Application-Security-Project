@@ -179,7 +179,7 @@ def resetPasswordRequest():
             # but is requesting for a password reset
             htmlBody = (
                 "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
-                f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{url_for('guestBP.login', _external=True)}' target='_blank'>login to CourseFinity</a> using your Google account.",
+                f"Otherwise, please note that you had signed up to CourseFinity using your Google account.<br>Hence, please <a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.login')}' target='_blank'>login to CourseFinity</a> using your Google account.",
             )
             # send email to the user to remind them to login using Google account
             send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
@@ -201,7 +201,7 @@ def resetPasswordRequest():
         # send the token to the user's email
         htmlBody = (
             "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
-            f"You can change the password on your account by clicking the button below.<br><a href='{url_for('guestBP.resetPassword', token=token, _external=True)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
+            f"You can change the password on your account by clicking the button below.<br><a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPassword', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
         )
         send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
 
@@ -380,7 +380,7 @@ def login():
                 f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
                 "* Location is approximate based on the login's IP address.",
                 f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
-                f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{url_for('userBP.updatePassword', _external=True)}"
+                f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}"
             )
             send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
 

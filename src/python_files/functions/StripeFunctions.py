@@ -13,7 +13,7 @@ from stripe.api_resources.checkout.session import Session as StripeCheckoutSessi
 from css_inline import inline, CSSInliner # Not sure why VSC doesn't register these two
 
 # import local python libraries
-from python_files.classes.Constants import SECRET_CONSTANTS
+from python_files.classes.Constants import SECRET_CONSTANTS, CONSTANTS
 from .NormalFunctions import JWTExpiryProperties, send_email, generate_id
 from .SQLFunctions import generate_limited_usage_jwt_token, sql_operation
 
@@ -47,7 +47,7 @@ def stripe_product_create(
                 "unit_amount_decimal" : coursePrice * 100
             },
             images = [] if courseImagePath is None else [courseImagePath],
-            url = url_for("generalBP.coursePage", _external = True, courseID = courseID)
+            url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.coursePage', courseID = courseID)}"
         )
 
         # print(courseData)
@@ -143,8 +143,8 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
     try:
         checkoutSession = stripe.checkout.Session.create(
-            success_url = url_for("userBP.purchase", _external = True, jwtToken = jwtToken),
-            cancel_url = url_for("userBP.shoppingCart", _external = True),
+            success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', jwtToken = jwtToken)}",
+            cancel_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.shoppingCart')}",
             customer_email = email,
             expires_at = int(time()) + 3600,
             line_items = [{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],

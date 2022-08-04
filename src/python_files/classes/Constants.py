@@ -32,16 +32,22 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-#TODO: Ask what the secret payload json returns
+# TODO: Ask what the secret payload json returns
 schema = {
     
 }
+
+# TODO: Change the debug mode below accordingly
+DEBUG_MODE = True
 
 @dataclass(frozen=True, repr=False)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Debug flag
-    DEBUG_MODE: bool = True 
+    DEBUG_MODE: bool = DEBUG_MODE 
+
+    # custom domain
+    CUSTOM_DOMAIN: str = "https://coursefinity.social" if (not DEBUG_MODE) else "https://127.0.0.1:8080"
 
     # For RBAC checks (Follows the sequence of the MySQL columns in the database)
     BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
