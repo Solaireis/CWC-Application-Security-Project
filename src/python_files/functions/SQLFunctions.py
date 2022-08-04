@@ -18,6 +18,7 @@ from flask import url_for, current_app, abort
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
+from jsonschema import validate
 
 # import local python files
 from python_files.classes.Course import CourseInfo
@@ -27,6 +28,10 @@ from .NormalFunctions import JWTExpiryProperties, convert_to_mpd, download_to_pa
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
+
+schema = {
+    
+}
 
 def validate_course_video_path(courseID:str, returnUrl:bool=False) -> Optional[str]:
     """
@@ -153,11 +158,11 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
         expiryInfo=expiryInfo,
         limit=1
     )
-    htmlBody = [
+    htmlBody = (
         f"Welcome to CourseFinity!<br>",
         "Please click the link below to verify your email address:",
         f"<a href={url_for('generalBP.verifyEmail', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
-    ]
+    )
     send_email(to=email, subject="Please verify your email!", body="<br>".join(htmlBody), name=username)
 
 def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
@@ -178,7 +183,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         expiryInfo=expiryInfo,
         limit=1
     )
-    htmlBody = [
+    htmlBody = (
         "Your account has been locked due to too many failed login attempts.<br>",
         "Just in case that it was you, you can unlock your account by clicking the button below.",
         "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
@@ -187,10 +192,10 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         "Please click the link below to unlock your account:",
         f"<a href={url_for('guestBP.unlockAccount', token=token, _external=True)} style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
         "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
-    ]
+    )
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
-def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo]:
+def get_image_path(userID:str, returnUserInfo:bool=False, getCart:Optional[bool]=False) -> Union[str, UserInfo]:
     """
     Returns the image path for the user.
 
@@ -200,14 +205,16 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo
     If returnUserInfo is True, it will return a tuple of the user's record.
 
     Args:
-    - userID: The user's ID
-    - returnUserInfo: If True, it will return a tuple of the user's record.
+    - userID (str): The user's ID
+    - returnUserInfo (bool): If True, it will return a tuple of the user's record.
+    - getCart (bool, Optional): If True, it will also return the user's cart items.
+        - Default: False, will not return the user's cart items.
 
     Returns:
     - The image path (str) only if returnUserInfo is False
     - The UserInfo object with the profile image path in the object if returnUserInfo is True
     """
-    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
+    userInfo = sql_operation(table="user", mode="get_user_data", userID=userID, getCart=getCart)
 
     # Since the admin user will not have an upload profile image feature,
     # return an empty string for the image profile src link if the user is the admin user.
@@ -218,21 +225,18 @@ def get_image_path(userID:str, returnUserInfo:bool=False) -> Union[str, UserInfo
     imageSrcPath = userInfo.profileImage
     return imageSrcPath if (not returnUserInfo) else userInfo
 
-def format_user_info(userInfo:tuple, offset:int=0) -> UserInfo:
+def format_user_info(userInfo:tuple) -> UserInfo:
     """
     Format the user's information to be returned to the client.
 
     Args:
     - userInfo (tuple): The user's tuple matched from a database query.
-    - offset (int): The offset of the user's tuple.
-        - Used when there's extra attribute at the start of the user's tuple queried from the database.
-        - Default: 0, no offset.
 
     Returns:
     - UserInfo object with the formatted user information.
     """
-    userProfile = get_dicebear_image(userInfo[2 + offset]) if (userInfo[6 + offset] is None) else userInfo[6 + offset]
-    return UserInfo(tupleData=userInfo, userProfile=userProfile, offset=offset)
+    userProfile = get_dicebear_image(userInfo[2]) if (userInfo[6] is None) else userInfo[6]
+    return UserInfo(tupleData=userInfo, userProfile=userProfile)
 
 def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, tuple, bool, dict, None]:
     """
@@ -284,6 +288,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "stripe_payments"):
                 returnValue = stripe_payments_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "cart"):
+                returnValue = cart_sql_operation(connection=con, mode=mode, **kwargs)
             else:
                 raise ValueError("Invalid table name")
         except (
@@ -311,10 +317,30 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     return returnValue
 
+def cart_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+
+    cur = connection.cursor()
+    if (mode == "check_if_purchased_or_in_cart"):
+        courseID = kwargs["courseID"]
+        userID = kwargs["userID"]
+
+        cur.execute("SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s", {"courseID":courseID, "userID":userID})
+        isInCart = (cur.fetchone() is not None)
+
+        cur.execute("SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s", {"courseID":courseID, "userID":userID})
+        isPurchased = (cur.fetchone() is not None)
+
+        return (isInCart, isPurchased)
+
+    else:
+        raise ValueError("Invalid mode in cart_sql_operation function!")
+
 def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
         raise ValueError("You must specify a mode in the stripe_payments_sql_operation function!")
-    
+
     cur = connection.cursor()
     if mode == "create_payment_session":
         paymentID = kwargs["paymentID"]
@@ -405,6 +431,7 @@ def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None
         tokenID = kwargs["tokenID"]
         expiryDate = kwargs.get("expiryDate")
         limit = kwargs.get("limit")
+        print(limit)
         cur.execute(
             "INSERT INTO limited_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
             {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
@@ -620,6 +647,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
         validFlag, idx = False, 0
         backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
+        # try:
+        #     validate(instance=backupCodes, schema=schema)
+        # except:
+        #     print("Error in Json schema")
         for idx, codeTuple in enumerate(backupCodes):
             if (codeTuple[0] == kwargs["backupCode"] and codeTuple[1] == "Active"):
                 validFlag = True
@@ -801,7 +832,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         return matched if (getEmail) else matched[0]
 
     elif (mode == "remove_unverified_users_more_than_30_days"):
-        cur.execute("DELETE FROM user WHERE email_verified=FALSE AND date_joined < SGT_NOW() - INTERVAL 30 DAY")
+        cur.execute("DELETE FROM user WHERE email_verified=0 AND date_joined < SGT_NOW() - INTERVAL 30 DAY")
         connection.commit()
 
     elif (mode == "update_email_to_verified"):
@@ -918,8 +949,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         roleID = cur.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(),%(cart_courses)s, %(purchased_courses)s, 'Active')",
-            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None,"cart_courses":"[]", "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(purchased_courses)s, 'Active')",
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "purchased_courses":"[]"}
         )
         connection.commit()
 
@@ -955,8 +986,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             roleID = cur.fetchone()[0]
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(cart_courses)s, %(purchased_courses)s, 'Active')",
-                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic, "cart_courses":"[]", "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(purchased_courses)s, 'Active')",
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic, "purchased_courses":"[]"}
             )
             connection.commit()
         else:
@@ -1046,7 +1077,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "get_user_data"):
         userID = kwargs["userID"]
-        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
+        cur.execute(
+            "CALL get_user_data(%(userID)s, %(getCart)s)", 
+            {"userID":userID, "getCart":kwargs.get("getCart", False)}
+        )
         matched = cur.fetchone()
         return format_user_info(matched) if (matched is not None) else None
 
@@ -1205,13 +1239,18 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "delete_user"):
         userID = kwargs["userID"]
-        cur.execute("CALL delete_user(%(userID)s)", {"userID":userID})
+        cur.execute("DELETE FROM user WHERE id=%(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "delete_user_data"):
+        userID = kwargs["userID"]
+        cur.execute("CALL delete_user_data(%(userID)s)", {"userID":userID})
         connection.commit()
 
     elif (mode == "update_to_teacher"):
         userID = kwargs["userID"]
 
-        cur.execute("CALL get_user_data(%(userID)s)", {"userID":userID})
+        cur.execute("CALL get_user_data(%(userID)s, 0)", {"userID":userID})
         currentRole = cur.fetchone()[0][1]
 
         isTeacher = False if (currentRole != "Teacher") else True
@@ -1231,18 +1270,33 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userInput = kwargs.get("userInput")
         filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
 
-        if (userInput is None):
-            cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
-        elif (filterType == "uid"):
-            cur.execute("CALL paginate_users_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        elif (filterType == "email"):
-            cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        else:
-            # Paginate by username by default in the HTML, 
-            # but this is also a fallback if the user has tampered with the HTML value
-            cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        matched = cur.fetchall() or []
+        paginationRole = kwargs["role"]
+        if (paginationRole != "Admin"):
+            # Students/Teachers (users) pagination
+            if (userInput is None):
+                cur.execute("CALL paginate_users(%(pageNum)s)", {"pageNum":pageNum})
+            elif (filterType == "uid"):
+                cur.execute("CALL paginate_users_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            elif (filterType == "email"):
+                cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            else:
+                # Paginate by username by default in the HTML, 
+                # but this is also a fallback if the user has tampered with the HTML value
+                cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        else: 
+            # Admin users pagination
+            if (userInput is None):
+                cur.execute("CALL paginate_admins(%(pageNum)s)", {"pageNum":pageNum})
+            elif (filterType == "uid"):
+                cur.execute("CALL paginate_admins_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            elif (filterType == "email"):
+                cur.execute("CALL paginate_admins_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+            else:
+                # Paginate by username by default in the HTML, 
+                # but this is also a fallback if the user has tampered with the HTML value
+                cur.execute("CALL paginate_admins_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
 
+        matched = cur.fetchall() or []
         maxPage = 1
         if (len(matched) > 0):
             maxPage = ceil(matched[0][-1] / 10)
@@ -1256,32 +1310,30 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            userInfo = format_user_info(data, offset=1)
-            isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
-            courseArr.append((userInfo, isInRecovery))
+            userInfo = format_user_info(data[1:])
+            if (paginationRole != "Admin"):
+                isInRecovery = recovery_token_sql_operation(
+                    connection=connection, mode="check_if_recovering", userID=userInfo.uid
+                )
+                courseArr.append((userInfo, isInRecovery))
+            else:
+                courseArr.append(userInfo)
 
         return courseArr, maxPage
 
-    elif (mode == "paginate_admins"):
+    # elif (mode == "get_user_purchases"):
+    #     userID = kwargs["userID"]
+    #     cur.execute("SELECT JSON_ARRAYAGG(course_id) FROM purchased_courses WHERE user_id=%(userID)s", {"userID":userID})
+    #     return json.loads(cur.fetchone()[0])
+
+    elif (mode == "paginate_user_purchases"):
+        userID = kwargs["userID"]
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
 
-        userInput = kwargs.get("userInput")
-        filterType = kwargs.get("filterType", "username") # To determine what the user input is (UID or username)
-
-        if (userInput is None):
-            cur.execute("CALL paginate_admins(%(pageNum)s)", {"pageNum":pageNum})
-        elif (filterType == "uid"):
-            cur.execute("CALL paginate_admins_by_uid(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        elif (filterType == "email"):
-            cur.execute("CALL paginate_admins_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        else:
-            # Paginate by username by default in the HTML, 
-            # but this is also a fallback if the user has tampered with the HTML value
-            cur.execute("CALL paginate_admins_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
+        cur.execute("CALL paginate_purchased_courses(%(userID)s, %(pageNum)s)", {"userID":userID, "pageNum":pageNum})
         matched = cur.fetchall() or []
-
         maxPage = 1
         if (len(matched) > 0):
             maxPage = ceil(matched[0][-1] / 10)
@@ -1295,72 +1347,71 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            userInfo = format_user_info(data, offset=1)
-            isInRecovery = recovery_token_sql_operation(connection=connection, mode="check_if_recovering", userID=userInfo.uid)
-            courseArr.append((userInfo, isInRecovery))
+            data = data[1:]
+            # Get the teacher's profile image from the first tuple
+            teacherProfile = get_dicebear_image(data[2]) if (data[3] is None) \
+                                                         else data[3]
+            courseArr.append(CourseInfo(data, profilePic=teacherProfile, truncateData=False, getReadableCategory=True))
 
         return courseArr, maxPage
 
-    elif (mode == "get_user_purchases"):
-        userID = kwargs["userID"]
-        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        cur.execute("SELECT JSON_ARRAY('userID', %(userID)s) FROM user", {"userID":userID})
-        return json.loads(cur.fetchone()[0])
-
     elif mode == "get_user_cart":
         userID = kwargs["userID"]
-        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
+        cur.execute("SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=%(userID)s", {"userID":userID})
         return json.loads(cur.fetchone()[0])
 
     elif mode == "add_to_cart":
         userID = kwargs["userID"]
         courseID = kwargs["courseID"]
 
-        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        cartCourseIDs = json.loads(cur.fetchone()[0])
+        cur.execute("SELECT * FROM cart WHERE user_id=%(userID)s AND course_id=%(courseID)s", {"userID":userID, "courseID":courseID})
+        isInCart = True if (cur.fetchone() is not None) else False
 
-        cur.execute("SELECT teacher_id FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
-        isSameTeacher = (cur.fetchone()[0] == userID)
+        cur.execute("SELECT teacher_id, active FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
+        matched = cur.fetchone()
+        isSameTeacher = (matched[0] == userID)
+        isActiveCourse = bool(matched[1])
 
-        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        purchasedCourseIDs = json.loads(cur.fetchone()[0])
+        cur.execute(
+            "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+            {"courseID":courseID, "userID":userID}
+        )
+        isPurchased = True if (cur.fetchone() is not None) else False
 
-        if courseID not in cartCourseIDs and courseID not in purchasedCourseIDs and not isSameTeacher:
-            cartCourseIDs.append(courseID)
-            cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
+        if (isActiveCourse and not isInCart and not isSameTeacher and not isPurchased):
+            cur.execute("INSERT INTO cart (user_id, course_id) VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
             connection.commit()
 
     elif mode == "remove_from_cart":
         userID = kwargs["userID"]
         courseID = kwargs["courseID"]
 
-        cur.execute("SELECT cart_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        cartCourseIDs = json.loads(cur.fetchone()[0])
-
-        if courseID in cartCourseIDs:
-            cartCourseIDs.remove(courseID)
-            cur.execute("UPDATE user SET cart_courses=%(cart)s WHERE id=%(userID)s", {"cart":json.dumps(cartCourseIDs),"userID":userID})
-            connection.commit()
+        cur.execute(
+            "DELETE FROM cart WHERE user_id=%(userID)s AND course_id=%(courseID)s", 
+            {"userID":userID, "courseID":courseID}
+        )
+        connection.commit()
 
     elif mode == "purchase_courses":
-
         userID = kwargs["userID"]
         cartCourseIDs = kwargs["cartCourseIDs"]
 
-        cur.execute("SELECT purchased_courses FROM user WHERE id=%(userID)s", {"userID":userID})
-        purchasedCourseIDs = json.loads(cur.fetchone()[0])
-
         for courseID in cartCourseIDs:
+            try:
+                cur.execute(
+                    "INSERT INTO purchased_courses (user_id, course_id) VALUES (%(userID)s, %(courseID)s)",
+                    {"userID":userID, "courseID":courseID}
+                )
+                connection.commit()
+            except (MySQLErrors.IntegrityError):
+                # Catches if the for any duplicate key error
+                write_log_entry(
+                    logMessage=f"User {userID}, has purchased the course, {courseID}, but he/she had already purchased it",
+                    severity="WARNING"
+                )
 
-            if courseID not in purchasedCourseIDs:
-                purchasedCourseIDs.append(courseID)
-
-        # Add to purchases
-        cur.execute("UPDATE user SET purchased_courses=%(purchased)s WHERE id=%(userID)s", {"purchased":json.dumps(purchasedCourseIDs), "userID":userID})
-
-        # Empty cart
-        cur.execute("UPDATE user SET cart_courses='[]' WHERE id=%(userID)s", {"userID":userID})
-
+        # Empty user's cart
+        cur.execute("DELETE FROM cart WHERE user_id=%(userID)s", {"userID":userID})
         connection.commit()
 
     elif mode == "create_admin":
@@ -1368,14 +1419,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         email = kwargs["email"]
         profilePic = "https://storage.googleapis.com/coursefinity/user-profiles/default.png"
         adminID = generate_id()
-        ADMIN_ROLE_ID = None
         cur.execute("CALL get_role_id('Admin')")
-        ADMIN_ROLE_ID = cur.fetchone()
-        ADMIN_ROLE_ID = ADMIN_ROLE_ID[0]
+        adminRoleID = cur.fetchone()[0]
+
         cur.execute(
-                        "INSERT INTO user (id, role, username, email, email_verified, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(profilePic)s, SGT_NOW())", \
-                        {"id": adminID, "role": ADMIN_ROLE_ID, "username": username, "email": email, "profilePic": profilePic}
-                    )
+            "INSERT INTO user (id, role, username, email, email_verified, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(profilePic)s, SGT_NOW())",
+            {"id": adminID, "role": adminRoleID, "username": username, "email": email, "profilePic": profilePic}
+        )
         connection.commit()
 
     else:
@@ -1416,10 +1466,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         teacherID = kwargs["teacherID"]
         videoPath = kwargs["videoPath"]
+        print("INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())" % 
+            {"courseID": courseID, "teacherID": teacherID, "videoPath": videoPath})
 
         cur.execute(
             "INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())", 
-            {"courseID":courseID, "teacherID":teacherID, "videoPath":videoPath}
+            {"courseID": courseID, "teacherID": teacherID, "videoPath": videoPath}
         )
         connection.commit()
 
@@ -1454,7 +1506,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         print("Matched:", matched)
         if (matched is None):
             return False
-        
+
         return matched
 
     # Added just in case want to do updating
@@ -1538,6 +1590,9 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
 
+        if (maxPage <= 0):
+            maxPage = 1
+
         teacherName = ""
         if (getTeacherName):
             cur.execute("SELECT username FROM user WHERE id=%(teacherID)s", {"teacherID":teacherID})
@@ -1551,10 +1606,26 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                                                                else resultsList[0][4]
 
         courseList = []
+        loggedInUserID = kwargs.get("userID")
         for tupleInfo in resultsList:
             foundResultsTuple = tupleInfo[1:]
+
+            purchased = isInCart = False
+            if (loggedInUserID is not None):
+                cur.execute(
+                    "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                    {"courseID":foundResultsTuple[0], "userID":loggedInUserID}
+                )
+                purchased = True if (cur.fetchone() is not None) else False
+                cur.execute(
+                    "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                    {"courseID":foundResultsTuple[0], "userID":loggedInUserID}
+                )
+                isInCart = True if (cur.fetchone() is not None) else False
+
             courseList.append(
-                CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True)
+                (CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True),
+                {"purchased":purchased, "isInCart":isInCart})
             )
 
         return (courseList, maxPage, teacherName) if (getTeacherName) else (courseList, maxPage)
@@ -1569,12 +1640,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         try:
             maxPage = cur.fetchone()[-1]
             if (pageNum > maxPage):
-                return (False , maxPage)
+                return ([] , maxPage)
         except:
-            return []
+            return ([], 1)
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
         maxPage = ceil(resultsList[0][-1] / 10)
+
+        if (maxPage <= 0):
+            maxPage = 1
+
         teacherProfile = get_dicebear_image(resultsList[0][3]) if (resultsList[0][4] is None) \
                                                                else resultsList[0][4]
 
@@ -1674,6 +1749,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     ORDER BY avg_rating DESC LIMIT 3;
                 """, {"teacherID":teacherID})
 
+        loggedInUserID = kwargs.get("userID")
         matchedList = cur.fetchall()
         if (not matchedList):
             return []
@@ -1687,8 +1763,23 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     res = cur.fetchone()
                     teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                         else res[1]
+
+                    purchased = isInCart = False
+                    if (loggedInUserID is not None):
+                        cur.execute(
+                            "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":matchedList[i][0], "userID":loggedInUserID}
+                        )
+                        purchased = True if (cur.fetchone() is not None) else False
+                        cur.execute(
+                            "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":matchedList[i][0], "userID":loggedInUserID}
+                        )
+                        isInCart = True if (cur.fetchone() is not None) else False
+
                     courseInfoList.append(
-                        CourseInfo(matchedList[i], profilePic=teacherProfile, truncateData=True)
+                        (CourseInfo(matchedList[i], profilePic=teacherProfile, truncateData=True),
+                        {"purchased":purchased, "isInCart":isInCart})
                     )
                 return courseInfoList
             else:
@@ -1697,8 +1788,22 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 teacherProfile = get_dicebear_image(res[0]) if (res[1] is None) \
                                                                     else res[1]
                 for tupleInfo in matchedList:
+                    purchased = isInCart = False
+                    if (loggedInUserID is not None):
+                        cur.execute(
+                            "SELECT * FROM purchased_courses WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":tupleInfo[0], "userID":loggedInUserID}
+                        )
+                        purchased = True if (cur.fetchone() is not None) else False
+                        cur.execute(
+                            "SELECT * FROM cart WHERE course_id=%(courseID)s AND user_id=%(userID)s",
+                            {"courseID":tupleInfo[0], "userID":loggedInUserID}
+                        )
+                        isInCart = True if (cur.fetchone() is not None) else False
+
                     courseInfoList.append(
-                        CourseInfo( tupleInfo, profilePic=teacherProfile, truncateData=True)
+                        (CourseInfo(tupleInfo, profilePic=teacherProfile, truncateData=True),
+                        {"purchased":purchased, "isInCart":isInCart})
                     )
 
                 if (kwargs.get("getTeacherUsername")):
@@ -1787,34 +1892,34 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     cur = connection.cursor()
 
     if mode == "retrieve_all":
-        cur.execute("SELECT * FROM role")
+        cur.execute("SELECT * FROM role ORDER BY role_id")
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
 
-    
     elif mode == "retrieve_admin":
-        cur.execute("SELECT * FROM role WHERE role_name = 'admin'")
+        cur.execute("SELECT * FROM role WHERE role_name = 'Admin'")
         role_list = cur.fetchall()
         return role_list if (role_list is not None) else []
-    
+
     elif mode == "retrieve_role":
-        roleName = kwargs["roleName"]
+        roleName = kwargs["roleName"].title()
         cur.execute("SELECT * FROM role WHERE role_name = '%(roleName)s'", {"roleName":roleName})
         role_list = cur.fetchone()
         return role_list if (role_list is not None) else []
 
-    elif mode=="update_role": #updates the role of a group
-        roleName = kwargs["roleName"]
+    elif mode == "update_role": #updates the role of a group
+        roleName = kwargs["roleName"].title()
         guestBP = kwargs["guestBP"]
         generalBP = kwargs["generalBP"]
         adminBP = kwargs["adminBP"]
         loggedInBP = kwargs["loggedInBP"]
-        errorBP = kwargs["errorBP"]
         teacherBP= kwargs["teacherBP"]
         userBP= kwargs["userBP"]
-        superAdminBP= kwargs["superAdminBP"]
-        cur.execute("UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, error_bp = %(errorBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s, super_admin_bp = %(superAdminBP)s WHERE role_name = %(roleName)s", {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "errorBP":errorBP, "teacherBP":teacherBP, "userBP":userBP, "superAdminBP":superAdminBP})
+        cur.execute(
+            "UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s",
+            {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP}
+        )
         connection.commit()
-    
+
     else:
         raise ValueError("Invalid mode in the role_sql_operation function!")

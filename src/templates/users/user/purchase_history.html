@@ -10,74 +10,74 @@
 {% block content %}
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            {% for category, message in messages %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h6>{{ message }}</h6>
-            </div>
-            {% endfor %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
-            </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-{% endwith %}
-
-<div class="container">
-    <h2>Purchase History</h2>
-    {% if courseList | length == 0 %}
-    <div>
-        <h4>Your Purchase History is empty.</h4>
-    </div>
-    {% else %}
-        {% for course in courseList %}
-        <div class="row g-0 casing mx-auto border">
-            <div class="col-5">            
-                {% if (course.courseImagePath == None) %}
-                    <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
-                {% else %}
-                    <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
-                {% endif %}
-            </div>
-            <div class="col-7">
-                <div class="card-body">
-                    <h5 class="card-title"><a href="/course/{{ course.courseID }}">{{ course.courseName }}</a></h5>
-                    <p class="card-text">{{ course.courseDescription }}</p>
-                </div>
-                <div class="card-body">
-                    <div class="row g-0">
-                        <div class="selection col">
-                            <a href="/purchase-view/{{ course.courseID }}" class="view">View course materials</a>
-                            {% if course["ReviewChecker"] == False %}
-                                <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">Submit Review</a>
-                            {% else %}
-                                <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">View Review</a>
-                            {% endif %}
-                        </div>
+        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    {% for category, message in messages %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>{{ message }}</h6>
+                    </div>
+                    {% endfor %}
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
                     </div>
                 </div>
             </div>
         </div>
+    {% endif %}
+{% endwith %}
+
+<div class="container">
+    <h3>Purchase History</h3>
+    {% if courseList | length == 0 %}
+    <div>
+        <h5 class="text-muted">Your Purchase History is empty.</h5>
+    </div>
+    {% else %}
+        {% for course in courseList %}
+            <div class="row g-0 casing mx-auto border">
+                <div class="col-5">            
+                    {% if (course.courseImagePath == None) %}
+                        <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                    {% else %}
+                        <img src= "{{ course.courseImagePath }}" class="card-img" alt="Course Thumbnail">
+                    {% endif %}
+                </div>
+                <div class="col-7">
+                    <div class="card-body">
+                        <h5 class="card-title"><a href="/course/{{ course.courseID }}">{{ course.courseName }}</a></h5>
+                        <p class="card-text">{{ course.courseDescription }}</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-0">
+                            <div class="selection col">
+                                <a href="/purchase-view/{{ course.courseID }}" class="view">View course materials</a>
+                                {% if course["ReviewChecker"] == False %}
+                                    <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">Submit Review</a>
+                                {% else %}
+                                    <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">View Review</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endfor %}
     {% endif %}
-  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 	{% with messages = get_flashed_messages() %}
 		{% if messages %}
-		<script nonce="{{ csp_nonce() }}">
-			var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
-			alertModal.show();
-		</script>
+            <script nonce="{{ csp_nonce() }}">
+                var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+                alertModal.show();
+            </script>
 		{% endif %}
 	{% endwith %}
 {% endblock %}

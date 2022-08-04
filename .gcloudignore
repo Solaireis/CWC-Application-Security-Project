@@ -3,14 +3,14 @@
 src/config_files/*
 !src/config_files/google-sm.json
 
-# Ignore all pycache folders and files.
+# Ignore all pycache files
 *.pyc
-**/__pycache__/*
-**/__pycache__
-__pycache__
 
 # Ignore all markdown files
 *.md
+
+# Ignore uploaded files for course videos
+src/static/course_videos/**
 
 # Ignore Mac DS_Store files
 .DS_Store
@@ -18,16 +18,22 @@ __pycache__
 
 # Ignore test codes and folders
 test/**
-test
 *test*.*
 *Test*.*
 *test*.*/**
 *Test*.*/**
 
 # Ignore other folders and files.
+*.pem
+*.log
+*.bak
+*.bin
+node_modules
+.firebaserc
+firebase.json
+package-lock.json
 .gitignore
 .dccache
 res/**
-res
-sample/**
-sample
+sample/*
+!sample/download_dependencies.py

@@ -2,13 +2,19 @@
 from flask import render_template, request, session, abort, current_app, redirect
 from flask import wrappers
 from flask_limiter.util import get_remote_address
+from jsonschema import validate
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
 from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, write_log_entry
+from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
 import re, json
+
+schema = {
+    
+}
 
 def update_secret_key() -> None:
     """
@@ -37,17 +43,6 @@ def before_request() -> None:
     Returns:
     - None
     """
-    # Redirect user to coursefinity.social domain if they are not on it
-    # Reason: Firebase and Google Cloud Run have their own default 
-    # domain names (that cannot be disabled) which are not protected by Cloudflare.
-    if (
-        not current_app.config["DEBUG_FLAG"] and 
-        re.fullmatch(current_app.config["CONSTANTS"].CUSTOM_DOMAIN_REGEX, request.url) is None
-    ):
-        urlToRedirect = "https://coursefinity.social" + request.full_path
-        write_log_entry(logMessage=f"Redirected user from {request.url} to {urlToRedirect}")
-        return redirect(urlToRedirect, code=301)
-
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
         print("Route Error: Either Does Not Exist or Cannot Access")
@@ -114,6 +109,10 @@ def before_request() -> None:
             adminWhitelistedIP = json.loads(
                 current_app.config["SECRET_CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
             )
+            # try:
+            #     validate(instance=adminWhitelistedIP, schema=schema)
+            # except:
+            #     print("Error in JSON Schema")
         else:
             adminWhitelistedIP = ["127.0.0.1"]
 
@@ -127,28 +126,36 @@ def before_request() -> None:
         session.clear()
 
     if (request.endpoint != "static"):
+        # Retrieve the roles database, there could be a better way to do this
+        roles = sql_operation(table="role", mode="retrieve_all")
+        roleTable = {}
+        for idx, role in enumerate(roles): # iterate through each role and append the information to a list
+            currentRoleName = current_app.config["CONSTANTS"].ROLE_NAME_ORDER_TUPLE[idx]
+            roleTable[currentRoleName] = RoleInfo(role).format_blueprints_for_checking()
+
         requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
         print("Request Endpoint:", request.endpoint)
-        if ("user" in session and requestBlueprint in current_app.config["CONSTANTS"].USER_BLUEPRINTS):
+        print("Request Blueprint:", requestBlueprint)
+        if ("user" in session and requestBlueprint in roleTable["Student"]):
             pass # allow the user to access the page
 
-        elif("user" in session and requestBlueprint in current_app.config["CONSTANTS"].TEACHER_BLUEPRINTS):
-            userInfo = sql_operation(table="user", mode="get_user_data", userID=session["user"])
-            if (userInfo.role != "Teacher"):
-                return abort(404) # allow the teacher to access the page
-            pass
+        elif ("user" in session and requestBlueprint in roleTable["Teacher"]):
+            if (session.get("isTeacher", False)):
+                pass # allow the teacher to access the page
+            else:
+                return abort(404)
 
         elif ("admin" in session):
-            isSuperAdmin = sql_operation(table="user", mode="check_if_superadmin", userID=session["admin"])
-            if (not isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].ADMIN_BLUEPRINTS):
+            isSuperAdmin = session.get("isSuperAdmin", False)
+            if (not isSuperAdmin and requestBlueprint in roleTable["Admin"]):
                 pass # allow the admin to access the page
-            elif (isSuperAdmin and requestBlueprint in current_app.config["CONSTANTS"].SUPER_ADMIN_BLUEPRINTS):
+            elif (isSuperAdmin and requestBlueprint in roleTable["SuperAdmin"]):
                 pass # allow the superadmin to access the page
             else:
                 # if the admin is not allowed to access the page, abort 404
                 return abort(404)
 
-        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in current_app.config["CONSTANTS"].GUEST_BLUEPRINTS):
+        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in roleTable["Guest"]):
             pass # allow the guest user to access the page
 
         else:

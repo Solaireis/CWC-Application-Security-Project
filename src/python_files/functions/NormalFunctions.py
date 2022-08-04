@@ -40,6 +40,7 @@ import PIL, pymysql, shlex, platform
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
+from jsonschema import validate
 
 # import Flask libraries
 from flask import url_for, flash, Markup, current_app
@@ -70,6 +71,10 @@ from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
+
+schema = {
+    
+}
 
 def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
@@ -335,10 +340,10 @@ def send_change_password_alert_email(email:str="") -> None:
     Args:
     - email (str): The email of the user.
     """
-    htmlBody = [
+    htmlBody = (
         f"Your CourseFinity account, {email}, password has been found to be compromised in a data breach!",
         f"Please change your password immediately by clicking the link below.<br>Change password:<br>{url_for('userBP.updatePassword', _external=True)}"
-    ]
+    )
     send_email(to=email, subject="Security Alert", body="<br><br>".join(htmlBody))
     flash(
         Markup(f"Your password has been compromised in a data breach, please <a href='{url_for('userBP.updatePassword')}'>change your password</a> immediately!"),
@@ -571,15 +576,16 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
     - A random byte string of length nBytes if returnHex is False.
     - A random hex string of length nBytes if returnHex is True.
     """
-    if (not generateFromHSM):
+    if (nBytes < 1):
+        raise ValueError("nBytes must be greater than 0!")
+
+    # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes, 
+    # fallback to secrets library if nBytes is less than 8
+    if (not generateFromHSM or nBytes < 8):
         return token_hex(nBytes) if (returnHex) else token_bytes(nBytes)
 
     # Construct the location name
     locationName = SECRET_CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
-
-    # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes.
-    if (nBytes < 8):
-        nBytes = 8
 
     # Check if the number of bytes exceeds GCP KMS RNG Cloud HSM limit
     if (nBytes > 1024):
@@ -1019,6 +1025,10 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
 
             # get the data payload and its data type
             payloadInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[1]).decode("utf-8"))
+            # try:
+            #     validate(instance=payloadInfo, schema=schema)
+            # except:
+            #     raise KeyError("payload not found in data")
             if ("payload" not in payloadInfo):
                 raise KeyError("payload not found in data")
             dataType = payloadInfo["data_type"]
@@ -1031,6 +1041,10 @@ def EC_verify(data:Union[dict, bytes, str]="", getData:Optional[bool]=False) -> 
 
             # get the key info
             keyInfo = json.loads(urlsafe_b64decode(b64EncodedDataList[0]).decode("utf-8"))
+            # try:
+            #     validate(instance=keyInfo, schema=schema)
+            # except:
+            #     raise KeyError("key error in json")
             keyID = keyInfo["key_id"]
             if (keyID not in CONSTANTS.AVAILABLE_KEY_IDS):
                 raise KeyError("key not found in GCP KMS")
@@ -1315,6 +1329,10 @@ def get_gmail_client() -> Resource:
 
     # get the token.json file from Google Cloud Secret Manager API
     GOOGLE_TOKEN = json.loads(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
+    # try:
+    #     validate(instance=GOOGLE_TOKEN, schema=schema)
+    # except:
+    #     print("Error in Json schema")
 
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 
@@ -1475,6 +1493,10 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
         args = shlex.split(cmd)
         # run the ffprobe process, decode stdout into utf-8 & convert to JSON
         dimensions = json.loads(check_output(args).decode('utf-8'))["streams"][0]
+        # try:
+        #     validate(instance=dimensions, schema=schema)
+        # except:
+        #     print("Error in Json schema")
     else:
         # To maintain standard size; also quickly helps remove anything that isn't an image with a video extension.
         # shell = False helps prevent command injection, but idk if it messes with the code
@@ -1483,6 +1505,10 @@ def convert_to_mpd(courseID:str, fileSuffix:str) -> bool:
     try:
         if (platform.system() != "Darwin"):
             dimensions = json.loads(dimensions.stdout.decode("utf-8"))["streams"][0]
+            # try:
+            #     validate(instance=dimensions, schema=schema)
+            # except:
+            #     print("Error in Json schema")
         print(dimensions)
     except KeyError:
         error = dimensions.stderr.decode("utf-8")

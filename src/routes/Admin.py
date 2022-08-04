@@ -23,6 +23,9 @@ def adminProfile():
 
 @adminBP.route("/user-management", methods=["GET","POST"])
 def userManagement():
+    if (session.get("isSuperAdmin")):
+        return redirect(url_for("superAdminBP.adminManagement"))
+
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -62,14 +65,14 @@ def userManagement():
                     token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
                     sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
 
-                    htmlBody = [
+                    htmlBody = (
                         "Great news! Your account has been recovered by an administrator on our side.<br>",
                         f"Your account email address has been changed to {newEmail} during the account recovery process.",
                         "However, you still need to reset your password by clicking the link below.<br>",
                         "Please click the link below to reset your password.",
                         f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
                         "Note: This link will ONLY expire upon usage."
-                    ]
+                    )
                     send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))
                 except (SameAsOldEmailError):
                     flash("The new email entered is the same as the old email...", "Error recovering user's account!")
@@ -87,7 +90,7 @@ def userManagement():
                 flash("The user's account is not in the process of being recovered.", "Error Revoking Recovery Process!")
 
         elif (formType == "deleteUser"):
-            sql_operation(table="user", mode="delete_user", userID=userID)
+            sql_operation(table="user", mode="delete_user_data", userID=userID)
             flash(f"The user, {userID}, has been deleted.", "User Deleted!")
 
         elif (formType == "changeUsername"):
@@ -128,9 +131,12 @@ def userManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(
+            table="user", mode="paginate_users", pageNum=pageNum, 
+            userInput=unquote_plus(userInput), filterType=filterInput, role="User"
+        )
     else:
-        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum)
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="User")
 
     if (pageNum > maxPage):
         if (userInput is not None):

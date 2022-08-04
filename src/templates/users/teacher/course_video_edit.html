@@ -1,9 +1,7 @@
 {% extends "user_base.html" %}
 {% block head %}
-{% from "includes/_videoHelper.html" import video_styles %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/create_course.css') }}">
 <script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
-{{ video_styles() }}
 {% endblock %}
 
 {% block title %}Create Course | CourseFinity{% endblock %}
@@ -44,7 +42,7 @@
                     <input type="hidden" name="submittedForm" value="courseDetails">
                     <h4 class="text-white">Course Edit</h4>
                     <div class="col-md-4 border-end border-white">
-                        {{ video_player(imagePath) }}
+                        {{ video_player(videoData) }}
                         <!--<video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
                             <source src="{{ videoPath }}" type="video/mp4">
                             Your browser does not support the video tag.
@@ -160,5 +158,7 @@
             </script>
         {% endif %}
     {% endwith %}
-    {{ video_scripts(videoPath) }}
+    {% if videoData != None %}
+        {{ video_scripts() }}
+    {% endif %}
 {% endblock %}

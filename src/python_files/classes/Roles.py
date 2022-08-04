@@ -1,3 +1,6 @@
+# import third party libraries
+from .Constants import CONSTANTS
+
 class RoleInfo:
     def __init__(self, tupleData:tuple=None):
         """
@@ -10,7 +13,7 @@ class RoleInfo:
         Note that all attributes are public.
         """
         self.__roleID = tupleData[0]
-        self.__roleName= tupleData[1]
+        self.__roleName = tupleData[1]
         self.__guestBP = bool(tupleData[2])
         self.__generalBP = bool(tupleData[3])
         self.__adminBP = bool(tupleData[4])
@@ -19,6 +22,25 @@ class RoleInfo:
         self.__teacherBP = bool(tupleData[7])
         self.__userBP = bool(tupleData[8])
         self.__superAdminBP = bool(tupleData[9])
+
+    def format_blueprints_to_array(self) -> tuple:
+        """
+        Returns a tuple of the blueprint attributes of the class.
+        """
+        return (
+            self.__guestBP, self.__generalBP, self.__adminBP, 
+            self.__loggedInBP, self.__errorBP, self.__teacherBP, self.__userBP, self.__superAdminBP
+        )
+
+    def format_blueprints_for_checking(self) -> tuple:
+        """
+        Returns a tuple of the blueprint attributes of the class.
+        """
+        blueprintArr = []
+        for idx, blueprint in enumerate(self.format_blueprints_to_array()):
+            if (blueprint):
+                blueprintArr.append(CONSTANTS.BLUEPRINT_ORDER_TUPLE[idx])
+        return tuple(blueprintArr)
 
     @property
     def roleID(self) -> str:

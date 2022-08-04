@@ -59,56 +59,20 @@
 
     <div class="container container_margin">
         <div class="row">
-            <div class="col-lg-3 merge-boxes">
-                <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
-                    <h4><span class="fs-4">SuperAdmin Dashboard</span></h4>
-                    <hr>
-                    <ul class="nav nav-pills flex-column mb-auto">
-                        <li class="nav-item">
-                            <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white">
-                                Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('adminBP.adminProfile') }}" class="nav-link text-white">
-                                Account Settings
-                            </a>
-                        </li>
-                    
-                        <li class="nav-item">
-                            <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white ">
-                                Admin Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('superAdminBP.roleManagement') }}" class="nav-link text-white ">
-                                Role Base Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ url_for('superAdminBP.createAdmin') }}" class="nav-link text-white active-custom">
-                                Create Admin
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+            {% include "includes/_admin_sidebar.html" %}
             <div class="col-lg-9 merge-boxes">
                 <div id="right-user">
                     <div class="container">
                         <div class="row">
                             <form action="" method="POST" >
                                 <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                
                                 <h6>
-                                    You are creating an administrator role
+                                    You are creating an administrator account
                                 </h6>
-                                
-                                    {{ render_field(form.username,  class="form-control") }}
-                                    {{ render_field(form.email,  class="form-control") }}
-                                    <button type="reset" class="btn btn-danger" >Cancel</button>
-                                    <button type="submit" class="btn btn-success">Create</button>
-                                            
+                                {{ render_field(form.username,  class="form-control") }}
+                                {{ render_field(form.email,  class="form-control") }}
+                                <button type="reset" class="btn btn-danger" >Cancel</button>
+                                <button type="submit" class="btn btn-success">Create</button>
                             </form>
                         </div>
                     </div>

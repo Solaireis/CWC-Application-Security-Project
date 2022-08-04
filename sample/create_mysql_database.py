@@ -62,8 +62,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     - The connection to the database (mysql connection object)
     """
     # Restrict connections to be made from localhost if in debug mode
-    # else if not in debug mode, restrict to our custom domain, "coursefinity.social"
-    hostName = "localhost" if (debug) else "coursefinity.social" 
+    # else if not in debug mode, restrict to our cloud run domain, "https://coursefinity-o3rc5pl4fa-uc.a.run.app
+    hostName = "localhost" if (debug) else "%" # TODO: Fix hostname restriction issue
 
     definer = f"coursefinity`@`{hostName}"
     mydb = NormalFunctions.get_mysql_connection(debug=debug, database=None, user="root")
@@ -97,14 +97,13 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         id VARCHAR(32) PRIMARY KEY, 
         role INTEGER UNSIGNED NOT NULL,
         username VARCHAR(255) NOT NULL UNIQUE, 
-        email VARCHAR(255) NOT NULL UNIQUE, 
+        email VARCHAR(255), 
         email_verified BOOLEAN NOT NULL DEFAULT FALSE,
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
-        cart_courses JSON DEFAULT NULL, -- will be deleted soon
         purchased_courses JSON DEFAULT NULL, -- can be null for admin user
-        status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned')) DEFAULT 'Active',
+        status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned', 'Deleted')) DEFAULT 'Active',
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
     cur.execute("CREATE INDEX user_role_idx ON user(role)")
@@ -137,22 +136,16 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_id CHAR(32) NOT NULL,
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-        FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
+        FOREIGN KEY (course_id) REFERENCES course(course_id) 
     )""")
 
-    cur.execute("""CREATE TABLE deleted_teacher_courses (
-        course_id CHAR(32) PRIMARY KEY,
-        teacher_name VARCHAR(255) NOT NULL,
-        teacher_email VARCHAR(255) NOT NULL,
-        course_name VARCHAR(255) NOT NULL,
-        course_description VARCHAR(2000) DEFAULT NULL,
-        course_image_path VARCHAR(255) DEFAULT NULL,
-        course_price DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
-        course_category VARCHAR(255) NOT NULL,
-        date_created DATETIME NOT NULL,
-        video_path VARCHAR(255) NOT NULL
+    cur.execute("""CREATE TABLE purchased_courses(
+        user_id VARCHAR(32) NOT NULL,
+        course_id CHAR(32) NOT NULL,
+        PRIMARY KEY (user_id, course_id),
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES course(course_id)
     )""")
-    cur.execute("CREATE INDEX deleted_teacher_courses_teacher_name_idx ON deleted_teacher_courses(teacher_name)")
 
     cur.execute("""CREATE TABLE draft_course (
         course_id CHAR(32) PRIMARY KEY,
@@ -172,22 +165,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         payment_time DATETIME,
         amount DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
         receipt_email VARCHAR(255),
-        FOREIGN KEY (user_id) REFERENCES user(id)
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX stripe_payments_user_idx ON stripe_payments(user_id)")
-
-    cur.execute("""CREATE TABLE deleted_user_stripe_payments (
-        payment_id VARCHAR(32) PRIMARY KEY,
-        username VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        cart_courses JSON NOT NULL,
-        stripe_payment_intent VARCHAR(32), -- actual length 27, but may change in the future; generate_id() has 32
-        created_time DATETIME NOT NULL,
-        payment_time DATETIME,
-        amount DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)
-        receipt_email VARCHAR(255)  
-    )""")
-    cur.execute("CREATE INDEX deleted_user_stripe_payments_username_idx ON deleted_user_stripe_payments(username)")
 
     cur.execute("""CREATE TABLE user_ip_addresses (
         user_id VARCHAR(32) NOT NULL,
@@ -255,7 +235,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
         PRIMARY KEY (user_id, course_id),
         FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-        FOREIGN KEY (course_id) REFERENCES course(course_id) ON DELETE CASCADE
+        FOREIGN KEY (course_id) REFERENCES course(course_id) 
     )""")
     cur.execute("CREATE INDEX review_user_id_idx ON review(user_id)")
     cur.execute("CREATE INDEX review_course_id_idx ON review(course_id)")
@@ -267,25 +247,24 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     # Stored Procedures
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `delete_user`(IN user_id_input VARCHAR(32))
+        CREATE DEFINER=`{definer}` PROCEDURE `delete_user_data`(IN user_id_input VARCHAR(32))
         BEGIN
-            INSERT INTO deleted_teacher_courses 
-            (course_id, teacher_name, email, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path) 
-            SELECT c.course_id, u.username, u.email, c.course_name, c.course_description, c.course_image_path, c.course_price, c.course_category, c.date_created, c.video_path
-            FROM course AS c
-            INNER JOIN user AS u ON c.teacher_id = u.id
-            WHERE c.teacher_id = user_id_input;
-            DELETE FROM course WHERE teacher_id = user_id_input;
+            UPDATE course SET active=0 WHERE teacher_id=user_id_input;
 
-            INSERT INTO deleted_user_stripe_payments
-            (payment_id, username, email, cart_courses, stripe_payment_intent, created_time, payment_time, amount, receipt_email)
-            SELECT s.payment_id, u.username, u.email, s.cart_courses, s.stripe_payment_intent, s.created_time, s.payment_time, s.amount, s.receipt_email
-            FROM stripe_payments AS s
-            INNER JOIN user AS u ON s.user_id = u.id
-            WHERE s.user_id = user_id_input;
-            DELETE FROM stripe_payments WHERE user_id = user_id_input;
+            UPDATE user SET email=NULL, password=NULL, profile_image=NULL, status='Deleted', 
+            role=(SELECT role_id FROM role WHERE role_name='Student'),
+            username=CONCAT('deleted-user-', UUID())
+            WHERE id=user_id_input;
 
-            DELETE FROM user WHERE id = user_id_input;
+            DELETE FROM purchased_courses WHERE user_id=user_id_input;
+            DELETE FROM draft_course WHERE teacher_id = user_id_input;
+            DELETE FROM review WHERE user_id = user_id_input;
+            DELETE FROM review WHERE course_id IN (SELECT course_id FROM course WHERE teacher_id = user_id_input);
+            DELETE FROM user_ip_addresses WHERE user_id = user_id_input;
+            DELETE FROM twofa_token WHERE user_id = user_id_input;
+            DELETE FROM login_attempts WHERE user_id = user_id_input;
+            DELETE FROM session WHERE user_id = user_id_input;
+            DELETE FROM recovery_token WHERE user_id = user_id_input;
         END
     """)
     cur.execute(f"""
@@ -327,21 +306,49 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id VARCHAR(32))
+        CREATE DEFINER=`{definer}` PROCEDURE `get_user_data` (IN user_id_input VARCHAR(32), IN get_cart_data BOOLEAN)
         BEGIN
             SELECT
             u.id, r.role_name, u.username, 
             u.email, u.email_verified, u.password, 
-            u.profile_image, u.date_joined, u.cart_courses, 
-            u.purchased_courses, u.status, t.token AS has_two_fa
+            u.profile_image, u.date_joined, 
+            IF(get_cart_data, (SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=user_id_input), NULL) AS cart_courses,
+            u.status, t.token AS has_two_fa
             FROM user AS u
             LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
             INNER JOIN role AS r ON u.role=r.role_id
-            WHERE u.id=user_id;
+            WHERE u.id=user_id_input;
         END
     """)
-    
-    """Pagination Functions"""
+
+    # Pagination Functions
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_purchased_courses` (IN user_id_input VARCHAR(32), IN page_number INT)
+        BEGIN
+            SET @total_course_num := (SELECT COUNT(*) FROM purchased_courses WHERE user_id=user_id);
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num,
+            course_info.* FROM (
+                SELECT c.course_id, c.teacher_id, 
+                u.username, u.profile_image, c.course_name, c.course_description, 
+                c.course_image_path, c.course_price, c.course_category, c.date_created, 
+                ROUND(SUM(r.course_rating) / COUNT(r.user_id), 0) AS avg_rating, @total_course_num
+                FROM course AS c
+                LEFT OUTER JOIN review AS r ON c.course_id=r.course_id
+                INNER JOIN user AS u ON c.teacher_id=u.id
+                INNER JOIN purchased_courses AS pc ON pc.course_id=c.course_id
+                WHERE pc.user_id=user_id_input
+                GROUP BY c.course_id
+                ORDER BY c.date_created DESC -- show most recent courses first
+            ) AS course_info
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
@@ -367,7 +374,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
 
-    #For Drafting
+    # For Drafting
     cur.execute(f"""
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_draft_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
@@ -447,7 +454,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SET @total_user := (SELECT COUNT(*) FROM user AS u
                                 INNER JOIN role AS r ON u.role=r.role_id
-                                WHERE r.role_name='Student' OR r.role_name='Teacher');
+                                WHERE r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
             SET @count := 0;
@@ -455,12 +462,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE r.role_name='Student' OR r.role_name='Teacher'
+                WHERE r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -482,12 +489,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE r.role_name = 'Admin'
+                WHERE r.role_name = 'Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -511,12 +518,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE username LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
+                WHERE username LIKE @search_query AND r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -539,12 +546,11 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined, u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE username LIKE @search_query AND r.role_name='Admin'
+                WHERE username LIKE @search_query AND r.role_name='Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -568,12 +574,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.id LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
+                WHERE u.id LIKE @search_query AND r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -596,12 +602,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.id LIKE @search_query AND r.role_name='Admin'
+                WHERE u.id LIKE @search_query AND r.role_name='Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
             HAVING row_num > @page_offset
@@ -625,12 +631,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user 
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user 
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.email LIKE @search_query AND r.role_name IN ('Student', 'Teacher')
+                WHERE u.email LIKE @search_query AND r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
@@ -653,12 +659,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.cart_courses, 
-                u.purchased_courses, u.status, t.token AS has_two_fa, @total_user 
+                u.profile_image, u.date_joined,
+                u.status, t.token AS has_two_fa, @total_user 
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
-                WHERE u.email LIKE @search_query AND r.role_name='Admin'
+                WHERE u.email LIKE @search_query AND r.role_name='Admin' AND u.status <> 'Deleted'
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
@@ -688,35 +694,35 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("INSERT INTO role (role_name) VALUES ('SuperAdmin')")
     cur.execute("INSERT INTO role (role_name) VALUES ('Guest')")
 
-    #insert into student role the rbac
+    # insert into student role the rbac
     cur.execute("""
         UPDATE role SET 
-        guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0
+        guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=1 , super_admin_bp=0
         WHERE role_id = 1;
     """)
 
-    #insert into Teacher role the rbac
+    # insert into Teacher role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=0, general_bp=1, admin_bp=0, logged_in_bp=1, error_bp=1, teacher_bp=1, user_bp=1 , super_admin_bp=0
         WHERE role_id = 2;
     """)
 
-    #insert into Admin role the rbac
+    # insert into Admin role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=0, general_bp=1, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0
         WHERE role_id = 3;
     """)
 
-    #insert into Super Admin role the rbac
+    # insert into Super Admin role the rbac
     cur.execute("""
         UPDATE role SET 
-        guest_bp=0, general_bp=0, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=1
+        guest_bp=0, general_bp=1, admin_bp=1, logged_in_bp=1, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=1
         WHERE role_id = 4;
     """)
 
-    #insert into Guest role the rbac
+    # insert into Guest role the rbac
     cur.execute("""
         UPDATE role SET 
         guest_bp=1, general_bp=1, admin_bp=0, logged_in_bp=0, error_bp=1, teacher_bp=0, user_bp=0 , super_admin_bp=0
@@ -750,6 +756,7 @@ if (__name__ == "__main__"):
         else:
             debugFlag = True if (debugPrompt != "n") else False
             break
+
     try:
         deactivate_stripe_courses(debug=debugFlag)
     except pymysql.err.ProgrammingError:

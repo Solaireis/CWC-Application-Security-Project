@@ -11,7 +11,6 @@ from python_files.functions.NormalFunctions import *
 from python_files.classes.Roles import RoleInfo
 from python_files.classes.Forms import *
 
-
 superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", template_folder="template")
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
@@ -55,14 +54,14 @@ def adminManagement():
                     token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
                     sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
 
-                    htmlBody = [
+                    htmlBody = (
                         "Great news! Your account has been recovered by an administrator on our side.<br>",
                         f"Your account email address has been changed to {newEmail} during the account recovery process.",
                         "However, you still need to reset your password by clicking the link below.<br>",
                         "Please click the link below to reset your password.",
                         f"<a href='{url_for('guestBP.recoverAccount', _external=True, token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
                         "Note: This link will ONLY expire upon usage."
-                    ]
+                    )
                     send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))
                 except (SameAsOldEmailError):
                     flash("The new email entered is the same as the old email...", "Error recovering user's account!")
@@ -121,10 +120,13 @@ def adminManagement():
             filterInput = "username"
 
         userInput = userInput[:100] # limit user input to 100 characters to avoid buffer overflow when querying in MySQL
-        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", pageNum=pageNum, userInput=unquote_plus(userInput), filterType=filterInput)
+        userArr, maxPage = sql_operation(
+            table="user", mode="paginate_users", pageNum=pageNum, 
+            userInput=unquote_plus(userInput), filterType=filterInput, role="Admin"
+        )
     else:
-        print(sql_operation(table="user", mode="paginate_admins", pageNum=pageNum))
-        userArr, maxPage = sql_operation(table="user", mode="paginate_admins", pageNum=pageNum)
+        # print(sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="Admin"))
+        userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="Admin")
 
     if (pageNum > maxPage):
         if (userInput is not None):
@@ -145,7 +147,7 @@ def adminManagement():
     return render_template("users/superadmin/admin_management.html", currentPage=pageNum, userArr=userArr, maxPage=maxPage, paginationArr=paginationArr, form=recoverUserForm )
 
 @superAdminBP.route("/admin-rbac", methods=["GET","POST"])
-def roleManagement(): #TODO Create Admin Accounts Create a form to edit the roles permission, first retrieve the information
+def roleManagement(): 
     role = sql_operation(table="role", mode="retrieve_all")
     roleList = []
     for role in role:
@@ -156,28 +158,15 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         print(role.roleName)
 
     form = UpdateRoles(request.form)
-    if (request.method == "POST" and form.validate()):
-        # formType = request.form.get("formType", default=None, type=str)
+    if (request.method == "POST" ):
 
         roleName = form.roleName.data
-        guestBP = form.guestBP.data
-        generalBP = form.generalBP.data
-        adminBP = form.adminBP.data
-        loggedInBP = form.loggedInBP.data
-        errorBP = form.errorBP.data
-        teacherBP = form.teacherBP.data
-        userBP = form.userBP.data
-        superAdminBP = form.superAdminBP.data
-
-        guestBP1 = request.form.get("guestBP1", default="off", type=str)
-        generalBP1 = request.form.get("generalBP1", default="off", type=str)
-        adminBP1 = request.form.get("adminBP1", default="off", type=str)
-        loggedInBP1 = request.form.get("loggedInBP1", default="off", type=str)
-        errorBP1 = request.form.get("errorBP1", default="off", type=str)
-        teacherBP1 = request.form.get("teacherBP1", default="off", type=str)
-        userBP1 = request.form.get("userBP1", default="off", type=str)
-        superAdminBP1 = request.form.get("superAdminBP1", default="off", type=str)
-        print(guestBP1, generalBP1, adminBP1, loggedInBP1, errorBP1, teacherBP1, userBP1, superAdminBP1)
+        guestBP = request.form.get("guestBP1", default="off", type=str)
+        generalBP = request.form.get("generalBP1", default="off", type=str)
+        adminBP = request.form.get("adminBP1", default="off", type=str)
+        loggedInBP = request.form.get("loggedInBP1", default="off", type=str)
+        teacherBP = request.form.get("teacherBP1", default="off", type=str)
+        userBP = request.form.get("userBP1", default="off", type=str)
 
         # TODO: create input validations for the form
 
@@ -185,15 +174,13 @@ def roleManagement(): #TODO Create Admin Accounts Create a form to edit the role
         generalBP = True if (generalBP.lower() == "on") else False
         adminBP = True if (adminBP.lower() == "on") else False
         loggedInBP = True if (loggedInBP.lower() == "on") else False
-        errorBP = True if (errorBP.lower() == "on") else False # TODO: Remove later
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
-        superAdminBP = True if (superAdminBP.lower() == "on") else False # TODO: Remove later
-
+        
         sql_operation(
             table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
-            adminBP=adminBP, loggedInBP=loggedInBP, errorBP=errorBP, teacherBP=teacherBP, 
-            userBP=userBP, superAdminBP=superAdminBP
+            adminBP=adminBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
+            userBP=userBP
         )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))

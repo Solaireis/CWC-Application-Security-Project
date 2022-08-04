@@ -61,7 +61,7 @@
     <script nonce="{{ csp_nonce() }}">
         function onSubmit(token) {
             document.getElementById("dropper").submit();
-        }
+        };
     </script>
     {% with messages = get_flashed_messages() %}
         {% if messages %}

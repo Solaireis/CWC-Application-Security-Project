@@ -18,22 +18,17 @@
     padding:0px 10vw;
 }
 
-.contact-form label {
-    display:none;
-}
-
 .contact-form button {
     text-align:center;
     display:block;
 }
 
-.contact-form input, .contact-form select, .contact-form textarea, .contact-form button, .text-danger {
-    margin:1em auto;
-    width:75%;
-}
-
 .contact-form textarea {
     resize:vertical;
+}
+
+.contact-form label {
+    margin-top: 1rem;
 }
 
 .response-div h3 {
@@ -45,7 +40,7 @@
     padding:5px;
 }
 
-@media only screen and (max-width: 600px) {
+@media only screen and (max-width: 700px) {
     .icon-div {
         display:none;
     }

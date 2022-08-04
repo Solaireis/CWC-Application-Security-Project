@@ -12,6 +12,7 @@ from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Reviews import Reviews
 from python_files.classes.Course import get_readable_category
+from python_files.classes.Forms import ContactUsForm
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import limiter
 
@@ -23,22 +24,24 @@ limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(general
 
 @generalBP.route("/")
 def home():
-    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses")
-    threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses")
-
-    userPurchasedCourses = []
     accType = imageSrcPath = None
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo.purchasedCourses
         accType = userInfo.role
         imageSrcPath = userInfo.profileImage
     elif ("admin" in session):
         accType = "Admin"
 
+    if (accType not in ("Student", "Teacher")):
+        userID = None
+    else:
+        userID = session["user"]
+
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", userID=userID)
+    threeHighlyRatedCourses = sql_operation(table="course", mode="get_3_highly_rated_courses", userID=userID)
+
     return render_template(
         "users/general/home.html", imageSrcPath=imageSrcPath,
-        userPurchasedCourses=userPurchasedCourses,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType
     )
@@ -68,21 +71,24 @@ def teacherPage(teacherID:str):
     if (teacherInfo is None or teacherInfo.role != "Teacher"):
         abort(404) # prevent users from using other ids except existing teachers
 
-    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False)
-    threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True)
-
     teacherProfilePath = get_image_path(userID=teacherID)
 
     accType = imageSrcPath = None
-    userPurchasedCourses = {}
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
-        userPurchasedCourses = userInfo.purchasedCourses
         accType = userInfo.role
         imageSrcPath = userInfo.profileImage
 
+    if (accType not in ("Student", "Teacher")):
+        userID = None
+    else:
+        userID = session["user"]
+
+    latestThreeCourses = sql_operation(table="course", mode="get_3_latest_courses", teacherID=teacherID, getTeacherUsername=False, userID=userID)
+    threeHighlyRatedCourses, teacherUsername = sql_operation(table="course", mode="get_3_highly_rated_courses", teacherID=teacherID, getTeacherUsername=True, userID=userID)
+
     return render_template("users/general/teacher_page.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherUsername=teacherUsername,
+        imageSrcPath=imageSrcPath, teacherUsername=teacherUsername,
         teacherProfilePath=teacherProfilePath, teacherID=teacherID,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
         latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
@@ -98,9 +104,15 @@ def allCourses(teacherID:str):
         if (accType == "Teacher" and userID == teacherID):
             return redirect(url_for("teacherBP.courseList"))
 
+    if (accType not in ("Student", "Teacher")):
+        userID = None
+    else:
+        userID = session["user"]
+
     page = request.args.get("p", default=1, type=int)
     courseList, maxPage, teacherName = sql_operation(
-        table="course", mode="get_all_courses_by_teacher", pageNum=page, teacherID=teacherID, getTeacherName=True
+        table="course", mode="get_all_courses_by_teacher", pageNum=page, 
+        teacherID=teacherID, getTeacherName=True, userID=userID
     )
     paginationArr = []
     if (len(courseList) != 0):      
@@ -148,16 +160,18 @@ def coursePage(courseID:str):
     #TODO: Pagnination required.
 
     accType = imageSrcPath = None
-    userPurchasedCourses = {}
+    purchased = isInCart = False
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         imageSrcPath = userInfo.profileImage
-        userPurchasedCourses = userInfo.purchasedCourses
+        isInCart, purchased = sql_operation(
+            table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID
+        )
         accType = userInfo.role
 
     return render_template(
         "users/general/course_page.html",
-        imageSrcPath=imageSrcPath, userPurchasedCourses=userPurchasedCourses, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
+        imageSrcPath=imageSrcPath, purchased=purchased, isInCart=isInCart, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
         accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
     )
 
@@ -365,8 +379,51 @@ def faq():
 
 @generalBP.route("/contact-us", methods=["GET", "POST"])
 def contactUs():
-    # TODO: Wei Ren to do the contact us page and form
-    return "Work in progress"
+    accType = imageSrcPath = None
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
+
+    contactUsForm = ContactUsForm(request.form)
+    if (request.method == "POST" and contactUsForm.validate()):
+        email = contactUsForm.email.data.lower()
+        if (email in current_app.config["CONSTANTS"].COURSEFINITY_SUPPORT_EMAILS):
+            flash(
+                Markup("You can't just use our support email and expect the support team to help themselves. However, as a token of appreciation, you can click <a href='https://youtu.be/dQw4w9WgXcQ' target='_blank' rel='nofollow noopener'>here</a> for one of our easter eggs."),
+                "Excuse me!?"
+            )
+            return render_template(
+                "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+            )
+
+        name = contactUsForm.name.data
+        enquiryType = contactUsForm.enquiryType.data.title()
+        if (enquiryType not in current_app.config["CONSTANTS"].SUPPORT_ENQUIRY_TYPE):
+            flash("Please select a valid enquiry type!", "Invalid Enquiry Type!")
+            return render_template(
+                "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+            )
+
+        enquiryType = f"Support Enquiry: {enquiryType}"
+        enquiry = contactUsForm.enquiry.data
+        bodyHtml = (
+            "Thanks for contacting CourseFinity Support! We have received your contact form enquiry and will respond back as soon as we are able to.",
+            "For the fastest resolution to your enquiry, please provide the Support Team with as much information as possible and keep it contained to a this email instead of creating a new one.",
+            f"While you are waiting, you can check our FAQ page at {url_for('generalBP.faq', _external=True)} for solutions to common problems.",
+            f"Below is a copy of your enquiry:<br>{enquiry}"
+        )
+        send_email(to=email, subject=enquiryType, body="<br><br>".join(bodyHtml), name=name)
+        flash(
+            Markup("Your enquiry has been submitted successfully!<br>We will get back to you shortly!"),
+            "Enquiry Submitted!"
+        )
+
+    return render_template(
+        "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+    )
 
 @generalBP.route("/community-guidelines")
 def communityGuidelines():

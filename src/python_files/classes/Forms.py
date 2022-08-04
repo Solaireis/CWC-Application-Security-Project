@@ -1,5 +1,5 @@
 # import third party libraries
-from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, SelectField, BooleanField, DecimalField
+from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, BooleanField, DecimalField, SelectField
 
 # import local python libraries
 from .Constants import CONSTANTS
@@ -91,15 +91,26 @@ class CreateReview(Form):
 
 class UpdateRoles(Form):
     roleName = StringField("Role Name: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
-    guestBP = SelectField("Guest BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    generalBP = SelectField("General BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    adminBP = SelectField("Admin BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    loggedInBP = SelectField("Logged In BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    errorBP=SelectField("Error BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    teacherBP = SelectField("Teacher BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    userBP = SelectField("Student BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
-    superAdminBP = SelectField("Super Admin BP: ", [validators.DataRequired()], choices=[ ('0', 'Disable'),('1', 'Enable')])
 
 class CreateAdmin(Form):
     username = StringField("Enter username:", [validators.Length(min=1, max=30), validators.DataRequired()])
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
+
+class ContactUsForm(Form):
+    name = StringField("Name:", [validators.DataRequired()])
+    email = EmailField("Email:", [validators.DataRequired(), validators.Email()])
+    enquiryType = SelectField(
+        "Enquiry Type:", 
+        [validators.DataRequired()], 
+        choices=[
+            ("", "Select an Enquiry Type..."),
+            ("General", "General Enquiry"),
+            ("Account", "Account Enquiry"),
+            ("Business", "Business Enquiry"),
+            ("Bugs", "Bug Report"),
+            ("Jobs", "Job Seeking"),
+            ("News", "News Media"),
+            ("Others", "Others")
+        ]
+    )
+    enquiry = TextAreaField("Enquiry:", [validators.DataRequired()])

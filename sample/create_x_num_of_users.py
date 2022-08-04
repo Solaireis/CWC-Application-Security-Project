@@ -157,7 +157,7 @@ def main() -> None:
             userArr = cur.fetchall()
             userArr = [userID[0] for userID in userArr]
             for userID in userArr:
-                cur.execute("CALL delete_user(%(userID)s)", {"userID": userID})
+                cur.execute("CALL delete_user_data(%(userID)s)", {"userID": userID})
 
             con.commit()
             print("All user accounts deleted!\n")

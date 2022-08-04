@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
 from dicebear import DOptions
+from jsonschema import validate, ValidationError
 
 # For ipinfo.io to get details about a user's IP address
 import ipinfo
@@ -31,32 +32,30 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-# TODO: Change debug mode below ONLY!
-DEBUG_MODE = True
+#TODO: Ask what the secret payload json returns
+schema = {
+    
+}
 
 @dataclass(frozen=True, repr=False)
 class Constants:
     """This dataclass is used to store all the constants used in the application."""
     # Debug flag
-    DEBUG_MODE: bool = DEBUG_MODE 
+    DEBUG_MODE: bool = True 
 
-    # For redirecting user to the custom domain which is protected by Cloudflare
-    CUSTOM_DOMAIN_REGEX: re.Pattern[str] = re.compile(r"^(https://coursefinity\.social)(\/.*)?$")
+    # For RBAC checks (Follows the sequence of the MySQL columns in the database)
+    BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
+    ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
 
-    GUEST_BLUEPRINTS: tuple = ("guestBP", "generalBP","errorBP")
-    USER_BLUEPRINTS: tuple = ("generalBP", "userBP", "loggedInBP", "errorBP")
-    ADMIN_BLUEPRINTS: tuple = ("adminBP", "generalBP", "loggedInBP", "errorBP","userBP")
-    SUPER_ADMIN_BLUEPRINTS: tuple = ("superAdminBP", "generalBP", "loggedInBP", "errorBP","userBP","adminBP")
-    TEACHER_BLUEPRINTS: tuple = ("userBP", "generalBP", "loggedInBP", "errorBP","teacherBP") # it's better to seperate the teacher and student blueprints
+    # For the contact us form checks
+    COURSEFINITY_SUPPORT_EMAILS: tuple = ("coursefinity123@gmail.com",)
+    SUPPORT_ENQUIRY_TYPE: tuple = ("General", "Account", "Business", "Bugs", "Jobs", "News", "Others")
 
     # Request limit
     REQUEST_LIMIT: str = "120 per minute"
 
     # For lockout policy
-    MAX_LOGIN_ATTEMPTS: int = 6
-
-    # For Flask's session cookie key length
-    SESSION_NUM_OF_BYTES: int = 512
+    MAX_LOGIN_ATTEMPTS: int = 8
 
     # For removing session identifiers that has no activity for more than x mins 
     # (Expiry date will be updated per request to the web application)
@@ -110,17 +109,14 @@ class Constants:
     TWENTY_BYTES_2FA_REGEX: re.Pattern[str] = re.compile(r"^[A-Z2-7]{32}$")
     TWO_FA_CODE_REGEX: re.Pattern[str] = re.compile(r"^\d{6}$")
 
-    # Configured Argon2id default configurations so that it will take 
-    # at least +-200ms/0.2s to hash a plaintext password 
-    # on a decent Desktop PC (Ryzen 5 3600X + RTX2070 Super)
-    # i.e. around 5 hashes per minute
+    # Argon2id configurations
     PH: PasswordHasher = PasswordHasher(
-        time_cost=8,          # 8 count of iterations
-        salt_len=64,          # 64 bytes salt
-        hash_len=64,          # 64 bytes hash
-        parallelism=16,       # 16 threads
-        memory_cost=128*1024, # 128MiB
-        type=Argon2Type.ID    # using hybrids of Argon2i and Argon2d
+        time_cost=4,         # 4 count of iterations
+        salt_len=64,         # 64 bytes salt
+        hash_len=64,         # 64 bytes hash
+        parallelism=4,       # 4 threads
+        memory_cost=64*1024, # 64MiB
+        type=Argon2Type.ID   # using hybrids of Argon2i and Argon2d
     )
     # More helpful details on choosing the parameters for argon2id:
     # https://www.ory.sh/choose-recommended-argon2-parameters-password-hashing/#argon2s-cryptographic-password-hashing-parameters
@@ -133,6 +129,11 @@ class Constants:
     # For the Flask secret key when retrieving the secret key
     # from Google Secret Manager API
     FLASK_SECRET_KEY_NAME: str = "flask-secret-key"
+    FLASK_SALT_KEY_NAME: str = "flask-session-salt"
+
+    # For Flask session cookie
+    SESSION_NUM_OF_BYTES: int = 512
+    SALT_NUM_OF_BYTES: int = 64
 
     # For Stripe API
     STRIPE_PUBLIC_KEY: str = "pk_test_51LD90SEQ13luXvBj7mFXNdvH08TWzZ477fvvR82HNOriieL7nj230ZhWVFjLTczJVNcDx5oKUOMZuvkkrXUXxKMS00WKMQ3hDu"
@@ -148,15 +149,15 @@ class Constants:
     COURSEFINITY_SITE_KEY: str = "6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"
 
     # For Google Key Management Service API
-    LOCATION_ID: str = "asia-southeast1"
+    LOCATION_ID: str = "global"
 
     # During development, we will use software protected keys
     # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
     # Lastly, cryptographic operations will be cheaper 
     # ($0.03 per 10k operations vs $0.03-$0.15 per 10k operations)
     # More details: https://cloud.google.com/kms/pricing
-    APP_KEY_RING_ID: str = "dev-key-ring" if (DEBUG_MODE) else "coursefinity"
-    AVAILABLE_KEY_RINGS: tuple = ("dev-key-ring") if (DEBUG_MODE) else ("coursefinity")
+    APP_KEY_RING_ID: str = "coursefinity-global"
+    AVAILABLE_KEY_RINGS: tuple = ("coursefinity-global",)
 
     # For encrypting data in the database
     PEPPER_KEY_ID: str = "pepper-key"
@@ -298,8 +299,15 @@ class SecretConstants:
         # For Stripe API
         self.__STRIPE_SECRET_KEY = self.get_secret_payload(secretID="stripe-secret")
 
+        # For VdoCipher API
+        self.__VDOCIPHER_SECRET = self.get_secret_payload(secretID="vdocipher-secret")
+
         # For Google Cloud Logging API
         self.__LOGGING_CLIENT = gcp_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
+        # try:
+        #     validate(instance=self.__LOGGING_CLIENT, schema=schema)
+        # except ValidationError as e:
+        #     print("Schema Error")
         self.__GOOGLE_LOGGING_HANDLER = CloudLoggingHandler(self.__LOGGING_CLIENT, name=CONSTANTS.LOGGING_NAME)
 
         # For Google Gmail API
@@ -309,11 +317,19 @@ class SecretConstants:
         self.__RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-recaptcha"))
         )
+        # try:
+        #     validate(instance=self.__RECAPTCHA_CLIENT, schema=schema)
+        # except ValidationError as e:
+        #     print("Schema Error")
 
         # For Google Key Management Service API
         self.__KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-kms"))
         )
+        # try:
+        #     validate(instance=self.__KMS_CLIENT, schema=schema)
+        # except ValidationError as e:
+        #     print("Schema Error")
 
         # For Google MySQL Cloud API
         self.__SQL_CLIENT = MySQLConnector(
@@ -321,11 +337,19 @@ class SecretConstants:
                 json.loads(self.get_secret_payload(secretID="google-mysql"))
             )
         )
+        # try:
+        #     validate(instance=self.__LOGGING_CLIENT, schema=schema)
+        # except ValidationError as e:
+        #     print("Schema Error")
 
         # For Google Cloud Storage API
         self.__GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-storage"))
         )
+        # try:
+        #     validate(instance=self.__GOOGLE_STORAGE_CLIENT, schema=schema)
+        # except ValidationError as e:
+        #     print("Schema Error")
 
     """----------------------------------------- END OF DEFINING CONSTANTS -----------------------------------------"""
 
@@ -342,6 +366,10 @@ class SecretConstants:
     @property
     def STRIPE_SECRET_KEY(self) -> str:
         return self.__STRIPE_SECRET_KEY
+
+    @property
+    def VDOCIPHER_SECRET(self) -> str:
+        return self.__VDOCIPHER_SECRET
 
     @property
     def LOGGING_CLIENT(self) -> gcp_logging.Client:

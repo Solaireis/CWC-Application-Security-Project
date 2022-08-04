@@ -44,78 +44,6 @@
                             Update the roles permission
                             these are the roles permissions
                         </h6>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <tr>
-                                    <td>Role Name</td>
-                                    <td>Guest Routes</td>
-                                    <td>General Routes</td>
-                                    <td>Admin Routes</td>
-                                    <td>Logged in Routes</td>
-                                    <td>Error Routes</td>
-                                    <td>Teacher Routes</td>
-                                    <td>User Routes</td>
-                                    <td>SuperAdmin Routes</td>
-                                </tr>
-                                <tr>
-                                    <td>{{ role.roleName }}</td> 
-                                    {% if role.guestBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.generalBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.adminBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.loggedInBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.errorBP == 1 %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.teacherBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.userBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-
-                                    {% if role.superAdminBP %}
-                                        <td class="text-success">Enabled</td>
-                                    {% else %}
-                                        <td class="text-danger">Disabled</td>
-                                    {% endif %}
-                                </tr>
-                            </table>
-                            {{ render_field(form.guestBP,  class="form-control") }}
-                            {{ render_field(form.generalBP,  class="form-control") }}
-                            {{ render_field(form.adminBP, class="form-control") }}
-                            {{ render_field(form.loggedInBP,  class="form-control") }}
-                            {{ render_field(form.errorBP, class="form-control") }}
-                            {{ render_field(form.teacherBP,  class="form-control") }}
-                            {{ render_field(form.userBP, class="form-control") }}
-                            {{ render_field(form.superAdminBP,  class="form-control") }}
 
                             {% if role.guestBP == 1 %} <!-- if guest blueprints is set to on-->
                                 <div class="form-check form-switch">
@@ -168,20 +96,6 @@
                                 </div>
                             {% endif %}
 
-
-                            {% if role.errorBP == 1 %} <!-- if guest blueprints is set to on-->
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck5" checked disabled name="errorBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck5">Error BluePrints Access Control</label>
-                                </div>
-                            {% else %}
-                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck5" disabled name="errorBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck5">Error BluePrints Access Control</label>
-                                </div>
-                            {% endif %}
-
-
                             {% if role.teacherBP == 1 %} <!-- if guest blueprints is set to on-->
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="flexSwitchCheck6" checked name="teacherBP1">
@@ -193,7 +107,6 @@
                                     <label class="form-check-label" for="flexSwitchCheck6">Teacher BluePrints Access Control</label>
                                 </div>
                             {% endif %}
-
 
                             {% if role.userBP == 1 %} <!-- if guest blueprints is set to on-->
                                 <div class="form-check form-switch">
@@ -207,27 +120,9 @@
                                 </div>
                             {% endif %}
 
-
-                            {% if role.superAdminBP == 1 %} <!-- if guest blueprints is set to on-->
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck8" checked disabled name="superAdminBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck8">Super Admin BluePrints Access Control</label>
-                                </div>
-                            {% else %}
-                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck8" disabled name="superAdminBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck8">Super Admin BluePrints Access Control</label>
-                                </div>
-                            {% endif %}
-
-
-
-                        </div>
-                        <!-- Add forms to change the roles-->
-                    </div>
-                    <div class="modal-footer">
                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-success">Update</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -236,40 +131,7 @@
 {% endfor %}
 <div class="container container_margin">
     <div class="row">
-        <div class="col-lg-3 merge-boxes">
-            <div class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark" id="left-user">
-                <h4><span class="fs-4">SuperAdmin Dashboard</span></h4>
-                <hr>
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white">
-                            Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('adminBP.adminProfile') }}" class="nav-link text-white">
-                            Account Settings
-                        </a>
-                    </li>
-                
-                    <li class="nav-item">
-                        <a href="{{ url_for('superAdminBP.adminManagement') }}" class="nav-link text-white ">
-                            Admin Management
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('superAdminBP.roleManagement') }}" class="nav-link text-white active-custom">
-                            Role Base Management
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ url_for('superAdminBP.createAdmin') }}" class="nav-link text-white ">
-                            Create Admin
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </div>
+        {% include "includes/_admin_sidebar.html" %}
         <div class="col-lg-9 merge-boxes">
             <div id="right-user">
                 <div class="container">

@@ -44,12 +44,22 @@
     - References:
       - [SHATTERED](https://shattered.it/)
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
-    - Using Google Cloud Platform KMS API RNG in the Cloud HSM (4096 bits) for the symmetric key used in the HMAC algorithm.
+    - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
       - Ensures high entropy
+        - Generated key will have a high entropy as it is generated using a cryptographically secure random number generator (RNG) in the Cloud HSM.
+        - Since the max cookie size is 4093 bits, specified in Flask's default configuration, a key size must be at least 4093 bits will be needed to ensure high entropy as the key size must match the message size.
+          - If the key size is less than 4093 bits, the key will be padded with zeros to match the message size.
+            - Wil reduce the entropy of the key.
+          - If the key size is greater than 4093 bits, the key will be truncated to match the message size.
+            - No effect on the entropy of the key.
+          - If the key size is equal to 4093 bits, the key will be used as is.
+            - No effect on the entropy of the key.
       - Unlikely to be guessed ($2^{4096}$ possible keys)
       - Prevent session cookie from being tampered with
       - Automatically rotated at the end of each month
-      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
+      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)1
+  - Changing the default salt from "cookie-session" to something more secure using Google Cloud Platform KMS API RNG in the Cloud HSM
+    - The randomly generated 64 bytes salt will be stored in Google Cloud Platform Secret Manager API.
 
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
@@ -69,13 +79,14 @@
     - Argon2id
     - On average, the time taken to hash a password is about 0.05+- seconds.
   - Manually tweaked Argon2 configurations (Meets the minimum requirements):
-    - 128MiB of memory
-    - 8 count of iterations
-    - 16 degrees of parallelism
+    - 64MiB of memory
+    - 4 count of iterations
+    - 4 degrees of parallelism
     - 64 bytes salt, `os.urandom(64)`
     - 64 bytes hash
     - Argon2id
-    - On average, the time taken to hash a password is about 0.19+- seconds.
+    - On average, the time taken to hash a password is about 0.06+- seconds.
+      - Not too resource intensive as to avoid server resource exhaustion.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 
 - Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
@@ -107,7 +118,7 @@
 - Enabled HSTS for the Flask web application to be hosted using [Flask-Talisman](https://pypi.org/project/flask-talisman/)
   - Flask-Talisman was originally created by Google but has not been maintained, hence, using a forked repository that is being maintained by [Winterbloom](https://github.com/wntrblm) and supported by other developers.
   - Since the web application will be hosted using [gunicorn](https://gunicorn.org/), I have configured the HTTP redirects to HTTPS and enabled HSTS to prevent MITM attacks.
-    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls before being redirected to the custom domain.
+    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls
       - Firebase's default domains that cannot be disabled:
         - [https://coursefinity-339412.firebaseapp.com/](https://coursefinity-339412.firebaseapp.com/)
         - [https://coursefinity-339412.web.app/](https://coursefinity-339412.web.app/)
@@ -162,7 +173,7 @@
     - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
-- Maximum of 6 failed login attempts per account (will reset after 1 hour)
+- Maximum of 8 failed login attempts per account (will reset after 1 hour)
   - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
     - An email will be sent to the user's email with a one-time link to unlock the account
     - Link uses a digitally signed token to prevent tampering
@@ -247,6 +258,10 @@
 - RBAC will make Different roles  see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
+- RBAC Console 
+  - super admin can change the approute group based access controls
+  - Super admin can create google accounts
+  - Super admin can edit and modify the admin users
 
 ---
 

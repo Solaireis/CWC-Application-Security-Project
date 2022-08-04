@@ -8,6 +8,7 @@
 
 {% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/home.css') }}">{% endblock %}
 {% block title %}Home | CourseFinity{% endblock %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
 
 {% block content %}
 
@@ -49,7 +50,7 @@
 					</div>
 				</div>
 			{% else %}
-				{% for course in threeHighlyRatedCourses %}
+				{% for course, courseUserState in threeHighlyRatedCourses %}
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
@@ -78,25 +79,11 @@
 								{% endif %}
 							</div>
 							<div class="card-footer">
-								{% if (accType == None) %}
-									<a href="{{ url_for('guestBP.login') }}" class="btn btn-success float-end">
-										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
-									</a>
-								{% elif (accType == "Admin") %}
-									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
-								{% else %}
-									{% if (course.courseID in userPurchasedCourses) %}
-										<a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="btn btn-success float-end">
-											<i class="fas fa-shopping-bag"></i> View Purchase
-										</a>
-									{% else %}
-										<form action="{{ url_for('userBP.addToCart', courseID = course.courseID) }}" method="POST">
-											<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-											<input name="courseID" type="hidden" value="{{ course.courseID }}">
-											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-										</form>
-									{% endif %}
-								{% endif %}
+								{{ add_to_cart_btn(
+									course=course,
+									courseUserState=courseUserState, 
+									accType=accType
+								) }}
 							</div>
 						</div>
 					</div>
@@ -118,7 +105,7 @@
 					</div>
 				</div>
 			{% else %}
-				{% for course in latestThreeCourses %}
+				{% for course, courseUserState in latestThreeCourses %}
 					<div class="col">
 						<div class="card text-dark bg-light h-100">
 							{% if (course.courseImagePath == None) %}
@@ -147,25 +134,11 @@
 								{% endif %}
 							</div>
 							<div class="card-footer">
-								{% if (accType == None) %}
-									<a href="{{ url_for('guestBP.login') }}" class="btn btn-success float-end">
-										<i class="fas fa-cart-plus fa-lg"></i> Add to Cart
-									</a>
-								{% elif (accType == "Admin") %}
-									<button type="button" class="btn btn-success float-end">Admin cannot add to cart!</button>
-								{% else %}
-									{% if (course.courseID in userPurchasedCourses) %}
-										<a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="btn btn-success float-end">
-											<i class="fas fa-shopping-bag"></i> View Purchase
-										</a>
-									{% else %}
-										<form action="{{ url_for('userBP.addToCart', courseID = course.courseID) }}" method="POST">
-											<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-											<input name="courseID" type="hidden" value="{{ course.courseID }}">
-											<button type="submit" class="btn btn-success float-end"><i class="fas fa-cart-plus fa-lg"></i> Add to Cart</button>
-										</form>
-									{% endif %}
-								{% endif %}
+								{{ add_to_cart_btn(
+									course=course,
+									courseUserState=courseUserState, 
+									accType=accType
+								) }}
 							</div>
 						</div>
 					</div>

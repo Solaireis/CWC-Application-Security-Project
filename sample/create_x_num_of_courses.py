@@ -163,7 +163,8 @@ If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDO
 
     # video_path = "https://www.youtube.com/embed/dQw4w9WgXcQ" # demo, will be changed to a video path
     # video_path = "https://www.youtube.com/embed/L7ESZZkn_z8" # demo uncopyrighted song, will be changed to a video path
-    video_path = f"https://storage.googleapis.com/coursefinity-videos/videos/watame{rand_choice(('', '2'))}.mp4" # Doesn't work, but shhhhh
+    # video_path = f"https://storage.googleapis.com/coursefinity-videos/videos/watame{rand_choice(('', '2'))}.mp4"
+    video_path = "1d2cadbd56754e8490e05fbe43764955" # More like videoID lol
 
     cur.execute("INSERT INTO course (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, date_created, video_path, active) VALUES (%s, %s, %s, %s, %s, %s, %s, SGT_NOW(), %s, 1)", (course_id, teacher_id, course_name, course_description, course_image_path, course_price, course_category, video_path))
     try:
@@ -187,27 +188,36 @@ If you can also consider subscribing to my [YouTube channel]({rand_choice(MARKDO
 
 
 # Add student
-STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
+STUDENT_ID1 = "76456a9aa7104d7db2c89b24cab697c4"
 STUDENT_ID2 = "76456a9aa7104d7db2c89b24cab697c5"
-cur.execute(f"SELECT * FROM user WHERE id='{STUDENT_ID}'")
+cur.execute(f"SELECT * FROM user WHERE id='{STUDENT_ID1}'")
 res = cur.fetchone()
 if (res is None):
     # add to the mysql database
     # use first 10 courseIDs as data
 
-    cartData = f'["{course_id_list[0]}", "{course_id_list[1]}", "{course_id_list[2]}"]'
-    purchasedData = f'["{course_id_list[3]}", "{course_id_list[4]}"]'
-
-    userID = STUDENT_ID
+    userID = STUDENT_ID1
     username = "Chloe"
     email = "test@student.com"
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
-    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
+    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW())", (userID, STUDENT_ROLE_ID, username, email, password))
     con.commit()
-    ipAddress = "127.0.0.1"
+
+    for i in range(3):
+        cur.execute(
+            "INSERT INTO cart (course_id, user_id) VALUES (%s, %s)",
+            (course_id_list[i], STUDENT_ID1)
+        )
+    for i in range(3, 5):
+        cur.execute(
+            "INSERT INTO purchased_courses (course_id, user_id) VALUES (%s, %s)",
+            (course_id_list[i], STUDENT_ID1)
+        )
+    con.commit()
 
     # Convert the IP address to binary format
+    ipAddress = "127.0.0.1"
     try:
         ipAddress = inet_aton(ipAddress).hex()
         isIpv4 = True
@@ -223,11 +233,22 @@ if (res is None):
     email = "test2@student.com"
     password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User1234!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
-    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined, cart_courses, purchased_courses) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW(), %s, %s)", (userID, STUDENT_ROLE_ID, username, email, password, cartData, purchasedData))
+    cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW())", (userID, STUDENT_ROLE_ID, username, email, password))
     con.commit()
-    ipAddress = "127.0.0.1"
+    for i in range(3):
+        cur.execute(
+            "INSERT INTO cart (course_id, user_id) VALUES (%s, %s)",
+            (course_id_list[i], STUDENT_ID2)
+        )
+    for i in range(3, 5):
+        cur.execute(
+            "INSERT INTO purchased_courses (course_id, user_id) VALUES (%s, %s)",
+            (course_id_list[i], STUDENT_ID2)
+        )
+    con.commit()
 
     # Convert the IP address to binary format
+    ipAddress = "127.0.0.1"
     try:
         ipAddress = inet_aton(ipAddress).hex()
         isIpv4 = True
@@ -252,13 +273,13 @@ while (1):
 if (addReviews != "n"):
     # adding reviews to courses
     # STUDENT_ID = "76456a9aa7104d7db2c89b24cab697c4"
-    cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID}'")
+    cur.execute(f"SELECT * FROM review WHERE user_id='{STUDENT_ID1}'")
     res = cur.fetchone()
     if (res is None):
         courseReview = """Daniel is actually a very helpful person.
 he has shared many tips and tricks to teaching me
 how to do better at data structure and algorithms"""
-        userID = STUDENT_ID
+        userID = STUDENT_ID1
         cur.execute(f"SELECT * FROM course")
         res = cur.fetchall()
 
@@ -287,7 +308,7 @@ how to do better at data structure and algorithms"""
             )
             con.commit()
     else:
-        print("Error: No such student found with the id,", STUDENT_ID)
+        print("Error: No such student found with the id,", STUDENT_ID1)
 
 con.commit()
 con.close()
