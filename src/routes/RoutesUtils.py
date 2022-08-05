@@ -77,9 +77,9 @@ def before_request() -> None:
         ):
             session.pop("relative_url", None)
 
-    print(f"Session cookie: {session}")
     # Validate the user's session for every request that is not to the static files
     if (request.endpoint != "static"):
+        print(f"Session cookie: {session}")
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value (but not both)
             userID = session.get("user") or session.get("admin")

@@ -68,6 +68,7 @@ if (not app.config["CONSTANTS"].DEBUG_MODE):
     app.logger.addHandler(gunicornLogger)
 
 # Flask SeaSurf to prevents cross-site request forgery
+app.config["TESTING"] = True
 app.config["CSRF_COOKIE_NAME"] = "csrf_token"
 app.config["CSRF_COOKIE_SECURE"] = True
 app.config["CSRF_COOKIE_HTTPONLY"] = True
@@ -339,9 +340,14 @@ if (__name__ == "__main__"):
     # Start all the scheduled jobs
     scheduler.start()
 
-    SSL_CONTEXT = (
-        CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
-        CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
-    )
+    if (app.config["DEBUG_FLAG"]):
+        SSL_CONTEXT = (
+            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-cert.pem"),
+            CONSTANTS.CONFIG_FOLDER_PATH.joinpath("flask-private-key.pem")
+        )
+        host = None
+    else:
+        SSL_CONTEXT = None
+        host = "0.0.0.0"
 
-    app.run(debug=app.config["DEBUG_FLAG"], port=int(environ.get("PORT", 8080)), ssl_context=SSL_CONTEXT)
+    app.run(debug=app.config["DEBUG_FLAG"], host=host, port=int(environ.get("PORT", 8080)), ssl_context=SSL_CONTEXT)

@@ -12,7 +12,7 @@ from google.oauth2 import id_token
 from google.auth.exceptions import GoogleAuthError
 
 # import flask libraries (Third-party libraries)
-from flask import make_response, render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 from flask_limiter.util import get_remote_address
 
 # import local python libraries
@@ -29,20 +29,6 @@ from time import sleep
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
 limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(guestBP)
-
-@guestBP.before_app_first_request
-def before_first_request() -> None:
-    """
-    Called called at the very first request to the web app.
-
-    Returns:
-    - None
-    """
-    # load google client id from credentials.json
-    current_app.config["GOOGLE_CLIENT_ID"] = current_app.config["SECRET_CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"]
-
-    # get Google oauth flow object
-    current_app.config["GOOGLE_OAUTH_FLOW"] = get_google_flow()
 
 @guestBP.route("/recover-account/<string:token>", methods=["GET","POST"])
 @limiter.limit("15 per minute")
@@ -558,7 +544,7 @@ def enterGuardTOTP():
 @guestBP.route("/login-google")
 def loginViaGoogle():
     # https://developers.google.com/identity/protocols/oauth2/web-server#python
-    authorisationUrl, state = current_app.config["GOOGLE_OAUTH_FLOW"].authorization_url(
+    authorisationUrl, state = get_google_flow().authorization_url(
         # Enable offline access so that you can refresh an
         # access token without re-prompting the user for permission
         access_type="offline",
@@ -573,15 +559,21 @@ def loginViaGoogle():
         plaintext=state, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
     )
     print("google oauth redirect url:", authorisationUrl)
-    return make_response(redirect(authorisationUrl))
+    return redirect(authorisationUrl)
 
 @guestBP.route("/login-callback")
 def loginCallback():
     if ("state" not in session):
         return redirect(url_for("guestBP.login"))
 
+    googleOauthFlow = get_google_flow()
+    print("Google OAuth Reponse URL:", request.url)
     try:
-        current_app.config["GOOGLE_OAUTH_FLOW"].fetch_token(authorization_response=request.url)
+        # if (not request.url.startswith("https")):
+        #     raise Exception("Reponse is not a secure connection!")
+        # environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        googleOauthFlow.fetch_token(authorization_response=request.url)
+        # environ["OAUTHLIB_INSECURE_TRANSPORT"] = "0"
     except (Exception) as e:
         write_log_entry(
             logMessage=f"Error with Google OAuth2 token: {e}",
@@ -597,15 +589,20 @@ def loginCallback():
     if (decryptedState != request.args.get("state", default="", type=str)):
         abort(500) # when state does not match (protect against CSRF attacks)
 
-    credentials = current_app.config["GOOGLE_OAUTH_FLOW"].credentials
+    credentials = googleOauthFlow.credentials
     requestSession = req.session()
     cachedSession = CacheControl(requestSession)
     tokenRequest = GoogleRequest(session=cachedSession)
 
     try:
         # clock_skew_in_seconds=5 seconds as it might take some time to retreive the token from Google API
-        idInfo = id_token.verify_oauth2_token(credentials.id_token, tokenRequest, audience=current_app.config["GOOGLE_CLIENT_ID"], clock_skew_in_seconds=5)
-    except (ValueError, GoogleAuthError):
+        idInfo = id_token.verify_oauth2_token(
+            credentials.id_token,
+            tokenRequest, 
+            audience=current_app.config["SECRET_CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"],
+            clock_skew_in_seconds=10
+        )
+    except (ValueError, GoogleAuthError, KeyError):
         flash("Failed to verify Google login! Please try again!", "Danger")
         return redirect(url_for("guestBP.login"))
 

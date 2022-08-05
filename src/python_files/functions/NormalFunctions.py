@@ -404,9 +404,9 @@ def get_google_flow() -> Flow:
             "https://www.googleapis.com/auth/gmail.send",
             # for Google to read the user's emails as required for some OAuth2 logins
             "https://www.googleapis.com/auth/gmail.readonly",
-        ],
-        redirect_uri=f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('guestBP.loginCallback')}"
+        ]
     )
+    flow.redirect_uri = CONSTANTS.CUSTOM_DOMAIN + url_for("guestBP.loginCallback")
     return flow
 
 def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToken:str="", recaptchaAction:Optional[str] = None) -> Assessment:
