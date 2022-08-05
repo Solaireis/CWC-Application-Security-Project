@@ -579,15 +579,17 @@
     - Fix deserialization vulnerability with pickle (shelve) by changing to SQL
   - Comparing Hashes of Packages, before pip installing them
     - Ensures that there was no tampering between the files when it was being taken from the source
-  - Check Hash of Video File, before saving it
-    - Ensures that there was no tampering between the files when it was being taken from the source
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
   - Digest Authentication
     - Authenticating the user and server so that it is sent to the correct person
   
   Requires Approval:
   - Data Integrity For Profile Pictures (Code Done, Untested)
-
+  
+  Removed:
+    - Check Hash of Video File, before saving it
+      - Ensures that there was no tampering between the files when it was being taken from the source
+      - Uploading to API directly, so removed
 - Dropped Features (& why?):
   - Digital Signatures
     - Not really necessary due to HTTPS & HSTS to ensure request is sent across HTTPS will already provide encryption
