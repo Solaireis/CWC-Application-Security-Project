@@ -7,7 +7,6 @@
 
 # Ignore downloaded dependencies
 python_packages/*
-node_modules
 
 # Ignore test codes and folders
 *test*.*
@@ -28,7 +27,6 @@ src/static/course_videos/**
 
 # Ignore all .json files (just in case as there are google gmail api tokens in there)
 *.json
-!firebase.json
 
 # Ignore .pem files (For SQL server SSL Certificates)
 *.pem

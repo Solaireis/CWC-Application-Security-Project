@@ -28,10 +28,6 @@ test/**
 *.log
 *.bak
 *.bin
-node_modules
-.firebaserc
-firebase.json
-package-lock.json
 .gitignore
 .dccache
 res/**

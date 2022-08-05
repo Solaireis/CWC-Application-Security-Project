@@ -38,7 +38,7 @@ schema = {
 }
 
 # TODO: Change the debug mode below accordingly
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 @dataclass(frozen=True, repr=False)
 class Constants:
