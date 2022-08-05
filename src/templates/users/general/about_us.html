@@ -1,64 +1,41 @@
 {% if accType == None %}
-	{% extends "guest_base.html" %}
+    {% extends "guest_base.html" %}
 {% elif accType == "Admin" %}
-	{% extends "admin_base.html" %}
+    {% extends "admin_base.html" %}
 {% else %}
-	{% extends "user_base.html" %}
+    {% extends "user_base.html" %}
 {% endif %}
 
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}"><link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}">{% endblock %}
+{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/about_us.css') }}">{% endblock %}
 {% block title %}About Us | CourseFinity{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-	<ul class="breadcrumb">
-		<li>
-			<a href="/">Home</a>
-		</li>
-		<li>About Us</li>
-	</ul>
-	<div class="row g-0 casing mx-auto border">
-		<div class="col-5">
-			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/about.jpg" alt="">
-		</div>
-		<div class="col-7">
-			<h2>An Introduction To The Website</h2>
-			<br>
-			<h3>Our website has a variety of courses that can range from Academics to Technological courses. We help organizations of all types and sizes prepare for the path ahead — wherever it leads. Our curated collection of business and technical courses help companies, governments, and nonprofits go further by placing learning at the center of their strategies.</h3>
-		</div>
-	</div>
-	<br>
-	<br>
-	<br>
-	<div class="row g-0 casing mx-auto border">
-		<div class="col-5">
-			<h2>Our Vision</h2>
-			<br>
-			<h3>We intend to expand our services to a large amount of areas in the world. We expect to see thousands of teachers from acrosss the world, helping out students from anywhere and anytime. Student will also no longer be restricted to physical materials, and have access to thousands of courses that might just be the thing that they need.</h3>
-		</div>
-		<div class="col-7">
-			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/vision.jpg" alt="">
-		</div>
-	</div>
-	<br>
-	<br>
-	<br>
-	<div class="row g-0 casing mx-auto border">
-		<div class="col-5">
-			<img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/mission.jpg" alt="">
-		</div>
-		<div class="col-7">
-			<h2>Our Mission</h2>
-			<br>
-			<h3>Our mission is simple. Reunite learning with education and make it accessible to every single person on this planet. Anyone can learn anything, at any age, at an affordable cost, anywhere in the world.</h3>
-		</div>
-	</div>
-	<br>
-	<br>
-	<br>
-</div>
-<div class="quote">
-	<p>"Education is what someone tells you to do. Learning is what you do for yourself."</p>
-	<p>- Eden Pang, Competitive Programmer</p>
+<div class="container">
+    <div class="row">
+        <div class="heading text-center">
+            <h1>About <span class="color-text">Us</span></h1>
+            <p class="text-muted">Our website has a variety of courses that can range from Academics to Technological courses. We help organizations of all types and sizes prepare for the path ahead — wherever it leads. Our curated collection of business and technical courses help companies, governments, and nonprofits go further by placing learning at the center of their strategies.</p>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-lg-6 text-center mb-1">
+            <img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/vision.jpg" alt="about" class="img-fluid about-images">
+        </div>
+        <div class="col-lg-6">
+            <h3 class="text-center">Our <span class="color-text">Vision</span></h3>
+            <p class="text-muted">We intend to expand our services to a large amount of areas in the world. We expect to see thousands of teachers from acrosss the world, helping out students from anywhere and anytime. Student will also no longer be restricted to physical materials, and have access to thousands of courses that might just be the thing that they need.</p>
+        </div>
+    </div>
+    <hr>
+    <div class="row mt-5">
+        <div class="col-lg-6 text-center mb-1">
+            <img src="https://storage.googleapis.com/coursefinity/web-assets/about_us/mission.jpg" alt="about" class="img-fluid about-images">
+        </div>
+        <div class="col-lg-6 align-middle">
+            <h3 class="text-center">Our <span class="color-text">Mission</span></h3>
+            <p class="text-muted">Our mission is simple. Reunite learning with education and make it accessible to every single person on this planet. Anyone can learn anything, at any age, at an affordable cost, anywhere in the world.</p>
+        </div>
+    </div>
 </div>
 {% endblock %}

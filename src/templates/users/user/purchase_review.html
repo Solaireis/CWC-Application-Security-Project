@@ -1,6 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/purchasereview.css') }}">
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/breadcrumb.css') }}"><link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">{% endblock %}
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">{% endblock %}
 {% block title %}Purchase Review | CourseFinity{% endblock %}
 {% from "includes/_formHelper.html" import render_field %}
 
@@ -8,7 +8,7 @@
 <div class="container">
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb">
-			<li class="breadcrumb-item"><a href="/purchasehistory/{{pageNum}}">Purchase History</a></li>
+			<li class="breadcrumb-item"><a href="{{ url_for('userBP.purchaseHistory') }}">Purchase History</a></li>
 			<li class="breadcrumb-item active" aria-current="page">Review</li>
 		</ol>
 	</nav>
@@ -41,9 +41,7 @@
 					{{ render_field(form.reviewDescription, class="form-control", rows="10") }}
 				</div>
 				<div>
-		
 					<button type="submit" class="btn btn-primary mb-2" class="float-end">Submit</button>
-					
 				</div>
 			</form>
 		</div>

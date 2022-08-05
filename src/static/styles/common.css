@@ -170,8 +170,8 @@ a:hover {
 }
 
 .icons a:hover {
-	color: white;
-	text-shadow: 0 0 30px white;
+	color: #fff;
+	text-shadow: 0 0 30px #fff;
 }
 
 #logo img {
@@ -212,7 +212,7 @@ a:hover {
     position: absolute;
     background-color: #FF6B6B;
     border-radius: 50%;
-    border: 1.5px solid white;
+    border: 1.5px solid #fff;
     font-size: 0.5em;
     width: 2em;
     height: 2em;
