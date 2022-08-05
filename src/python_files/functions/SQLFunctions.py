@@ -913,8 +913,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         roleID = cur.fetchone()[0]
 
         cur.execute(
-            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), %(purchased_courses)s, 'Active')",
-            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None, "purchased_courses":"[]"}
+            "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, FALSE, %(passwordInput)s, %(profile_image)s, SGT_NOW(), 'Active')",
+            {"userID":userID, "role":roleID, "usernameInput":usernameInput, "emailInput":emailInput, "passwordInput":passwordInput, "profile_image":None}
         )
         connection.commit()
 
@@ -950,8 +950,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             roleID = cur.fetchone()[0]
 
             cur.execute(
-                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), %(purchased_courses)s, 'Active')",
-                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic, "purchased_courses":"[]"}
+                "INSERT INTO user VALUES (%(userID)s, %(role)s, %(usernameInput)s, %(emailInput)s, TRUE, NULL, %(profile_image)s, SGT_NOW(), 'Active')",
+                {"userID":userID, "role":roleID, "usernameInput":username, "emailInput":email, "profile_image":googleProfilePic}
             )
             connection.commit()
         else:
