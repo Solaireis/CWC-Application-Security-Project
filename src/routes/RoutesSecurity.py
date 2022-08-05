@@ -1,5 +1,5 @@
 # import flask libraries (Third-party libraries)
-from flask_seasurf import SeaSurf
+from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import current_app
@@ -11,15 +11,14 @@ This helps prevent circular imports.
 Refer to docs: https://flask-seasurf.readthedocs.io/en/1.1.1/
 Usage example below:
 
-from python_files.Constants import CONSTANTS
 from .RoutesSecurity import csrf
 
-@csrf.exempt
 @blueprintObj.route("/demo", methods=["GET", "POST"])
+@csrf.exempt
 def routeFn():
     ...
 """
-csrf = SeaSurf()
+csrf = CSRFProtect()
 
 """
 For creating a limiter object to customise the rate limiters without initialising the web app.

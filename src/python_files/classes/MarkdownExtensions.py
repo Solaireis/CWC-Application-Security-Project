@@ -24,7 +24,7 @@ class AnchorTagPreprocessor(preprocessors.Preprocessor):
                 for htmlAnchorTag in htmlAnchorTagArray:
                     line = line.replace(
                         "".join(htmlAnchorTag),
-                        fr"<a rel='nofollow' target='_blank' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={htmlAnchorTag[3]}'>{htmlAnchorTag[-2]}</a>"
+                        f"<a rel='nofollow' target='_blank' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={htmlAnchorTag[3]}'>{htmlAnchorTag[-2]}</a>"
                     )
 
             markdownAnchorTagArray = UsefulRegexForMarkdown.MARKDOWN_ANCHOR_REGEX.findall(line)
@@ -32,7 +32,7 @@ class AnchorTagPreprocessor(preprocessors.Preprocessor):
                 for markdownAnchorTag in markdownAnchorTagArray:
                     line = line.replace(
                         "".join(markdownAnchorTag),
-                        fr"<a rel='nofollow' target='_blank' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={markdownAnchorTag[-2]}'>{markdownAnchorTag[1]}</a>"
+                        f"<a rel='nofollow' target='_blank' href='{CONSTANTS.REDIRECT_CONFIRMATION_URL}?{CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME}={markdownAnchorTag[-2]}'>{markdownAnchorTag[1]}</a>"
                     )
 
             newLines.append(line)

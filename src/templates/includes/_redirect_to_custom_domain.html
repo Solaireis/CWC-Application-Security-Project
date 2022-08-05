@@ -1,0 +1,9 @@
+<script nonce="{{ csp_nonce() }}">
+    if (window.location.hostname !== "coursefinity.social") {
+        currentUrl = new URL(window.location.href);
+        currentUrl.protocol = "https";
+        currentUrl.hostname = "coursefinity.social";
+        currentUrl.port = "";
+        window.location.href = currentUrl.href;
+    }
+</script>

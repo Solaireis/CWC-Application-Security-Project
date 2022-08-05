@@ -21,6 +21,9 @@
         </form>
         <p id="copyright_year">&copy; CourseFinity, Inc. <noscript>2022</noscript></p>
     </div>
+    {% if not config.get("DEBUG_FLAG") %}
+        {% include "includes/_redirect_to_custom_domain.html" %}
+    {% endif %}
     <script nonce="{{ csp_nonce() }}">
         let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
     </script>

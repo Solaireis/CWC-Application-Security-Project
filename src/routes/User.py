@@ -324,8 +324,8 @@ def deletePic():
         flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
     return redirect(url_for("userBP.userProfile"))
 
-@csrf.exempt
 @userBP.post("/upload-profile-picture")
+@csrf.exempt
 def uploadPic():
     userID = session["user"]
     if ("profilePic" not in request.files):
@@ -359,8 +359,8 @@ def uploadPic():
 #TODO: Doing dropzone, just realised we dont download the file locally. So need ask if i shld store file locally first check then delete, then upload to bucket. Code already in place for it, just need approval.
 # TODO : If approved test if working, if not delete
 # TODO: Looks like upload file from path already uses CRC32C checksum, clarify if need to do here also
-# @csrf.exempt
 # @userBP.post("/upload-profile-picture")
+# @csrf.exempt
 # def uploadPic():
 #     if ("image_saving" not in session):
 #         imageID = generate_id(sixteenBytesTimes=2)

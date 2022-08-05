@@ -28,6 +28,9 @@
         <p>Routine maintenance usually takes not more than an hour. If the maintenance turns into an extended outage, we will post more details on our <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">twitter account</a>.</p>
     </main>   
     <footer id="copyright_year">&copy; CourseFinity, Inc. <noscript>2022</noscript></footer>
+    {% if not config.get("DEBUG_FLAG") %}
+        {% include "includes/_redirect_to_custom_domain.html" %}
+    {% endif %}
     <script nonce="{{ csp_nonce() }}">
         let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
     </script>

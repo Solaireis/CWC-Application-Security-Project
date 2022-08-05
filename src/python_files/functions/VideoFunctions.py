@@ -37,19 +37,20 @@ def get_video(videoID:str) -> Optional[dict]:
         url = f"https://dev.vdocipher.com/api/videos/{videoID}/otp",
         headers = {
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
-            'Content-Type': "application/json",
-            'Accept': "application/json"
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         },
         data = dumps({
-        "ttl": 300,  # Time to live
-        "whitelisthref": request.headers["Host"],    # Whitelist sites
+            "ttl": 300,  # Time to live
+            "whitelisthref": request.headers["Host"],    # Whitelist sites
         })
     )
     .text)
 
     # Course cannot be acquired for reasons
     if data.get("message") is not None: 
-    # E.g. # {'message': 'You have reached the trial limit of 4 videos. Either remove the previously uploaded \n        videos or subscribe to our premium plans to unlock the video limit.'}
+    # E.g. # {'message': 'You have reached the trial limit of 4 videos. Either remove the previously uploaded 
+    # videos or subscribe to our premium plans to unlock the video limit.'}
         print(data.get("message"))
         #TODO: Log error
         return None
@@ -71,7 +72,7 @@ def get_video_thumbnail(videoID:str) -> tuple:
         url = f"https://dev.vdocipher.com/api/meta/{videoID}",
         headers = {
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
-            'Accept': "application/json"
+            "Accept": "application/json"
         }
     )
     return tuple(thumbnail.get("url") for thumbnail in loads(data.text).get("posters"))
@@ -96,7 +97,7 @@ def check_video(videoID:str) -> Optional[dict]:
         url = f"https://dev.vdocipher.com/api/videos/{videoID}",
         headers = {
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
-            'Accept': "application/json"
+            "Accept": "application/json"
         }
     )
     .text) 
@@ -133,11 +134,11 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
     data = loads(post(
         url = f"https://dev.vdocipher.com/api/videos/{videoID}/files",
         headers = {
-            'Authorization': f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
-            'Content-Type': "multipart/form-data",
-            'Accept': "application/json"
+            "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
+            "Content-Type": "multipart/form-data",
+            "Accept": "application/json"
         },
-        files = {'file': PoolManager().request("GET", thumbnailFilePath).data}
+        files = {"file": PoolManager().request("GET", thumbnailFilePath).data}
     )
     .text)
 
@@ -182,7 +183,7 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     data = loads(put(
         url = "https://dev.vdocipher.com/api/videos",
         headers = {
-            'Authorization': f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}"
+            "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}"
         },
         params = {
             "title": f"Course {courseID}", 

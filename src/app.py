@@ -17,7 +17,6 @@ from python_files.functions.SQLFunctions import sql_operation
 # import python standard libraries
 from pathlib import Path
 from os import environ
-from datetime import timedelta
 import logging, hashlib
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
@@ -27,6 +26,14 @@ app = Flask(__name__)
 # Add the constants objects to the Flask web app
 app.config["CONSTANTS"] = CONSTANTS
 app.config["SECRET_CONSTANTS"] = SECRET_CONSTANTS
+
+# OAuth2 configuration for insecure http transport as
+# the hosted web server is indeed HTTPS on the public domain
+# However, internally in the docker container,
+# the requests would be proxied to gunicorn which will be in http.
+# Therefore, we need to use the insecure http transport else OAuth2 will fail.
+if (not app.config["CONSTANTS"].DEBUG_MODE):
+    environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Flask session cookie configurations
 # Configure the default FLask session default
@@ -67,13 +74,8 @@ if (not app.config["CONSTANTS"].DEBUG_MODE):
     gunicornLogger = logging.getLogger("gunicorn.error")
     app.logger.addHandler(gunicornLogger)
 
-# Flask SeaSurf to prevents cross-site request forgery
-app.config["TESTING"] = True
-app.config["CSRF_COOKIE_NAME"] = "csrf_token"
-app.config["CSRF_COOKIE_SECURE"] = True
-app.config["CSRF_COOKIE_HTTPONLY"] = True
-app.config["CSRF_COOKIE_SAMESITE"] = "Lax"
-app.config["CSRF_COOKIE_TIMEOUT"] = timedelta(days=1)
+# Flask-WTF CSRF Protection to 
+# prevent cross-site request forgery
 csrf.init_app(app)
 
 # Flask Talisman to helps set policies

@@ -567,16 +567,15 @@ def loginCallback():
         return redirect(url_for("guestBP.login"))
 
     googleOauthFlow = get_google_flow()
-    print("Google OAuth Reponse URL:", request.url)
     try:
-        # if (not request.url.startswith("https")):
-        #     raise Exception("Reponse is not a secure connection!")
-        # environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         googleOauthFlow.fetch_token(authorization_response=request.url)
-        # environ["OAUTHLIB_INSECURE_TRANSPORT"] = "0"
     except (Exception) as e:
         write_log_entry(
-            logMessage=f"Error with Google OAuth2 token: {e}",
+            logMessage={
+                "Google OAuth2 login error": str(e),
+                "Google OAuth2 request url": request.url,
+                "User's IP address": get_remote_address()
+            },
             severity="NOTICE"
         )
         print("Error with Google OAuth2 token:", e)
@@ -595,7 +594,7 @@ def loginCallback():
     tokenRequest = GoogleRequest(session=cachedSession)
 
     try:
-        # clock_skew_in_seconds=5 seconds as it might take some time to retreive the token from Google API
+        # clock_skew_in_seconds=10 seconds as it might take some time to retreive the token from Google API
         idInfo = id_token.verify_oauth2_token(
             credentials.id_token,
             tokenRequest, 

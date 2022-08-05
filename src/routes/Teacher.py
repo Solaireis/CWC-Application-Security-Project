@@ -136,8 +136,8 @@ def uploadSuccess(jwtToken):
 """ Start Of Course Creation """
 
 #TODO: Ask if need do CRC32C checksum
-@csrf.exempt
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
+@csrf.exempt
 def videoUpload():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
