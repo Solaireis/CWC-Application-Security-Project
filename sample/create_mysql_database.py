@@ -100,7 +100,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         password VARBINARY(1024) DEFAULT NULL, -- can be null for user who signed in using Google OAuth2
         profile_image VARCHAR(255) DEFAULT NULL, 
         date_joined DATETIME NOT NULL,
-        purchased_courses JSON DEFAULT NULL, -- can be null for admin user
         status VARCHAR(255) NOT NULL CHECK (status IN ('Active', 'Inactive', 'Banned', 'Deleted')) DEFAULT 'Active',
         FOREIGN KEY (role) REFERENCES role(role_id)
     )""")
