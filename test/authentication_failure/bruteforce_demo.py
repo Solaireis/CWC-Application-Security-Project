@@ -16,17 +16,17 @@ async def send_requests(urls:list) -> list:
                 print("Initial GET request failed!")
                 sys.exit(1)
 
-            cookies = session.cookie_jar.filter_cookies(urls[0].rsplit("/", 1)[0])
-            csrfCookie = {k: v for k, v in cookies.items() if (k == "_csrf_token")}
-            if (not csrfCookie):
-                print("Could not find CSRF token cookie!")
-                sys.exit(1)
+            # Update the current session with the cookies from the response
+            # that contains the CSRF token
+            session.cookie_jar.update_cookies(r.cookies)
 
-        # add the csrfToken cookie to the session
-        session.cookie_jar.update_cookies(csrfCookie)
+            # Get the HTML response from the login page and extract the CSRF token from the page
+            htmlResponse = await r.text()
+            htmlTree = html.fromstring(htmlResponse)
+            csrfToken = htmlTree.xpath("//input[@name='_csrf_token']/@value")[0]
 
-        # get the _csrf_token value from the login page
-        data = {"email": "demo@test.com", "password": "123123123", "_csrf_token": csrfCookie["_csrf_token"].value}
+        # Create a form data dictionary to send the login credentials
+        data = {"email": "demo@test.com", "password": "123123123", "_csrf_token": csrfToken}
         data = aiohttp.FormData(data)
         return await asyncio.gather(*[fetch(url, session, data) for url in urls])
 
