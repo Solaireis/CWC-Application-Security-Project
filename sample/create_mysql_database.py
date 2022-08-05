@@ -381,7 +381,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SELECT (@count := @count + 1) AS row_num, 
             teacher_course_info.* FROM (
                 SELECT c.course_id, c.teacher_id, 
-                u.username, u.profile_image, c.date_created, @total_course_num
+                u.username, u.profile_image, c.date_created, c.video_path, @total_course_num
                 FROM draft_course AS c
                 INNER JOIN user AS u ON c.teacher_id=u.id
                 WHERE c.teacher_id=teacherID

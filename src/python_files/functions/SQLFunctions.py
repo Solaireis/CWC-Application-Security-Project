@@ -1624,8 +1624,11 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             foundResultsTuple = tupleInfo[1:]
             if ((currentDay - foundResultsTuple[4]).days > 1):
                 cur.execute("DELETE FROM draft_course WHERE course_id=%(courseID)s", {"courseID":foundResultsTuple[0]})
+                from .VideoFunctions import delete_video # I love circular imports...
+                delete_video(foundResultsTuple[-2])
                 connection.commit()
             else:
+                print(foundResultsTuple)
                 courseList.append(
                     CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True, draftStatus=True)
                 )

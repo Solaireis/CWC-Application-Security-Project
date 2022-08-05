@@ -54,10 +54,22 @@
                 <div class="col-md-4">
                     <img class="w-100" src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" alt="Course Thumbnail">
                 </div>
+                {% set videoStatus = videoStatusList[loop.index0] %}
                 <div class="col-md-8">
                     <div class="card-body">
-                        <h4 class="card-title">DRAFT COURSE</h4>
-                        <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" onclick="return false;">Complete Course Creation</a></span>
+                        <h4 class="card-title">
+                            DRAFT COURSE
+                            {% if videoStatus not in ("ready", "Queued") %}
+                            <span class="float-end text-danger">&#9888;</span>
+                            {% endif %}
+                        </h4>
+                        {% if videoStatus == "ready" %}
+                            <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" onclick="return false;">Complete Course Creation</a></span>
+                        {% elif videoStatus == "Queued" %}
+                            <span class="text-muted">Video Processing...</span>
+                        {% else %}
+                            <span class="text-warning">{{ videoStatus }}</span>
+                        {% endif %}
                         <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
                             data-bs-target="#deleteCourse">Delete Draft</a></span>
                         <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"

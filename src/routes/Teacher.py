@@ -50,6 +50,8 @@ def draftCourseList():
     page = request.args.get("p", default=1, type=int)
     paginationArr = []
     courseList, maxPage = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
+    videoStatusList = tuple(check_video(course.videoPath)["status"] for course in courseList)
+    print(videoStatusList)
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.draftCourseList") + f"?p={maxPage}")
@@ -60,7 +62,7 @@ def draftCourseList():
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr)
+    return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr, videoStatusList=videoStatusList)
 
 """ Start of Course Creation API Calls """
 
@@ -159,19 +161,25 @@ def videoUpload():
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
 def createCourse(courseID:str):
     courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
-    videoPath = courseTuple[2]
     if (not courseTuple):
         flash("Course Already Created / Draft Does not exist!", "Course Creation error")
         return redirect(url_for("teacherBP.courseList"))
 
+    videoPath = courseTuple[2]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
-    videoData=get_video(videoPath)
-    print(videoData)
-    if videoData.get("message") == "Queued":
-        videoData = None
+
+    
+    # Check if course exists
+    videoData = check_video(videoPath)
+    if videoData is None: # video doesn't exist
+        abort(404)
+    elif videoData["status"] != "ready": # Video is in processing/error
+        abort(400)
+
+    videoData = get_video(videoPath)
 
     if (userInfo.role != "Teacher"):
-        abort(500)
+        abort(404)
 
     courseForm = CreateCourse(request.form)
     if (request.method == "POST" and courseForm.validate()):
@@ -215,6 +223,9 @@ def createCourse(courseID:str):
                 imageData=imageData, imagePath=filePath, dimensions=(1920, 1080),
                 folderPath=f"course-thumbnails"
             )
+            if update_video_thumbnail(videoPath, imageUrlToStore) is None:
+                flash("Image is invalid and cannot be parsed.", "Failed to Upload Course Thumbnail!")
+                return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
         except (InvalidProfilePictureError):
             flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Course Thumbnail!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
@@ -222,7 +233,6 @@ def createCourse(courseID:str):
             flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
-        update_video_thumbnail(videoPath, imageUrlToStore)
 
         # videoPath = upload_file_from_path(
         #     bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
@@ -306,14 +316,7 @@ def draftCourseDelete():
     if (not courseFound):
         abort(404)
 
-    shutil.rmtree(
-        current_app.config["COURSE_VIDEO_FOLDER"].joinpath(secure_filename(courseID)),
-        ignore_errors=False,
-        onerror=lambda func, path, exc_info: write_log_entry(
-            logMessage=f"Error deleting {courseID} folder at \"{path}\": {exc_info}",
-            severity="WARNING"
-        )
-    )
+    delete_video(courseFound[2])
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
     print("Draft Course Deleted")
     return redirect(url_for("teacherBP.draftCourseList"))
@@ -389,6 +392,7 @@ def courseUpdate():
 
             sql_operation(table="course", mode="update_course_thumbnail", courseID=courseID, courseImagePath=imageUrlToStore)
             stripe_product_update(courseID=courseID, courseImagePath=imageUrlToStore)
+            update_video_thumbnail(courseFound.videoPath, imageUrlToStore)
             updated += "Course Thumbnail, "
 
         if (len(updated) > 0):

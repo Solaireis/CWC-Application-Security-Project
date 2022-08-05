@@ -58,7 +58,9 @@ class CourseInfo:
         self.__teacherID = tupleInfo[1]
         self.__teacherUsername = tupleInfo[2]
         self.__teacherProfile = profilePic # Note: Use get_dicebear_image(res[2]) if (res[3] is None) else res[3]
-        if (not draftStatus):
+        if draftStatus:
+            self.__videoPath = tupleInfo[-2]
+        else:
             self.__courseName = tupleInfo[4]
             self.__courseDescription = tupleInfo[5] if (not truncateData) \
                                                     else tupleInfo[5][:300].strip() + "..."
