@@ -55,11 +55,11 @@
                     <div class="card-body">
                         <div class="row g-0">
                             <div class="selection col">
-                                <a href="/purchase-view/{{ course.courseID }}" class="view">View course materials</a>
+                                <a href="{{ url_for('userBP.purchaseView', courseID=course.courseID) }}" class="view">View course materials</a>
                                 {% if course["ReviewChecker"] == False %}
-                                    <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">Submit Review</a>
+                                    <a class="btn btn-link" href="{{ url_for('userBP.courseReview', courseID=course.courseID) }}">Submit Review</a>
                                 {% else %}
-                                    <a class="btn btn-link" href="/purchase-review/{{ course.courseID }}">View Review</a>
+                                    <a class="btn btn-link" href="{{ url_for('userBP.courseReview', courseID=course.courseID) }}">View Review</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -67,6 +67,51 @@
                 </div>
             </div>
         {% endfor %}
+        <nav aria-label="Page navigation" class="d-flex justify-content-center">
+            <ul class="pagination">
+                {% with urlPath = url_for("userBP.purchaseHistory") + "?p=" %}
+                    {% if currentPage != 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
+                            <span aria-hidden="true">&laquo;</span>
+                            <span class="sr-only">First Page</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ currentPage - 1 }}" aria-label="Previous">
+                                <span aria-hidden="true">&lt;</span>
+                                <span class="sr-only">Previous</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% for pageNum in paginationArr %}
+                        {% if pageNum == currentPage %}
+                            <li class="page-item active" aria-current="page">
+                                <a class="page-link" href="{{ urlPath }}{{ currentPage }}">{{ currentPage }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ urlPath }}{{ pageNum }}">{{ pageNum }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if currentPage != maxPage %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ currentPage + 1 }}" aria-label="Next">
+                                <span aria-hidden="true">&gt;</span>
+                                <span class="sr-only">Next</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="{{ urlPath }}{{ maxPage }}" aria-label="Last Page">
+                            <span aria-hidden="true">&raquo;</span>
+                            <span class="sr-only">Last Page</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endwith %}
+            </ul>
+        </nav>
     {% endif %}
 </div>
 {% endblock %}

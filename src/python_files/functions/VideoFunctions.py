@@ -26,7 +26,6 @@ def get_video(videoID:str) -> Optional[dict]:
     - {"otp": ..., "playbackInfo": ...} (dict) -> Video Ready
     - {"message": ...} (dict) -> Video not ready
     """
-
     # Get course data
     data = json.loads(requests.post(
         url=f"https://dev.vdocipher.com/api/videos/{videoID}/otp",

@@ -3,7 +3,6 @@ This python file contains all the functions that touches on the MySQL database.
 """
 # import python standard libraries
 import json
-from pathlib import Path
 from socket import inet_aton, inet_pton, AF_INET6
 from typing import Union, Optional
 from datetime import datetime, timedelta
@@ -25,6 +24,7 @@ from jsonschema import validate
 from python_files.classes.Course import CourseInfo
 from python_files.classes.User import UserInfo
 from python_files.classes.Errors import *
+from python_files.classes.Reviews import ReviewInfo, Reviews
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
@@ -1380,7 +1380,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             # Get the teacher's profile image from the first tuple
             teacherProfile = get_dicebear_image(data[2]) if (data[3] is None) \
                                                          else data[3]
-            courseArr.append(CourseInfo(data, profilePic=teacherProfile, truncateData=False, getReadableCategory=True))
+            courseArr.append(CourseInfo(data, profilePic=teacherProfile, truncateData=True, getReadableCategory=True))
 
         return courseArr, maxPage
 
@@ -1521,7 +1521,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         print("Course ID:", courseID)
         cur.execute("CALL get_course_data(%(courseID)s)", {"courseID":courseID})
         matched = cur.fetchone()
-        print("Matched:", matched)
         if (matched is None):
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
@@ -1532,7 +1531,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         print("Course ID:", courseID)
         cur.execute("SELECT * FROM draft_course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
-        print("Matched:", matched)
         if (matched is None):
             return False
 
@@ -1880,13 +1878,11 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     revieve_user_review keywords: userID, courseID,
     insert keywords: userID, courseID, courseRating, CourseReview
     retrieve_all keywords: courseID
-
     """
     if mode is None:
         raise ValueError("You must specify a mode in the review_sql_operation function!")
 
     cur = connection.cursor()
-
     courseID = kwargs["courseID"]
 
     if mode == "retrieve_user_review":
@@ -1908,6 +1904,59 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("SELECT r.user_id, r.course_id, r.course_rating, r.course_review, r.review_date, u.username FROM review r INNER JOIN user u ON r.user_id = u.id WHERE r.course_id = %(courseID)s", {"courseID":courseID})
         review_list = cur.fetchall()
         return review_list if (review_list is not None) else []
+
+    elif (mode == "check_if_user_reviewed"):
+        cur.execute("SELECT * FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":kwargs["userID"], "courseID":courseID})
+        return True if (cur.fetchone() is not None) else False
+
+    elif (mode == "get_user_review"):
+        userID = kwargs["userID"]
+
+        cur.execute("SELECT * FROM review WHERE user_id = %(userID)s AND course_id = %(courseID)s", {"userID":userID, "courseID":courseID})
+        matchedReview = cur.fetchone()
+        if (matchedReview is None):
+            return (False, None)
+
+        print("Review:", matchedReview)
+        return (True, ReviewInfo(matchedReview))
+
+    elif (mode == "get_3_latest_user_review"):
+        cur.execute("SELECT r.user_id, r.course_id, r.course_rating, r.course_review, r.review_date, u.username FROM review r INNER JOIN user u ON r.user_id = u.id WHERE r.course_id = %(courseID)s ORDER BY r.review_date DESC LIMIT 3", {"courseID":courseID})
+        matchedReview = cur.fetchall()
+        if (matchedReview is None):
+            return []
+
+        reviewArr = []
+        for tupleData in matchedReview:
+            reviewUserID = tupleData[0]
+            reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
+            imageSrcPath = reviewInfo.profileImage
+            reviewArr.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
+        return reviewArr
+
+    elif (mode == "paginate_reviews"):
+        pageNum = kwargs["pageNum"]
+        cur.execute("CALL paginate_review_by_course(%(pageNum)s, %(courseID)s)", {"courseID":courseID, "pageNum":pageNum})
+        matchedReview = cur.fetchall()
+        if (matchedReview is None):
+            return ([], 1)
+
+        maxPage = 1
+        if (len(matchedReview) > 0):
+            maxPage = ceil(matchedReview[0][-1] / 10)
+
+        # To prevent infinite redirects
+        if (maxPage <= 0):
+            maxPage = 1
+
+        reviewArr = []
+        for tupleData in matchedReview:
+            tupleData = tupleData[1:]
+            reviewUserID = tupleData[0]
+            reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
+            imageSrcPath = reviewInfo.profileImage
+            reviewArr.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
+        return (reviewArr, maxPage)
 
     else:
         raise ValueError("Invalid mode in the review_sql_operation function!")

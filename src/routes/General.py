@@ -57,12 +57,12 @@ def redirectConfirmation():
         accType = "Admin"
 
     redirectURL = request.args.get(
-        CONSTANTS.REDIRECT_CONFIRMATION_PARAM_NAME, default=None, type=str
+        current_app.config["CONSTANTS"].REDIRECT_CONFIRMATION_PARAM_NAME, default=None, type=str
     )
     if (redirectURL is None):
         return redirect(url_for("generalBP.home"))
 
-    isValidURL = re.fullmatch(CONSTANTS.URL_REGEX, redirectURL)
+    isValidURL = re.fullmatch(current_app.config["CONSTANTS"].URL_REGEX, redirectURL)
     return render_template("users/general/redirect_confirmation.html", imageSrcPath=imageSrcPath, accType=accType, redirectURL=html.escape(redirectURL), isValidURL=isValidURL)
 
 @generalBP.route("/teacher/<string:teacherID>")
@@ -91,7 +91,8 @@ def teacherPage(teacherID:str):
         imageSrcPath=imageSrcPath, teacherUsername=teacherUsername,
         teacherProfilePath=teacherProfilePath, teacherID=teacherID,
         threeHighlyRatedCourses=threeHighlyRatedCourses, threeHighlyRatedCoursesLen=len(threeHighlyRatedCourses),
-        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType)
+        latestThreeCourses=latestThreeCourses, latestThreeCoursesLen=len(latestThreeCourses), accType=accType
+    )
 
 @generalBP.route("/teacher/<string:teacherID>/courses")
 def allCourses(teacherID:str):
@@ -114,15 +115,48 @@ def allCourses(teacherID:str):
         table="course", mode="get_all_courses_by_teacher", pageNum=page, 
         teacherID=teacherID, getTeacherName=True, userID=userID
     )
-    paginationArr = []
-    if (len(courseList) != 0):      
-        if (page > maxPage):
-            return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" + str(maxPage))
+    paginationArr = []  
+    if (page > maxPage):
+        return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" + str(maxPage))
 
-        # Compute the buttons needed for pagination
+    # Compute the buttons needed for pagination
+    if (courseList):
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
     return render_template("users/general/course_list.html", imageSrcPath=imageSrcPath, courseListLen=len(courseList), accType=accType, currentPage=page, maxPage=maxPage, courseList=courseList, teacherID=teacherID, isOwnself=False, paginationArr=paginationArr, userID=userID, teacherName=teacherName)
+
+@generalBP.route("/course/<string:courseID>/reviews")
+def reviewPage(courseID:str):
+    courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if (not courses): #raise exception
+        abort(404)
+
+    accType = imageSrcPath = None
+    purchased = isInCart = False
+    if ("user" in session):
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = userInfo.profileImage
+        isInCart, purchased = sql_operation(
+            table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID
+        )
+        accType = userInfo.role
+
+    pageNum = request.args.get("p", default=1, type=int)
+    reviewArr, maxPage = sql_operation(table="review", mode="paginate_reviews", courseID=courseID, pageNum=pageNum)
+
+    if (pageNum > maxPage):
+        return redirect(url_for("userBP.reviewPage", courseID=courseID) + f"?p={maxPage}")
+    elif (pageNum < 1):
+        return redirect(url_for("userBP.reviewPage", courseID=courseID) + f"?p=1")
+
+    if (reviewArr):
+        paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
+
+    return render_template(
+        "users/general/review_page.html",
+        imageSrcPath=imageSrcPath, purchased=purchased, isInCart=isInCart, paginationArr=paginationArr,
+        accType=accType, reviewArr=reviewArr, courses=courses, maxPage=maxPage, currentPage=pageNum
+    )
 
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
@@ -138,26 +172,14 @@ def coursePage(courseID:str):
             extensions=[AnchorTagExtension()]
         )
     )
-    # print("hi",courses)
     teacherRecords = sql_operation(table="user", mode="get_user_data", userID=courses.teacherID)
     if (not teacherRecords): #raise exception if teacher records doesnt exist
         abort(404)
+
     teacherName = teacherRecords.username
     teacherProfilePath = teacherRecords.profileImage
 
-    retrieveReviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
-    # print("the reviews", retrieveReviews)
-    reviewList = [] #list to store all the reviews
-    if retrieveReviews: #if there are reviews
-        for tupleData in retrieveReviews:
-            reviewUserID = tupleData[0]
-            reviewInfo = get_image_path(reviewUserID, returnUserInfo=True)
-            imageSrcPath = reviewInfo.profileImage
-            reviewList.append(Reviews(tupleData=tupleData, courseID=courseID, profileImage=imageSrcPath))
-    else: #if there are no reviews
-        pass # Returns the previous var, an empty list
-
-    #TODO: Pagnination required.
+    threeLatestReview = sql_operation(table="review", mode="get_3_latest_user_review", courseID=courseID)
 
     accType = imageSrcPath = None
     purchased = isInCart = False
@@ -172,7 +194,7 @@ def coursePage(courseID:str):
     return render_template(
         "users/general/course_page.html",
         imageSrcPath=imageSrcPath, purchased=purchased, isInCart=isInCart, teacherName=teacherName, teacherProfilePath=teacherProfilePath,
-        accType=accType, reviewList= reviewList, courses=courses, courseDescription=courseDescription
+        accType=accType, threeLatestReview=threeLatestReview, courses=courses, courseDescription=courseDescription
     )
 
 @generalBP.route("/search")

@@ -1,0 +1,106 @@
+{% if accType == None %}
+	{% extends "guest_base.html" %}
+{% elif accType == "Admin" %}
+	{% extends "admin_base.html" %}
+{% else %}
+	{% extends "user_base.html" %}
+{% endif %}
+
+{% block head %}
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/course_page.css') }}">
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
+{% endblock %}
+{% block title %} {{ courses.courseName }} Reviews | CourseFinity{% endblock %}
+{% from "includes/_add_to_cart_btn.html" import add_to_cart_btn %}
+
+{% block content %}
+<div class="container-md course-container">
+    <div class="row">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('generalBP.teacherPage', teacherID=courses.teacherID) }}">{{ courses.teacherUsername }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('generalBP.allCourses', teacherID=courses.teacherID) }}">All Courses</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('generalBP.coursePage', courseID=courses.courseID) }}">{{ courses.courseName }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Reviews</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-lg-12 pt-3">
+            {% if reviewArr %}
+                <h3>Reviews for <a href="{{ url_for('generalBP.coursePage', courseID=courses.courseID) }}">{{ courses.courseName }}</a></h3>
+                {% for review in reviewArr %}
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <img src="{{ review.profile_image }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                                {{review.username}}
+                                <div class="ratings">
+                                    {% with remainingStars = 5 - review.rating %}
+                                        {% for _ in range(review.rating) %}
+                                            <span class="fas fa-star"></span>
+                                        {% endfor %}
+                                        {% for _ in range(remainingStars) %}
+                                            <span class="far fa-star"></span>
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                            </h5>
+                            <p class="card-text">
+                                {{ review.review }}
+                            </p>
+                        </div>
+                    </div>
+                {% endfor %}
+                <nav aria-label="Page navigation" class="d-flex justify-content-center mt-4">
+                    <ul class="pagination">
+                        {% with urlPath = url_for("generalBP.reviewPage", courseID=courses.courseID) + "?p=" %}
+                            {% if currentPage != 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ urlPath }}1" aria-label="First Page">
+                                    <span aria-hidden="true">&laquo;</span>
+                                    <span class="sr-only">First Page</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ urlPath }}{{ currentPage - 1 }}" aria-label="Previous">
+                                        <span aria-hidden="true">&lt;</span>
+                                        <span class="sr-only">Previous</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% for pageNum in paginationArr %}
+                                {% if pageNum == currentPage %}
+                                    <li class="page-item active" aria-current="page">
+                                        <a class="page-link" href="{{ urlPath }}{{ currentPage }}">{{ currentPage }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ urlPath }}{{ pageNum }}">{{ pageNum }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            {% if currentPage != maxPage %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ urlPath }}{{ currentPage + 1 }}" aria-label="Next">
+                                        <span aria-hidden="true">&gt;</span>
+                                        <span class="sr-only">Next</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ urlPath }}{{ maxPage }}" aria-label="Last Page">
+                                    <span aria-hidden="true">&raquo;</span>
+                                    <span class="sr-only">Last Page</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endwith %}
+                    </ul>
+                </nav>
+            {% else %}
+                <h3>There are currently no reviews for <a href="{{ url_for('generalBP.coursePage', courseID=courses.courseID) }}">{{ courses.courseName }}</a>...</h3>
+            {% endif %}
+        </div>
+    </div> 
+</div>
+{% endblock %}

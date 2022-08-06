@@ -1,50 +1,82 @@
 {% extends "user_base.html" %}
-{% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/purchasereview.css') }}">
-<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">{% endblock %}
+{% block head %}
+<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/rating.css') }}">
+{% endblock %}
 {% block title %}Purchase Review | CourseFinity{% endblock %}
 {% from "includes/_formHelper.html" import render_field %}
 
 {% block content %}
 <div class="container">
-	<nav aria-label="breadcrumb">
-		<ol class="breadcrumb">
-			<li class="breadcrumb-item"><a href="{{ url_for('userBP.purchaseHistory') }}">Purchase History</a></li>
-			<li class="breadcrumb-item active" aria-current="page">Review</li>
-		</ol>
-	</nav>
-	<div class="box">
-		<div>
-			<form action="{{ url_for('userBP.courseReview', courseID=course.courseID) }}" method="POST">
-				<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-				<div class="row">
-					<div class="col-sm-6">
-						<h2>Create a review (Less than 200 words):</h2>
-					</div>
-					<div class="col-sm-6 float-end text-end">
-						<h2>Leave a rating:</h2>
-						<div class="rate float-end">
-							<input type="radio" id="star5" name="rate" value="5">
-							<label for="star5" title="text">5 stars</label>
-							<input type="radio" id="star4" name="rate" value="4">
-							<label for="star4" title="text">4 stars</label>
-							<input type="radio" id="star3" name="rate" value="3" checked>
-							<label for="star3" title="text">3 stars</label>
-							<input type="radio" id="star2" name="rate" value="2">
-							<label for="star2" title="text">2 stars</label>
-							<input type="radio" id="star1" name="rate" value="1">
-							<label for="star1" title="text">1 star</label>
-							<br>
-						</div>
-					</div>
-				</div>
-				<div>
-					{{ render_field(form.reviewDescription, class="form-control", rows="10") }}
-				</div>
-				<div>
-					<button type="submit" class="btn btn-primary mb-2" class="float-end">Submit</button>
-				</div>
-			</form>
-		</div>
-	</div>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% with purchaseHistURL = url_for("userBP.purchaseHistory") %}
+                {% if session.get("historyCurPage") %}
+                    {% set purchaseHistURL = purchaseHistURL + "?p=" + session.get("historyCurPage") %}
+                {% endif %}
+                <li class="breadcrumb-item"><a href="{{ purchaseHistURL }}">Purchase History</a></li>
+            {% endwith %}
+            <li class="breadcrumb-item active" aria-current="page">Review</li>
+        </ol>
+    </nav>
+    {% if reviewObj != None %}
+        <div class="box">
+            <div class="row">
+                <div class="col-sm-6">
+                    <h2>Your Review:</h2>
+                </div>
+                <div class="col-sm-6 d-flex justify-content-end">
+                    <h4>Your Rating:
+                    {% with remainingStars = 5 - course.averageRating %}
+                        {% for _ in range(course.averageRating) %}
+                            <span class="fas fa-star text-warning "></span>
+                        {% endfor %}
+                        {% for _ in range(remainingStars) %}
+                            <span class="far fa-star text-warning "></span>
+                        {% endfor %}
+                    {% endwith %}
+                    </h4>
+                </div>
+                <div>
+                    <textarea class="form-control" rows="10" aria-label="readonly input example" readonly>
+                        {{ reviewObj.review }}
+                    </textarea>
+                    <p></p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="box">
+            <form action="{{ url_for('userBP.courseReview', courseID=course.courseID) }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Create a review (Less than 200 words):</h2>
+                    </div>
+                    <div class="col-sm-6 float-end text-end">
+                        <h2>Leave a rating:</h2>
+                        <div class="rate float-end">
+                            <input type="radio" id="star5" name="rate" value="5">
+                            <label for="star5" title="text">5 stars</label>
+                            <input type="radio" id="star4" name="rate" value="4">
+                            <label for="star4" title="text">4 stars</label>
+                            <input type="radio" id="star3" name="rate" value="3" checked>
+                            <label for="star3" title="text">3 stars</label>
+                            <input type="radio" id="star2" name="rate" value="2">
+                            <label for="star2" title="text">2 stars</label>
+                            <input type="radio" id="star1" name="rate" value="1">
+                            <label for="star1" title="text">1 star</label>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    {{ render_field(form.reviewDescription, class="form-control", rows="10") }}
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary mb-2" class="float-end">Submit</button>
+                </div>
+            </form>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

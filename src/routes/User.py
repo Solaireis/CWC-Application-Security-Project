@@ -462,44 +462,44 @@ def courseReview(courseID:str):
     print("user is logged in")
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
-    print(userInfo)
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
 
     if (not purchased):
         print("user has not purchased this course")
         abort(404)
-    print("user has purchased this course")         
-    review = False
 
-    reviews = sql_operation(table="review", mode="retrieve_all", courseID=courseID)
-    for review in reviews:
-        # print(review) # commented it out to prevent massive prints
-        if (review[0] == userID and review[1] == courseID):
-            review = True
-            break
+    hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 
-    if (review):
-        print("user has already reviewed this course")
-        abort(404)
-    print("user has not reviewed this course")
-
-    if (request.method == "POST" and reviewForm.validate()):
-        print("post request")
-        print("form validated")
+    if (not hasReviewed and request.method == "POST" and reviewForm.validate()):
         review = reviewForm.reviewDescription.data
-        print("review:",review)
         rating = request.form.get("rate")
-        print("rating:",rating)
         sql_operation(
             table="review", mode="add_review", courseID=courseID, userID=userID,
             courseReview=review, courseRating=rating
         )
-        print("review updated")
         flash("Your review has been successfully added.", "Review Added!")
-        #redirect back to coursepage
-        return redirect(url_for("generalBP.coursePage", courseID=courseID))
+        return redirect(url_for("userBP.purchaseHistory") + f"?p={session.get('historyCurPage')}")
     else:
-        return render_template("users/user/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage)
+        return render_template("users/user/purchase_review.html", form=reviewForm, course=course, userID=userID, imageSrcPath=userInfo.profileImage, reviewObj=reviewObj)
+
+@userBP.route("/purchase-history")
+def purchaseHistory():
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    print(userInfo)
+
+    pageNum = request.args.get("p", default=1, type=int)
+    purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
+    # TODO: Complete the pagination for purchase history
+
+    if (pageNum > maxPage):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p={maxPage}")
+    elif (pageNum < 1):
+        return redirect(url_for("userBP.purchaseHistory") + f"?p=1")
+
+    paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage) if (purchasedCourseArr) else []
+    session["historyCurPage"] = str(pageNum)
+
+    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role, paginationArr=paginationArr, currentPage=pageNum, maxPage=maxPage)
 
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
@@ -608,21 +608,3 @@ def purchase(jwtToken:str):
     sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
 
     return redirect(url_for("userBP.purchaseHistory"))
-
-@userBP.route("/purchase-history")
-def purchaseHistory():
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    print(userInfo)
-
-    pageNum = request.args.get("p", default=1, type=int)
-    purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
-    # TODO: Complete the pagination for purchase history
-
-    if (pageNum > maxPage):
-        return redirect(url_for("userBP.purchaseHistory") + f"?p={maxPage}")
-    elif (pageNum < 1):
-        return redirect(url_for("userBP.purchaseHistory") + f"?p=1")
-
-    paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage) if (purchasedCourseArr) else []
-
-    return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role, paginationArr=paginationArr)

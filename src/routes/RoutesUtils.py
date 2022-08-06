@@ -54,28 +54,28 @@ def before_request() -> None:
     # check if 2fa_token key is in session
     # remove if the user is no longer on the setup 2FA page anymore
     if ("2fa_token" in session):
-        # remove if the endpoint is not the same as twoFactorAuthSetup
-        # note that since before_request checks for every request,
-        # meaning the css, js, and images are also checked when a user request the webpage
-        # which will cause the 2fa_token key to be removed from the session as the endpoint is "static"
-        # hence, adding allowing if the request endpoint is pointing to a static file
         if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "twoFactorAuthSetup"):
             session.pop("2fa_token", None)
 
     # check if relative_url key is in session
     # Remove if the admin is not on the userManagement page anymore
     if ("relative_url" in session):
-        # remove if the endpoint is not the same as userManagement or adminManagement
-        # note that since before_request checks for every request,
-        # meaning the css, js, and images are also checked when a user request the webpage
-        # which will cause the relative_url key to be removed from the session as the endpoint is "static"
-        # hence, adding allowing if the request endpoint is pointing to a static file
         if (
             request.endpoint and 
             request.endpoint != "static" and 
             request.endpoint.split(".")[-1] not in ("userManagement", "adminManagement")
         ):
             session.pop("relative_url", None)
+
+    # check if historyCurPage key is in session
+    # Remove if the user is not on the any of the purchase history related pages anymore
+    if ("historyCurPage" in session):
+        if (
+            request.endpoint and 
+            request.endpoint != "static" and 
+            request.endpoint.split(".")[-1] not in ("purchaseHistory", "courseReview", "purchaseView")
+        ):
+            session.pop("historyCurPage", None)
 
     # Validate the user's session for every request that is not to the static files
     if (request.endpoint != "static"):

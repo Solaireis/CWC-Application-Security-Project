@@ -6,81 +6,55 @@
 {% block content %}
 {% from "includes/_videoHelper.html" import video_player %}
 <div class="container-lg">
-    <div class="row">
-        
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="">{{ courses.teacherUsername }}</a></li>
-            <li class="breadcrumb-item active"><a href="">All Courses</a></li>
-            <li class="breadcrumb-item active" aria-current="page"> {{ courses.courseName }}</li>
+            {% with purchaseHistURL = url_for("userBP.purchaseHistory") %}
+                {% if session.get("historyCurPage") %}
+                    {% set purchaseHistURL = purchaseHistURL + "?p=" + session.get("historyCurPage") %}
+                {% endif %}
+                <li class="breadcrumb-item"><a href="{{ purchaseHistURL }}">Purchase History</a></li>
+            {% endwith %}
+            <li class="breadcrumb-item active" aria-current="page">{{ courses.courseName }}</li>
         </ol>
     </nav>
-
-    <div class="table-responsive-lg">
-        <table class="table table-borderless">
-            <tr></tr>
-        </table>
-    </div>
-
     <div class="container-lg">
         <div class="row">
             {{ video_player(videoData) }}
         </div>
     </div>
-
-    <div class="container-lg">
+    <div class="container-lg mt-3">
         <div class="row">
             <div class="col-lg-12">
-                <h1>{{ courses.courseName }}</h1>
+                <h1><a href="{{ url_for('generalBP.coursePage', courseID=courses.courseID) }}">{{ courses.courseName }}</a></h1>
                 <hr>
-                
-                <p>Uploaded by: <span><img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">{{ courses.teacherUsername }}</span></p>
+                <p>Uploaded by: 
+                    <span>
+                        <img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">
+                        <a href="{{ url_for('generalBP.teacherPage', teacherID=courses.teacherID) }}">{{ courses.teacherUsername }}</a>
+                    </span>
+                </p>
                 <p>Date Published: {{courses.dateCreated}}</p>
                 <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
-                <p> Course Rating: {% if (courses.averageRating > 0) %}
-                    <span class="ratings">
-                        {% with remainingStars = 5 - courses.averageRating %}
-                            {% for _ in range(courses.averageRating) %}
-                                <span class="fas fa-star"></span>
-                            {% endfor %}
-                            {% for _ in range(remainingStars) %}
-                                <span class="far fa-star"></span>
-                            {% endfor %}
-                        {% endwith %}
-                    </span> 
+                <p> Course Rating: 
+                    {% if (courses.averageRating > 0) %}
+                        <span class="ratings">
+                            {% with remainingStars = 5 - courses.averageRating %}
+                                {% for _ in range(courses.averageRating) %}
+                                    <span class="fas fa-star"></span>
+                                {% endfor %}
+                                {% for _ in range(remainingStars) %}
+                                    <span class="far fa-star"></span>
+                                {% endfor %}
+                            {% endwith %}
+                        </span> 
                     {% else %}
-                    <p class="card-text text-danger">No ratings yet...</p>
+                        <p class="card-text text-danger">No ratings yet...</p>
                     {% endif %} </p>
-                <p> Rating Counts:  </p>
-                <p>{{ courseDescription }}</p>
-            </div>
-        </div>
-    
-    <div class="accordion accordion-flush" id="accordionFlushExample">
-        <div class="accordion-item">
-            <h2 class="accordion-header" id="flush-headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-                <h4>Description</h4>
-            </button>
-            </h2>
-        <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne" data-bs-parent="#accordionFlushExample">
-            <div class="accordion-body"> 
-                <p>Course Category: <span>{{ courseCategory }}</span></p>
-                <p>Uploaded by: <span><img src="{{ teacherProfilePath }}" class="rounded-circle" alt="User Image" width="50" height="50">{{ courses.teacherUsername }}</span></p>
-                <p>Date Published: {{courses.dateCreated}}</p>
-                <p> Course Rating: {{courses.averageRating}}</p> / 5 </p>
-                <p> Rating Counts:  </p>
-                <hr> <!-- Not sure why hr doesnt appear-->
-                <hr>
-                <p>Description</p>
+                <p>Description:</p>
                 <p>{{ courseDescription }}</p>
             </div>
         </div>
     </div>
-    </div>
-    </div>
-
-
 </div>
     
 {% endblock %}

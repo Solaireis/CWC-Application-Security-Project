@@ -671,6 +671,29 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
 
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` PROCEDURE `paginate_review_by_course` (IN page_number INT, IN course_id_input CHAR(32))
+        BEGIN
+            SET @total_reviews := (SELECT COUNT(*) FROM review WHERE course_id=course_id_input GROUP BY course_id);
+
+            SET @page_offset := (page_number - 1) * 10;
+            SET @count := 0;
+            SELECT (@count := @count + 1) AS row_num, 
+            review.* FROM (
+                SELECT 
+                r.user_id, r.course_id, r.course_rating, 
+                r.course_review, r.review_date, u.username, @total_reviews 
+                FROM review r 
+                INNER JOIN user u ON r.user_id=u.id 
+                WHERE r.course_id=course_id_input
+                ORDER BY r.review_date DESC -- show newest reviews first
+            ) AS review
+            HAVING row_num > @page_offset
+            ORDER BY row_num
+            LIMIT 10;
+        END
+    """)
+
     """Datetime function"""
     cur.execute(f"""
         CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
