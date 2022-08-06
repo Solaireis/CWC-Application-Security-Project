@@ -4,9 +4,6 @@
 # Use the official lightweight Python image
 FROM python:3.10.5-slim
 
-# Install ffmpeg in container
-# RUN apt-get update && apt-get install -y ffmpeg
-
 # Allow statements and log messages to immediately appear in the Knative logs
 ENV PYTHONUNBUFFERED True
 
