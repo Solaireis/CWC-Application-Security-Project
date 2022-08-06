@@ -1,12 +1,15 @@
 /* --------------- START OF HAMBURGER MENU JAVASCRIPT --------------- */
 
-let navbtn = document.getElementById("nav-icon");
+let navBtn = document.getElementById("nav-icon");
+let navBtnContent = document.getElementById("navbar-content");
+let navBtnInput = document.getElementById("check");
 
-function btnclick(){
-    navbtn.classList.toggle("openTrue");
+function btnclick() {
+    navBtnContent.className === "navbar-collapse collapse show" && navBtnInput.getAttribute("aria-expanded")
+        ? navBtn.classList.remove("openTrue") : navBtn.classList.add("openTrue");
 }
 
-navbtn.addEventListener("click", btnclick);
+navBtn.addEventListener("click", btnclick);
 
 /* --------------- END OF HAMBURGER MENU JAVASCRIPT --------------- */
 
@@ -25,12 +28,8 @@ window.onscroll = function(){
 };
 
 function scrollFunction(){
-    if(document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-        scrollToTopBtn.classList.add("show");
-    }
-    else{
-        scrollToTopBtn.classList.remove("show");
-    }
+    document.body.scrollTop > 20 || document.documentElement.scrollTop > 20 
+        ? scrollToTopBtn.classList.add("show") : scrollToTopBtn.classList.remove("show");
 }
 
 scrollToTopBtn.addEventListener("click", scrollToTop);
