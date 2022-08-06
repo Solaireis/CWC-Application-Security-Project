@@ -3,26 +3,26 @@
 
 var clientPayload = null;
 // function getClientPayload() {
-//     console.error("Getting payload")
+//     console.log("Getting payload")
     // fetch(document.getElementById("dropzone-client").innerText).then((response) => {
     //     if (!response.ok) {
     //         throw new Error(`HTTP error: ${response.status}`);
     //     }
     //     clientPayload = response.json();
-    //     console.error("Payload acquired");
-    //     console.error(JSON.parse(clientPayload));
+    //     console.log("Payload acquired");
+    //     console.log(JSON.parse(clientPayload));
     //     return response.json().uploadLink;
 // })};
 
 function getClientPayload() {
-    console.error("Getting payload")
+    console.log("Getting payload")
     fetch(document.getElementById("dropzone-client").innerHTML)
     .then((response) => response.json())
     .then((uploadCreds) => {
         clientPayload = uploadCreds;
         myDropzone.options.url = clientPayload.uploadLink;
-        console.error("Payload acquired");
-        console.error(clientPayload);
+        console.log("Payload acquired");
+        console.log(clientPayload);
         myDropzone.processQueue();
     });
 };
@@ -34,33 +34,33 @@ var myDropzone = new Dropzone("#dropper", {
     acceptedFiles: 'video/*',
     autoProcessQueue: false,
     // accept: function(file) {
-    //     console.error("File Accepted");
+    //     console.log("File Accepted");
     //     this.options.url = getClientPayload();
-    //     console.error(this.options.url);
+    //     console.log(this.options.url);
     // },
     init: function() {
-        console.error("Initialising");
+        console.log("Initialising");
         this.url = '#/sdfjsldf';
 
         this.on("addedfile", async function() {
-            console.error("File Accepted");
+            console.log("File Accepted");
             if (clientPayload == null) {
                 getClientPayload();
                 myDropzone.processQueue();
             }
             else {
-                console.error("Payload exists");
+                console.log("Payload exists");
             }
-            console.error(this.options.url);
+            console.log(this.options.url);
         });
 
         this.on("sending", async function(file, xhr, formData) {
             while (clientPayload == null) {
-                console.error("Waiting");
+                console.log("Waiting");
                 await new Promise(r => setTimeout(r, 500));
             };
-            console.error("Sending");
-            console.error(clientPayload);
+            console.log("Sending");
+            console.log(clientPayload);
             formData.append("x-amz-credential", clientPayload['x-amz-credential']);
             formData.append("x-amz-algorithm", clientPayload['x-amz-algorithm']);
             formData.append("x-amz-date ", clientPayload['x-amz-date']);
@@ -84,7 +84,7 @@ var myDropzone = new Dropzone("#dropper", {
 //         if (!response.ok) {
 //             throw new Error(`HTTP error: ${response.status}`);
 //         }
-//         console.error(response.text())
+//         console.log(response.text())
 //         return JSON.parse(response.text());
 // })};
 
@@ -99,17 +99,17 @@ var myDropzone = new Dropzone("#dropper", {
 //         fetch(document.getElementById("dropzone-client").innerHTML)
 //         .then((response) => response.json())
 //         .then((uploadCreds) => {
-//             console.error("Hello")
+//             console.log("Hello")
 //             this.awsOptions = uploadCreds;
 //             this.options.url = this.awsOptions.uploadLink;
 //             clientPayload = uploadCreds
-//             console.error(uploadCreds)
+//             console.log(uploadCreds)
 //         });
 //     },
 //         // await clientPayload({}, () => {
-//         //     console.error(uploadCreds)
+//         //     console.log(uploadCreds)
 //             // this.awsOptions = uploadCreds;
-//             // console.error("Hello")
+//             // console.log("Hello")
 //             // this.options.url = this.awsOptions.uploadLink;
 //             // done();
 //         // })
@@ -120,7 +120,7 @@ var myDropzone = new Dropzone("#dropper", {
 //         this.url = "#/sdfjsldf";
 //         // this.options.url = clientPayload.uploadLink;
 //         // while (clientPayload == null) {
-//         //     console.error(clientPayload)
+//         //     console.log(clientPayload)
 //         //     await new Promise(r => setTimeout(r, 1000));
 //         //   };
 
@@ -135,9 +135,9 @@ var myDropzone = new Dropzone("#dropper", {
 
 //         this.on("sending", function(file, xhr, formData) {
 //             // clientPayload = getClientPayload()
-//             // console.error(getClientPayload())
+//             // console.log(getClientPayload())
 //             // while (clientPayload == null) {
-//             //     console.error(clientPayload);
+//             //     console.log(clientPayload);
 //             //     await new Promise(r => setTimeout(r, 5000));
 //             // }
 //             formData.append("x-amz-credential", clientPayload.x-amz-credential);
@@ -148,7 +148,7 @@ var myDropzone = new Dropzone("#dropper", {
 //             formData.append("policy", clientPayload.policy);
 //             formData.append("success_action_status", 201);
 //             formData.append("success_action_redirect", "");
-//             console.error(formData);
+//             console.log(formData);
 //         });
 
 //         this.on("success", function (file) {

@@ -18,6 +18,7 @@ from flask import url_for, current_app, abort
 from argon2.exceptions import VerifyMismatchError
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
+import requests
 from jsonschema import validate
 
 # import local python files
@@ -28,6 +29,7 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
 from python_files.classes.Constants import CONSTANTS
+from .VideoFunctions import delete_video
 
 schema = {
     
@@ -101,6 +103,69 @@ def generate_limited_usage_jwt_token(
         expiryDate=expiryInfoToStore, limit=limit
     )
     return token if (not getTokenIDFlag) else (token, tokenID)
+
+def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
+    """
+    Send a request to VdoCipher to prepare to receive a video.
+    Returns the proper credentials to connect with VdoCipher to receive said video.
+    Passed to Dropzone as an API call.
+
+    Uses input values derived from a JWT.
+    Creates another JWT with videoID, to be passed to server when upload successful (for MySQL).
+
+    Inputs:
+    - courseID (str)
+    - teacherID (str)
+
+    Outputs (dict):
+    {
+        'clientPayload': {
+            'policy': ... (str),
+            'key': ... (str),
+            'x-amz-signature': ... (str),
+            'x-amz-algorithm': ... (str),
+            'x-amz-date': ... (str),
+            'x-amz-credential': ... (str),
+            'uploadLink': ... (str),
+            'successUrl': ... (str)
+    }
+    """
+    data = json.loads(requests.put(
+        url="https://dev.vdocipher.com/api/videos",
+        headers={
+            "Authorization": f"Apisecret {current_app.config['SECRET_CONSTANTS'].VDOCIPHER_SECRET}"
+        },
+        params={
+            "title": f"Course {courseID}",
+            "folderId": "root"
+        }
+    )
+    .text)
+
+    if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos. 
+                                        # Either remove the previously uploaded videos or 
+                                        # subscribe to our premium plans to unlock the video limit.'}
+        print(data.get("message"))
+        #TODO: Log error
+        return None
+
+    payload = data["clientPayload"]
+
+    expiryInfo = JWTExpiryProperties(activeDuration=300)
+    jwtToken = generate_limited_usage_jwt_token(
+        payload={
+            "teacherID": teacherID,
+            "courseID": courseID,
+            "videoPath": data["videoId"],
+            "dateCreated":  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        },
+        expiryInfo=expiryInfo,
+        limit=1
+    )
+
+    payload["successUrl"] = url_for("teacherBP.uploadSuccess", jwtToken=jwtToken)
+    print(payload)
+    return payload
 
 def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
     """
@@ -1624,7 +1689,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             foundResultsTuple = tupleInfo[1:]
             if ((currentDay - foundResultsTuple[4]).days > 1):
                 cur.execute("DELETE FROM draft_course WHERE course_id=%(courseID)s", {"courseID":foundResultsTuple[0]})
-                from .VideoFunctions import delete_video # I love circular imports...
                 delete_video(foundResultsTuple[-2])
                 connection.commit()
             else:

@@ -5,7 +5,7 @@ Routes for logged in Teachers
 from werkzeug.utils import secure_filename
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -14,13 +14,10 @@ from python_files.functions.StripeFunctions import *
 from python_files.functions.VideoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.Course import get_readable_category
-from python_files.classes.MarkdownExtensions import AnchorTagExtension
-from .RoutesSecurity import csrf
 
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
-import platform, hashlib, shutil
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -66,14 +63,10 @@ def draftCourseList():
 
 """ Start of Course Creation API Calls """
 
-
-
-""" Start of Course Creation API Calls """
-
 @teacherBP.route("/client-payload/<string:jwtToken>")
 def clientPayload(jwtToken):
     print(request.data)
-    data = EC_verify(jwtToken, getData = True)
+    data = EC_verify(jwtToken, getData=True)
     if not data.get("verified"):
         abort(400)
 
@@ -99,17 +92,17 @@ def clientPayload(jwtToken):
 
 @teacherBP.route("/video-uploaded/<string:jwtToken>")
 def uploadSuccess(jwtToken):
-    data = EC_verify(jwtToken, getData = True)
+    data = EC_verify(jwtToken, getData=True)
     if not data.get("verified"):
         abort(400)
     print("Token valid")
 
     tokenID = data["data"].get("token_id")
-    
+
     if (tokenID is None):
         abort(404)
     print("Token has no token ID")
-    
+
     if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
         abort(400)
     print("Token in database")
@@ -117,7 +110,7 @@ def uploadSuccess(jwtToken):
     sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
 
     # Check video really has been uploaded
-    payload = data['data']['payload']
+    payload = data["data"]["payload"]
     if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
         #TODO: Delete video
         abort(400)
@@ -133,13 +126,9 @@ def uploadSuccess(jwtToken):
 
 """ End of Course Creation API Calls """
 
-
-
 """ Start Of Course Creation """
 
-#TODO: Ask if need do CRC32C checksum
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
-@csrf.exempt
 def videoUpload():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     print(userInfo)
@@ -168,7 +157,6 @@ def createCourse(courseID:str):
     videoPath = courseTuple[2]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
 
-    
     # Check if course exists
     videoData = check_video(videoPath)
     if videoData is None: # video doesn't exist
@@ -233,7 +221,6 @@ def createCourse(courseID:str):
             flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
-
         # videoPath = upload_file_from_path(
         #     bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
         #     localFilePath=absFilePath,
@@ -269,8 +256,6 @@ def createCourse(courseID:str):
 
 """ End Of Course Creation """
 
-
-
 """ Start Of Course Management """
 
 """
@@ -296,8 +281,8 @@ def rawVideo(courseID:str, videoName:str):
         )
     else:
         abort(404)
-
 """
+
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     courseID = request.args.get("cid", default="test", type=str)
@@ -398,6 +383,12 @@ def courseUpdate():
         if (len(updated) > 0):
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
-    return render_template("users/teacher/course_video_edit.html",form=courseForm, imageSrcPath=userInfo.profileImage, accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, courseTag=courseFound.courseCategory, videoData=get_video(courseFound.videoPath))
+    return render_template(
+        "users/teacher/course_video_edit.html", 
+        form=courseForm, imageSrcPath=userInfo.profileImage, 
+        accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, 
+        courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, 
+        courseTag=courseFound.courseCategory, videoData=get_video(courseFound.videoPath)
+    )
 
 """ End Of Course Management """
