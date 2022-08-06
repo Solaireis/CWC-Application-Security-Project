@@ -46,6 +46,11 @@ a:hover {
 	width: 600px;
 }
 
+#explore-category:focus {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
 .navbar-expand-lg .navbar-nav .nav-link {
 	padding: 5px;
 }

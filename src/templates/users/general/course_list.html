@@ -112,14 +112,14 @@
                             </p>
                             {% if accType == "Teacher" and userID == teacherID %}
                                 <span>
-                                    <a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}" onclick="return false;">
+                                    <a href="{{ url_for('teacherBP.courseUpdate') }}?cid={{course.courseID}}">
                                         Edit Course
                                     </a>
                                 </span>
                                 <span>
-                                    <a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal" data-bs-target="#deleteCourse">
+                                    <button class="text-danger btn btn-link" data-bs-toggle="modal" data-bs-target="#deleteCourse">
                                         Delete Course
-                                    </a>
+                                    </button>
                                 </span>
                                 <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"

@@ -64,14 +64,16 @@
                             {% endif %}
                         </h4>
                         {% if videoStatus == "ready" %}
-                            <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" onclick="return false;">Complete Course Creation</a></span>
+                            <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" >Complete Course Creation</a></span>
                         {% elif videoStatus == "Queued" %}
                             <span class="text-muted">Video Processing...</span>
                         {% else %}
                             <span class="text-warning">{{ videoStatus }}</span>
                         {% endif %}
-                        <span><a class="text-danger" href="#" onclick="return false;" data-bs-toggle="modal"
-                            data-bs-target="#deleteCourse">Delete Draft</a></span>
+                        <span>
+                            <button class="text-danger btn btn-link" data-bs-toggle="modal"
+                            data-bs-target="#deleteCourse">Delete Draft</button>
+                        </span>
                         <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
                         data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
                         aria-hidden="true">
