@@ -99,6 +99,8 @@ CSP = {
     ],
     "script-src":[
         "'self'",
+        "https://coursefinity.social/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js",
+        "https://coursefinity.social/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js",
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
