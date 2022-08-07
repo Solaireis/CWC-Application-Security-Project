@@ -38,20 +38,20 @@
                             <h5 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=results.courseID) }}">{{ results.courseName }}</a></h5>
                             <p class="card-text">{{ results.courseDescription }}</p>
                             <p class="card-text">
-                                <small class="text-muted">
+                                <small>
                                     {% if (results.averageRating > 0) %}
-                                    <div class="ratings">
-                                        {% with remainingStars = 5 - results.averageRating %}
-                                            {% for _ in range(results.averageRating) %}
-                                                <span class="fas fa-star"></span>
-                                            {% endfor %}
-                                            {% for _ in range(remainingStars) %}
-                                                <span class="far fa-star"></span>
-                                            {% endfor %}
-                                        {% endwith %}
-                                    </div>
+                                        <div class="text-warning">
+                                            {% with remainingStars = 5 - results.averageRating %}
+                                                {% for _ in range(results.averageRating) %}
+                                                    <span class="fas fa-star"></span>
+                                                {% endfor %}
+                                                {% for _ in range(remainingStars) %}
+                                                    <span class="far fa-star"></span>
+                                                {% endfor %}
+                                            {% endwith %}
+                                        </div>
                                     {% else %}
-                                    <p class="card-text text-danger">No ratings yet...</p>
+                                        <p class="card-text text-danger">No ratings yet...</p>
                                     {% endif %}
                                 </small>
                             </p>

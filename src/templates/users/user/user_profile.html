@@ -59,13 +59,6 @@
         <div class="col-lg-9 merge-boxes">
             <div id="right-user">
                 <div class="container res_padding_remove">
-                    {# if emailVerification == False #}
-                    <!--div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        <h6>Looks like you have not verified your email, please verify by clicking <a class="text-danger fw-bold" href="/generate_verify_email_token">here...</a></h6>
-                        <h6>Alternatively, you can check your email if you have recently signed up.</h6>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div-->
-                    {# endif #}
                     <div class="row">
                         <div class="col-md-5 image-center">
                             <!---Dicebear uses Links so cannot use url_for-->
@@ -221,13 +214,20 @@
                                     role="alert">
                                     <h4>Did you know?</h4>
                                     <p>If you have a passion for teaching, you can become an educator on CourseFinity!</p>
-                                    <p>CourseFinity will only take 25% of your monthly revenue. Additionally, for the first
-                                        three months, you will earn 100% of your monthly revenue!</p>
                                     <p>Click on the button below or click on "Become a Teacher!" above!</p>
                                     <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal"
                                         data-bs-target="#becomeTeacher">Change account type</button>
                                     <button type="button" class="btn-close" data-bs-dismiss="alert"
                                         aria-label="Close"></button>
+                                </div>
+                            {% else %}
+                                <div class="border border-2 alert alert-light alert-dismissible fade show text-dark"
+                                    role="alert">
+                                    <h4>Did you know?</h4>
+                                    <p>
+                                        If you want to teach a subject that is not listed in the select option when uploading a video, you can contact us to get it added to the list of subjects!
+                                    </p>
+                                    <p>Additionally, if you require any assistance, feel free to <a href="{{ url_for('generalBP.contactUs') }}">contact us!</a></p>
                                 </div>
                             {% endif %}
                         </div>

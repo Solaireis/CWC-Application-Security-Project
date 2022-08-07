@@ -56,7 +56,7 @@
 								<p class="card-text">{{ course.courseDescription }}</p>
 								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
 								{% if (course.averageRating > 0) %}
-								<div class="ratings">
+								<div class="text-warning">
 									{% with remainingStars = 5 - course.averageRating %}
 										{% for _ in range(course.averageRating) %}
 											<span class="fas fa-star"></span>
@@ -111,7 +111,7 @@
 								<p class="card-text">{{ course.courseDescription }}</p>
 								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
 								{% if (course.averageRating > 0) %}
-								<div class="ratings">
+								<div class="text-warning">
 									{% with remainingStars = 5 - course.averageRating %}
 										{% for _ in range(course.averageRating) %}
 											<span class="fas fa-star"></span>

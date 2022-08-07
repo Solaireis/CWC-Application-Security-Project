@@ -96,6 +96,10 @@ def teacherPage(teacherID:str):
 
 @generalBP.route("/teacher/<string:teacherID>/courses")
 def allCourses(teacherID:str):
+    page = request.args.get("p", default=1, type=int)
+    if (page < 1):
+        return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=1")
+
     accType = imageSrcPath = userID = None
     if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
@@ -110,14 +114,15 @@ def allCourses(teacherID:str):
     else:
         userID = session["user"]
 
-    page = request.args.get("p", default=1, type=int)
     courseList, maxPage, teacherName = sql_operation(
         table="course", mode="get_all_courses_by_teacher", pageNum=page, 
         teacherID=teacherID, getTeacherName=True, userID=userID
     )
     paginationArr = []  
     if (page > maxPage):
-        return redirect(url_for("generalBP.allCourses", teacherID=teacherID) + "?p=" + str(maxPage))
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].PAGE_NUM_REGEX, f"p={maxPage}", request.url, count=1)
+        )
 
     # Compute the buttons needed for pagination
     if (courseList):
@@ -127,6 +132,10 @@ def allCourses(teacherID:str):
 
 @generalBP.route("/course/<string:courseID>/reviews")
 def reviewPage(courseID:str):
+    pageNum = request.args.get("p", default=1, type=int)
+    if (pageNum < 1):
+        return redirect(url_for("userBP.reviewPage", courseID=courseID) + f"?p=1")
+
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courses): #raise exception
         abort(404)
@@ -141,13 +150,10 @@ def reviewPage(courseID:str):
         )
         accType = userInfo.role
 
-    pageNum = request.args.get("p", default=1, type=int)
     reviewArr, maxPage = sql_operation(table="review", mode="paginate_reviews", courseID=courseID, pageNum=pageNum)
 
     if (pageNum > maxPage):
         return redirect(url_for("userBP.reviewPage", courseID=courseID) + f"?p={maxPage}")
-    elif (pageNum < 1):
-        return redirect(url_for("userBP.reviewPage", courseID=courseID) + f"?p=1")
 
     if (reviewArr):
         paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)
@@ -209,9 +215,15 @@ def search():
     E.g. 
     - https://github.com/search?q=test&type=Repositories
     - https://github.com/search?p=2&q=test&type=Repositories
-    
+
     TODO: Must handle all sorts of situation such as manually tampering with the url
     """
+    page = request.args.get("p", default=1, type=int)
+    if (page < 1):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].NEGATIVE_PAGE_NUM_REGEX, "p=1", request.url, count=1)
+        )
+
     searchInput = request.args.get("q", default=None, type=str)
     courseCategory = request.args.get("ct", default=None, type=str)
 
@@ -237,7 +249,6 @@ def search():
     if (len(searchInput) > 100):
         searchInput = searchInput[:100]
 
-    page = request.args.get("p", default=1, type=int)
     if (courseCategory):
         if (get_readable_category(courseCategory) != "Unknown Category"):
             listInfo = sql_operation(table="course", mode="explore", courseCategory=searchInput, pageNum=page)
@@ -246,29 +257,27 @@ def search():
     else:
         listInfo = sql_operation(table="course", mode="search", searchInput=searchInput, pageNum=page)
 
+    foundResults, maxPage = [], 1
     if (listInfo):
         foundResults, maxPage = listInfo[0], listInfo[1]
-        if (page > maxPage):
-            # TODO: Protect against injections
-            if (courseCategory):
-                return redirect(url_for('generalBP.search') + "?ct=" + searchInput + "&p=" + str(maxPage))
-            else:
-                return redirect(url_for('generalBP.search') + "?q=" + searchInput + "&p=" + str(maxPage))
 
-        # Compute the buttons needed for pagination
+    if (page > maxPage):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].PAGE_NUM_REGEX, f"p={maxPage}", request.url, count=1)
+        )
+
+    # Compute the buttons needed for pagination
+    paginationArr = []
+    if (listInfo):
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-        if ("user" in session or "admin" in session):
-            userInfo = get_image_path(session["user"], returnUserInfo=True)
-            return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=userInfo.profileImage, maxPage=maxPage, accType=userInfo.role, paginationArr=paginationArr, tagSearch=tagSearch)
-
-        return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), maxPage=maxPage, accType=None, paginationArr=paginationArr, tagSearch=tagSearch)
-
+    accType = imageSrcPath = None
     if ("user" in session or "admin" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
-        return render_template("users/general/search.html", searchInput=searchInput, foundResultsLen=0, imageSrcPath=userInfo.profileImage, accType=userInfo.role, tagSearch=tagSearch)
+        accType = userInfo.role
+        imageSrcPath = userInfo.profileImage
 
-    return render_template("users/general/search.html", searchInput=searchInput, foundResults=None, foundResultsLen=0, accType=None, tagSearch=tagSearch)
+    return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=accType, paginationArr=paginationArr, tagSearch=tagSearch)
 
 @generalBP.route("/verify-email/<string:token>")
 @limiter.limit("15 per minute")

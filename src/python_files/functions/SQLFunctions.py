@@ -1605,18 +1605,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         if (pageNum > 2147483647):
             pageNum = 2147483647
 
-        cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":1})
-        try:
-            maxPage = cur.fetchone()[-1]
-            if (pageNum > maxPage):
-                return ([] , maxPage, "") if (getTeacherName) else ([], maxPage)
-        except:
-            return ([], 1, "") if (getTeacherName) else ([], 1)
-
         cur.execute("CALL paginate_teacher_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
-        maxPage = ceil(resultsList[0][-1] / 10)
+        if (resultsList is None or len(resultsList) < 1):
+            return ([], 1, "") if (getTeacherName) else ([], 1)
 
+        maxPage = ceil(resultsList[0][-1] / 10)
         if (maxPage <= 0):
             maxPage = 1
 
@@ -1662,18 +1656,13 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
-        # Not using offset as it will get noticeably slower with more courses
-        cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":1})
-        try:
-            maxPage = cur.fetchone()[-1]
-            if (pageNum > maxPage):
-                return ([] , maxPage)
-        except:
-            return ([], 1)
+
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
-        maxPage = ceil(resultsList[0][-1] / 10)
+        if (resultsList is None or len(resultsList) < 1):
+            return ([], 1)
 
+        maxPage = ceil(resultsList[0][-1] / 10)
         if (maxPage <= 0):
             maxPage = 1
 
@@ -1846,15 +1835,17 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         pageNum = kwargs.get("pageNum")
         if (pageNum > 2147483647):
             pageNum = 2147483647
-        resultsList = []
 
+        resultsList = []
         if (mode == "search"):
             cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         else:
             cur.execute("CALL explore_course_paginate(%(pageNum)s, %(courseTag)s)", {"pageNum":pageNum,"courseTag":courseTag})
+
         foundResults = cur.fetchall()
         if (len(foundResults) == 0):
             return []
+
         maxPage = ceil(foundResults[0][-1] / 10)
         teacherIDList = [teacherID[2] for teacherID in foundResults]
         for i, teacherID in enumerate(teacherIDList):
@@ -1866,7 +1857,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             resultsList.append(CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True))
 
         return (resultsList, maxPage)
-        
 
     else:
         raise ValueError("Invalid mode in the course_sql_operation function!")
@@ -1936,9 +1926,12 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "paginate_reviews"):
         pageNum = kwargs["pageNum"]
+        if (pageNum > 2147483647):
+            pageNum = 2147483647
+
         cur.execute("CALL paginate_review_by_course(%(pageNum)s, %(courseID)s)", {"courseID":courseID, "pageNum":pageNum})
         matchedReview = cur.fetchall()
-        if (matchedReview is None):
+        if (matchedReview is None or len(matchedReview) < 1):
             return ([], 1)
 
         maxPage = 1

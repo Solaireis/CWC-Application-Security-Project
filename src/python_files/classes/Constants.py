@@ -46,6 +46,10 @@ class Constants:
     # Debug flag
     DEBUG_MODE: bool = DEBUG_MODE 
 
+    # For pagination page numbers
+    NEGATIVE_PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"p=-\d+")
+    PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"p=\d+")
+
     # custom domain
     CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if ( DEBUG_MODE) else "https://coursefinity.social"
 

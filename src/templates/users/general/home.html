@@ -1,9 +1,9 @@
 {% if accType == None %}
-	{% extends "guest_base.html" %}
+    {% extends "guest_base.html" %}
 {% elif accType == "Admin" %}
-	{% extends "admin_base.html" %}
+    {% extends "admin_base.html" %}
 {% else %}
-	{% extends "user_base.html" %}
+    {% extends "user_base.html" %}
 {% endif %}
 
 {% block head %}<link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/home.css') }}">{% endblock %}
@@ -36,140 +36,140 @@
 {% endwith %}
 
 <div class="container">
-	<div class="row">
-		<h2>Highly Rated</h2>
-		<div class="row row-cols-1 row-cols-md-3 g-4">
-			{% if (threeHighlyRatedCoursesLen < 1) %}
-				<div class="col">
-					<div class="card text-dark bg-light h-100">
-						<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
-						<div class="card-body">
-							<h4 class="card-title">No Course Available</h4>
-							<p class="card-text">Sorry, there are currently no courses available.</p>
-						</div>
-					</div>
-				</div>
-			{% else %}
-				{% for course, courseUserState in threeHighlyRatedCourses %}
-					<div class="col">
-						<div class="card text-dark bg-light h-100">
-							{% if (course.courseImagePath == None) %}
-								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
-							{% else %}
-								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
-							{% endif %}
-							<div class="card-body">
-								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
-								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
-								<p class="card-text">{{ course.courseDescription }}</p>
-								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
-								{% if (False) %}
-								<div class="ratings">
-									{% with remainingStars = 5 - course.averageRating %}
-										{% for _ in range(course.averageRating) %}
-											<span class="fas fa-star"></span>
-										{% endfor %}
-										{% for _ in range(remainingStars) %}
-											<span class="far fa-star"></span>
-										{% endfor %}
-									{% endwith %}
-								</div>
-								{% else %}
-								<p class="card-text text-danger">No ratings yet...</p>
-								{% endif %}
-							</div>
-							<div class="card-footer">
-								{{ add_to_cart_btn(
-									course=course,
-									courseUserState=courseUserState, 
-									accType=accType
-								) }}
-							</div>
-						</div>
-					</div>
-				{% endfor %}
-			{% endif %}
-		</div>
-	</div>
-	<div class="row">
-		<h2 id="newest-videos">Newly Uploaded Videos</h2>
-		<div class="row row-cols-1 row-cols-md-3 g-4">
-			{% if (latestThreeCoursesLen < 1) %}
-				<div class="col">
-					<div class="card text-dark bg-light h-100">
-						<img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
-						<div class="card-body">
-							<h4 class="card-title">No Course Available</h4>
-							<p class="card-text">Sorry, there are currently no courses available.</p>
-						</div>
-					</div>
-				</div>
-			{% else %}
-				{% for course, courseUserState in latestThreeCourses %}
-					<div class="col">
-						<div class="card text-dark bg-light h-100">
-							{% if (course.courseImagePath == None) %}
-								<img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
-							{% else %}
-								<img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
-							{% endif %}
-							<div class="card-body">
-								<h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
-								<a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
-								<p class="card-text">{{ course.courseDescription }}</p>
-								<p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
-								{% if (course.averageRating > 0) %}
-								<div class="ratings">
-									{% with remainingStars = 5 - course.averageRating %}
-										{% for _ in range(course.averageRating) %}
-											<span class="fas fa-star"></span>
-										{% endfor %}
-										{% for _ in range(remainingStars) %}
-											<span class="far fa-star"></span>
-										{% endfor %}
-									{% endwith %}
-								</div>
-								{% else %}
-								<p class="card-text text-danger">No ratings yet...</p>
-								{% endif %}
-							</div>
-							<div class="card-footer">
-								{{ add_to_cart_btn(
-									course=course,
-									courseUserState=courseUserState, 
-									accType=accType
-								) }}
-							</div>
-						</div>
-					</div>
-				{% endfor %}
-			{% endif %}
-		</div>
-	</div>
-	{% if (accType == None or accType == "Student") %}
-	<div class="row become_headings">
-		<div class="col-md">
-			<img src="https://storage.googleapis.com/coursefinity/web-assets/home/home_teacher_banner.webp" alt="Become a Teacher Promo Image" class="thumbnails rounded">
-		</div>
-		<div class="col-md text-center">
-			<h2>Become A Teacher Today!</h2>
-			<p>We provide the platform for you to teach what you love.<br>Start now by teaching students and earn 25% comission!</p>
-			<form action="{{ url_for('guestBP.signup') }}" method="GET">
-				<button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
-			</form>
-		</div>
-	</div>
-	{% endif %}
+    <div class="row">
+        <h2>Highly Rated</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% if (threeHighlyRatedCoursesLen < 1) %}
+                <div class="col">
+                    <div class="card text-dark bg-light h-100">
+                        <img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+                        <div class="card-body">
+                            <h4 class="card-title">No Course Available</h4>
+                            <p class="card-text">Sorry, there are currently no courses available.</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                {% for course, courseUserState in threeHighlyRatedCourses %}
+                    <div class="col">
+                        <div class="card text-dark bg-light h-100">
+                            {% if (course.courseImagePath == None) %}
+                                <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                            {% else %}
+                                <img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
+                            {% endif %}
+                            <div class="card-body">
+                                <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
+                                <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
+                                <p class="card-text">{{ course.courseDescription }}</p>
+                                <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+                                {% if (False) %}
+                                    <div class="text-warning">
+                                        {% with remainingStars = 5 - course.averageRating %}
+                                            {% for _ in range(course.averageRating) %}
+                                                <span class="fas fa-star"></span>
+                                            {% endfor %}
+                                            {% for _ in range(remainingStars) %}
+                                                <span class="far fa-star"></span>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                {% else %}
+                                    <p class="card-text text-danger">No ratings yet...</p>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                {{ add_to_cart_btn(
+                                    course=course,
+                                    courseUserState=courseUserState, 
+                                    accType=accType
+                                ) }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <h2 id="newest-videos">Newly Uploaded Videos</h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% if (latestThreeCoursesLen < 1) %}
+                <div class="col">
+                    <div class="card text-dark bg-light h-100">
+                        <img src="https://storage.googleapis.com/coursefinity/course-thumbnails/placeholder.webp" class="card-img-top" alt="Course Thumbnail">
+                        <div class="card-body">
+                            <h4 class="card-title">No Course Available</h4>
+                            <p class="card-text">Sorry, there are currently no courses available.</p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                {% for course, courseUserState in latestThreeCourses %}
+                    <div class="col">
+                        <div class="card text-dark bg-light h-100">
+                            {% if (course.courseImagePath == None) %}
+                                <img src="{{ url_for('static', filename='images/courses/placeholder.webp') }}" class="card-img-top" alt="Course Thumbnail">
+                            {% else %}
+                                <img src= "{{ course.courseImagePath }}" class="card-img-top" alt="Course Thumbnail">
+                            {% endif %}
+                            <div class="card-body">
+                                <h4 class="card-title"><a href="{{ url_for('generalBP.coursePage', courseID=course.courseID) }}">{{ course.courseName }}</a></h4>
+                                <a href="{{ url_for('generalBP.teacherPage', teacherID=course.teacherID) }}"><small class="text-muted">By {{ course.teacherUsername }}</small></a>
+                                <p class="card-text">{{ course.courseDescription }}</p>
+                                <p class="card-text fw-bold">Price: {{ course.coursePrice }}</p>
+                                {% if (course.averageRating > 0) %}
+                                    <div class="text-warning">
+                                        {% with remainingStars = 5 - course.averageRating %}
+                                            {% for _ in range(course.averageRating) %}
+                                                <span class="fas fa-star"></span>
+                                            {% endfor %}
+                                            {% for _ in range(remainingStars) %}
+                                                <span class="far fa-star"></span>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                {% else %}
+                                    <p class="card-text text-danger">No ratings yet...</p>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                {{ add_to_cart_btn(
+                                    course=course,
+                                    courseUserState=courseUserState, 
+                                    accType=accType
+                                ) }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {% if (accType == None or accType == "Student") %}
+    <div class="row become_headings">
+        <div class="col-md">
+            <img src="https://storage.googleapis.com/coursefinity/web-assets/home/home_teacher_banner.webp" alt="Become a Teacher Promo Image" class="thumbnails rounded">
+        </div>
+        <div class="col-md text-center">
+            <h2>Become A Teacher Today!</h2>
+            <p>We provide the platform for you to teach what you love.<br>Start now by teaching students!</p>
+            <form action="{{ url_for('guestBP.signup') }}" method="GET">
+                <button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-			<script nonce="{{ csp_nonce() }}">
-				var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
-				alertModal.show();
-			</script>
+            <script nonce="{{ csp_nonce() }}">
+                var alertModal = new bootstrap.Modal(document.getElementById("alertModal"), {});
+                alertModal.show();
+            </script>
         {% endif %}
     {% endwith %}
 {% endblock %}

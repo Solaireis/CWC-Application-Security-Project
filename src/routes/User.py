@@ -7,7 +7,7 @@ from flask_limiter.util import get_remote_address
 import markdown, pyotp, qrcode, html
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -484,17 +484,17 @@ def courseReview(courseID:str):
 
 @userBP.route("/purchase-history")
 def purchaseHistory():
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    print(userInfo)
-
     pageNum = request.args.get("p", default=1, type=int)
+    if (pageNum < 1):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].NEGATIVE_PAGE_NUM_REGEX, "p=1", request.url, count=1)
+        )
+
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     purchasedCourseArr, maxPage = sql_operation(table="user", mode="paginate_user_purchases", userID=session["user"], pageNum=pageNum)
-    # TODO: Complete the pagination for purchase history
 
     if (pageNum > maxPage):
         return redirect(url_for("userBP.purchaseHistory") + f"?p={maxPage}")
-    elif (pageNum < 1):
-        return redirect(url_for("userBP.purchaseHistory") + f"?p=1")
 
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage) if (purchasedCourseArr) else []
     session["historyCurPage"] = str(pageNum)

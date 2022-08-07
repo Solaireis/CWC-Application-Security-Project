@@ -37,7 +37,7 @@
                 <p>Course Category: <span>{{ courses.courseCategory }}</span></p>
                 <p> Course Rating: 
                     {% if (courses.averageRating > 0) %}
-                        <span class="ratings">
+                        <span class="text-warning">
                             {% with remainingStars = 5 - courses.averageRating %}
                                 {% for _ in range(courses.averageRating) %}
                                     <span class="fas fa-star"></span>

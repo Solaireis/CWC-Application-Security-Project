@@ -15,6 +15,12 @@ superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", templ
 
 @superAdminBP.route("/admin-management", methods=["GET","POST"])
 def adminManagement():
+    pageNum = request.args.get("p", default=1, type=int)
+    if (pageNum < 1):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].NEGATIVE_PAGE_NUM_REGEX, "p=1", request.url, count=1)
+        )
+
     recoverUserForm = AdminRecoverForm(request.form)
     # Form actions starts below
     if (request.method == "POST"):
@@ -110,8 +116,6 @@ def adminManagement():
 
         return redirect(session["relative_url"])
 
-    # Pagination starts below
-    pageNum = request.args.get("p", default=1, type=int)
     userInput = request.args.get("user", default=None, type=str)
     userInput = quote_plus(userInput) if (userInput is not None) else None
     if (userInput is not None):
@@ -129,15 +133,9 @@ def adminManagement():
         userArr, maxPage = sql_operation(table="user", mode="paginate_users", pageNum=pageNum, role="Admin")
 
     if (pageNum > maxPage):
-        if (userInput is not None):
-            return redirect(f"{url_for('superAdminBP.adminManagement')}?user={userInput}&filter={filterInput}&p={maxPage}")
-        else:
-            return redirect(f"{url_for('superAdminBP.adminManagement')}?p={maxPage}")
-    elif (pageNum < 1):
-        if (userInput is not None):
-            return redirect(f"{url_for('superAdminBP.adminManagement')}?user={userInput}&filter={filterInput}&p=1")
-        else:
-            return redirect(f"{url_for('superAdminBP.adminManagement')}?p=1")
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].PAGE_NUM_REGEX, f"p={maxPage}", request.url, count=1)
+        )
 
     # Compute the buttons needed for pagination
     paginationArr = get_pagination_arr(pageNum=pageNum, maxPage=maxPage)

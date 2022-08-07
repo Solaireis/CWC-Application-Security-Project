@@ -5,7 +5,7 @@ Routes for logged in Teachers
 from werkzeug.utils import secure_filename
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -23,17 +23,20 @@ teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_fo
 
 @teacherBP.route("/course-list")
 def courseList():
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
     page = request.args.get("p", default=1, type=int)
-    paginationArr = []
+    if (page < 1):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].NEGATIVE_PAGE_NUM_REGEX, "p=1", request.url, count=1)
+        )
+
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
     print(courseList)
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
-    elif (page < 1):
-        return redirect(url_for("teacherBP.courseList") + "?p=1")
 
+    paginationArr = []
     if (len(courseList) != 0) :
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
@@ -43,20 +46,22 @@ def courseList():
 @teacherBP.route("/draft-course-video-list")
 def draftCourseList():
     #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
     page = request.args.get("p", default=1, type=int)
-    paginationArr = []
+    if (page < 1):
+        return redirect(
+            re.sub(current_app.config["CONSTANTS"].NEGATIVE_PAGE_NUM_REGEX, "p=1", request.url, count=1)
+        )
+
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
     videoStatusList = tuple(check_video(course.videoPath)["status"] for course in courseList)
     print(videoStatusList)
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.draftCourseList") + f"?p={maxPage}")
-    elif (page < 1):
-        return redirect(url_for("teacherBP.draftCourseList") + "?p=1")
 
+    paginationArr = []
     if (len(courseList) != 0) :
-        # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
     return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr, videoStatusList=videoStatusList)
