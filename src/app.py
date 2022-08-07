@@ -85,9 +85,6 @@ CSP = {
         "'self'",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css",
         "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css",
-        # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css",
-        # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js \'unsafe-inline\'",
-        # "https://unpkg.com/@videojs/themes@1/dist/forest/index.css",
         "https://vjs.zencdn.net/7.19.2/video-js.css",
         "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css",
         "https://unpkg.com/dropzone@5/dist/min/dropzone.min.css",
@@ -99,18 +96,15 @@ CSP = {
     ],
     "script-src":[
         "'self'",
-        "https://coursefinity.social/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js",
-        "https://coursefinity.social/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js",
         "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js",
         "https://cdn.jsdelivr.net/npm/less@4",
         "https://www.google.com/recaptcha/enterprise.js",
         "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js",
         "https://player.vdocipher.com/v2/api.js",
-        # "https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js blob:",
-        # "https://cdn.dashjs.org/v4.4.0/dash.all.min.js",
-        # "https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js",
         "https://unpkg.com/dropzone@5/dist/min/dropzone.min.js",
         "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js",
+        "https://coursefinity.social/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js",
+        "https://coursefinity.social/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js"
     ]
 }
 PERMS_POLICY = {

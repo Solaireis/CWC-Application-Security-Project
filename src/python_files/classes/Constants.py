@@ -62,7 +62,8 @@ class Constants:
     SUPPORT_ENQUIRY_TYPE: tuple = ("General", "Account", "Business", "Bugs", "Jobs", "News", "Others")
 
     # Request limit
-    REQUEST_LIMIT: str = "120 per minute"
+    DEFAULT_REQUEST_LIMIT: str = "60 per minute"
+    SENSITIVE_PAGE_LIMIT: str = "10 per minute"
 
     # For lockout policy
     MAX_LOGIN_ATTEMPTS: int = 8

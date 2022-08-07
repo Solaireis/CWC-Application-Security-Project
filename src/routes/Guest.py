@@ -28,10 +28,10 @@ from datetime import datetime
 from time import sleep
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
-limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(guestBP)
+limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(guestBP)
 
 @guestBP.route("/recover-account/<string:token>", methods=["GET","POST"])
-@limiter.limit("15 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def recoverAccount(token:str):
     # verify the token
     data = EC_verify(data=token, getData=True)
@@ -88,7 +88,7 @@ def recoverAccount(token:str):
         return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
 @guestBP.route("/login/disable-2fa", methods=["GET","POST"])
-@limiter.limit("15 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def recoverAccountMFA():
     recoverForm = RecoverAccountMFAForm(request.form)
     if (request.method == "POST" and recoverForm.validate()):
@@ -128,7 +128,7 @@ def recoverAccountMFA():
         return render_template("users/guest/recover_account.html", form=recoverForm)
 
 @guestBP.route("/reset-password", methods=["GET", "POST"])
-@limiter.limit("60 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def resetPasswordRequest():
     requestForm = RequestResetPasswordForm(request.form)
     if (request.method == "POST" and requestForm.validate()):
@@ -197,7 +197,7 @@ def resetPasswordRequest():
         return render_template("users/guest/request_password_reset.html", form=requestForm)
 
 @guestBP.route("/reset-password/<string:token>", methods=["GET", "POST"])
-@limiter.limit("15 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def resetPassword(token:str):
     # verify the token
     data = EC_verify(data=token, getData=True)
@@ -269,7 +269,7 @@ def resetPassword(token:str):
         return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
 @guestBP.route("/login", methods=["GET", "POST"])
-@limiter.limit("60 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def login():
     loginForm = CreateLoginForm(request.form)
     if (request.method == "GET"):
@@ -428,7 +428,7 @@ def login():
         return render_template("users/guest/login.html", form = loginForm)
 
 @guestBP.route("/unlock-account/<string:token>")
-@limiter.limit("15 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def unlockAccount(token:str):
     # verify the token
     data = EC_verify(data=token, getData=True)
@@ -462,7 +462,7 @@ def unlockAccount(token:str):
     return redirect(url_for("guestBP.login"))
 
 @guestBP.route("/verify-login", methods=["GET", "POST"])
-@limiter.limit("60 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def enterGuardTOTP():
     """
     This page is only accessible to users who are logging but from a new IP address.
@@ -645,6 +645,7 @@ def loginCallback():
     return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/signup", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
 def signup():
     signupForm = CreateSignUpForm(request.form)
     if (request.method == "GET"):
@@ -732,7 +733,7 @@ def signup():
         return render_template("users/guest/signup.html", form=signupForm)
 
 @guestBP.route("/send-verify-email")
-@limiter.limit("60 per minute")
+@limiter.limit("30 per minute")
 def sendVerifyEmail():
     userID = request.args.get("user", default=None, type=str)
     if (userID is None):
@@ -761,7 +762,7 @@ def sendVerifyEmail():
         abort(404)
 
 @guestBP.route("/enter-2fa", methods=["GET", "POST"])
-@limiter.limit("60 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def enter2faTOTP():
     """
     This page is only accessible to users who have 2FA enabled and is trying to login.

@@ -20,7 +20,7 @@ from .RoutesSecurity import limiter
 import re
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
-limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(generalBP)
+limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(generalBP)
 
 @generalBP.route("/")
 def home():
@@ -280,7 +280,7 @@ def search():
     return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=accType, paginationArr=paginationArr, tagSearch=tagSearch)
 
 @generalBP.route("/verify-email/<string:token>")
-@limiter.limit("15 per minute")
+@limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def verifyEmail(token:str):
     """
     In the general blueprint as a user might change their email when logged in.
@@ -409,6 +409,7 @@ def faq():
     return render_template("users/general/faq.html", accType=accType, imageSrcPath=imageSrcPath)
 
 @generalBP.route("/contact-us", methods=["GET", "POST"])
+@limiter.limit("30 per minute")
 def contactUs():
     accType = imageSrcPath = None
     if ("user" in session):

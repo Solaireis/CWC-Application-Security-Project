@@ -29,11 +29,11 @@ Usage example below:
 
 from flask import current_app
 from .RoutesSecurity import limiter
-limiter.limit(limit_value=current_app.config["CONSTANTS"].REQUEST_LIMIT)(blueprintObj)
+limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(blueprintObj)
 
 @blueprintObj.route("/demo")
 @limiter.limit("10 per second")
 def routeFn():
     ...
 """
-limiter = Limiter(key_func=get_remote_address, default_limits=[current_app.config["CONSTANTS"].REQUEST_LIMIT])
+limiter = Limiter(key_func=get_remote_address, default_limits=[current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT])
