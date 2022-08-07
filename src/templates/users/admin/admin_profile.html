@@ -40,22 +40,18 @@
                                 <tr>
                                     <tr>
                                         <td class="p-3"><h6>Admin ID:</h6></td>
-                                        <td class="p-3"><h6 id="tooltipValueUID" onmouseout="tooltipMouseOut('UID')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard"  class="profile_copy_text">{{ adminID }}</h6></td>
+                                        <td class="p-3"><h6>{{ adminID }}</h6></td>
                                     </tr>
                                     <td class="p-3"><h6>Username:</h6></td>
                                     <td class="p-3">
-                                        <h6 id="tooltipValueUsername" onmouseout="tooltipMouseOut('Username')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" class="profile_copy_text">
-                                        {{ username }}
-                                        </h6>
+                                        <h6>{{ username }}</h6>
                                         <a href="{{ url_for('loggedInBP.updateUsername') }}">Change Username</a>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="p-3"><h6>Email:</h6></td>
                                     <td class="p-3">
-                                        <h6 id="tooltipValueEmail" onmouseout="tooltipMouseOut('Email')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" class="profile_copy_text">
-                                        {{ email }}
-                                        </h6>
+                                        <h6>{{ email }}</h6>
                                     </td>
                                 </tr>
                                 <tr>
@@ -81,11 +77,4 @@
         </script>
         {% endif %}
     {% endwith %}
-    <script nonce="{{ csp_nonce() }}">
-        document.getElementById("tooltipValueUID").onclick = function() {copyToClipBoard('UID')};
-        document.getElementById("tooltipValueEmail").onclick = function() {copyToClipBoard('Email')};
-        document.getElementById("tooltipValueUsername").onclick = function() {copyToClipBoard('Username')};
-    </script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}

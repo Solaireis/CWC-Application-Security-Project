@@ -111,10 +111,7 @@
                                             <h6>Username:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueUsername" data-bs-toggle="tooltip"
-                                            data-bs-placement="top" title="Copy to clipboard" class="profile_copy_text">
-                                            {{ username}}
-                                            </h6>
+                                            <h6 class="margin-btm">{{ username}}</h6>
                                             <a href="{{ url_for('loggedInBP.updateUsername') }}">Change Username</a>
                                         </td>
                                     </tr>
@@ -123,11 +120,7 @@
                                             <h6>Email:</h6>
                                         </td>
                                         <td>
-                                            <h6 class="margin-btm" id="tooltipValueEmail"  data-bs-toggle="tooltip"
-                                            data-bs-placement="top" title="Copy to clipboard"
-                                            class="profile_copy_text">
-                                            {{ email }}
-                                            </h6>
+                                            <h6 class="margin-btm">{{ email }}</h6>
                                             {% if loginViaGoogle != True %}
                                                 <a href="{{ url_for('userBP.updateEmail') }}">Change Email</a>
                                             {% endif %}
@@ -252,5 +245,4 @@
         {% endif %}
     {% endwith %}
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
 {% endblock %}
