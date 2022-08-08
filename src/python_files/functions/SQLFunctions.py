@@ -794,6 +794,8 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
             [kwargs["userIP"].encode("utf-8"), kwargs["userAgent"].encode("utf-8")]
         )).hexdigest()
 
+        # Get the session data from the database 
+        # if the session ID exists, the fingerprint hash matches, and is not expired
         cur.execute(
             "SELECT * FROM session WHERE session_id = %(sessionID)s AND expiry_date > SGT_NOW() AND fingerprint_hash = %(fingerprintHash)s AND user_id = %(userID)s", 
             {"sessionID":sessionID, "fingerprintHash":fingerprintHash, "userID":userID}
@@ -801,10 +803,19 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         if (cur.fetchone() is None):
             return False
 
-        # not expired, check if the userID matches the sessionID
-        # and if the fingerprint hash matches the storedFingerprintHash
+        # Check if user is active or exists in the database
+        cur.execute("SELECT status FROM user WHERE id = %(userID)s", {"userID":userID})
+        matchedStatus = cur.fetchone()
+        if (matchedStatus is None):
+            return False
+        elif (matchedStatus[0] != "Active"):
+            cur.execute("DELETE FROM session WHERE session_id = %(sessionID)s", {"sessionID":sessionID})
+            connection.commit()
+            return False
+
+        # Session ID is valid, update the expiry date by adding an interval to the current time
         cur.execute(
-            "UPDATE session SET expiry_date = SGT_NOW() + INTERVAL %(interval)s MINUTE WHERE session_id = %(sessionID)s", 
+            "UPDATE session SET expiry_date=SGT_NOW() + INTERVAL %(interval)s MINUTE WHERE session_id=%(sessionID)s", 
             {"interval":CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID":sessionID}
         )
         connection.commit()
