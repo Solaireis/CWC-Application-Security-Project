@@ -371,13 +371,27 @@
 
 ### Plan
 - DRM (Maybe https://www.vdocipher.com)
-- contact us form for issues
-- File type policies
+  - Delete videos if not used (e.g. in 24 hours)
+    - More info why: (not more work lol)
+      Retry upload without breaking thing
+      What happens if request for credentials, error, then stop uploading?
+  - Upload in chunks
+- contact us form for issues (review)
+
+Policies
+- File type policies (3 sentences lol)
 - Max content length policy
-- Logging stack (app.py)
+
+Add to cart validation
+- Own course
+- Purchased course
+- Already in cart
+
 - Stripe
-   - https://stripe.com/docs/radar/rules/reference
-   - https://stripe.com/docs/api/payouts
+  - Images (last thing lol)
+
+- Draft course
+  - Error sign logic (1 condition in case I forget)
 
 ### Implemented
 - Stripe with modified JWT (no encoding/encryption method stored; no reason to)
@@ -396,13 +410,10 @@
 ### Security Logging and Monitoring Failures
 
 #### Plan:
-- Implement logging
+- Logging stack (app.py)
 - Log all logins (successful and failed logins), access controls (when user tries to access a folder, etc.), server-side input failures (SQL query, etc.)
 - Implement an algorithm to detect malicious accounts (created in same IP, etc.)
-- Ensure logs can be used by log management solution software
-- Ensure logs is not vulnerable to corruption
-- Prevent all access except read access to admins (need to create a log page for admins)
-- Alert the security teams and/or admins in an event of a live attack (DDoS)
+- Alert the security teams and/or admins in an event of a live attack (DDoS) ??????
 
 #### Implemented:
 -
