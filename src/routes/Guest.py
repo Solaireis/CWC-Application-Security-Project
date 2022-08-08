@@ -313,17 +313,17 @@ def login():
             successfulLogin = True
             sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userInfo[0])
         except (UserIsNotActiveError, EmailDoesNotExistError):
-            flash("Please check your entries and try again!", "Danger")
+            flash("Please check your entries or check if you have verified your email and try again!", "Danger")
         except (IncorrectPwdError):
             try:
                 sql_operation(table="login_attempts", mode="add_attempt", email=emailInput)
-                flash("Please check your entries and try again!", "Danger")
+                flash("Please check your entries or check if you have verified your email and try again!", "Danger")
             except (AccountLockedError):
                 flash("Too many failed login attempts, please try again later.", "Danger")
         except (AccountLockedError):
             flash("Too many failed login attempts, please try again later.", "Danger")
         except (UserIsUsingOauth2Error, EmailNotVerifiedError):
-            flash("Please check your entries and try again!", "Danger")
+            flash("Please check your entries or check if you have verified your email and try again!", "Danger")
         except (LoginFromNewIpAddressError):
             # sends an email with a generated TOTP code 
             # to authenticate the user if login was successful.

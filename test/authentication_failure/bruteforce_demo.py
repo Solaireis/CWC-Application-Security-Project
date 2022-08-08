@@ -44,7 +44,7 @@ def get_result(responses:list) -> list:
 
             # using xpath to find the error message
             tooManyAttempts = htmlTree.xpath("//div//h6[@class='warning_text' and text()[contains(., 'Too many failed login attempts, please try again later.')]]")
-            failedLogin = htmlTree.xpath("//div//h6[@class='warning_text' and text()[contains(., 'Please check your entries and try again!')]]")
+            failedLogin = htmlTree.xpath("//div//h6[@class='warning_text' and text()[contains(., 'Please check your entries or check if you have verified your email and try again!')]]")
             recaptchaMessage = htmlTree.xpath("//div//h6[@class='warning_text' and text()[contains(., 'Verification error with reCAPTCHA, please try again!')]]")
 
             if (len(tooManyAttempts) > 0):

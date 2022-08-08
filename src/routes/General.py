@@ -21,6 +21,10 @@ import re
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
 limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(generalBP)
 
+@generalBP.route("/favicon.ico")
+def favicon():
+    return redirect("https://storage.googleapis.com/coursefinity/web-assets/common/favicon.ico", code=301)
+
 @generalBP.route("/")
 def home():
     accType = imageSrcPath = None
