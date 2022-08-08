@@ -636,7 +636,8 @@ def loginCallback():
     # assign the session accordingly based on the role of the user
     if (returnedRole == "Admin" or returnedRole == "SuperAdmin"):
         session["admin"] = userID
-        session["isSuperAdmin"] = True
+        if (returnedRole == "SuperAdmin"):
+            session["isSuperAdmin"] = True 
     else:
         session["user"] = userID
         session["isTeacher"] = True if (returnedRole == "Teacher") else False
