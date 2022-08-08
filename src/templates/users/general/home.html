@@ -146,19 +146,22 @@
             {% endif %}
         </div>
     </div>
-    {% if (accType == None or accType == "Student") %}
-    <div class="row become_headings">
-        <div class="col-md">
-            <img src="https://storage.googleapis.com/coursefinity/web-assets/home/home_teacher_banner.webp" alt="Become a Teacher Promo Image" class="thumbnails rounded">
+    {% if accType == None or accType == "Student" %}
+        <div class="row become_headings">
+            <div class="col-md">
+                <img src="https://storage.googleapis.com/coursefinity/web-assets/home/home_teacher_banner.webp" alt="Become a Teacher Promo Image" class="thumbnails rounded">
+            </div>
+            <div class="col-md text-center">
+                <h2>Become A Teacher Today!</h2>
+                <p>We provide the platform for you to teach what you love.<br>Start now by teaching students!</p>
+                {% with teacherSignupURL = url_for("guestBP.login") %}
+                    {% if accType == "Student" %}
+                        {% set teacherSignupURL = url_for("userBP.userProfile") %}
+                    {% endif %}
+                    <a href="{{ teacherSignupURL }}" class="btn btn-primary btn-lg">Start Teaching Today</a>
+                {% endwith %}
+            </div>
         </div>
-        <div class="col-md text-center">
-            <h2>Become A Teacher Today!</h2>
-            <p>We provide the platform for you to teach what you love.<br>Start now by teaching students!</p>
-            <form action="{{ url_for('guestBP.signup') }}" method="GET">
-                <button type="submit" class="btn btn-primary btn-lg">Start Teaching Today</button>
-            </form>
-        </div>
-    </div>
     {% endif %}
 </div>
 {% endblock %}
