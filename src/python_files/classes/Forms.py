@@ -74,7 +74,7 @@ class twoFAForm(Form):
 class CreateCourse(Form):
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
     courseDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-    coursePrice = DecimalField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=500)], places=2)
+    coursePrice = DecimalField("Price for Course (USD$): ", [validators.DataRequired(), validators.NumberRange(min=0, max=100)], places=2)
     complyWithPolicies = BooleanField(
         "I understand that videos uploaded must comply with CourseFinity's terms and conditions.", 
         [validators.DataRequired()]
