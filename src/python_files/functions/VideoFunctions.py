@@ -165,11 +165,11 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
     return data
 # print(update_video_thumbnail("c452cdeec4ca45578454849fd0794862", r"https://storage.googleapis.com/coursefinity/course-thumbnails/a7f9a72762b842ad987cb5449a7f6d7e86c08ef1b5d04cfd9a56a8a1313a966d.webp"))
 
-def delete_video(videoIDs:Union[tuple, str]) -> Optional[dict]:
+def delete_video(videoIDs:Union[tuple, list, str]) -> Optional[dict]:
     """
     {'code': 200, 'message': 'Successfully deleted <num> videos'}
     """
-    if isinstance(videoIDs, tuple):
+    if isinstance(videoIDs, tuple) or isinstance(videoIDs, list):
         videoIDs = ", ".join(videoIDs)
 
     data = json.loads(requests.delete(

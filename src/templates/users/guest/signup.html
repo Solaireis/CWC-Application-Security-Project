@@ -52,10 +52,7 @@
                     <div class="col-12 text-white">
                         {{ render_field(form.cfmPassword, class="form-control") }}
                     </div>
-                    {% include "includes/_password_advice.html" %}
-                    <div class="col-12 d-flex justify-content-center">
-                        <div class="g-recaptcha" data-sitekey="6LfItpcgAAAAAL2DVlCIG-nKm8_ctRZKOuCfMo1B" data-action="signup"></div>
-                    </div>          
+                    {% include "includes/_password_advice.html" %}         
                     <div class="col-12">
                         <button data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" data-action="signup" data-callback="onSubmit" class="g-recaptcha btn btn-colour text-white float-end">Sign Up</button>
                     </div>

@@ -107,7 +107,7 @@ def recoverAccountMFA():
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/recover_account.html", form=recoverForm)
 
         emailInput = recoverForm.email.data
@@ -149,7 +149,7 @@ def resetPasswordRequest():
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
         emailInput = requestForm.email.data
@@ -278,20 +278,20 @@ def login():
     if (request.method == "POST" and loginForm.validate()):
         recaptchaToken = request.form.get("g-recaptcha-response")
         if (recaptchaToken is None):
-            flash("Please verify that you are not a bot!", "Danger")
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
         try:
             recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="login")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot!", "Danger")
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!", "Danger")
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
         requestIPAddress = get_remote_address()
@@ -500,14 +500,14 @@ def enterGuardTOTP():
         try:
             recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_two_fA")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
         totpInput = guardAuthForm.twoFATOTP.data
@@ -661,14 +661,14 @@ def signup():
         try:
             recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="signup")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/signup.html", form=signupForm)
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/signup.html", form=signupForm)
 
         emailInput = signupForm.email.data

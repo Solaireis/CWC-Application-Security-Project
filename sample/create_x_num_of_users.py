@@ -4,7 +4,8 @@ from randomuser import RandomUser
 
 # import python standard libraries
 from sys import exit as sysExit
-import re, pathlib, sys
+import re, pathlib, sys, uuid
+from urllib import error as urllibError
 from importlib.util import spec_from_file_location, module_from_spec
 from socket import inet_aton, inet_pton, AF_INET6
 
@@ -115,38 +116,66 @@ def main() -> None:
                     continue
                 else:
                     noOfStudents = int(noOfStudents)
-                    print(f"\nCreating {noOfStudents} students...", end="")
                     break
 
+            defaultPass = "User123!" # for debug purposes only (in real world use, use a more secure password)
+            generateDefaultPass = False
+            while (1):
+                print()
+                print(f"You can use the generated passwords, \"{defaultPass}\", to login!", "However, generation of demo accounts will take longer...")
+                generateDefaultPass = input(f"Do you want to login to the {noOfStudents} accounts to be created? (Y/n): ").lower().strip()
+                if (generateDefaultPass not in ("y", "n", "")):
+                    print("Invalid input", end="\n\n")
+                    continue
+                else:
+                    generateDefaultPass = True if (generateDefaultPass != "n") else False
+                    break
+
+            print(f"\nCreating {noOfStudents} students...", end="")
             count = 0
+            password = None
             for _ in range(noOfStudents):
-                randomStudentInfo = RandomUser(get_params={"nat": "AU,CA,US"})
-                userID = NormalFunctions.generate_id()
-                username = randomStudentInfo.get_full_name()
-                email = randomStudentInfo.get_email()
-                # for debug purposes only (in real world use, use a more secure password)
-                password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
-
-                cur.execute(
-                    "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())", \
-                    {"id": userID, "role": STUDENT_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": randomStudentInfo.get_picture()}
-                )
-                con.commit()
-
-                ipAddress = "127.0.0.1"
-
-                # Convert the IP address to binary format
+                generate = True
                 try:
-                    ipAddress = inet_aton(ipAddress).hex()
-                    isIpv4 = True
-                except (OSError):
-                    isIpv4 = False
-                    ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+                    randomStudentInfo = RandomUser(get_params={"nat": "AU,CA,US"})
+                except (urllibError.HTTPError):
+                    generate = False
 
-                cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "isIpv4": isIpv4})
-                con.commit()
+                if (generate):
+                    userID = NormalFunctions.generate_id()
+                    username = randomStudentInfo.get_full_name()
+                    email = randomStudentInfo.get_email()
+                    if (generateDefaultPass):
+                        password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash(), keyID=CONSTANTS.PEPPER_KEY_ID)
 
-                count += 1
+                    SQL_STATEMENT = "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())"
+                    try:
+                        cur.execute(
+                            SQL_STATEMENT, \
+                            {"id": userID, "role": STUDENT_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": randomStudentInfo.get_picture()}
+                        )
+                    except (pymysql.err.IntegrityError):
+                        username += uuid.uuid4().hex[:8]
+                        cur.execute(
+                            SQL_STATEMENT, \
+                            {"id": userID, "role": STUDENT_ROLE_ID, "username": username, "email": email, "password": password, "profilePic": randomStudentInfo.get_picture()}
+                        )
+                    con.commit()
+
+                    ipAddress = "127.0.0.1"
+
+                    # Convert the IP address to binary format
+                    try:
+                        ipAddress = inet_aton(ipAddress).hex()
+                        isIpv4 = True
+                    except (OSError):
+                        isIpv4 = False
+                        ipAddress = inet_pton(AF_INET6, ipAddress).hex()
+
+                    cur.execute("INSERT INTO user_ip_addresses (user_id, last_accessed, ip_address, is_ipv4) VALUES (%(userID)s, SGT_NOW(), %(ipAddress)s, %(isIpv4)s)", {"userID": userID, "ipAddress": ipAddress, "isIpv4": isIpv4})
+                    con.commit()
+
+                    count += 1
 
             print(f"\r{count} student accounts created!")
             print()

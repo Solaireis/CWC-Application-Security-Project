@@ -1267,12 +1267,23 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         connection.commit()
 
     elif (mode == "delete_user"):
+        # Delete user from the database unlike deleting user's data from the database
+        # Used for user who have not verified their email.
         userID = kwargs["userID"]
         cur.execute("DELETE FROM user WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "delete_user_data"):
         userID = kwargs["userID"]
+
+        # Delete user's draft courses uploaded to vdocipher if any
+        cur.execute("SELECT course_id FROM draft_course WHERE teacher_id=%(userID)s", {"userID":userID})
+        courses = cur.fetchall()
+        if (courses is not None or len(courses) > 0):
+            courses = tuple([course[0] for course in courses])
+            delete_video(videoIDs=courses)
+
+        # Delete user's data from the database except the userID and username and uploaded courses if any
         cur.execute("CALL delete_user_data(%(userID)s)", {"userID":userID})
         connection.commit()
 

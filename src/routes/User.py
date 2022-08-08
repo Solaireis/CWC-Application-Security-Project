@@ -155,14 +155,14 @@ def showBackupCodes():
                 recaptchaToken=recaptchaToken, recaptchaAction="generate_backup_codes"
             )
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot!", "Sorry!")
+            flash("Verification error with reCAPTCHA, please try again!", "Sorry!")
             return redirect(url_for("userBP.showBackupCodes"))
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Please verify that you are not a bot!", "Sorry!")
+            flash("Verification error with reCAPTCHA, please try again!", "Sorry!")
             return redirect(url_for("userBP.showBackupCodes"))
 
         backUpCodes = sql_operation(table="2fa_token", mode="generate_codes", userID=userID)

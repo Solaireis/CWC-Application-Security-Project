@@ -8,9 +8,8 @@ import markdown, html
 from flask import render_template, request, session, abort, Blueprint, Markup, redirect, flash, current_app
 
 # import local python libraries
-from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify
+from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify, create_assessment, score_within_acceptable_threshold
 from python_files.functions.SQLFunctions import *
-from python_files.classes.Reviews import Reviews
 from python_files.classes.Course import get_readable_category
 from python_files.classes.Forms import ContactUsForm
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
@@ -421,6 +420,30 @@ def contactUs():
 
     contactUsForm = ContactUsForm(request.form)
     if (request.method == "POST" and contactUsForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Verification error with reCAPTCHA, please try again!", "Form Was Not Submitted")
+            return render_template(
+                "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+            )
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="contact_form")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Verification error with reCAPTCHA, please try again!", "Form Was Not Submitted")
+            return render_template(
+                "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+            )
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Verification error with reCAPTCHA, please try again!", "Form Was Not Submitted")
+            return render_template(
+                "users/general/contact_us.html", accType=accType, imageSrcPath=imageSrcPath, form=contactUsForm
+            )
+
         email = contactUsForm.email.data.lower()
         if (email in current_app.config["CONSTANTS"].COURSEFINITY_SUPPORT_EMAILS):
             flash(

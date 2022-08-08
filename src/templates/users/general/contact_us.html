@@ -8,6 +8,7 @@
 
 {% block head %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/contact_us.css') }}">
+<script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 {% endblock %}
 {% block title %}Contact Us | CourseFinity{% endblock %}
 {% from "includes/_formHelper.html" import render_field %}
@@ -45,13 +46,13 @@
         <i class="fas fa-envelope-open-text"></i>
     </div>
     <div class="col form-div">
-        <form class="contact-form" method="post">
+        <form id="contactForm" method="post">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
             {{ render_field(form.name, class="form-control", placeholder="John Doe") }}
             {{ render_field(form.email, class="form-control", placeholder="johndoe@gmail.com") }}
             {{ render_field(form.enquiryType, class="form-select") }}
             {{ render_field(form.enquiry, class="form-control", placeholder="Type your enquiry here...", rows="6") }}
-            <button type="submit" class="btn btn-primary mb-2 mt-3 float-end btn-lg">Submit</button>
+            <button data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" data-callback="onSubmit" data-action="contact_form" class="g-recaptcha btn btn-primary mb-2 mt-3 float-end btn-lg">Submit</button>
         </form>
     </div>
 </div>
@@ -66,4 +67,9 @@
 			</script>
         {% endif %}
     {% endwith %}
+    <script nonce="{{ csp_nonce() }}">
+        function onSubmit(token) {
+            document.getElementById("contactForm").submit();
+        }
+    </script>
 {% endblock %}

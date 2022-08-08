@@ -127,6 +127,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX course_course_category_idx ON course(course_category)")
     cur.execute("CREATE INDEX course_date_created_idx ON course(date_created)")
     cur.execute("CREATE INDEX course_teacher_idx ON course(teacher_id)")
+    cur.execute("CREATE INDEX course_active_idx ON course(active)")
 
     cur.execute("""CREATE TABLE cart(
         user_id VARCHAR(32) NOT NULL,
@@ -152,6 +153,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX draft_course_teacher_idx ON draft_course(teacher_id)")
+    cur.execute("CREATE INDEX draft_course_date_created_idx ON draft_course(date_created)")
 
     cur.execute("""CREATE TABLE stripe_payments (
         payment_id VARCHAR(32) PRIMARY KEY,
@@ -325,6 +327,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_course_num := (SELECT COUNT(*) FROM purchased_courses WHERE user_id=user_id);
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
@@ -340,9 +343,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -350,7 +352,9 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CREATE DEFINER=`{definer}` PROCEDURE `paginate_teacher_courses`(IN teacherID VARCHAR(32), IN page_number INT)
         BEGIN
             SET @total_course_num := (SELECT COUNT(*) FROM course WHERE teacher_id=teacherID);
+
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             teacher_course_info.* FROM (
@@ -365,9 +369,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS teacher_course_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -388,9 +391,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS teacher_course_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -401,6 +403,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_course_num := (SELECT COUNT(*) FROM course WHERE course_name LIKE @search_query);
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
@@ -415,9 +418,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -426,6 +428,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SET @total_course_num := (SELECT COUNT(*) FROM course WHERE course_category=course_tag);
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             course_info.* FROM (
@@ -440,9 +443,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS course_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -454,6 +456,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 WHERE r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             user_info.* FROM (
@@ -467,9 +470,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -481,6 +483,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 WHERE r.role_name='Admin');
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             user_info.* FROM (
@@ -494,9 +497,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE r.role_name = 'Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -510,6 +512,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
@@ -523,9 +526,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE username LIKE @search_query AND r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -538,6 +540,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 WHERE username LIKE @search_query AND r.role_name='Admin');
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
@@ -550,9 +553,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE username LIKE @search_query AND r.role_name='Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -566,6 +568,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
@@ -579,9 +582,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE u.id LIKE @search_query AND r.role_name IN ('Student', 'Teacher') AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -594,6 +596,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 WHERE id LIKE @search_query AND r.role_name="Admin");
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num,
             user_info.* FROM (
@@ -607,9 +610,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE u.id LIKE @search_query AND r.role_name='Admin' AND u.status <> 'Deleted'
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -623,6 +625,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 AND r.role_name IN ('Student', 'Teacher'));
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             user_info.* FROM (
@@ -637,9 +640,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
     cur.execute(f"""
@@ -651,6 +653,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                                 WHERE email LIKE @search_query AND r.role_name="Admin");
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             user_info.* FROM (
@@ -665,9 +668,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 GROUP BY u.id
                 ORDER BY u.date_joined DESC -- show newest users first
             ) AS user_info
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
@@ -677,6 +679,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             SET @total_reviews := (SELECT COUNT(*) FROM review WHERE course_id=course_id_input GROUP BY course_id);
 
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             review.* FROM (
@@ -688,9 +691,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 WHERE r.course_id=course_id_input
                 ORDER BY r.review_date DESC -- show newest reviews first
             ) AS review
-            HAVING row_num > @page_offset
-            ORDER BY row_num
-            LIMIT 10;
+            HAVING row_num > @page_offset AND row_num <= @page_limit
+            ORDER BY row_num;
         END
     """)
 
