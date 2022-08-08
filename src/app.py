@@ -208,9 +208,6 @@ with app.app_context():
     from routes.Teacher import teacherBP
     app.register_blueprint(teacherBP)
 
-    from routes.Files import filesBP
-    app.register_blueprint(filesBP)
-
 """------------------------------------- END OF WEB APP CONFIGS -------------------------------------"""
 
 """------------------------------------- START OF WEB APP SCHEDULED JOBS -------------------------------------"""

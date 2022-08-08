@@ -208,10 +208,10 @@
                                     <h4>Did you know?</h4>
                                     <p>If you have a passion for teaching, you can become an educator on CourseFinity!</p>
                                     <p>Click on the button below or click on "Become a Teacher!" above!</p>
-                                    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal"
-                                        data-bs-target="#becomeTeacher">Change account type</button>
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
+                                    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#becomeTeacher">
+                                        Change account type
+                                    </button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             {% else %}
                                 <div class="border border-2 alert alert-light alert-dismissible fade show text-dark"
@@ -221,6 +221,7 @@
                                         If you want to teach a subject that is not listed in the select option when uploading a video, you can contact us to get it added to the list of subjects!
                                     </p>
                                     <p>Additionally, if you require any assistance, feel free to <a href="{{ url_for('generalBP.contactUs') }}">contact us!</a></p>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                                 </div>
                             {% endif %}
                         </div>

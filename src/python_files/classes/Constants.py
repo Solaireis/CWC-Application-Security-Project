@@ -57,6 +57,29 @@ class Constants:
     BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
     ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
 
+    # For custom redirects after RBAC checks instead of the default abort(404)
+    # Available blueprints: generalBP, guestBP, errorBP, loggedInBP, teacherBP, userBP, adminBP, superAdminBP
+    # Note: request.endpoint takes precedence before getting the blueprint custom redirect url.
+    GUEST_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
+        "userBP": "guestBP.login",
+        "loggedInBP": "guestBP.login",
+        "teacherBP": "guestBP.login"
+    })
+    USER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
+        "teacherBP.createCourse": "generalBP.coursePage",
+        "teacherBP": "userBP.userProfile",
+        "guestBP": "generalBP.home"
+    })
+    TEACHER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
+        "guestBP": "guestBP.home"
+    })
+    ADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
+        "guestBP": "generalBP.home"
+    })
+    SUPERADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
+        "guestBP": "generalBP.home"
+    })
+
     # For the contact us form checks
     COURSEFINITY_SUPPORT_EMAILS: tuple = ("coursefinity123@gmail.com",)
     SUPPORT_ENQUIRY_TYPE: tuple = ("General", "Account", "Business", "Bugs", "Jobs", "News", "Others")

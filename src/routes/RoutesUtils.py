@@ -1,6 +1,5 @@
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, session, abort, current_app, redirect
-from flask import wrappers
+from flask import render_template, request, session, abort, current_app, redirect, wrappers, url_for
 from flask_limiter.util import get_remote_address
 from jsonschema import validate
 
@@ -43,13 +42,13 @@ def before_request() -> None:
     Returns:
     - None
     """
+    if (current_app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
+        return render_template("maintenance.html", estimation="soon!")
+
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
         print("Route Error: Either Does Not Exist or Cannot Access")
         abort(404)
-
-    if (current_app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
-        return render_template("maintenance.html", estimation="soon!")
 
     # check if 2fa_token key is in session
     # remove if the user is no longer on the setup 2FA page anymore
@@ -134,34 +133,84 @@ def before_request() -> None:
             currentRoleName = current_app.config["CONSTANTS"].ROLE_NAME_ORDER_TUPLE[idx]
             roleTable[currentRoleName] = RoleInfo(role).format_blueprints_for_checking()
 
-        requestBlueprint = request.endpoint.split(".")[0] if ("." in request.endpoint) else request.endpoint
-        print("Request Endpoint:", request.endpoint)
-        print("Request Blueprint:", requestBlueprint)
-        if ("user" in session and requestBlueprint in roleTable["Student"]):
-            pass # allow the user to access the page
+        requestBlueprint = request.endpoint
+        hasBlueprint = False
+        if ("." in request.endpoint):
+            requestBlueprint = request.endpoint.split(".")[0]
+            hasBlueprint = True
 
+        print("Request Endpoint:", request.endpoint)
+        if (hasBlueprint):
+            print("Request Blueprint:", requestBlueprint)
+
+        allowedAccess = False
+        isGuestUser = ("user" not in session and "admin" not in session)
+        if (not hasBlueprint):
+            # Since all routes have a blueprint, 
+            # abort(404) if the request does not have a blueprint
+            abort(404)
+        elif ("user" in session and requestBlueprint in roleTable["Student"]):
+            allowedAccess = True # allow the user to access the page
         elif ("user" in session and requestBlueprint in roleTable["Teacher"]):
             if (session.get("isTeacher", False)):
-                pass # allow the teacher to access the page
-            else:
-                return abort(404)
-
+                allowedAccess = True # allow the teacher to access the page
         elif ("admin" in session):
             isSuperAdmin = session.get("isSuperAdmin", False)
             if (not isSuperAdmin and requestBlueprint in roleTable["Admin"]):
-                pass # allow the admin to access the page
+                allowedAccess = True # allow the admin to access the page
             elif (isSuperAdmin and requestBlueprint in roleTable["SuperAdmin"]):
-                pass # allow the superadmin to access the page
+                allowedAccess = True # allow the superadmin to access the page
+        elif (isGuestUser and requestBlueprint in roleTable["Guest"]):
+            allowedAccess = True # allow the guest user to access the page
+
+        if (not allowedAccess):
+            if (isGuestUser):
+                # If the guest user is not allowed to access the page
+                guestBlueprintRedirectTable = current_app.config["CONSTANTS"].GUEST_REDIRECT_TABLE
+                if (request.endpoint in guestBlueprintRedirectTable):
+                    return redirect(url_for(guestBlueprintRedirectTable[request.endpoint], **request.view_args))
+                elif (requestBlueprint in guestBlueprintRedirectTable):
+                    return redirect(url_for(guestBlueprintRedirectTable[requestBlueprint], **request.view_args))
+                else:
+                    abort(404)
+            elif ("user" in session and session.get("isTeacher", False)):
+                # If the teacher user is not allowed to access the page
+                teacherBlueprintRedirectTable = current_app.config["CONSTANTS"].TEACHER_REDIRECT_TABLE
+                if (request.endpoint in teacherBlueprintRedirectTable):
+                    return redirect(url_for(teacherBlueprintRedirectTable[request.endpoint], **request.view_args))
+                elif (requestBlueprint in teacherBlueprintRedirectTable):
+                    return redirect(url_for(teacherBlueprintRedirectTable[requestBlueprint], **request.view_args))
+                else:
+                    abort(404)
+            elif ("user" in session):
+                # If the student user is not allowed to access the page
+                userBlueprintRedirectTable = current_app.config["CONSTANTS"].USER_REDIRECT_TABLE
+                if (request.endpoint in userBlueprintRedirectTable):
+                    return redirect(url_for(userBlueprintRedirectTable[request.endpoint], **request.view_args))
+                elif (requestBlueprint in userBlueprintRedirectTable):
+                    return redirect(url_for(userBlueprintRedirectTable[requestBlueprint], **request.view_args))
+                else:
+                    abort(404)
+            elif ("admin" in session and session.get("isSuperAdmin", False)):
+                # If the super-admin user is not allowed to access the page
+                superAdminBlueprintRedirectTable = current_app.config["CONSTANTS"].SUPERADMIN_REDIRECT_TABLE
+                if (request.endpoint in superAdminBlueprintRedirectTable):
+                    return redirect(url_for(superAdminBlueprintRedirectTable[request.endpoint], **request.view_args))
+                elif (requestBlueprint in superAdminBlueprintRedirectTable):
+                    return redirect(url_for(superAdminBlueprintRedirectTable[requestBlueprint], **request.view_args))
+                else:
+                    abort(404)
+            elif ("admin" in session):
+                # If the admin user is not allowed to access the page
+                adminBlueprintRedirectTable = current_app.config["CONSTANTS"].ADMIN_REDIRECT_TABLE
+                if (request.endpoint in adminBlueprintRedirectTable):
+                    return redirect(url_for(adminBlueprintRedirectTable[request.endpoint], **request.view_args))
+                elif (requestBlueprint in adminBlueprintRedirectTable):
+                    return redirect(url_for(adminBlueprintRedirectTable[requestBlueprint], **request.view_args))
+                else:
+                    abort(404)
             else:
-                # if the admin is not allowed to access the page, abort 404
-                return abort(404)
-
-        elif ("user" not in session and "admin" not in session and "teacher" not in session and requestBlueprint in roleTable["Guest"]):
-            pass # allow the guest user to access the page
-
-        else:
-            # If the user is not allowed to access the page, abort 404
-            return abort(404)
+                abort(404)
 
 @current_app.after_request # called after each request to the application
 def after_request(response:wrappers.Response) -> wrappers.Response:

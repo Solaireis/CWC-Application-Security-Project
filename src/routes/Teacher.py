@@ -388,6 +388,7 @@ def courseUpdate():
         if (len(updated) > 0):
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
+
     return render_template(
         "users/teacher/course_video_edit.html", 
         form=courseForm, imageSrcPath=userInfo.profileImage, 
