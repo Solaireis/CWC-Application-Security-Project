@@ -34,8 +34,8 @@ def courseList():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
     print(courseList)
-
     
+
     if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
 
@@ -44,7 +44,7 @@ def courseList():
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
+    return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr,courseDescriptionList=courseDescriptionList)
 
 @teacherBP.route("/draft-course-list")
 def draftCourseList():
@@ -392,11 +392,18 @@ def courseUpdate():
             flash(f"Fields Updated : {updated}", "Successful Update")
         return redirect(url_for("teacherBP.courseList"))
 
+    courseDescription = Markup(
+        markdown.markdown(
+            html.escape(courseFound.courseDescription),
+            extensions=[AnchorTagExtension()], 
+        )
+    )
+    
     return render_template(
         "users/teacher/course_video_edit.html", 
         form=courseForm, imageSrcPath=userInfo.profileImage, 
         accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, 
-        courseDescription=courseFound.courseDescription, coursePrice=courseFound.coursePrice, 
+        courseDescription=courseDescription, coursePrice=courseFound.coursePrice, 
         courseTag=courseFound.courseCategory, videoData=get_video(courseFound.videoPath)
     )
 
