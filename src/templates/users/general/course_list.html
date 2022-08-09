@@ -120,9 +120,13 @@
                                     </button>
                                 </span>
                                 <span>
-                                    <a href="{{ url_for('userBP.purchaseView', courseID=course.courseID ) }}">
-                                        View Course(Client POV)
+                                    <a href="{{ url_for('userBP.purchaseView', courseID=course.courseID ) + '?client_view=1' }}">
+                                        <button class="text-info btn btn-link">
+                                            View Course(Client POV)
+                                        </button>
                                     </a>
+                                        
+                                        
                                 </span>
                                 <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
