@@ -523,7 +523,7 @@ def purchaseView(courseID:str):
         abort(404)
 
     userID = session["user"]
-    clientView = request.args.get("client-view", default=False, type=bool)
+    clientView = request.args.get("client_view", default=False, type=bool)
     isClientView = False
     if (clientView and courses.teacherID == userID):
         isClientView = True
