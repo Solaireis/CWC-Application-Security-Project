@@ -60,9 +60,15 @@
                                 <i>Current Course Title: {{ courseName }}</i>
                             </div>
                             <!-- Title -->
+                            
+                            
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseDescription, class="form-control", placeholder="Give a brief summary of the course...") }}
-                                <i>Current Course Description: {{ courseDescription }}</i>
+                                <i>Current Course Description Preview:</i>
+                            </div>
+                            
+                            <div class="card  text-dark bg-light mb-3">
+                                <span class="card-text"><i>{{ courseDescription }}</i></span>
                             </div>
 
                             <div class="col-12 text-white">
