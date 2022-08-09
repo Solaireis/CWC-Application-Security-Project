@@ -545,11 +545,12 @@ def purchaseView(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-
+    if (courses.teacherID == userID):
+        flash("You are viewing this course as a client.", "Client View")
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
-        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath), isClientView=isClientView
+        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath), isClientView=isClientView, userID = userID, teacherID = courses.teacherID
     )
 
 @userBP.post("/add_to_cart/<string:courseID>")

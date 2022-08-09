@@ -19,6 +19,15 @@
             </ol>
         </nav>
     {% endif %}
+    {% if accType == "Teacher" and userID == teacherID %}
+        <div class="container-lg mt-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h3 class="text-primary">This is the video preview of {{courses.courseName }}</h3>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="container-lg">
         <div class="row">
             {{ video_player(videoData) }}
@@ -57,6 +66,16 @@
             </div>
         </div>
     </div>
+    {% if accType == "Teacher" and userID == teacherID %}
+        <div class="container-lg mt-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <a href="{{ url_for('teacherBP.courseList') }}" class="btn btn-primary">Return back to Course Lists</a>
+                    
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
     
 {% endblock %}
