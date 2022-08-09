@@ -524,26 +524,28 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
         abort(404)
 
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
-    if (not purchased or session["user"] != courses.teacherID): 
+    if (not purchased or session["user"] != courses.teacherID):
         return redirect(url_for("generalBP.coursePage", courseID=courseID))
-
-    # create variable to store these values
-    courseDescription = Markup(
-        markdown.markdown(
-            html.escape(courses.courseDescription),
-            extensions=[AnchorTagExtension()], 
+    elif (session["user"] != courses.teacherID):
+        return redirect(url_for("generalBP.coursePage", courseID=courseID))
+    else:
+        # create variable to store these values
+        courseDescription = Markup(
+            markdown.markdown(
+                html.escape(courses.courseDescription),
+                extensions=[AnchorTagExtension()], 
+            )
         )
-    )
-    teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
+        teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
 
-    userInfo = get_image_path(session["user"], returnUserInfo=True)
-    imageSrcPath = userInfo.profileImage
+        userInfo = get_image_path(session["user"], returnUserInfo=True)
+        imageSrcPath = userInfo.profileImage
 
-    return render_template("users/user/purchase_view.html",
-        imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
-        teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
-        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath)
-    )
+        return render_template("users/user/purchase_view.html",
+            imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
+            teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
+            accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath)
+        )
 
 @userBP.post("/add_to_cart/<string:courseID>")
 def addToCart(courseID:str):

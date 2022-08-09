@@ -119,6 +119,11 @@
                                         Delete Course
                                     </button>
                                 </span>
+                                <span>
+                                    <a href="{{ url_for('userBP.purchaseView', courseID=course.courseID ) }}">
+                                        View Course(Client POV)
+                                    </a>
+                                </span>
                                 <div class="modal fade" id="deleteCourse" data-bs-backdrop="static"
                                 data-bs-keyboard="false" tabindex="-1" aria-labelledby="deleteCourseLabel"
                                 aria-hidden="true">

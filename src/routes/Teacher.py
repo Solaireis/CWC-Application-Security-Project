@@ -14,10 +14,12 @@ from python_files.functions.StripeFunctions import *
 from python_files.functions.VideoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.Course import get_readable_category
+from python_files.classes.MarkdownExtensions import AnchorTagExtension
 
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
+import markdown,html
 
 teacherBP = Blueprint("teacherBP", __name__, static_folder="static", template_folder="template")
 
@@ -33,6 +35,7 @@ def courseList():
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
     print(courseList)
 
+    
     if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
 
