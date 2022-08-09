@@ -43,7 +43,7 @@ def courseList():
 
     return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
 
-@teacherBP.route("/draft-course-video-list")
+@teacherBP.route("/draft-course-list")
 def draftCourseList():
     #TODO Fix this to fit, add button in course list html to redirect to draft page, if user has drafted courses
     page = request.args.get("p", default=1, type=int)
