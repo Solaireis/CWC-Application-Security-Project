@@ -1,7 +1,6 @@
 {% extends "user_base.html" %}
 {% block head %}
 <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/video_upload.css') }}">
-<script nonce="{{ csp_nonce() }}" src="https://www.google.com/recaptcha/enterprise.js?render=6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw"></script>
 <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 {% endblock %}
 
@@ -41,15 +40,12 @@
 
         <span hidden id="dropzone-client">{{ payloadUrl }}</span>
         <form action="" method="POST" class="dropzone body" id="dropper" enctype="multipart/form-data">
-            <!-- <input type="hidden" name="_csrf_token" value="{# csrf_token() #}"> -->
             <div class="dz-default dz-message">
                 <i class="fas fa-cloud-upload-alt upload-icon"></i>
                 <br>
                 <strong>Drag and drop</strong> files here<br>
                 or <span>browse</span> to begin the upload
             </div>
-            <!-- <button id="submit-button" type="submit" class="btn btn-primary float-end">Upload</button> -->
-            <!-- <button data-action="upload" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="upload">Upload</button> -->
         </form>
     </div>
 </div>

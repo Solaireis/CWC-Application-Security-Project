@@ -43,10 +43,6 @@
                     <h4 class="text-white">Course Edit</h4>
                     <div class="col-md-4 border-end border-white">
                         {{ video_player(videoData) }}
-                        <!--<video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
-                            <source src="{{ videoPath }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>-->
                         <hr class="text-white">
                         <h6 class="text-white">Thumbnail:</h6>
                         <img id="thumbnail"
@@ -59,19 +55,9 @@
                                 {{ render_field(form.courseTitle, class="form-control", placeholder="Course Title") }}
                                 <i>Current Course Title: {{ courseName }}</i>
                             </div>
-                            <!-- Title -->
-                            
-                            
                             <div class="col-12 text-white">
-                                <textarea name="courseDescription" id="courseDescription" class="form-control" rows="15" placeholder="Add a description..."> {{ courseDescription2 }}</textarea>   
-                                <!-- <i>Current Course Description Preview:</i> -->
+                                <textarea name="courseDescription" id="courseDescription" class="form-control" rows="15" placeholder="Add a description..."> {{ courseDescription2 }}</textarea>
                             </div>
-                            
-                            <!-- 
-                            <div class="card  text-dark bg-light mb-3">
-                                
-                            </div> -->
-
                             <div class="col-12 text-white">
                                 <div class="col-md-6">
                                     <label for="formFile" class="form-label">Upload Lesson Thumbnail Here!</label>
@@ -79,9 +65,7 @@
                                     <i>Current Image Being Displayed</i>
                                 </div>
                             </div>
-
                         </div>
-
                         <div class="row">
                             <div class="col-6">
                                 <label for="course-tag" class="form-label text-white">Choose Your Course Category!</label>
@@ -130,16 +114,12 @@
                                 <i>Current Course Price: {{ coursePrice }}</i>
                             </div>
                         </div>
-
-
                         <div class="col-md-12">
                             <button data-action="edit_course" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="edit">Edit</button>
                             <!-- <button type="submit" class="btn btn-primary float-end">Edit</button> -->
                         </div>
                     </div>
                 </form>
-
-                
             </div>
         </div>
     </div>

@@ -43,12 +43,6 @@
                     <h4 class="text-white">Create Course</h4>
                     <div class="col-md-4 border-end border-white">
                         {{ video_player(videoData) }}
-                        <!--
-                        <video width="400" height="200" class="embed-responsive-item embed-responsive-16by9" controls>
-                            <source src="{{ videoPath }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        -->
                         <hr class="text-white">
                         <h6 class="text-white">Thumbnail:</h6>
                         <img id="thumbnail"
@@ -60,20 +54,16 @@
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseTitle, class="form-control", placeholder="Course Title") }}
                             </div>
-                            <!-- Title -->
                             <div class="col-12 text-white">
                                 {{ render_field(form.courseDescription, class="form-control", placeholder="Give a brief summary of the course...") }}
                             </div>
-
                             <div class="col-12 text-white">
                                 <div class="col-md-6">
                                     <label for="formFile" class="form-label">Upload Lesson Thumbnail Here!</label>
                                     <input accept=".png, .jpg, .jpeg" name="courseThumbnail" class="form-control" required id="formFile" type='file'/>
                                 </div>
                             </div>
-
                         </div>
-
                         <div class="row">
                             <div class="col-6">
                                 <label for="course-tag" class="form-label text-white">Choose Your Course Category!</label>
@@ -115,20 +105,15 @@
                                     </optgroup>
                                 </select>
                             </div>
-                            <!-- coursePrice -->
                             <div class="col-md-6 text-white">
                                 {{ render_field(form.coursePrice, class="form-control", placeholder="Course Price") }}
                             </div>
                         </div>
-
-                        <!-- checkbox -->
                         <div class="col-md-12 form_checkbox text-white">
                             {{ render_field(form.complyWithPolicies, labelFirst=False, class="form-check-input") }}
                         </div>
-
                         <div class="col-md-12">
                             <button data-action="create_course" data-callback="onSubmit" data-sitekey="6Lc4X8EgAAAAAHxgPuly7X-soqiIZjU6-PBbkXsw" class="g-recaptcha btn btn-primary float-end" id="create">Create</button>
-                            <!-- <button type="submit" class="btn btn-primary float-end">Create</button> -->
                         </div>
                     </div>
                 </form>
