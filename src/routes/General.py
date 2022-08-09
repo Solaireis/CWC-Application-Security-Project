@@ -2,7 +2,7 @@
 Routes for the general public and CourseFinity users (Guests, Students, Teachers, and Admins)
 """
 # import third party libraries
-import markdown, html
+import markdown
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, session, abort, Blueprint, Markup, redirect, flash, current_app
@@ -16,7 +16,7 @@ from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import limiter
 
 # import python standard libraries
-import re
+import re, html
 
 generalBP = Blueprint("generalBP", __name__, static_folder="static", template_folder="template")
 limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(generalBP)

@@ -3,13 +3,15 @@ Routes for admin users
 """
 # import flask libraries (Third-party libraries)
 from flask import Blueprint, render_template, redirect, url_for, session, request, current_app
-from urllib.parse import quote_plus, unquote_plus
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
 from python_files.functions.NormalFunctions import *
 from python_files.classes.Roles import RoleInfo
 from python_files.classes.Forms import *
+
+# import python standard libraries
+from urllib.parse import quote_plus, unquote_plus
 
 superAdminBP = Blueprint("superAdminBP", __name__, static_folder="static", template_folder="template")
 

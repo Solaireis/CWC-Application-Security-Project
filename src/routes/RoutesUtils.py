@@ -5,7 +5,7 @@ from jsonschema import validate
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, write_log_entry
+from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes
 from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries

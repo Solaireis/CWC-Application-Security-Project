@@ -2,8 +2,8 @@
 Routes for users who are not logged in (Guests)
 """
 # import third party libraries
-import requests as req
-import pyotp, random, html
+import requests as req, pyotp
+from argon2.exceptions import HashingError
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -26,6 +26,7 @@ from .RoutesSecurity import limiter
 from zoneinfo import ZoneInfo
 from datetime import datetime
 from time import sleep
+import random, html
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
 limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)(guestBP)
@@ -79,7 +80,20 @@ def recoverAccount(token:str):
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
         # update the password and reactivate the user
-        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        try:
+            sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        except (HashingError) as e:
+            write_log_entry(
+                logMessage={
+                    "User ID": userID,
+                    "Purpose": "Reset Password",
+                    "Argon2 Error": str(e)
+                },
+                severity="ERROR"
+            )
+            flash("An error occurred while resetting your password! Please try again later.", "Danger")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+
         sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
         sql_operation(table="user", mode="reactivate_user", userID=userID)
         flash("Password has been reset successfully!", "Success")
@@ -698,7 +712,18 @@ def signup():
             flash("Password is too weak, please enter a stronger password!")
             return render_template("users/guest/signup.html", form=signupForm)
 
-        passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
+        try:
+            passwordInput = current_app.config["CONSTANTS"].PH.hash(passwordInput)
+        except (HashingError) as e:
+            write_log_entry(
+                logMessage={
+                    "Purpose": "Signup",
+                    "Argon2 Error": str(e)
+                }
+            )
+            flash("Sorry! Something went wrong, please try again!")
+            return render_template("users/guest/signup.html", form=signupForm)
+
         ipAddress = get_remote_address()
 
         returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)

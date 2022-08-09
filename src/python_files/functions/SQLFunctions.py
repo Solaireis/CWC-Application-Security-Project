@@ -14,7 +14,7 @@ from math import ceil
 from flask import url_for, current_app, abort
 
 # import third party libraries
-from argon2.exceptions import VerifyMismatchError
+from argon2.exceptions import VerificationError, VerifyMismatchError, InvalidHash
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 import requests
@@ -1108,6 +1108,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 return (userID, newIpAddress, username, roleName)
         except (VerifyMismatchError):
             raise IncorrectPwdError("Incorrect password!")
+        except (VerificationError, InvalidHash) as e:
+            write_log_entry(
+                logMessage={
+                    "User ID": userID,
+                    "Purpose": "Login",
+                    "Argon2 Error": str(e)
+                },
+                severity="ERROR"
+            )
+            raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "find_user_for_reset_password"):
         email = kwargs["email"]
@@ -1229,6 +1239,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 send_verification_email(email=emailInput, userID=userID)
         except (VerifyMismatchError):
             raise IncorrectPwdError("Incorrect password!")
+        except (VerificationError, InvalidHash) as e:
+            write_log_entry(
+                logMessage={
+                    "User ID": userID,
+                    "Purpose": "Change Email",
+                    "Argon2 Error": str(e)
+                },
+                severity="ERROR"
+            )
+            raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "change_password"):
         userID = kwargs["userID"]
@@ -1265,7 +1285,17 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 )
                 connection.commit()
         except (VerifyMismatchError):
-            raise ChangePwdError("The old password is incorrect!")
+            raise IncorrectPwdError("Incorrect password!")
+        except (VerificationError, InvalidHash) as e:
+            write_log_entry(
+                logMessage={
+                    "User ID": userID,
+                    "Purpose": "Change Password",
+                    "Argon2 Error": str(e)
+                },
+                severity="ERROR"
+            )
+            raise IncorrectPwdError("Incorrect password!")
 
     elif (mode == "reset_password"):
         userID = kwargs["userID"]

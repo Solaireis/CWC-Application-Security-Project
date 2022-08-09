@@ -4,7 +4,8 @@ Routes for logged in normal users (Students or Teachers)
 # import third party libraries
 from werkzeug.utils import secure_filename
 from flask_limiter.util import get_remote_address
-import markdown, pyotp, qrcode, html
+import markdown, pyotp, qrcode
+from argon2.exceptions import HashingError
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
@@ -22,6 +23,7 @@ from .RoutesSecurity import csrf
 from pathlib import Path
 from io import BytesIO
 from base64 import b64encode
+import html
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -281,6 +283,16 @@ def updatePassword():
                 flash(
                     Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!")
                 )
+            except (HashingError) as e:
+                write_log_entry(
+                    logMessage={
+                        "User ID": userID,
+                        "Purpose": "Change Password",
+                        "Argon2 Error": str(e)
+                    },
+                    severity="ERROR"
+                )
+                flash("An error occurred while changing your password! Please try again later.")
 
             if (changed):
                 emailBody = (
