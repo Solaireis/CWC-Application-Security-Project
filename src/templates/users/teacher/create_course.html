@@ -6,10 +6,10 @@
 
 {% block title %}Create Course | CourseFinity{% endblock %}
 
-{% block content %}
 {% from "includes/_videoHelper.html" import video_player %}
 {% from "includes/_formHelper.html" import render_field %}
 
+{% block content %}1
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">

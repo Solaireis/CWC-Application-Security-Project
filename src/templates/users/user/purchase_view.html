@@ -6,17 +6,19 @@
 {% block content %}
 {% from "includes/_videoHelper.html" import video_player %}
 <div class="container-lg">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            {% with purchaseHistURL = url_for("userBP.purchaseHistory") %}
-                {% if session.get("historyCurPage") %}
-                    {% set purchaseHistURL = purchaseHistURL + "?p=" + session.get("historyCurPage") %}
-                {% endif %}
-                <li class="breadcrumb-item"><a href="{{ purchaseHistURL }}">Purchase History</a></li>
-            {% endwith %}
-            <li class="breadcrumb-item active" aria-current="page">{{ courses.courseName }}</li>
-        </ol>
-    </nav>
+    {% if not isClientView %}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                {% with purchaseHistURL = url_for("userBP.purchaseHistory") %}
+                    {% if session.get("historyCurPage") %}
+                        {% set purchaseHistURL = purchaseHistURL + "?p=" + session.get("historyCurPage") %}
+                    {% endif %}
+                    <li class="breadcrumb-item"><a href="{{ purchaseHistURL }}">Purchase History</a></li>
+                {% endwith %}
+                <li class="breadcrumb-item active" aria-current="page">{{ courses.courseName }}</li>
+            </ol>
+        </nav>
+    {% endif %}
     <div class="container-lg">
         <div class="row">
             {{ video_player(videoData) }}
