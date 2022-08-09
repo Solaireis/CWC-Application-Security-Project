@@ -543,8 +543,8 @@ def purchaseView(courseID:str):
     )
     teacherRecords = get_image_path(courses.teacherID, returnUserInfo=True)
 
-        userInfo = get_image_path(session["user"], returnUserInfo=True)
-        imageSrcPath = userInfo.profileImage
+    userInfo = get_image_path(session["user"], returnUserInfo=True)
+    imageSrcPath = userInfo.profileImage
 
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
