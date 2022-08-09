@@ -44,7 +44,7 @@ def courseList():
         # Compute the buttons needed for pagination
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr,courseDescriptionList=courseDescriptionList)
+    return render_template("users/general/course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList, isOwnself=True, paginationArr=paginationArr)
 
 @teacherBP.route("/draft-course-list")
 def draftCourseList():
