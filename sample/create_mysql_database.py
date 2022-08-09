@@ -181,6 +181,15 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX user_ip_addresses_is_ipv4_idx ON user_ip_addresses(is_ipv4)")
     cur.execute("CREATE INDEX user_ip_addresses_user_id_idx ON user_ip_addresses(user_id)")
 
+    cur.execute("""CREATE TABLE reset_password (
+        token CHAR(171) PRIMARY KEY, -- base64 encoded token since a hexadecimal token would be too long for a PK
+        user_id VARCHAR(32) NOT NULL,
+        expiry_date DATETIME NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+    )""")
+    cur.execute("CREATE INDEX reset_password_user_idx ON reset_password(user_id)")
+    cur.execute("CREATE INDEX reset_password_expiry_date_idx ON reset_password(expiry_date)")
+
     cur.execute("""CREATE TABLE limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
         token_limit TINYINT, -- Min: -128, Max: 127

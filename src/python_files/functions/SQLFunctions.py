@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from hashlib import sha512
 from math import ceil
+from base64 import urlsafe_b64decode
 
 # import Flask web application configs
 from flask import url_for, current_app, abort
@@ -27,7 +28,7 @@ from python_files.classes.Errors import *
 from python_files.classes.Reviews import ReviewInfo, Reviews
 from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
-                             send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes
+                             send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video
 
@@ -309,6 +310,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "review"):
                 returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "reset_password"):
+                returnValue = reset_password_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "limited_use_jwt"):
                 returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "role"):
@@ -345,6 +348,65 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             abort(500)
 
     return returnValue
+
+def reset_password_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+
+    cur = connection.cursor()
+    if (mode == "add_token"):
+        expiryDatetime = kwargs["expiryDate"]
+        if (isinstance(expiryDatetime, ExpiryProperties)):
+            expiryDatetime = expiryDatetime.expiryDate.replace(microsecond=0, tzinfo=None)
+
+        cur.execute(
+            "INSERT INTO reset_password (user_id, token, expiry_date) VALUES (%(userID)s, %(token)s, %(expiryDate)s)",
+            {"userID": kwargs["userID"], "token": kwargs["token"], "expiryDate": expiryDatetime}
+        )
+        connection.commit()
+
+    elif (mode == "verify_token"):
+        token = symmetric_decrypt(
+            ciphertext=urlsafe_b64decode(kwargs["token"]),
+            keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID,
+            decode=False
+        )
+        cur.execute(
+            """
+            SELECT 
+            r.user_id, u.status, t.token
+            FROM reset_password AS r 
+            INNER JOIN user AS u ON r.user_id=u.id
+            LEFT OUTER JOIN twofa_token AS t ON r.user_id=t.user_id
+            WHERE r.token = %(token)s AND r.expiry_date >= SGT_NOW();
+            """,
+            {"token": token}
+        )
+        matched = cur.fetchone()
+        print("Matched:", matched)
+        return matched if (matched is not None) else None
+
+    elif (mode == "delete_token"):
+        token = symmetric_decrypt(
+            ciphertext=urlsafe_b64decode(kwargs["token"]),
+            keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID,
+            decode=False
+        )
+        cur.execute("DELETE FROM reset_password WHERE token = %(token)s", {"token": token})
+        connection.commit()
+
+    elif (mode == "delete_token_by_user_id"):
+        cur.execute("DELETE FROM reset_password WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
+        connection.commit()
+
+    elif (mode == "delete_all_expired_tokens"):
+        cur.execute(
+            "DELETE FROM reset_password WHERE expiry_date < SGT_NOW()"
+        )
+        connection.commit()
+
+    else:
+        raise ValueError("Invalid mode in reset_password_sql_operation function!")
 
 def cart_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -851,6 +913,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT * FROM user WHERE id=%(userID)s", {"userID":userID})
         return bool(cur.fetchone())
 
+    elif (mode == "check_if_active"):
+        userID = kwargs["userID"]
+        cur.execute("SELECT * FROM user WHERE id=%(userID)s AND status='Active'", {"userID":userID})
+        return bool(cur.fetchone())
+
     elif (mode == "check_if_superadmin"):
         userID = kwargs["userID"]
         cur.execute("SELECT r.role_name FROM role AS r INNER JOIN user AS u ON r.role_id=u.role WHERE u.id=%(userID)s", {"userID":userID})
@@ -1308,6 +1375,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
         )
         connection.commit()
+        reset_password_sql_operation(connection=connection, mode="delete_token_by_user_id", userID=userID)
 
     elif (mode == "delete_user"):
         # Delete user from the database unlike deleting user's data from the database

@@ -9,15 +9,13 @@ import requests as req, uuid, re, json, pathlib
 from six import ensure_binary
 from typing import Union, Optional
 from base64 import urlsafe_b64encode, urlsafe_b64decode
-from time import time, sleep
+from time import sleep
 from hashlib import sha1, sha384
 from urllib.parse import unquote
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from io import IOBase, BytesIO
-from secrets import token_bytes, token_hex
-# from subprocess import call as subprocess_call, PIPE, check_output
-from subprocess import run as subprocess_run, PIPE, check_output
+from secrets import token_bytes, token_hex, token_urlsafe
 from inspect import stack, getframeinfo
 from os import environ
 from pathlib import Path
@@ -36,10 +34,9 @@ else:
     from python_files.classes.Errors import *
 
 # import third party libraries
-import PIL, pymysql, shlex, platform
+import PIL, pymysql
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
-from ffmpeg_streaming import input as ffmpeg_input, Formats, Representation, Size, Bitrate
 from jsonschema import validate
 
 # import Flask libraries
@@ -66,7 +63,7 @@ from google.cloud.kms_v1.types import resources
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, ec, utils
+from cryptography.hazmat.primitives.asymmetric import ec, utils
 
 # For Google Cloud reCAPTCHA API (Third-party libraries)
 from google.cloud import recaptchaenterprise_v1
@@ -557,7 +554,9 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
     else:
         raise ValueError("logMessage must be a str or dict")
 
-def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False) -> Union[bytes, str]:
+def generate_secure_random_bytes(
+    nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False, base64Encoded:bool=False
+) -> Union[bytes, str]:
     """
     Generate a random byte/hex string of length nBytes that is cryptographicy secure.
 
@@ -574,6 +573,7 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
             - Recommended by OWASP to use secrets library to ensure higher entropy
             - More details: https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
     - returnHex (bool): Whether to return the random bytes as a hex string.
+    - base64Encoded (bool): Whether to return the random bytes as a URL-safe base64 encoded string.
 
     Returns:
     - A random byte string of length nBytes if returnHex is False.
@@ -581,11 +581,18 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
     """
     if (nBytes < 1):
         raise ValueError("nBytes must be greater than 0!")
+    if (returnHex and base64Encoded):
+        raise ValueError("returnHex and base64Encoded cannot both be True!")
 
     # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes, 
     # fallback to secrets library if nBytes is less than 8
     if (not generateFromHSM or nBytes < 8):
-        return token_hex(nBytes) if (returnHex) else token_bytes(nBytes)
+        if (returnHex):
+            return token_hex(nBytes)
+        elif (base64Encoded):
+            return token_urlsafe(nBytes)
+        else:
+            return token_bytes(nBytes)
 
     # Construct the location name
     locationName = SECRET_CONSTANTS.KMS_CLIENT.common_location_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID)
@@ -626,7 +633,12 @@ def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, ret
         )
         randomBytes = randomBytesResponse.data
 
-    return randomBytes.hex() if (returnHex) else randomBytes
+    if (returnHex):
+        return randomBytes.hex()
+    elif (base64Encoded):
+        return urlsafe_b64encode(randomBytes).decode("utf-8")
+    else:
+        return randomBytes
 
 def get_key_info(keyRingID:str="", keyName:str="") -> resources.CryptoKey:
     """
@@ -659,12 +671,12 @@ def crc32c(data:Union[bytes, str]) -> int:
     """
     return int(g_crc32c(initial_value=ensure_binary(data)).hexdigest(), 16)
 
-def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> bytes:
+def symmetric_encrypt(plaintext:Union[str, bytes]="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> bytes:
     """
     Using Google Symmetric Encryption Algorithm, encrypt the provided plaintext.
 
     Args:
-    - plaintext (str): the plaintext to encrypt
+    - plaintext (str|bytes): the plaintext to encrypt
     - keyRingID (str): the key ring ID
         - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
@@ -672,7 +684,8 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID,
     Returns:
     - ciphertext (bytes): the ciphertext
     """
-    plaintext = plaintext.encode("utf-8")
+    if (isinstance(plaintext, str)):
+        plaintext = plaintext.encode("utf-8")
 
     # compute the plaintext's CRC32C checksum before sending it to Google Cloud KMS API
     plaintextCRC32C = crc32c(plaintext)
@@ -694,7 +707,12 @@ def symmetric_encrypt(plaintext:str="", keyRingID:str=CONSTANTS.APP_KEY_RING_ID,
 
     return response.ciphertext
 
-def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING_ID, keyID:str="") -> str:
+def symmetric_decrypt(
+    ciphertext:bytes=b"", 
+    keyRingID:str=CONSTANTS.APP_KEY_RING_ID, 
+    keyID:str="", 
+    decode:Optional[bool]=True
+) -> Union[str, bytes]:
     """
     Using Google Symmetric Encryption Algorithm, decrypt the provided ciphertext.
 
@@ -703,6 +721,8 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING
     - keyRingID (str): the key ring ID
         - Defaults to APP_KEY_RING_ID defined in Constants.py
     - keyID (str): the key ID/name of the key
+    - decode (bool): whether to decode the decrypted plaintext to string
+        - Defaults to True
 
     Returns:
     - plaintext (str): the plaintext
@@ -738,7 +758,7 @@ def symmetric_decrypt(ciphertext:bytes=b"", keyRingID:str=CONSTANTS.APP_KEY_RING
         # response received from Google Cloud KMS API was corrupted in-transit
         raise CRC32ChecksumError("Plaintext CRC32C checksum does not match.")
 
-    return response.plaintext.decode("utf-8")
+    return response.plaintext.decode("utf-8") if (decode) else response.plaintext
 
 class JWTExpiryProperties:
     """
@@ -767,6 +787,72 @@ class JWTExpiryProperties:
     ) -> None:
         """
         Initializes the JWTExpiryProperties object
+
+        Args:
+        - activeDuration (int, optional): the number of seconds the token is active.
+        - strDate (str, optional): the date in the format of "YYYY-MM-DD HH:MM:SS".
+        - datetimeObj (datetime, optional): the datetime object.
+            - This datetime object must be timezone aware.
+            - E.g. datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
+        - Either one of the two parameters should be provided but NOT both.
+        """
+        if (strDate is None and activeDuration != 0 and datetimeObj is None):
+            self.expiryDate = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(seconds=activeDuration)
+
+        elif (strDate is not None and activeDuration == 0 and datetimeObj is None):
+            self.expiryDate = datetime.strptime(strDate, CONSTANTS.DATE_FORMAT).astimezone(tz=ZoneInfo("Asia/Singapore"))
+
+        elif (strDate is None and activeDuration == 0 and datetimeObj is not None):
+            # check if datetimeObj is an instance of datetime class
+            if (not isinstance(datetimeObj, datetime)):
+                raise TypeError("datetimeObj must be an instance of datetime class")
+
+            # check if datetimeObj is timezone aware
+            if (datetimeObj.tzinfo is None):
+                raise ValueError("datetimeObj must be timezone aware")
+
+            # Once all the checks are done, set the expiryDate
+            self.expiryDate = datetimeObj
+
+        elif (strDate is not None and activeDuration != 0 and datetimeObj is not None):
+            raise ValueError("Cannot specify both expirySeconds, strDate, and datetimeObj")
+
+        else:
+            raise ValueError("Either expirySeconds, strDate, or datetimeObj must be provided")
+
+    def get_expiry_str_date(self) -> str:
+        """
+        Returns the expiry date in string type.
+
+        E.g. "2022-06-26 17:21:20.123456 +0800"
+        """
+        return self.expiryDate.strftime(CONSTANTS.DATE_FORMAT)
+
+    def is_expired(self) -> bool:
+        """
+        Returns True if the token has expired, False otherwise
+        """
+        return (datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) > self.expiryDate)
+
+    def __str__(self) -> str:
+        return self.get_expiry_str_date()
+
+    def __repr__(self) -> str:
+        return self.get_expiry_str_date()
+
+# Temporary for now
+class ExpiryProperties:
+    """
+    Class to format a timezone aware datetime object for expiry datetime used in tokens (NOT JWT).
+    """
+    def __init__(
+        self,
+        activeDuration:Optional[int]=0,
+        strDate:Optional[str]=None,
+        datetimeObj:Optional[datetime]=None
+    ) -> None:
+        """
+        Initializes the ExpiryProperties object
 
         Args:
         - activeDuration (int, optional): the number of seconds the token is active.

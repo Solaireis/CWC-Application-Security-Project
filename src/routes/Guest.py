@@ -26,6 +26,7 @@ from .RoutesSecurity import limiter
 from zoneinfo import ZoneInfo
 from datetime import datetime
 from time import sleep
+from base64 import urlsafe_b64encode
 import random, html
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
@@ -153,13 +154,13 @@ def resetPasswordRequest():
         # get the userID from the email
         recaptchaToken = request.form.get("g-recaptcha-response")
         if (recaptchaToken is None):
-            flash("Please verify that you are not a bot.")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
         try:
             recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="reset_password")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Please verify that you are not a bot.")
+            flash("Verification error with reCAPTCHA, please try again!")
             return render_template("users/guest/request_password_reset.html", form=requestForm)
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
@@ -189,22 +190,26 @@ def resetPasswordRequest():
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
-        # create a token that is digitally signed with an active duration of 30 mins 
-        # before it expires (something like JWT/JWS but not exactly)
-        jsonPayload = {"userID": userInfo[0]}
-        expiryInfo = JWTExpiryProperties(activeDuration=60*30)
-        tokenID = generate_id(sixteenBytesTimes=2)
-        token = EC_sign(payload=jsonPayload, b64EncodeData=True, expiry=expiryInfo, limit=1, tokenID=tokenID)
+        # create a token using the secrets library that is to be stored in the database 
+        # with an active duration of 30 mins before it expires
+        token = generate_secure_random_bytes(nBytes=128, returnHex=False, base64Encoded=True) # 1024 bits
         sql_operation(
-            table="limited_use_jwt", mode="add_jwt", jwtToken=token, 
-            expiryDate=expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None),
-            limit=1, tokenID=tokenID
+            table="reset_password", mode="add_token", 
+            token=token, userID=userInfo[0],
+            expiryDate=ExpiryProperties(activeDuration=60*30),
         )
+
+        # The token which will be in the url will be encrypted
+        # Note: The attacker will still need the key managed by GCP KMS due to our application logic
+        #       in order to encrypt a user's token and use it in the url to reset someone's password
+        encryptedToken = urlsafe_b64encode(
+            symmetric_encrypt(plaintext=token, keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID)
+        ).decode("utf-8")
 
         # send the token to the user's email
         htmlBody = (
             "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
-            f"You can change the password on your account by clicking the button below.<br><a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPassword', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
+            f"You can change the password on your account by clicking the button below.<br><a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPassword', token=encryptedToken)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Click here to reset your password</a>"
         )
         send_email(to=emailInput, subject="Reset Password", body="<br><br>".join(htmlBody))
 
@@ -216,41 +221,26 @@ def resetPasswordRequest():
 @guestBP.route("/reset-password/<string:token>", methods=["GET", "POST"])
 @limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def resetPassword(token:str):
-    # verify the token
-    data = EC_verify(data=token, getData=True)
-    if (not data.get("verified")):
+    try:
+        # verify the token and retrieve the userID if it is valid
+        userData = sql_operation(table="reset_password", mode="verify_token", token=token)
+    except (DecryptionError):
+        # If the user tampers with the encrypted token, the decryption will fail
+        userData = None
+
+    if (userData is None):
         # if the token is invalid
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    # check if jwt exists in database
-    tokenID = data["data"].get("token_id")
-    if (tokenID is None):
-        abort(404)
-
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
-        flash("Reset password link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # get the userID from the token
-    jsonPayload = data["data"]["payload"]
-    userID = jsonPayload["userID"]
-
-    # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-        # if the user does not exist
+    userID, status, twoFAToken = userData[0], userData[1], userData[2]
+    twoFAEnabled = True if (twoFAToken is not None) else False
+    if (status != "Active"):
+        # If the user is no longer active, then the token is invalid
         flash("Reset password link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
     resetPasswordForm = CreateResetPasswordForm(request.form)
-
-    # check if user has enabled 2FA
-    try:
-        twoFAToken = sql_operation(table="2fa_token", mode="get_token", userID=userID)
-    except (No2FATokenError):
-        twoFAToken = None
-    twoFAEnabled = True if (twoFAToken is not None) else False
-
     if (request.method == "POST" and resetPasswordForm.validate()):
         # check if password input and confirm password are the same
         passwordInput = resetPasswordForm.password.data
@@ -280,9 +270,8 @@ def resetPassword(token:str):
             flash("Your password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
-        # update the password
+        # update the password and delete the token from the database after usage
         sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
-        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:

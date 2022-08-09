@@ -200,6 +200,7 @@ class Constants:
 
     # For encrypting data that will be shared with the client (e.g. the JWT signature)
     COOKIE_ENCRYPTION_KEY_ID: str = "cookie-key"
+    TOKEN_ENCRYPTION_KEY_ID: str = "token-key"
     EC_SIGNING_KEY_ID: str = "signing-key"
     SIGNATURE_VERSION_NAME: str = "ec-signature-version"
     AVAILABLE_KEY_IDS: tuple = ("cookie-key", "signing-key")
