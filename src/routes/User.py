@@ -516,16 +516,23 @@ def purchaseHistory():
     return render_template("users/user/purchase_history.html", courseList=purchasedCourseArr, imageSrcPath=userInfo.profileImage, accType=userInfo.role, paginationArr=paginationArr, currentPage=pageNum, maxPage=maxPage)
 
 @userBP.route("/purchase-view/<string:courseID>")
-def purchaseView(courseID:str): # TODO add a check to see if user has purchased the course
-    # TODO: Make the argument based on the purchaseID instead of courseID
+def purchaseView(courseID:str):
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
 
     if (not courses): # raise 404 error
         abort(404)
 
-    purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
-    if (not purchased or session["user"] != courses.teacherID): 
-        return redirect(url_for("generalBP.coursePage", courseID=courseID))
+    userID = session["user"]
+    clientView = request.args.get("client-view", default=False, type=bool)
+    isClientView = False
+    if (clientView and courses.teacherID == userID):
+        isClientView = True
+    else:
+        isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
+        if (isInCart):
+            return redirect(url_for("userBP.shoppingCart"))
+        if (not purchased):
+            return redirect(url_for("generalBP.coursePage", courseID=courseID))
 
     # create variable to store these values
     courseDescription = Markup(
@@ -542,7 +549,7 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
-        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath)
+        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath), isClientView=isClientView
     )
 
 @userBP.post("/add_to_cart/<string:courseID>")
