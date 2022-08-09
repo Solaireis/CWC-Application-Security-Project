@@ -524,7 +524,7 @@ def purchaseView(courseID:str): # TODO add a check to see if user has purchased 
         abort(404)
 
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
-    if (not purchased):
+    if (not purchased or session["user"] != courses.teacherID): 
         return redirect(url_for("generalBP.coursePage", courseID=courseID))
 
     # create variable to store these values
