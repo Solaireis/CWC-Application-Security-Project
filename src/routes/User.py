@@ -550,7 +550,8 @@ def purchaseView(courseID:str):
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
-        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath), isClientView=isClientView, userID = userID, teacherID = courses.teacherID
+        accType=userInfo.role, courses=courses, videoData=get_video(courses.videoPath), 
+        isClientView=isClientView, userID=userID, teacherID=courses.teacherID
     )
 
 @userBP.post("/add_to_cart/<string:courseID>")
