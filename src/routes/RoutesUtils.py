@@ -77,9 +77,7 @@ def before_request() -> None:
     # check if state key is in session
     # remove if the user is no longer on the google OAuth2 routes
     if ("state" in session):
-        print("wadawdawd")
         if (isNotStaticEndpoint and requestRoute not in ("loginViaGoogle", "loginCallback")):
-            print("Route awdawd awdawd ", requestBlueprint)
             session.pop("state", None)
 
     # check if 2fa_token key is in session
