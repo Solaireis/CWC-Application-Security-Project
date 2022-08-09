@@ -63,12 +63,12 @@
                             
                             
                             <div class="col-12 text-white">
-                                {{ render_field(form.courseDescription, class="form-control", placeholder="Give a brief summary of the course...") }}
+                                <textarea name="courseDescription" id="courseDescription" class="form-control" rows="15" placeholder="Add a description..."> {{ courseDescription2 }}</textarea>   
                                 <i>Current Course Description Preview:</i>
                             </div>
                             
                             <div class="card  text-dark bg-light mb-3">
-                                <span class="card-text"><i>{{ courseDescription }}</i></span>
+                                {{courseDescription}}
                             </div>
 
                             <div class="col-12 text-white">

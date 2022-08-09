@@ -349,8 +349,8 @@ def courseUpdate():
                 stripe_product_update(courseID=courseID, courseName=courseForm.courseTitle.data)
                 updated += "Course Title, "
 
-        if (courseForm.courseDescription.data):
-            if (courseForm.courseDescription.data != courseFound.courseDescription):
+        if (request.form.get("courseDescription")):
+            if (request.form.get("courseDescription") != courseFound.courseDescription):
                 sql_operation(table="course", mode="update_course_description", courseID=courseID, courseDescription=courseForm.courseDescription.data)
                 stripe_product_update(courseID=courseID, courseDescription=courseForm.courseDescription.data)
                 updated += "Course Description, "
@@ -403,7 +403,7 @@ def courseUpdate():
         "users/teacher/course_video_edit.html", 
         form=courseForm, imageSrcPath=userInfo.profileImage, 
         accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, 
-        courseDescription=courseDescription, coursePrice=courseFound.coursePrice, 
+        courseDescription=courseDescription, courseDescription2 = courseFound.courseDescription, coursePrice=courseFound.coursePrice, 
         courseTag=courseFound.courseCategory, videoData=get_video(courseFound.videoPath)
     )
 
