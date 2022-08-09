@@ -144,7 +144,6 @@ def before_request() -> None:
             print("Request Blueprint:", requestBlueprint)
 
         allowedAccess = False
-        isGuestUser = ("user" not in session and "admin" not in session)
         if (not hasBlueprint):
             # Since all routes have a blueprint, 
             # abort(404) if the request does not have a blueprint
@@ -160,55 +159,31 @@ def before_request() -> None:
                 allowedAccess = True # allow the admin to access the page
             elif (isSuperAdmin and requestBlueprint in roleTable["SuperAdmin"]):
                 allowedAccess = True # allow the superadmin to access the page
-        elif (isGuestUser and requestBlueprint in roleTable["Guest"]):
+        elif ("user" not in session and "admin" not in session and requestBlueprint in roleTable["Guest"]):
             allowedAccess = True # allow the guest user to access the page
 
         if (not allowedAccess):
-            if (isGuestUser):
-                # If the guest user is not allowed to access the page
-                guestBlueprintRedirectTable = current_app.config["CONSTANTS"].GUEST_REDIRECT_TABLE
-                if (request.endpoint in guestBlueprintRedirectTable):
-                    return redirect(url_for(guestBlueprintRedirectTable[request.endpoint], **request.view_args))
-                elif (requestBlueprint in guestBlueprintRedirectTable):
-                    return redirect(url_for(guestBlueprintRedirectTable[requestBlueprint], **request.view_args))
-                else:
-                    abort(404)
-            elif ("user" in session and session.get("isTeacher", False)):
-                # If the teacher user is not allowed to access the page
-                teacherBlueprintRedirectTable = current_app.config["CONSTANTS"].TEACHER_REDIRECT_TABLE
-                if (request.endpoint in teacherBlueprintRedirectTable):
-                    return redirect(url_for(teacherBlueprintRedirectTable[request.endpoint], **request.view_args))
-                elif (requestBlueprint in teacherBlueprintRedirectTable):
-                    return redirect(url_for(teacherBlueprintRedirectTable[requestBlueprint], **request.view_args))
-                else:
-                    abort(404)
-            elif ("user" in session):
-                # If the student user is not allowed to access the page
-                userBlueprintRedirectTable = current_app.config["CONSTANTS"].USER_REDIRECT_TABLE
-                if (request.endpoint in userBlueprintRedirectTable):
-                    return redirect(url_for(userBlueprintRedirectTable[request.endpoint], **request.view_args))
-                elif (requestBlueprint in userBlueprintRedirectTable):
-                    return redirect(url_for(userBlueprintRedirectTable[requestBlueprint], **request.view_args))
-                else:
-                    abort(404)
-            elif ("admin" in session and session.get("isSuperAdmin", False)):
-                # If the super-admin user is not allowed to access the page
-                superAdminBlueprintRedirectTable = current_app.config["CONSTANTS"].SUPERADMIN_REDIRECT_TABLE
-                if (request.endpoint in superAdminBlueprintRedirectTable):
-                    return redirect(url_for(superAdminBlueprintRedirectTable[request.endpoint], **request.view_args))
-                elif (requestBlueprint in superAdminBlueprintRedirectTable):
-                    return redirect(url_for(superAdminBlueprintRedirectTable[requestBlueprint], **request.view_args))
-                else:
-                    abort(404)
+            blueprintRedirectTable = {}
+            if ("user" in session):
+                if (session.get("isTeacher", False)):
+                    # If the teacher user is not allowed to access the page
+                    blueprintRedirectTable = current_app.config["CONSTANTS"].TEACHER_REDIRECT_TABLE
+                else: # If the student user is not allowed to access the page
+                    blueprintRedirectTable = current_app.config["CONSTANTS"].USER_REDIRECT_TABLE
             elif ("admin" in session):
-                # If the admin user is not allowed to access the page
-                adminBlueprintRedirectTable = current_app.config["CONSTANTS"].ADMIN_REDIRECT_TABLE
-                if (request.endpoint in adminBlueprintRedirectTable):
-                    return redirect(url_for(adminBlueprintRedirectTable[request.endpoint], **request.view_args))
-                elif (requestBlueprint in adminBlueprintRedirectTable):
-                    return redirect(url_for(adminBlueprintRedirectTable[requestBlueprint], **request.view_args))
-                else:
-                    abort(404)
+                if (session.get("isSuperAdmin", False)):
+                    # If the super-admin user is not allowed to access the page
+                    blueprintRedirectTable = current_app.config["CONSTANTS"].SUPERADMIN_REDIRECT_TABLE
+                else: # If the admin user is not allowed to access the page
+                    blueprintRedirectTable = current_app.config["CONSTANTS"].ADMIN_REDIRECT_TABLE
+            else:
+                # If the guest user is not allowed to access the page
+                blueprintRedirectTable = current_app.config["CONSTANTS"].GUEST_REDIRECT_TABLE
+
+            if (request.endpoint in blueprintRedirectTable):
+                return redirect(url_for(blueprintRedirectTable[request.endpoint], **request.view_args))
+            elif (requestBlueprint in blueprintRedirectTable):
+                return redirect(url_for(blueprintRedirectTable[requestBlueprint], **request.view_args))
             else:
                 abort(404)
 
