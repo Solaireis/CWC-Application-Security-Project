@@ -75,8 +75,11 @@ def recoverAccount(token:str):
             flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
-        if (pwnedPassword or not pwd_is_strong(passwordInput)):
-            flash("Password is not strong enough!", "Danger")
+        if (pwnedPassword):
+            flash("Your password has been compromised, please use a different password!", "Danger")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
+        if (not pwd_is_strong(passwordInput)):
+            flash("Your password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
         # update the password and reactivate the user
@@ -270,8 +273,11 @@ def resetPassword(token:str):
             flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
-        if (pwnedPassword or not pwd_is_strong(passwordInput)):
-            flash("Password is not strong enough!", "Danger")
+        if (pwnedPassword):
+            flash("Your password has been compromised, please use a different password!", "Danger")
+            return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
+        if (not pwd_is_strong(passwordInput)):
+            flash("Your password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
         # update the password
@@ -708,8 +714,11 @@ def signup():
             flash(Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!"))
             return render_template("users/guest/signup.html", form=signupForm)
 
-        if (pwnedPassword or not pwd_is_strong(passwordInput)):
-            flash("Password is too weak, please enter a stronger password!")
+        if (pwnedPassword):
+            flash("Your password has been compromised, please use a different password!", "Danger")
+            return render_template("users/guest/signup.html", form=signupForm)
+        if (not pwd_is_strong(passwordInput)):
+            flash("Your password is too weak, please enter a stronger password!")
             return render_template("users/guest/signup.html", form=signupForm)
 
         try:

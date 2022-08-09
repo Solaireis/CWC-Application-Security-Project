@@ -66,10 +66,13 @@ class PwdTooLongError(Exception):
 
 class PwdTooWeakError(Exception):
     """
+    Raised if the password does not meet the minimum complexity requirements.
+    """
+
+class PwdCompromisedError(Exception):
+    """
     Raised if the password is too weak as it has been found in haveibeenpwned's api databases of
     leaked passwords in the dark web caused by data breaches
-    
-    It is also raised if the password does not meet the minimum complexity requirements.
     """
 
 class haveibeenpwnedAPIDownError(Exception):

@@ -9,7 +9,7 @@ from python_files.functions.NormalFunctions import upload_new_secret_version, ge
 from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
-import json
+import json, re
 
 schema = {
     
@@ -42,42 +42,66 @@ def before_request() -> None:
     Returns:
     - None
     """
-    if (current_app.config["MAINTENANCE_MODE"] and request.endpoint != "static"):
+    isNotStaticEndpoint = (request.endpoint != "static")
+    if (current_app.config["MAINTENANCE_MODE"] and isNotStaticEndpoint):
         return render_template("maintenance.html", estimation="soon!")
+
+    if ("user" in session and "admin" in session):
+        # both user and admin are in session cookie value
+        # clear the session as it should not be possible to have both session
+        session.clear()
 
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
-        print("Route Error: Either Does Not Exist or Cannot Access")
+        print("Route Error: Route does not exist...")
         abort(404)
+
+    # Check if the route has a blueprint
+    hasBlueprint = False
+    requestBlueprint = requestRoute = None
+    if (isNotStaticEndpoint):
+        print("Request Endpoint:", request.endpoint)
+        if (re.fullmatch(current_app.config["CONSTANTS"].BLUEPRINT_ENDPOINT_REGEX, request.endpoint)):
+            splittedRequestEndpoint = request.endpoint.split(sep=".", maxsplit=1)
+            requestBlueprint = splittedRequestEndpoint[0]
+            requestRoute = splittedRequestEndpoint[1]
+            hasBlueprint = True
+            print("Request Blueprint:", requestBlueprint)
+
+    if (isNotStaticEndpoint and not hasBlueprint):
+        # Since all routes except static endpoint have a blueprint, 
+        # abort(404) if the request does not have a blueprint
+        print("Route Error: Route does not have a blueprint...")
+        abort(404)
+
+    # check if state key is in session
+    # remove if the user is no longer on the google OAuth2 routes
+    if ("state" in session):
+        print("wadawdawd")
+        if (isNotStaticEndpoint and requestRoute not in ("loginViaGoogle", "loginCallback")):
+            print("Route awdawd awdawd ", requestBlueprint)
+            session.pop("state", None)
 
     # check if 2fa_token key is in session
     # remove if the user is no longer on the setup 2FA page anymore
     if ("2fa_token" in session):
-        if (request.endpoint and request.endpoint != "static" and request.endpoint.split(".")[-1] != "twoFactorAuthSetup"):
+        if (isNotStaticEndpoint and requestRoute != "twoFactorAuthSetup"):
             session.pop("2fa_token", None)
 
     # check if relative_url key is in session
-    # Remove if the admin is not on the userManagement page anymore
+    # Remove if the admin is not on the account management routes anymore
     if ("relative_url" in session):
-        if (
-            request.endpoint and 
-            request.endpoint != "static" and 
-            request.endpoint.split(".")[-1] not in ("userManagement", "adminManagement")
-        ):
+        if (isNotStaticEndpoint and requestRoute not in ("userManagement", "adminManagement")):
             session.pop("relative_url", None)
 
     # check if historyCurPage key is in session
     # Remove if the user is not on the any of the purchase history related pages anymore
     if ("historyCurPage" in session):
-        if (
-            request.endpoint and 
-            request.endpoint != "static" and 
-            request.endpoint.split(".")[-1] not in ("purchaseHistory", "courseReview", "purchaseView")
-        ):
+        if (isNotStaticEndpoint and requestRoute not in ("purchaseHistory", "courseReview", "purchaseView")):
             session.pop("historyCurPage", None)
 
     # Validate the user's session for every request that is not to the static files
-    if (request.endpoint != "static"):
+    if (isNotStaticEndpoint):
         print(f"Session cookie: {session}")
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value (but not both)
@@ -86,7 +110,7 @@ def before_request() -> None:
 
             if (
                 sessionID is not None and 
-                not sql_operation(
+                sql_operation(
                     table="session",
                     mode="check_if_valid", 
                     sessionID=sessionID, 
@@ -95,37 +119,35 @@ def before_request() -> None:
                     userAgent=request.user_agent.string
                 )
             ):
-                # if session does not exist in the db or is in invalid
-                print("Session cleared due to invalid session ID!")
-                session.clear()
+                # if session ID is valid
+                pass
             elif (sessionID is None):
                 # if session ID is missing from the cookie
                 print("Session cleared due to missing session ID!")
+                session.clear()
+            else:
+                # if session does not exist in the db or is in invalid
+                print("Session cleared due to invalid session ID!")
                 session.clear()
 
     # If the admin still has the session cookie but is not in a whitelisted IP address
     if ("admin" in session):
         if (not current_app.config["DEBUG_FLAG"]):
-            adminWhitelistedIP = json.loads(
+            adminWhitelistedIP = tuple(json.loads(
                 current_app.config["SECRET_CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
-            )
+            ))
             # try:
             #     validate(instance=adminWhitelistedIP, schema=schema)
             # except:
             #     print("Error in JSON Schema")
         else:
-            adminWhitelistedIP = ["127.0.0.1"]
+            adminWhitelistedIP = ("127.0.0.1",)
 
         if (get_remote_address() not in adminWhitelistedIP):
             session.clear()
             abort(403)
 
-    if ("user" in session and "admin" in session):
-        # both user and admin are in session cookie value
-        # clear the session as it should not be possible to have both session
-        session.clear()
-
-    if (request.endpoint != "static"):
+    if (isNotStaticEndpoint):
         # Retrieve the roles database, there could be a better way to do this
         roles = sql_operation(table="role", mode="retrieve_all")
         roleTable = {}
@@ -133,22 +155,8 @@ def before_request() -> None:
             currentRoleName = current_app.config["CONSTANTS"].ROLE_NAME_ORDER_TUPLE[idx]
             roleTable[currentRoleName] = RoleInfo(role).format_blueprints_for_checking()
 
-        requestBlueprint = request.endpoint
-        hasBlueprint = False
-        if ("." in request.endpoint):
-            requestBlueprint = request.endpoint.split(".")[0]
-            hasBlueprint = True
-
-        print("Request Endpoint:", request.endpoint)
-        if (hasBlueprint):
-            print("Request Blueprint:", requestBlueprint)
-
         allowedAccess = False
-        if (not hasBlueprint):
-            # Since all routes have a blueprint, 
-            # abort(404) if the request does not have a blueprint
-            abort(404)
-        elif ("user" in session and requestBlueprint in roleTable["Student"]):
+        if ("user" in session and requestBlueprint in roleTable["Student"]):
             allowedAccess = True # allow the user to access the page
         elif ("user" in session and requestBlueprint in roleTable["Teacher"]):
             if (session.get("isTeacher", False)):

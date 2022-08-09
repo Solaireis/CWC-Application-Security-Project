@@ -1276,7 +1276,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     )
                     raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
 
-                if (not passwordCompromised or not pwd_is_strong(passwordInput)):
+                if (passwordCompromised):
+                    raise PwdCompromisedError(f"The password has been compromised!")
+                if (not pwd_is_strong(passwordInput)):
                     raise PwdTooWeakError("The password is too weak!")
 
                 cur.execute(

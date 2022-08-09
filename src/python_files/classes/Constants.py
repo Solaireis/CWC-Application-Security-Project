@@ -54,6 +54,7 @@ class Constants:
     CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if ( DEBUG_MODE) else "https://coursefinity.social"
 
     # For RBAC checks (Follows the sequence of the MySQL columns in the database)
+    BLUEPRINT_ENDPOINT_REGEX: re.Pattern[str] = re.compile(r"^[\w]+(.)[\w]+$")
     BLUEPRINT_ORDER_TUPLE: tuple = ("guestBP", "generalBP", "adminBP", "loggedInBP", "errorBP", "teacherBP", "userBP", "superAdminBP")
     ROLE_NAME_ORDER_TUPLE: tuple = ("Student", "Teacher", "Admin", "SuperAdmin", "Guest")
 
