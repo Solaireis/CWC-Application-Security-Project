@@ -9,7 +9,8 @@ function btnclick() {
         ? navBtn.classList.remove("openTrue") : navBtn.classList.add("openTrue");
 }
 
-navBtn.addEventListener("click", btnclick);
+if (navBtn)
+    navBtn.addEventListener("click", btnclick);
 
 /* --------------- END OF HAMBURGER MENU JAVASCRIPT --------------- */
 
@@ -32,7 +33,8 @@ function scrollFunction(){
         ? scrollToTopBtn.classList.add("show") : scrollToTopBtn.classList.remove("show");
 }
 
-scrollToTopBtn.addEventListener("click", scrollToTop);
+if (scrollToTopBtn)
+    scrollToTopBtn.addEventListener("click", scrollToTop);
 
 var rootElement = document.documentElement;
 
@@ -78,9 +80,8 @@ function idleLogout() {
 }
 
 let inacitivityModalEl = document.getElementById("inacitivityModal");
-if (inacitivityModalEl) {
+if (inacitivityModalEl)
     idleLogout();
-}
 
 /* --------------- End of Inactivity Modal Javascript --------------- */
 
@@ -102,6 +103,6 @@ console.warn(
 "color:red; font-size:30px; font-weight: bold;",
 "",
 "font-weight: bold;"
-)
+);
 
 /* --------------- End of Console Warning Javascript --------------- */
