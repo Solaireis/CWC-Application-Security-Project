@@ -66,7 +66,7 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
     # minimum requirement for a session ID length is 16 bytes as stated in OWASP's Session Management Cheatsheet,
     # https://owasp.deteact.com/cheat/cheatsheets/Session_Management_Cheat_Sheet.html#session-id-length
-    sessionID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
+    sessionID = generate_secure_random_bytes(nBytes=32, generateFromHSM=False, returnHex=True)
 
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
@@ -98,7 +98,7 @@ def generate_limited_usage_jwt_token(
     if (expiryInfo is not None):
         expiryInfoToStore = expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
 
-    tokenID = generate_secure_random_bytes(nBytes=32, generateFromHSM=True, returnHex=True)
+    tokenID = generate_secure_random_bytes(nBytes=32, generateFromHSM=False, returnHex=True)
     token = EC_sign(payload=payload, b64EncodeData=encodeTokenFlag, expiry=expiryInfo, tokenID=tokenID)
     sql_operation(
         table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
@@ -748,7 +748,7 @@ def generate_backup_codes(encrypt:Optional[bool]=False) -> Union[list, bytes]:
     """
     backupCodes = []
     for _ in range(8):
-        backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=True, returnHex=True)
+        backupCode = generate_secure_random_bytes(nBytes=8, generateFromHSM=False, returnHex=True)
         formattedBackupCode = "-".join([backupCode[:4], backupCode[4:8], backupCode[8:12], backupCode[12:16]])
         el = (formattedBackupCode, "Active")
         backupCodes.append(el)
