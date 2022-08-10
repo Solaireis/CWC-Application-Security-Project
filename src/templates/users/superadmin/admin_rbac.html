@@ -71,18 +71,6 @@
                             {% endif %}
 
 
-                            {% if role.adminBP == 1 %} <!-- if guest blueprints is set to on-->
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck3" checked name="adminBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck3">Admin BluePrints Access Control</label>
-                                </div>
-                            {% else %}
-                                <div class="form-check form-switch" > <!-- if guestBluprints is set to off-->
-                                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck3" name="adminBP1">
-                                    <label class="form-check-label" for="flexSwitchCheck3">Admin BluePrints Access Control</label>
-                                </div>
-                            {% endif %}
-
 
                             {% if role.loggedInBP == 1 %} <!-- if guest blueprints is set to on-->
                                 <div class="form-check form-switch">

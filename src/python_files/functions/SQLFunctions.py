@@ -2253,13 +2253,12 @@ def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         roleName = kwargs["roleName"].title()
         guestBP = kwargs["guestBP"]
         generalBP = kwargs["generalBP"]
-        adminBP = kwargs["adminBP"]
         loggedInBP = kwargs["loggedInBP"]
         teacherBP= kwargs["teacherBP"]
         userBP= kwargs["userBP"]
         cur.execute(
-            "UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, admin_bp = %(adminBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s",
-            {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP, "adminBP":adminBP, "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP}
+            "UPDATE role SET guest_bp = %(guestBP)s, general_bp = %(generalBP)s, logged_in_bp = %(loggedInBP)s, teacher_bp = %(teacherBP)s, user_bp = %(userBP)s WHERE role_name = %(roleName)s",
+            {"roleName":roleName, "guestBP":guestBP, "generalBP":generalBP,  "loggedInBP":loggedInBP, "teacherBP":teacherBP, "userBP":userBP}
         )
         connection.commit()
 

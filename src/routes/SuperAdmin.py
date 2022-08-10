@@ -40,53 +40,7 @@ def adminManagement():
         if (userInfo.role == "SuperAdmin"):
             flash("An error occurred while processing your request.", "Sorry!")
             return redirect(session["relative_url"])
-
-        # Admin user do not have an account recovery as they uses Google OAuth2
-        if (formType == "recoverUser" and not userInfo.googleOAuth):
-            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
-            if (isRecovering):
-                flash(
-                    Markup("The user's account is already in the process of being recovered.<br>However, if you wish to revoke the recovery process, please do that instead of recovering the user's account again."), 
-                    "Recovering User's Account Request Rejected"
-                )
-            elif (recoverUserForm.validate()):
-                newEmail = recoverUserForm.email.data 
-                try:
-                    # deactivate user's account to prevent the attacker from changing the email address again
-                    sql_operation(table="user", mode="deactivate_user", userID=userID)
-
-                    # change user's email address to the new one
-                    sql_operation(table="user", mode="admin_change_email", userID=userID, email=newEmail)
-                    
-                    flash(f"The user, {userID}, has its email changed to {newEmail} and the instructions to reset his/her password has bent sent to the new email.", f"User's Account Details Updated!")
-
-                    token, tokenID = generate_limited_usage_jwt_token(payload={"userID": userID}, limit=1, getTokenIDFlag=True)
-                    sql_operation(table="recovery_token", mode="add_token", userID=userID, tokenID=tokenID, oldUserEmail=userInfo.email)
-
-                    htmlBody = (
-                        "Great news! Your account has been recovered by an administrator on our side.<br>",
-                        f"Your account email address has been changed to {newEmail} during the account recovery process.",
-                        "However, you still need to reset your password by clicking the link below.<br>",
-                        "Please click the link below to reset your password.",
-                        f"<a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.recoverAccount', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Reset Password</a>",
-                        "Note: This link will ONLY expire upon usage."
-                    )
-                    send_email(to=newEmail, subject="Account Recovery", body="<br>".join(htmlBody))
-                except (SameAsOldEmailError):
-                    flash("The new email entered is the same as the old email...", "Error recovering user's account!")
-                except (EmailAlreadyInUseError):
-                    flash("The new email entered is already in use...", "Error recovering user's account!")
-            else:
-                flash("The email provided was invalid when recovering the user's account.", "Error recovering user's account!")
-
-        elif (formType == "revokeRecoveryProcess" and not userInfo.googleOAuth):
-            isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
-            if (isRecovering):
-                sql_operation(table="recovery_token", mode="revoke_token", userID=userID)
-                flash(f"The user's account recovery process has been revoked and the account has been reactivated for the user.", "Recovery Process Revoked!")
-            else:
-                flash("The user's account is not in the process of being recovered.", "Error Revoking Recovery Process!")
-
+        
         elif (formType == "deleteUser"):
             sql_operation(table="user", mode="delete_user", userID=userID)
             flash(f"The user, {userID}, has been deleted.", "User Deleted!")
@@ -164,7 +118,6 @@ def roleManagement():
         roleName = form.roleName.data
         guestBP = request.form.get("guestBP1", default="off", type=str)
         generalBP = request.form.get("generalBP1", default="off", type=str)
-        adminBP = request.form.get("adminBP1", default="off", type=str)
         loggedInBP = request.form.get("loggedInBP1", default="off", type=str)
         teacherBP = request.form.get("teacherBP1", default="off", type=str)
         userBP = request.form.get("userBP1", default="off", type=str)
@@ -173,14 +126,12 @@ def roleManagement():
 
         guestBP = True if (guestBP.lower() == "on") else False
         generalBP = True if (generalBP.lower() == "on") else False
-        adminBP = True if (adminBP.lower() == "on") else False
         loggedInBP = True if (loggedInBP.lower() == "on") else False
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
         
         sql_operation(
-            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
-            adminBP=adminBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
+            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
             userBP=userBP
         )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
