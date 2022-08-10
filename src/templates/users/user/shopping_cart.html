@@ -12,65 +12,64 @@
 <div id="shopping-title">
     <h4>Shopping Cart</h4>
     <hr>
+    {% if courseAddedStatus != None %}
+        {% if courseAddedStatus["status"] == "Success" %}
+        <div>
+            <div class="alert-div alert alert-info alert-dismissible fade show mb-0" role="alert">
+                <div>
+                    <i class="bi bi-info-circle"></i>
+                </div>
+                <div>
+                    Course Titled '{{ courseAddedStatus["name"] }}' Added to Cart
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% elif courseAddedStatus["status"] == "In Cart" %}
+        <div>
+            <div class="alert-div alert alert-warning alert-dismissible fade show mb-0" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-circle"></i>
+                </div>
+                <div>
+                    Course Titled '{{ courseAddedStatus["name"] }}' Already In Cart
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% elif courseAddedStatus["status"] == "Purchased" %}
+        <div>
+            <div class="alert-div alert alert-warning alert-dismissible fade show mb-0" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-circle"></i>
+                </div>
+                <div>
+                    Course Titled '{{ courseAddedStatus["name"] }}' Already Purchased
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% elif courseAddedStatus["status"] == "Own Course" %}
+        <div>
+            <div class="alert-div alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                <div>
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div>
+                    Own Course Titled '{{ courseAddedStatus["name"] }}' cannot be bought.
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
 </div>
 
 {% if courseList != [] %}
     <div class="row g-0">
         <div class="col">
-            {% if courseAddedTitle != None %}
-                {% if status == "Success" %}
-                <div>
-                    <div class="alert-div alert alert-info alert-dismissible fade show" role="alert">
-                        <div>
-                            <i class="bi bi-info-circle"></i>
-                        </div>
-                        <div>
-                            Course Titled '{{ courseAddedTitle }}' Added to Cart
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                </div>
-                {% elif status == "Already in Cart" %}
-                <div>
-                    <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
-                        <div>
-                            <i class="bi bi-exclamation-circle"></i>
-                        </div>
-                        <div>
-                            Course Titled '{{ courseAddedTitle }}' Already In Cart
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                </div>
-                {% elif status == "Already Purchased" %}
-                <div>
-                    <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
-                        <div>
-                            <i class="bi bi-exclamation-circle"></i>
-                        </div>
-                        <div>
-                            Course Titled '{{ courseAddedTitle }}' Already Purchased
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                </div>
-                {% elif status == "Own Course" %}
-                <div>
-                    <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
-                        <div>
-                            <i class="bi bi-exclamation-triangle"></i>
-                        </div>
-                        <div>
-                            Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                </div>
-                {% endif %}
-            {% endif %}
-
             <section class="h-100 h-custom">
-                <div class="container h-100 py-5">
+                <div class="container h-100 pb-5 pt-3">
                     <div class="row d-flex justify-content-center align-items-center h-100">
                         <div class="col">
                             <div class="table-responsive">
@@ -144,33 +143,6 @@
         </div>
     </div>
 {% else %}
-    {% if courseAddedTitle != None %}
-        {% if status == "Already Purchased" %}
-            <div class="div d-flex justify-content-center">
-                <div class="alert-div alert alert-danger alert-dismissible fade show" role="alert">
-                    <div>
-                        <i class="bi bi-exclamation-triangle"></i>
-                    </div>
-                    <div>
-                        Course Titled '{{ courseAddedTitle }}' Already Purchased
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
-        {% elif status == "Own Course" %}
-            <div class="div d-flex justify-content-center">
-                <div class="alert-div alert alert-warning alert-dismissible fade show" role="alert">
-                    <div>
-                        <i class="bi bi-exclamation-circle"></i>
-                    </div>
-                    <div>
-                        Own Course Titled '{{ courseAddedTitle }}' cannot be bought.
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            </div>
-        {% endif %}
-    {% endif %}
     <div class="empty-cart">
         <a href="/"><i class="fas fa-cart-plus"></i></a>
         <p>Seems like there isn't anything here. Continue Shopping?</p>

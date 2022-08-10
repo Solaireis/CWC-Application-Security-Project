@@ -391,7 +391,7 @@ Add to cart validation
   - Error sign logic (1 condition in case I forget)
 
 ### Implemented
-- Stripe with modified JWT (no encoding/encryption method stored; no reason to)
+- Stripe with token
 - mpd video player, randomised blob url
 
 #### Plan:
