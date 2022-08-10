@@ -132,7 +132,7 @@ def showBackupCodes():
     try:
         loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userID)
     except (UserDoesNotExist):
-        abort(403) # if for whatever reason, a user does not exist, abort
+        abort(404) # if for whatever reason, a user does not exist, abort 404, because likely the user is not logged in
 
     if (loginViaGoogle):
         # if so, redirect to user profile as the authentication security is handled by Google themselves
@@ -185,7 +185,7 @@ def disableTwoFactorAuth():
     try:
         loginViaGoogle = sql_operation(table="user", mode="check_if_using_google_oauth2", userID=userID)
     except (UserDoesNotExist):
-        abort(403) # if for whatever reason, a user does not exist, abort
+        abort(404) # if for whatever reason, a user does not exist, abort
 
     if (loginViaGoogle):
         # if so, redirect to user profile as the authentication security is handled by Google themselves
@@ -471,6 +471,8 @@ def courseReview(courseID:str):
     reviewForm = CreateReview(request.form)
     # get course data 
     course = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    if (not course):
+        return abort(404)
 
     # get user data
     print("user is logged in")
@@ -480,7 +482,7 @@ def courseReview(courseID:str):
 
     if (not purchased):
         print("user has not purchased this course")
-        abort(404)
+        return redirect(url_for("generalBP.course", courseID=courseID)) 
 
     hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 

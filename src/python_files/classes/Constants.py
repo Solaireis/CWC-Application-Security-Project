@@ -61,6 +61,7 @@ class Constants:
     # For custom redirects after RBAC checks instead of the default abort(404)
     # Available blueprints: generalBP, guestBP, errorBP, loggedInBP, teacherBP, userBP, adminBP, superAdminBP
     # Note: request.endpoint takes precedence before getting the blueprint custom redirect url.
+    # This is just a general wide area redirection, DO NOT rely on this for good user experience, youll still require to fine tune the individual approutes to ensure safe redirection
     GUEST_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "userBP": "guestBP.login",
         "teacherBP": "guestBP.login"
