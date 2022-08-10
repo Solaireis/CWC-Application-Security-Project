@@ -63,22 +63,26 @@ class Constants:
     # Note: request.endpoint takes precedence before getting the blueprint custom redirect url.
     GUEST_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "userBP": "guestBP.login",
-        "loggedInBP": "guestBP.login",
         "teacherBP": "guestBP.login"
+
     })
     USER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
-        "teacherBP.createCourse": "generalBP.coursePage",
         "teacherBP": "userBP.userProfile",
         "guestBP": "generalBP.home"
+        
     })
     TEACHER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
-        "guestBP": "guestBP.home"
+        "guestBP": "guestBP.home",
+        
     })
     ADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
-        "guestBP": "generalBP.home"
+        "guestBP": "generalBP.home",
+        "teacherBP": "generalBP.home"
+        
     })
     SUPERADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
-        "guestBP": "generalBP.home"
+        "guestBP": "generalBP.home",
+        "teacherBP": "generalBP.home"
     })
 
     # For the contact us form checks
