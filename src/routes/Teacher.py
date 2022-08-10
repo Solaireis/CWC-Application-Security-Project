@@ -76,14 +76,14 @@ def clientPayload(jwtToken):
     print(request.data)
     data = EC_verify(jwtToken, getData=True)
     if not data.get("verified"):
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     tokenID = data["data"]["token_id"]
     if (tokenID is None):
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
 
@@ -94,7 +94,7 @@ def clientPayload(jwtToken):
     clientPayload = get_upload_credentials(courseID, teacherID)
 
     if clientPayload is None:
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     return clientPayload
 
@@ -102,17 +102,17 @@ def clientPayload(jwtToken):
 def uploadSuccess(jwtToken):
     data = EC_verify(jwtToken, getData=True)
     if not data.get("verified"):
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
     print("Token valid")
 
     tokenID = data["data"].get("token_id")
 
     if (tokenID is None):
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
     print("Token has no token ID")
 
     if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
     print("Token in database")
 
     sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
@@ -121,7 +121,7 @@ def uploadSuccess(jwtToken):
     payload = data["data"]["payload"]
     if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
         #TODO: Delete video
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     sql_operation(
         table="course",
@@ -168,14 +168,14 @@ def createCourse(courseID:str):
     # Check if course exists
     videoData = check_video(videoPath)
     if videoData is None: # video doesn't exist
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
     elif videoData["status"] != "ready": # Video is in processing/error
-        abort(400)
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     videoData = get_video(videoPath)
 
     if (userInfo.role != "Teacher"):
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     courseForm = CreateCourse(request.form)
     if (request.method == "POST" and courseForm.validate()):
@@ -296,7 +296,7 @@ def courseDelete():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courseFound) or (not courseFound.status):
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     sql_operation(table="course", mode="delete", courseID=courseID)
     print("Course Deleted")
@@ -307,7 +307,7 @@ def draftCourseDelete():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
     if (not courseFound):
-        abort(404)
+        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     delete_video(courseFound[2])
     sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
@@ -319,7 +319,7 @@ def courseUpdate():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courseFound) or (not courseFound.status):
-        abort(404)
+        abort(404)#TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseForm = CreateCourseEdit(request.form)
