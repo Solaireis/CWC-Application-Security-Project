@@ -38,8 +38,7 @@ def get_video(videoID:str) -> Optional[dict]:
             "ttl": 300,  # Time to live
             "whitelisthref": flaskRequest.headers["Host"],    # Whitelist sites
         })
-    )
-    .text)
+    ).text)
     print(data)
 
     # Course cannot be acquired for reasons
@@ -52,7 +51,6 @@ def get_video(videoID:str) -> Optional[dict]:
 
     return data
 
-# Currently not in use due to ability to set video thumbnails not existing.
 def get_video_thumbnail(videoID:str) -> tuple:
     """
     Get thumbnail for a video, for display purposes.
@@ -94,8 +92,7 @@ def check_video(videoID:str) -> Optional[dict]:
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
             "Accept": "application/json"
         }
-    )
-    .text)
+    ).text)
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
         print(data.get("message"))
@@ -106,6 +103,31 @@ def check_video(videoID:str) -> Optional[dict]:
 
 # Testing
 # check_video("68c9b84e24c841498cc772e9760cc659")
+
+def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
+    """
+    Gets a list of videoIDs given a tag, up to 40 at a time.
+    Leave empty to get all videos.
+
+    Inputs:
+    - tagName (str)
+
+    Outputs:
+    - count (int)
+    - videoIDs (tuple)
+    """
+    data = json.loads(requests.get(
+        url="https://dev.vdocipher.com/api/videos",
+        headers={
+            "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
+            "Accept": "application/json"
+        },
+        params={"tags": tagName}
+    ).text)
+    if data["count"] > 0:
+        return data["count"], tuple(row["id"] for row in data["rows"])
+    else:
+        return 0, () # Empty tuple
 
 """ End of Get Video Data """
 
@@ -147,8 +169,7 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
             data=f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: image/webp\r\n\r\n{PoolManager().request('GET', thumbnailFilePath).data.decode('latin-1')}\r\n--{boundary}--",
             timeout=(2, 5) # If file cannot be processed, server refuses to respond
                              # until 504-Gateway Timeout Error (which takes forever)
-        )
-        .text)
+        ).text)
     except requests.ReadTimeout:
         return None
 
@@ -165,9 +186,18 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
     return data
 # print(update_video_thumbnail("c452cdeec4ca45578454849fd0794862", r"https://storage.googleapis.com/coursefinity/course-thumbnails/a7f9a72762b842ad987cb5449a7f6d7e86c08ef1b5d04cfd9a56a8a1313a966d.webp"))
 
-def delete_video(videoIDs:Union[tuple, list, str]) -> Optional[dict]:
+def delete_video(videoIDs:Union[tuple, list, str]) -> int:
     """
-    {'code': 200, 'message': 'Successfully deleted <num> videos'}
+    Deletes video(s), given 1 or more video IDs. Returns number of videos deleted.
+
+    Inputs:
+    - videoID (str)
+    - videoID (tuple, list)
+    - thumbnailFilePath (str, Path)
+    Either str, or tuple/list
+
+    Outputs:
+    - count (int)
     """
     if isinstance(videoIDs, tuple) or isinstance(videoIDs, list):
         videoIDs = ", ".join(videoIDs)
@@ -182,9 +212,66 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> Optional[dict]:
         params={
             "videos": videoIDs
         }
-    )
-    .text)
-    print(videoIDs)
-    print(data)
+    ).text)
+    # {'code': 200, 'message': 'Successfully deleted 0 videos'}
+    return int(data["message"].split(" ")[-2])
+
+def add_tag(videoID:str, tagName:str) -> str:
+    """
+    Adds a given tag to a video.
+
+    Inputs:
+    - videoID (str)
+    - tagName (str)
+
+    Outputs:
+    - status (str) E.g. Done
+    """
+
+    if not isinstance(tagName, str):
+        raise Exception("Tag name must be a string!")
+    
+    data = json.loads(requests.post(
+        url = "https://dev.vdocipher.com/api/videos/tags",
+        headers={
+            "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        data = json.dumps({
+            "videos": [videoID],
+            "tags": [tagName]
+        })
+    ).text)
+    return data.get("message")
+
+def edit_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
+    """
+    Replace tags in a video. Leave empty to remove tags.
+
+    Inputs:
+    - videoID (str)
+    - tagName (str)
+
+    Outputs:
+    - status (str) E.g. Done
+    """
+
+    if not isinstance(tagName, str):
+        raise Exception("Tag name must be a string!")
+
+    data = json.loads(requests.put(
+        url = "https://dev.vdocipher.com/api/videos/tags",
+        headers={
+            "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        data = json.dumps({
+            "videos": [videoID],
+            "tags": [] if tagName is None else [tagName]
+        })
+    ).text)
+    return data.get("message")
 
 """ End of Video Upload/Edit """
