@@ -105,7 +105,7 @@ class Constants:
 
     # Configurations on the allowed extensions for files such as images
     ALLOWED_IMAGE_EXTENSIONS: tuple = (".png", ".jfif", ".jpg", ".jpeg")
-    ALLOWED_VIDEO_EXTENSIONS: tuple = (".3g2", ".3gpp", ".3gp", ".asf", ".avchd", ".avi", ".flv", ".m4a", ".mkv", ".mov", ".mp4", ".mts", ".webm", ".wmv")
+    ALLOWED_VIDEO_EXTENSIONS: tuple = (".3g2", ".3gpp", ".3gp", ".asf", ".avchd", ".avi", ".flv", ".mkv", ".mov", ".mp4", ".mts", ".webm", ".wmv")
 
     # path to the root directory of the project
     ROOT_FOLDER_PATH: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.absolute()

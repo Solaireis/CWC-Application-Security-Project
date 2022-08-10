@@ -378,10 +378,6 @@
   - Upload in chunks
 - contact us form for issues (review)
 
-Policies
-- File type policies (3 sentences lol)
-- Max content length policy
-
 Add to cart validation
 - Own course
 - Purchased course
@@ -389,6 +385,7 @@ Add to cart validation
 
 - Stripe
   - Images (last thing lol)
+  - Double Charge
 
 - Draft course
   - Error sign logic (1 condition in case I forget)
