@@ -14,7 +14,7 @@
 
 #shopping-title {
     /*Top-Bottom, Left-Right*/
-    margin:2.5em auto;
+    margin:2.5em auto 0;
     max-width: 80vw;
 }
 
@@ -57,8 +57,6 @@
 .alert-div {
     display: flex;
     align-items: center;
-    margin: 0px 2.5vw 2.5vw;
-    max-width: 80vw;
 }
 
 .alert-div i {

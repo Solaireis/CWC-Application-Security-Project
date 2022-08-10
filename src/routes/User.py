@@ -556,13 +556,33 @@ def purchaseView(courseID:str):
 
 @userBP.post("/add-to-cart/<string:courseID>")
 def addToCart(courseID:str):
-    sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
+    courseInfo = sql_operation(table="course", mode="get_course_data", courseID=courseID)
+    courseAddedStatus = {"name": courseInfo.courseName}
+    isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
+    if isInCart:
+        courseAddedStatus["status"] = "In Cart"
+    elif purchased:
+        courseAddedStatus["status"] = "Purchased"
+    else:
+        if courseInfo.teacherID == session["user"]:
+            print(courseInfo.teacherID, session["user"])
+            courseAddedStatus["status"] = "Own Course"
+        else:
+            sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
+            courseAddedStatus["status"] = "Success"
+    session["courseAddedStatus"] = courseAddedStatus
     return redirect(url_for("userBP.shoppingCart"))
 
 @userBP.route("/shopping-cart", methods=["GET", "POST"])
 def shoppingCart():
     print(str(session))
     userID = session["user"]
+    if "courseAddedStatus" in session:
+        courseAddedStatus = session.get("courseAddedStatus")
+        session.pop("courseAddedStatus")
+    else:
+        courseAddedStatus = None
+
     if request.method == "POST":
         # Remove item from cart
         courseID = request.form.get("courseID")
@@ -582,7 +602,7 @@ def shoppingCart():
             course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
             courseList.append(course)
             subtotal += course.coursePrice
-        return render_template("users/user/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+        return render_template("users/user/shopping_cart.html", courseList=courseList, subtotal=f"{subtotal:,.2f}", imageSrcPath=userInfo.profileImage, accType=userInfo.role, courseAddedStatus=courseAddedStatus)
 
 @userBP.route("/checkout", methods = ["GET", "POST"])
 def checkout():
