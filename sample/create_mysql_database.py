@@ -262,7 +262,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
             UPDATE user SET email=NULL, password=NULL, profile_image=NULL, status='Deleted', 
             role=(SELECT role_id FROM role WHERE role_name='Student'),
-            username=CONCAT('deleted-user-', UUID())
+            username=CONCAT('deleted-user-', UUID_V4()) -- totally not copying discord (;
             WHERE id=user_id_input;
 
             DELETE FROM purchased_courses WHERE user_id=user_id_input;
@@ -274,6 +274,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
             DELETE FROM acc_recovery_token WHERE user_id = user_id_input;
+            DELETE FROM expirable_token WHERE user_id = user_id_input;
         END
     """)
     cur.execute(f"""
@@ -706,9 +707,10 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
 
-    """Datetime function"""
+    # Datetime function
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() RETURNS DATETIME 
+        CREATE DEFINER=`{definer}` FUNCTION SGT_NOW() 
+            RETURNS DATETIME 
         DETERMINISTIC 
         COMMENT 'Returns SGT (UTC+8) datetime.'
         BEGIN
@@ -716,7 +718,37 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         END
     """)
 
-    # end of stored procedures
+    # UUID_V4 function based on https://stackoverflow.com/a/61062917/16377492
+    cur.execute(f"""
+        CREATE DEFINER=`{definer}` FUNCTION UUID_V4()
+            RETURNS CHAR(36)
+        DETERMINISTIC
+        COMMENT 'Returns a random UUID v4 (36 or 32 Characters string).'
+        BEGIN
+            -- 1th and 2nd block are made of 6 random bytes
+            SET @h1 = HEX(RANDOM_BYTES(4));
+            SET @h2 = HEX(RANDOM_BYTES(2));
+
+            -- 3th block will start with a 4 indicating the version, remaining is random
+            SET @h3 = CONCAT('4', SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3));
+
+            -- 4th block first nibble can only be 8, 9 A or B, remaining is random
+            SET @h4 = CONCAT(
+                HEX(FLOOR(ASCII(RANDOM_BYTES(1)) / 64) + 8),
+                SUBSTR(HEX(RANDOM_BYTES(2)), 2, 3)
+            );
+
+            -- 5th block is made of 6 random bytes
+            SET @h5 = HEX(RANDOM_BYTES(6));
+
+            -- Build the complete UUID
+            RETURN LOWER(CONCAT_WS(
+                '-', @h1, @h2, @h3, @h4, @h5
+            ));
+        END
+    """)
+
+    # end of stored procedures and functions
     mydb.commit()
 
     # data initialisation
