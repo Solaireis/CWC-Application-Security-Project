@@ -8,7 +8,7 @@ from json import dumps
 # import third-party libraries
 from flask import url_for
 import stripe
-from stripe.error import InvalidRequestError
+from stripe.error import InvalidRequestError, IdempotencyError
 from stripe.api_resources.checkout.session import Session as StripeCheckoutSession # Conflicts with Flask session
 from css_inline import inline, CSSInliner # Not sure why VSC doesn't register these two
 
@@ -97,10 +97,6 @@ def stripe_product_deactivate(courseID:str) -> None:
     except InvalidRequestError as error:
         print(error)
 
-#TODO: THIS
-def stripe_product_edit(courseName=None, courseDescription = None, coursePrice = None, courseImagePath = None) -> None:
-    pass
-
 def stripe_product_check(courseID:str) -> Optional[str]:
     """
     Checks if a product exists on Stripe based on Course ID.
@@ -138,9 +134,17 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         - Probably more...
 
     """
+
+    paymentIntent = sql_operation(table="stripe_payments", mode="pop_previous_session", userID=userID)
+    print("Payment Intent:", paymentIntent)
+    if paymentIntent is not None:
+        checkoutID = stripe.PaymentIntent.retrieve(paymentIntent).metadata["checkoutID"]
+        expire_checkout(checkoutID)
+
     paymentID = generate_id()
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
     jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
+    print("Token generated")
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', jwtToken = jwtToken)}",
@@ -150,25 +154,29 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
             line_items = [{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],
             mode = "payment"
         )
-        # print(checkoutSession)
-        paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
-
-        sql_operation(
-            table="stripe_payments", 
-            mode="create_payment_session", 
-            paymentID = paymentID,
-            stripePaymentIntent = checkoutSession.payment_intent,
-            userID = userID,
-            cartCourseIDs = dumps(cartCourseIDs),
-            createdTime = datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
-            amount = round(paymentIntent["amount"]/100, 2)
-        )
-
-        return checkoutSession
 
     except Exception as error:
-        print("Checkout: " + str(error))
+        print("Checkout:", str(error))
+        # print(type(checkoutSession))
         return None
+    
+    # print(checkoutSession)
+    paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
+    stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {"checkoutID": checkoutSession.id})
+    print("Session Created")
+    sql_operation(
+        table="stripe_payments", 
+        mode="create_payment_session", 
+        paymentID = paymentID,
+        stripePaymentIntent = checkoutSession.payment_intent,
+        userID = userID,
+        cartCourseIDs = dumps(cartCourseIDs),
+        createdTime = datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
+        amount = round(paymentIntent["amount"]/100, 2)
+    )
+    print("SQL Success")
+
+    return checkoutSession
 
 def expire_checkout(checkoutSession:str) -> None:
     """
@@ -182,8 +190,9 @@ def expire_checkout(checkoutSession:str) -> None:
     """
     try:
         stripe.checkout.Session.expire(checkoutSession)
+        print(f"Session expired: {checkoutSession}")
     except InvalidRequestError:
-        print(f"Session {checkoutSession} has already expired.")
+        print(f"Session already expired: {checkoutSession}")
 
 def send_checkout_receipt(paymentID:str) -> None:
     paymentIntent = sql_operation(table="stripe_payments", mode="get_payment_intent", paymentID=paymentID)
