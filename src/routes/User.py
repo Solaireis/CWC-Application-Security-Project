@@ -8,7 +8,7 @@ import markdown, pyotp, qrcode
 from argon2.exceptions import HashingError
 
 # import flask libraries (Third-party libraries)
-from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
+from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app, make_response
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -24,6 +24,7 @@ from pathlib import Path
 from io import BytesIO
 from base64 import b64encode
 import html
+import hashlib
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -370,9 +371,8 @@ def uploadPic():
     flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
     return redirect(url_for("userBP.userProfile"))
 
-#TODO: Doing dropzone, just realised we dont download the file locally. So need ask if i shld store file locally first check then delete, then upload to bucket. Code already in place for it, just need approval.
-# TODO : If approved test if working, if not delete
-# TODO: Looks like upload file from path already uses CRC32C checksum, clarify if need to do here also
+#TODO: Hash being sent but wrong time
+#TODO: Something wrong with the BytesIO
 # @userBP.post("/upload-profile-picture")
 # @csrf.exempt
 # def uploadPic():
@@ -385,15 +385,16 @@ def uploadPic():
 #             resp = request.json
 #             session["image_saving"] = [imageID, resp["hash"]]
 #         except Exception as e:
-#             # print(e)
-#             # write_log_entry(logMessage=f"Error in videoUpload: {e}", severity="WARNING")
-#             # return make_response("Unexpected error", 500)
 #             pass
-#         #TODO : Find a way to check if this was the file currently being saved or not
 
 #     userID = session["user"]
 #     if ("profilePic" not in request.files):
 #         print("No File Sent")
+#         try:
+#             resp = request.json
+#             session["image_saving"] = [imageID, resp["hash"]]
+#         except Exception as e:
+#             pass
 #         return redirect(url_for("userBP.userProfile"))
         
 #     file = request.files["profilePic"]
@@ -406,8 +407,7 @@ def uploadPic():
 #     print("Total file size:", int(request.form["dztotalfilesize"]))
 
 #     filePath = Path(imageID + Path(filename).suffix)
-#     imageData = BytesIO(file.read())
-#     absFilePath = current_app.config["USER_IMAGE_VOLDER"].joinpath(filePath)
+#     absFilePath = current_app.config["USER_IMAGE_FOLDER"].joinpath(filePath)
 
 #     try:
 #         with open(absFilePath, "ab") as imageData: # ab flag for opening a file for appending data in binary format
@@ -420,7 +420,7 @@ def uploadPic():
 #     except:
 #         print("Unexpected error.")
 #         return make_response("Unexpected error", 500)
-        
+    
 #     if (currentChunk + 1 == totalChunks):
 #         # This was the last chunk, the file should be complete and the size we expect
 #         if (absFilePath.stat().st_size != int(request.form["dztotalfilesize"])):
@@ -432,11 +432,10 @@ def uploadPic():
 #             return make_response("Uploaded image is corrupted! Please try again!", 500)
 #         else:
 #             print(f"File {filename} has been uploaded successfully")
-
-#             # COMPARISON OF HASH
 #             hashNum = session["image_saving"][1]
 #             if (hashNum):
 #                 with open(absFilePath, "rb") as f:
+#                     print("Running Hash Check")
 #                     fileHash = hashlib.sha512(f.read()).hexdigest()
 #                 if (fileHash != hashNum):
 #                     print("File Hash is incorrect")
@@ -444,27 +443,30 @@ def uploadPic():
 #                     session.pop("image_saving", None)
 #                     return make_response("Uploaded image is corrupted! Please try again!", 500)
 
-#                 try:
-#                     imageUrlToStore = compress_and_resize_image(
-#                         imageData=imageData, uploadToGoogleStorage=False, imagePath=filePath, dimensions=(500, 500), 
-#                         folderPath=f"user-profiles"
-#                     )
-#                     imageUrlToStore = upload_file_from_path(
-#                           localFilePath=Path(absFilePath).with_suffix(".webp"), uploadDestination=f"user-profiles"
-#                     )
-#                     Path(absFilePath).with_suffix(".webp").unlink(missing_ok=True) # delete the webp file
-#                 except (InvalidProfilePictureError):
-#                     flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
-#                     return redirect(url_for("userBP.userProfile"))
-#                 except (UploadFailedError):
-#                     flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Profile Image!")
-#                     return redirect(url_for("userBP.userProfile"))
+#             imageBytesData = BytesIO(file.read()) 
+#             # CONFUSION : cannot identify image file <_io.BytesIO object at 0x10f52a480> 
+#             # BUT SOMETIMES IT WORKS?
+#             try:
+#                 imageUrlToStore = compress_and_resize_image(
+#                     imageData=imageBytesData, uploadToGoogleStorage=True, imagePath=filePath, dimensions=(500, 500), 
+#                     folderPath=f"user-profiles"
+#                 )
+#             except (InvalidProfilePictureError):
+#                 flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
+#                 session.pop("image_saving", None)
+#                 return redirect(url_for("userBP.userProfile"))
+#             except (UploadFailedError):
+#                 flash(Markup("Sorry, there was an error uploading your profile picture...<br>Please try again later!"), "Failed to Upload Profile Image!")
+#                 session.pop("image_saving", None)
+#                 return redirect(url_for("userBP.userProfile"))
 
-#     absFilePath.unlink(missing_ok=True)
-#     session.pop("image_saving", None)
-#     sql_operation(table="user", mode="change_profile_picture", userID=userID, profileImagePath=imageUrlToStore)
-#     flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
-#     return redirect(url_for("userBP.userProfile"))
+#             absFilePath.unlink(missing_ok=True)
+#             session.pop("image_saving", None)
+
+#             sql_operation(table="user", mode="change_profile_picture", userID=userID, profileImagePath=imageUrlToStore)
+#             flash(Markup("Your profile picture has been successfully uploaded.<br>If your profile picture has not changed on your end, please wait or clear your browser cache to see the changes."), "Profile Picture Uploaded!")
+            
+#             return redirect(url_for("userBP.userProfile"))
 
 @userBP.route("/course-review/<string:courseID>", methods=["GET","POST"]) #writing of review
 def courseReview(courseID:str):
