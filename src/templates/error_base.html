@@ -25,8 +25,6 @@
     {% if not config.get("DEBUG_FLAG") %}
         <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/redirect.js') }}"></script>
     {% endif %}
-    <script nonce="{{ csp_nonce() }}">
-        let footerCopright = document.getElementById("copyright_year").appendChild(document.createTextNode(new Date().getFullYear()));
-    </script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/common.js') }}"></script>
 </body>
 </html>

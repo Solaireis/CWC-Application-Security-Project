@@ -275,10 +275,12 @@ def search():
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
     accType = imageSrcPath = None
-    if ("user" in session or "admin" in session):
+    if ("user" in session):
         userInfo = get_image_path(session["user"], returnUserInfo=True)
         accType = userInfo.role
         imageSrcPath = userInfo.profileImage
+    elif ("admin" in session):
+        accType = "Admin"
 
     return render_template("users/general/search.html", searchInput=searchInput, currentPage=page, foundResults=foundResults, foundResultsLen=len(foundResults), imageSrcPath=imageSrcPath, maxPage=maxPage, accType=accType, paginationArr=paginationArr, tagSearch=tagSearch)
 
