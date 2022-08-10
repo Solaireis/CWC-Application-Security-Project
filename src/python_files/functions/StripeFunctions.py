@@ -26,15 +26,15 @@ def stripe_product_create(
     Create a product to add to Stripe database. 
     Provide matching details to what is saved in MySQL.
 
-    Inputs:
+    Args:
     - courseID (str)
     - courseName (str)
     - courseDescription (str)
     - coursePrice (float)
     - courseImagePath (str)
 
-    Output:
-    None
+    Returns:
+    - None
     """
     try:
         courseData = stripe.Product.create(
@@ -101,10 +101,10 @@ def stripe_product_check(courseID:str) -> Optional[str]:
     """
     Checks if a product exists on Stripe based on Course ID.
 
-    Inputs:
+    Args:
     - courseID (str): CourseID of the course to check
 
-    Output:
+    Returns:
     - courseData (str, optional): Data about the course, in JSON format.
     """
     try:
@@ -122,19 +122,17 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     Create a checkout session in Stripe servers.
     Creates a JWT Token with userID and cartCourseIDs.
 
-    Inputs:
+    Args:
     - userID (str)          : User ID to add payments to
     - cartCourseIDs (str)   : List of Course IDs in user cart to add to payments
     - email (str)           : Email field for Stripe checkout
 
-    Output:
+    Returns:
     - checkoutSession (StripeCheckoutSession)
         - checkout_session.id: id for reference
         - checkout_session.url: url to redirect to the Stripe server
         - Probably more...
-
     """
-
     paymentIntent = sql_operation(table="stripe_payments", mode="pop_previous_session", userID=userID)
     print("Payment Intent:", paymentIntent)
     if paymentIntent is not None:
@@ -145,6 +143,7 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     expiryInfo = JWTExpiryProperties(activeDuration=3600)
     jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
     print("Token generated")
+
     try:
         checkoutSession = stripe.checkout.Session.create(
             success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', jwtToken = jwtToken)}",
@@ -154,12 +153,11 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
             line_items = [{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],
             mode = "payment"
         )
-
     except Exception as error:
         print("Checkout:", str(error))
         # print(type(checkoutSession))
         return None
-    
+
     # print(checkoutSession)
     paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
     stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {"checkoutID": checkoutSession.id})
@@ -175,17 +173,17 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         amount = round(paymentIntent["amount"]/100, 2)
     )
     print("SQL Success")
-
     return checkoutSession
 
 def expire_checkout(checkoutSession:str) -> None:
     """
     Expires a checkout session.
     (e.g. shopping cart is altered while checkout is still active.)
-    Inputs:
+
+    Args:
     - 
 
-    Output:
+    Returns:
     - None
     """
     try:
