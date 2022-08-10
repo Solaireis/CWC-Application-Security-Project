@@ -191,10 +191,10 @@ def disableTwoFactorAuth():
         # if so, redirect to user profile as the authentication security is handled by Google themselves
         return redirect(url_for("userBP.userProfile"))
 
-    if (sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+    try:
         sql_operation(table="2fa_token", mode="delete_token", userID=userID)
         flash(Markup("Two factor authentication has been <span class='text-danger'>disabled</span>!<br>You will no longer be prompted to enter your 2FA time-based OTP."), "2FA Disabled!")
-    else:
+    except (No2FATokenError):
         flash("You do not have 2FA enabled!", "2FA Is NOT Enabled!")
 
     return redirect(url_for("userBP.userProfile"))
@@ -554,7 +554,7 @@ def purchaseView(courseID:str):
         isClientView=isClientView, userID=userID, teacherID=courses.teacherID
     )
 
-@userBP.post("/add_to_cart/<string:courseID>")
+@userBP.post("/add-to-cart/<string:courseID>")
 def addToCart(courseID:str):
     sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
     return redirect(url_for("userBP.shoppingCart"))

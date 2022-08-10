@@ -15,6 +15,16 @@ class EmailAlreadyInUseError(Exception):
     when changing their email to an email that is already in use.
     """
 
+class EmailIsAlreadyVerifiedError(Exception):
+    """
+    Raised when a user tries to verify an email that is already verified.
+    """
+
+class EmailIsNotUserEmailError(Exception):
+    """
+    Raised when a user tries to verify an email that is not their email.
+    """
+
 class EmailNotVerifiedError(Exception):
     """
     Raised when a user tries to login with an email that has not been verified.
@@ -96,6 +106,16 @@ class AccountLockedError(Exception):
 
     Reasons for locked account: 
         - Too many failed login attempts. (> 10 attempts)
+    """
+
+class UserAccountNotRecoveringError(Exception):
+    """
+    Raised if the admin tries to revoke the account recovery token but the user account is not in the process of being recovered.
+    """
+
+class UserAccountIsRecoveringError(Exception):
+    """
+    Raised if the admin tries to recover the account but the user account is already being recovered.
     """
 
 class No2FATokenError(Exception):

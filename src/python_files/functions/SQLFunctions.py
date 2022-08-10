@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from hashlib import sha512
 from math import ceil
-from base64 import urlsafe_b64decode
+from base64 import b85encode, urlsafe_b64decode, urlsafe_b64encode
+from binascii import Error as BinasciiError
 
 # import Flask web application configs
 from flask import url_for, current_app, abort
@@ -180,18 +181,14 @@ def send_verification_email(email:str="", username:Optional[str]=None, userID:st
     - userID (str): The user ID of the user.
     """
     # verify email token will be valid for a week
-    expiryInfo = JWTExpiryProperties(
+    expiryInfo = ExpiryProperties(
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=3)
     )
-    token = generate_limited_usage_jwt_token(
-        payload={"email": email, "userID": userID},
-        expiryInfo=expiryInfo,
-        limit=1
-    )
+    encryptedToken = sql_operation(table="expirable_token", mode="add_token", userID=userID, expiryDate=expiryInfo, purpose="verify_email")
     htmlBody = (
         f"Welcome to CourseFinity!<br>",
         "Please click the link below to verify your email address:",
-        f"<a href='{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.verifyEmail', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
+        f"<a href='{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.verifyEmail', token=encryptedToken)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Verify Email</a>"
     )
     send_email(to=email, subject="Please verify your email!", body="<br>".join(htmlBody), name=username)
 
@@ -205,14 +202,10 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     - email (str): The email of the user.
     - userID (str): The user ID of the user.
     """
-    expiryInfo = JWTExpiryProperties(
+    expiryInfo = ExpiryProperties(
         datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(minutes=30)
     )
-    token = generate_limited_usage_jwt_token(
-        payload={"email": email, "userID": userID},
-        expiryInfo=expiryInfo,
-        limit=1
-    )
+    encryptedToken = sql_operation(table="expirable_token", mode="add_token", userID=userID, expiryDate=expiryInfo, purpose="unlock_account")
     htmlBody = (
         "Your account has been locked due to too many failed login attempts.<br>",
         "Just in case that it was you, you can unlock your account by clicking the button below.",
@@ -220,7 +213,7 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
         "To change password:",
         f"{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}<br>",
         "Please click the link below to unlock your account:",
-        f"<a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.unlockAccount', token=token)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
+        f"<a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.unlockAccount', token=encryptedToken)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
         "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
     )
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
@@ -310,14 +303,14 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = user_ip_addresses_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "review"):
                 returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
-            elif (table == "reset_password"):
-                returnValue = reset_password_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "expirable_token"):
+                returnValue = expirable_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "limited_use_jwt"):
                 returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "role"):
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
-            elif (table == "recovery_token"):
-                returnValue = recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "acc_recovery_token"):
+                returnValue = acc_recovery_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "stripe_payments"):
                 returnValue = stripe_payments_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "cart"):
@@ -349,44 +342,149 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     return returnValue
 
-def reset_password_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, None]:
+def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
+    """
+    Decodes the URL-safe base64 encoded token and decrypts it using the token-key in GCP KMS.
+
+    Args:
+    - tokenInput (str): The token to decode and decrypt.
+
+    Returns:
+    - The decrypted token (str) if successful, None if not.
+    """
+    try:
+        token = symmetric_decrypt(
+            ciphertext=urlsafe_b64decode(tokenInput),
+            keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID
+        )
+        return token
+    except (DecryptionError, BinasciiError, ValueError, TypeError):
+        # If the user tampers with the token in the url
+        return None
+    except (Exception) as e:
+        write_log_entry(
+            logMessage=f"Error caught when decoding and decrypting reset password token: {e}",
+            severity="NOTICE"
+        )
+        return None
+
+def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, bytes, bool, None]:
     if (mode is None):
-        raise ValueError("You must specify a mode in the cart_sql_operation function!")
+        raise ValueError("You must specify a mode in the expirable_token_sql_operation function!")
 
     cur = connection.cursor()
     if (mode == "add_token"):
-        expiryDatetime = kwargs["expiryDate"]
-        if (isinstance(expiryDatetime, ExpiryProperties)):
-            expiryDatetime = expiryDatetime.expiryDate.replace(microsecond=0, tzinfo=None)
+        expiryDatetime = kwargs["expiryDate"].expiryDate.replace(microsecond=0, tzinfo=None)
+        purpose = kwargs["purpose"]
 
+        # Generate a 1536 bits random token and encode it 
+        # as comparing binary data in MySQL may not work properly
+        tokenBytes = b85encode(
+            generate_secure_random_bytes(nBytes=192, returnHex=False, base64Encoded=False)
+        )
+        tokenStr = tokenBytes.decode("utf-8")
+
+        # Note: The token in the database is not encrypted
         cur.execute(
-            "INSERT INTO reset_password (user_id, token, expiry_date) VALUES (%(userID)s, %(token)s, %(expiryDate)s)",
-            {"userID": kwargs["userID"], "token": kwargs["token"], "expiryDate": expiryDatetime}
+            "INSERT INTO expirable_token (user_id, token, expiry_date, purpose) VALUES (%(userID)s, %(token)s, %(expiryDate)s, %(purpose)s)",
+            {"userID": kwargs["userID"], "token": tokenStr, "expiryDate": expiryDatetime, "purpose": purpose}
         )
         connection.commit()
 
-    elif (mode == "verify_token"):
-        token = symmetric_decrypt(
-            ciphertext=urlsafe_b64decode(kwargs["token"]),
-            keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID,
-            decode=False
-        )
+        # The token which will be in the url will be encrypted
+        # Note: The attacker will still need the key managed by GCP KMS due to our application logic
+        #       in order to encrypt a user's token and use it in the url to reset someone's password
+        encryptedToken = urlsafe_b64encode(
+            symmetric_encrypt(plaintext=tokenBytes, keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID)
+        ).decode("utf-8")
+        return encryptedToken if (not kwargs.get("getPlaintextToken", False)) else (encryptedToken, tokenStr)
+
+    elif (mode == "verify_reset_pass_token"):
+        token = decode_and_decrypt_token(tokenInput=kwargs["token"])
+        if (token is None):
+            return None
+
         cur.execute(
             """
             SELECT 
-            r.user_id, u.status, t.token
-            FROM reset_password AS r 
-            INNER JOIN user AS u ON r.user_id=u.id
-            LEFT OUTER JOIN twofa_token AS t ON r.user_id=t.user_id
-            WHERE r.token = %(token)s AND r.expiry_date >= SGT_NOW();
+            e.user_id, u.status, t.token
+            FROM expirable_token AS e 
+            INNER JOIN user AS u ON e.user_id=u.id
+            LEFT OUTER JOIN twofa_token AS t ON e.user_id=t.user_id
+            WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW();
             """,
             {"token": token}
         )
         matched = cur.fetchone()
-        print("Matched:", matched)
         return matched if (matched is not None) else None
 
-    elif (mode == "delete_token"):
+    elif (mode == "verify_unlock_acc_token"):
+        token = decode_and_decrypt_token(tokenInput=kwargs["token"])
+        if (token is None):
+            return False
+
+        cur.execute(
+            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            {"token": token}
+        )
+        matched = cur.fetchone()
+        if (matched is None):
+            return False
+        userID = matched[0]
+        login_attempts_sql_operation(connection=connection, mode="reset_user_attempts_for_user", userID=userID)
+
+        cur.execute("DELETE FROM expirable_token WHERE token = %(token)s;", {"token": token})
+        connection.commit()
+        return True
+
+    elif (mode == "verify_email_token"):
+        token = decode_and_decrypt_token(tokenInput=kwargs["token"])
+        if (token is None):
+            return False
+
+        cur.execute(
+            "SELECT e.user_id, u.email_verified FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            {"token": token}
+        )
+        matched = cur.fetchone()
+        if (matched is None):
+            return False
+        userID, emailVerified = matched
+        print("UserID:", userID)
+        print("EmailVerified:", emailVerified)
+
+        # If the user is logged in and is verifying their email
+        # Note: This happens when the user is logged in and changes their email address
+        curUserID = kwargs.get("curUserID", None)
+        if (curUserID is not None and curUserID != userID):
+            raise EmailIsNotUserEmailError("The email token is not for the current user!")
+
+        # Delete the token
+        cur.execute("DELETE FROM expirable_token WHERE token = %(token)s;", {"token": token})
+        connection.commit()
+
+        # Check if the user has already verified their email
+        if (not emailVerified):
+            user_sql_operation(connection=connection, mode="update_email_to_verified", userID=userID)
+            return True
+        else:
+            raise EmailIsAlreadyVerifiedError("The email has already been verified!")
+
+    elif (mode == "verify_recover_acc_token"):
+        token = decode_and_decrypt_token(tokenInput=kwargs["token"])
+        if (token is None):
+            return None
+
+        cur.execute(
+            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            {"token": token}
+        )
+        matched = cur.fetchone()
+        if (matched is None):
+            return None
+        return matched[0]
+
+    elif (mode == "delete_encrypted_token"):
         token = symmetric_decrypt(
             ciphertext=urlsafe_b64decode(kwargs["token"]),
             keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID,
@@ -395,14 +493,17 @@ def reset_password_sql_operation(connection:MySQLConnection=None, mode:str=None,
         cur.execute("DELETE FROM reset_password WHERE token = %(token)s", {"token": token})
         connection.commit()
 
+    elif (mode == "delete_token"):
+        token = kwargs["token"]
+        cur.execute("DELETE FROM expirable_token WHERE token = %(token)s", {"token": token})
+        connection.commit()
+
     elif (mode == "delete_token_by_user_id"):
         cur.execute("DELETE FROM reset_password WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
         connection.commit()
 
     elif (mode == "delete_all_expired_tokens"):
-        cur.execute(
-            "DELETE FROM reset_password WHERE expiry_date < SGT_NOW()"
-        )
+        cur.execute("DELETE FROM reset_password WHERE expiry_date < SGT_NOW()")
         connection.commit()
 
     else:
@@ -472,46 +573,51 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
     elif mode == "delete_expired_payment_sessions":
         cur.execute("DELETE FROM stripe_payments WHERE TIMESTAMPDIFF(hour, created_time, now()) > 1 AND payment_time IS NULL")
 
-def recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
+def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     """For recovering user's account (from user management)"""
     if (mode is None):
-        raise ValueError("You must specify a mode in the recovery_token_sql_operation function!")
+        raise ValueError("You must specify a mode in the acc_recovery_token_sql_operation function!")
 
     cur = connection.cursor()
     if (mode == "add_token"):
-        tokenID = kwargs["tokenID"]
+        token = kwargs["token"]
         userID = kwargs["userID"]
         oldUserEmail = kwargs["oldUserEmail"]
 
         cur.execute(
-            "INSERT INTO recovery_token (token_id, user_id, old_user_email) VALUES (%(tokenID)s, %(userID)s, %(oldUserEmail)s)",
-            {"tokenID": tokenID, "userID": userID, "oldUserEmail": oldUserEmail}
-        )
-        connection.commit()
-
-    elif (mode == "check_if_recovering"):
-        userID = kwargs["userID"]
-
-        cur.execute(
-            "SELECT * FROM recovery_token WHERE user_id = %(userID)s", 
+            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s", 
             {"userID": userID}
         )
-        return (cur.fetchone() is not None)
+        if (cur.fetchone() is not None):
+            raise UserAccountIsRecoveringError("The token already exists!")
+
+        cur.execute(
+            "INSERT INTO acc_recovery_token (token, user_id, old_user_email) VALUES (%(token)s, %(userID)s, %(oldUserEmail)s)",
+            {"token": token, "userID": userID, "oldUserEmail": oldUserEmail}
+        )
+        connection.commit()
 
     elif (mode == "revoke_token"):
         userID = kwargs["userID"]
 
-        cur.execute("SELECT old_user_email FROM recovery_token WHERE user_id = %(userID)s", {"userID": userID})
-        oldUserEmail = cur.fetchone()[0]
+        cur.execute(
+            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s", 
+            {"userID": userID}
+        )
+        if (cur.fetchone() is not None):
+            cur.execute("SELECT old_user_email FROM acc_recovery_token WHERE user_id = %(userID)s", {"userID": userID})
+            oldUserEmail = cur.fetchone()[0]
 
-        cur.execute("CALL delete_recovery_token(%(userID)s)", {"userID": userID})
-        connection.commit()
+            cur.execute("CALL delete_acc_recovery_token(%(userID)s)", {"userID": userID})
+            connection.commit()
 
-        cur.execute("UPDATE user SET email = %(oldUserEmail)s, status='Active' WHERE id = %(userID)s", {"oldUserEmail": oldUserEmail, "userID": userID})
-        connection.commit()
+            cur.execute("UPDATE user SET email = %(oldUserEmail)s, status = 'Active' WHERE id = %(userID)s", {"oldUserEmail": oldUserEmail, "userID": userID})
+            connection.commit()
+        else:
+            raise UserAccountNotRecoveringError("User account is not recovering!")
 
     else:
-        raise ValueError("Invalid mode in the recovery_token_sql_operation function!")
+        raise ValueError("Invalid mode in the acc_recovery_token_sql_operation function!")
 
 def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -699,7 +805,18 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
     elif (mode == "delete_token"):
         userID = kwargs["userID"]
+
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
+        matchedToken = cur.fetchone()
+        if (matchedToken is None or matchedToken[0] is None):
+            raise No2FATokenError("No 2FA OTP found for this user!")
+
         cur.execute("UPDATE twofa_token SET token = NULL WHERE user_id = %(userID)s", {"userID":userID})
+        connection.commit()
+
+    elif (mode == "delete_token_and_backup_codes"):
+        userID = kwargs["userID"]
+        cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 
     elif (mode == "get_backup_codes"):
@@ -1267,9 +1384,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("UPDATE user SET status='Active' WHERE id=%(userID)s", {"userID":userID})
         connection.commit()
 
-    elif (mode == "admin_change_email"):
+    elif (mode == "recover_account"):
         userID = kwargs["userID"]
         emailInput = kwargs["email"]
+        oldEmail = kwargs["oldUserEmail"]
 
         # check if the email is already in use
         cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
@@ -1282,6 +1400,32 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         cur.execute("UPDATE user SET email=%(emailInput)s WHERE id=%(userID)s", {"emailInput": emailInput, "userID": userID})
         connection.commit()
+        if (kwargs.get("isUserAcc", False)):
+            # Generate a random token
+            encryptedToken, tokenStr = expirable_token_sql_operation(
+                connection=connection, mode="add_token", 
+                userID=userID, getPlaintextToken=True, purpose="recover_account",
+                expiryDate=ExpiryProperties(
+                    datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=15)
+                )
+            )
+            try:
+                # Add it to another table for the revoke process if needed
+                acc_recovery_token_sql_operation(
+                    connection=connection, mode="add_token", userID=userID, token=tokenStr, oldUserEmail=oldEmail
+                )
+            except (UserAccountIsRecoveringError):
+                # Delete the token if the user's account is already recovering
+                expirable_token_sql_operation(
+                    connection=connection, mode="delete_token", token=tokenStr
+                )
+                raise UserAccountIsRecoveringError(f"The user account is currently recovering!")
+
+            # Deactivate the user's account
+            user_sql_operation(connection=connection, mode="deactivate_user", userID=userID)
+            # Remove user's 2FA and its back-up codes if any
+            twofa_token_sql_operation(connection=connection, mode="delete_token_and_backup_codes", userID=userID)
+            return encryptedToken
 
     elif (mode == "change_email"):
         userID = kwargs["userID"]
@@ -1375,7 +1519,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(newPassword), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
         )
         connection.commit()
-        reset_password_sql_operation(connection=connection, mode="delete_token_by_user_id", userID=userID)
+        expirable_token_sql_operation(connection=connection, mode="delete_encrypted_token", token=kwargs["token"])
 
     elif (mode == "delete_user"):
         # Delete user from the database unlike deleting user's data from the database
@@ -1463,7 +1607,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         for data in matched:
             userInfo = format_user_info(data[1:])
             if (paginationRole != "Admin"):
-                isInRecovery = recovery_token_sql_operation(
+                isInRecovery = acc_recovery_token_sql_operation(
                     connection=connection, mode="check_if_recovering", userID=userInfo.uid
                 )
                 courseArr.append((userInfo, isInRecovery))

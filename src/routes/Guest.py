@@ -26,7 +26,6 @@ from .RoutesSecurity import limiter
 from zoneinfo import ZoneInfo
 from datetime import datetime
 from time import sleep
-from base64 import urlsafe_b64encode
 import random, html
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
@@ -35,29 +34,10 @@ limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)
 @guestBP.route("/recover-account/<string:token>", methods=["GET","POST"])
 @limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def recoverAccount(token:str):
-    # verify the token
-    data = EC_verify(data=token, getData=True)
-    if (not data.get("verified")):
+    # verify the token and retrieve the userID if it is valid
+    userID = sql_operation(table="expirable_token", mode="verify_recover_acc_token", token=token)
+    if (userID is None):
         # if the token is invalid
-        flash("Recovery account link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # check if jwt exists in database
-    tokenID = data["data"].get("token_id")
-    if (tokenID is None):
-        abort(404)
-
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
-        flash("Recovery account link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # get the userID from the token
-    jsonPayload = data["data"]["payload"]
-    userID = jsonPayload["userID"]
-
-    # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-        # if the user does not exist
         flash("Recovery account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -83,9 +63,9 @@ def recoverAccount(token:str):
             flash("Your password is not strong enough!", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
-        # update the password and reactivate the user
+        # update the password, remove the token from the database, and reactivate the user's account
         try:
-            sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+            sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput, token=token)
         except (HashingError) as e:
             write_log_entry(
                 logMessage={
@@ -98,7 +78,6 @@ def recoverAccount(token:str):
             flash("An error occurred while resetting your password! Please try again later.", "Danger")
             return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
-        sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
         sql_operation(table="user", mode="reactivate_user", userID=userID)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
@@ -192,19 +171,13 @@ def resetPasswordRequest():
 
         # create a token using the secrets library that is to be stored in the database 
         # with an active duration of 30 mins before it expires
-        token = generate_secure_random_bytes(nBytes=128, returnHex=False, base64Encoded=True) # 1024 bits
-        sql_operation(
-            table="reset_password", mode="add_token", 
-            token=token, userID=userInfo[0],
-            expiryDate=ExpiryProperties(activeDuration=60*30),
+        # and send the encrypted form of the token to user's email.
+        # Note: The token in the database is not encrypted.
+        encryptedToken = sql_operation(
+            table="expirable_token", mode="add_token", 
+            userID=userInfo[0], purpose="reset_password",
+            expiryDate=ExpiryProperties(activeDuration=1800),
         )
-
-        # The token which will be in the url will be encrypted
-        # Note: The attacker will still need the key managed by GCP KMS due to our application logic
-        #       in order to encrypt a user's token and use it in the url to reset someone's password
-        encryptedToken = urlsafe_b64encode(
-            symmetric_encrypt(plaintext=token, keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID)
-        ).decode("utf-8")
 
         # send the token to the user's email
         htmlBody = (
@@ -221,12 +194,8 @@ def resetPasswordRequest():
 @guestBP.route("/reset-password/<string:token>", methods=["GET", "POST"])
 @limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def resetPassword(token:str):
-    try:
-        # verify the token and retrieve the userID if it is valid
-        userData = sql_operation(table="reset_password", mode="verify_token", token=token)
-    except (DecryptionError):
-        # If the user tampers with the encrypted token, the decryption will fail
-        userData = None
+    # verify the token and retrieve the userID if it is valid
+    userData = sql_operation(table="expirable_token", mode="verify_reset_pass_token", token=token)
 
     if (userData is None):
         # if the token is invalid
@@ -271,7 +240,7 @@ def resetPassword(token:str):
             return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
         # update the password and delete the token from the database after usage
-        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput)
+        sql_operation(table="user", mode="reset_password", userID=userID, newPassword=passwordInput, token=token)
         flash("Password has been reset successfully!", "Success")
         return redirect(url_for("guestBP.login"))
     else:
@@ -439,34 +408,13 @@ def login():
 @guestBP.route("/unlock-account/<string:token>")
 @limiter.limit(current_app.config["CONSTANTS"].SENSITIVE_PAGE_LIMIT)
 def unlockAccount(token:str):
-    # verify the token
-    data = EC_verify(data=token, getData=True)
-    if (not data.get("verified")):
+    # verify the token and reset the login attempts if validated
+    resetFlag = sql_operation(table="expirable_token", mode="verify_unlock_acc_token", token=token)
+    if (not resetFlag):
         # if the token is invalid
         flash("Unlock account link is invalid or has expired!", "Danger")
         return redirect(url_for("guestBP.login"))
 
-    # check if jwt exists in database
-    tokenID = data["data"].get("token_id")
-    if (tokenID is None):
-        abort(404)
-
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
-        flash("Unlock account url is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # get the userID from the token
-    jsonPayload = data["data"]["payload"]
-    userID = jsonPayload["userID"]
-
-    # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-        # if the user does not exist
-        flash("Unlock account link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    sql_operation(table="login_attempts", mode="reset_user_attempts_for_user", userID=userID)
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     flash("Your account has been unlocked! Try logging in now!", "Success")
     return redirect(url_for("guestBP.login"))
 

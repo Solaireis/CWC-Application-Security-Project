@@ -181,14 +181,15 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX user_ip_addresses_is_ipv4_idx ON user_ip_addresses(is_ipv4)")
     cur.execute("CREATE INDEX user_ip_addresses_user_id_idx ON user_ip_addresses(user_id)")
 
-    cur.execute("""CREATE TABLE reset_password (
-        token CHAR(171) PRIMARY KEY, -- base64 encoded token since a hexadecimal token would be too long for a PK
+    cur.execute("""CREATE TABLE expirable_token (
+        token CHAR(240) PRIMARY KEY, -- base85 encoded token since a hexadecimal token would be too long for a PK
         user_id VARCHAR(32) NOT NULL,
-        expiry_date DATETIME NOT NULL,
+        expiry_date DATETIME,
+        purpose VARCHAR(30) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
-    cur.execute("CREATE INDEX reset_password_user_idx ON reset_password(user_id)")
-    cur.execute("CREATE INDEX reset_password_expiry_date_idx ON reset_password(expiry_date)")
+    cur.execute("CREATE INDEX expirable_token_user_idx ON expirable_token(user_id)")
+    cur.execute("CREATE INDEX expirable_token_expiry_date_idx ON expirable_token(expiry_date)")
 
     cur.execute("""CREATE TABLE limited_use_jwt (
         id CHAR(64) PRIMARY KEY,
@@ -199,12 +200,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX limited_use_jwt_token_limit_idx ON limited_use_jwt(token_limit)")
     cur.execute("CREATE INDEX limited_use_jwt_expiry_date_idx ON limited_use_jwt(expiry_date)")
 
-    cur.execute("""CREATE TABLE recovery_token ( 
+    cur.execute("""CREATE TABLE acc_recovery_token ( 
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
-        token_id CHAR(64) NOT NULL,
+        token CHAR(240) NOT NULL,
         old_user_email VARCHAR(255) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-        FOREIGN KEY (token_id) REFERENCES limited_use_jwt(id)
+        FOREIGN KEY (token) REFERENCES expirable_token(token) ON DELETE CASCADE
     )""")
 
     cur.execute("""CREATE TABLE twofa_token (
@@ -272,15 +273,14 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM twofa_token WHERE user_id = user_id_input;
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
-            DELETE FROM recovery_token WHERE user_id = user_id_input;
+            DELETE FROM acc_recovery_token WHERE user_id = user_id_input;
         END
     """)
     cur.execute(f"""
-        CREATE DEFINER=`{definer}` PROCEDURE `delete_recovery_token`(IN user_id_input VARCHAR(32))
+        CREATE DEFINER=`{definer}` PROCEDURE `delete_acc_recovery_token`(IN user_id_input VARCHAR(32))
         BEGIN
-            SET @user_recovery_token := (SELECT token_id FROM recovery_token WHERE user_id=user_id_input);
-            DELETE FROM recovery_token WHERE user_id = user_id_input;
-            DELETE FROM limited_use_jwt WHERE id = @user_recover_token;
+            DELETE FROM acc_recovery_token WHERE user_id = user_id_input;
+            DELETE FROM expirable_token WHERE id = user_id_input;
         END
     """)
     """Functions to get Data"""

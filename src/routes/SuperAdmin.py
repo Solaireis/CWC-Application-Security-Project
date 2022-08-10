@@ -41,6 +41,7 @@ def adminManagement():
             flash("An error occurred while processing your request.", "Sorry!")
             return redirect(session["relative_url"])
 
+        # Admin user do not have an account recovery as they uses Google OAuth2
         if (formType == "recoverUser" and not userInfo.googleOAuth):
             isRecovering = sql_operation(table="recovery_token", mode="check_if_recovering", userID=userID)
             if (isRecovering):

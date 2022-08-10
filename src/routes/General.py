@@ -292,58 +292,22 @@ def verifyEmail(token:str):
     if ("admin" in session):
         return redirect(url_for("generalBP.home"))
 
-    # verify the token
-    data = EC_verify(data=token, getData=True)
-    if (not data.get("verified")):
-        # if the token is invalid
-        flash("Verify email link is invalid or has expired!", "Danger")
-        return redirect(url_for("guestBP.login"))
-
-    # check if jwt exists in database
-    tokenID = data["data"].get("token_id")
-    if (tokenID is None):
-        abort(404)
-    if (not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID)):
-        if ("user" in session):
-            flash("Verify email url is invalid or has expired!", "Warning!")
-            return redirect(url_for("userBP.userProfile"))
-        elif ("user" not in session):
-            flash("Verify email url is invalid or has expired!", "Danger")
+    # verify the token and update the email verification status of the user if validated
+    try:
+        updatedFlag = sql_operation(table="expirable_token", mode="verify_email_token", token=token, curUserID=session.get("user"))
+    except (EmailIsNotUserEmailError):
+        return redirect(url_for("generalBP.home"))
+    except (EmailIsAlreadyVerifiedError):
+        if ("user" not in session):
+            flash("Your email is already verified!", "Danger")
             return redirect(url_for("guestBP.login"))
         else:
-            abort(404)
+            flash("Your email is already verified!", "Error Veriying Email!")
+            return redirect(url_for("userBP.userProfile"))
 
-    # get the userID from the token
-    jsonPayload = data["data"]["payload"]
-    userID = jsonPayload["userID"]
-
-    # Check if user is logged in, check if the userID in the token
-    # matches the userID in the session.
-    if ("user" in session and session["user"] != userID):
-        flash("Verify email link is invalid or has expired!", "Danger")
+    if (not updatedFlag):
         return redirect(url_for("generalBP.home"))
 
-    # check if the user exists in the database
-    if (not sql_operation(table="user", mode="verify_userID_existence", userID=userID)):
-        # if the user does not exist
-        flash("Reset password link is invalid or has expired!", "Danger")
-        if ("user" in session):
-            session.clear()
-        return redirect(url_for("guestBP.login"))
-
-    # check if email has been verified
-    if (sql_operation(table="user", mode="email_verified", userID=userID)):
-        # if the email has been verified
-        if ("user" in session):
-            flash("Your email has already been verified!", "Sorry!")
-            return redirect(url_for("generalBP.home"))
-        else:
-            flash("Your email has already been verified!", "Danger")
-            return redirect(url_for("guestBP.login"))
-
-    # update the email verified column to true
-    sql_operation(table="user", mode="update_email_to_verified", userID=userID)
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
     if ("user" in session):
         flash("Your email has been verified!", "Email Verified!")
         return redirect(url_for("generalBP.home"))
