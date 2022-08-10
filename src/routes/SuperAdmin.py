@@ -118,7 +118,6 @@ def roleManagement():
         roleName = form.roleName.data
         guestBP = request.form.get("guestBP1", default="off", type=str)
         generalBP = request.form.get("generalBP1", default="off", type=str)
-        adminBP = request.form.get("adminBP1", default="off", type=str)
         loggedInBP = request.form.get("loggedInBP1", default="off", type=str)
         teacherBP = request.form.get("teacherBP1", default="off", type=str)
         userBP = request.form.get("userBP1", default="off", type=str)
@@ -127,14 +126,12 @@ def roleManagement():
 
         guestBP = True if (guestBP.lower() == "on") else False
         generalBP = True if (generalBP.lower() == "on") else False
-        adminBP = True if (adminBP.lower() == "on") else False
         loggedInBP = True if (loggedInBP.lower() == "on") else False
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
         
         sql_operation(
-            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, 
-            adminBP=adminBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
+            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
             userBP=userBP
         )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
