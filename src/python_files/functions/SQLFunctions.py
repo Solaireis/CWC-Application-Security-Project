@@ -547,7 +547,7 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
         connection.commit()
         return paymentID
 
-    if mode == "complete_payment_session":
+    elif mode == "complete_payment_session":
         paymentID = kwargs["paymentID"]
         paymentTime = kwargs["paymentTime"]
         receiptEmail = kwargs["receiptEmail"]
@@ -557,6 +557,23 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
             {"paymentTime": paymentTime, "receiptEmail": receiptEmail, "paymentID": paymentID}
         )
         connection.commit()
+
+    elif mode == "pop_previous_session":
+        userID = kwargs["userID"]
+        cur.execute(
+            "SELECT stripe_payment_intent FROM stripe_payments WHERE user_id = %(userID)s AND payment_time IS NULL",
+            {"userID": userID}
+        )
+
+        stripePaymentIntent = cur.fetchone()
+        if stripePaymentIntent is not None:
+            cur.execute(
+                "DELETE FROM stripe_payments WHERE user_id = %(userID)s AND payment_time IS NULL",
+                {"userID": userID}
+            )
+            connection.commit()
+            return stripePaymentIntent[0]
+        return stripePaymentIntent
 
     elif mode == "get_payment_intent":
         paymentID = kwargs["paymentID"]
@@ -570,6 +587,7 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
 
     elif mode == "delete_expired_payment_sessions":
         cur.execute("DELETE FROM stripe_payments WHERE TIMESTAMPDIFF(hour, created_time, now()) > 1 AND payment_time IS NULL")
+        connection.commit()
 
 def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     """For recovering user's account (from user management)"""

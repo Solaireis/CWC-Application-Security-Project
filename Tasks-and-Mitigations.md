@@ -386,7 +386,9 @@
   - Error sign logic (1 condition in case I forget)
 
 ### Implemented
-- Stripe with token
+Stripe
+- JWT token
+- Double charge check
 - mpd video player, randomised blob url
 - Console warning
 Add to cart validation
