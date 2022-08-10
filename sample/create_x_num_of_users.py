@@ -49,7 +49,7 @@ def print_menu(userCount:int=0) -> None:
 > User Count: {userCount}
 
 1. Create X number of students
-2. Delete all users (Except admins)
+2. Delete all users' data (Except admins)
 X. Close program
 
 -------------------------------------------"""
@@ -98,7 +98,7 @@ ADMIN_ROLE_ID = ADMIN_ROLE_ID[0]
 def main() -> None:
     while (1):
         # count number of existing admin accounts
-        cur.execute("SELECT COUNT(*) FROM user WHERE role <> %(roleID)s", {"roleID": ADMIN_ROLE_ID})
+        cur.execute("SELECT COUNT(*) FROM user WHERE role <> %(roleID)s AND status='Active'", {"roleID": ADMIN_ROLE_ID})
         existingUserCount = cur.fetchone()[0]
         print_menu(userCount=existingUserCount)
 
@@ -146,7 +146,7 @@ def main() -> None:
                     username = randomStudentInfo.get_full_name()
                     email = randomStudentInfo.get_email()
                     if (generateDefaultPass):
-                        password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash(), keyID=CONSTANTS.PEPPER_KEY_ID)
+                        password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash(defaultPass), keyID=CONSTANTS.PEPPER_KEY_ID)
 
                     SQL_STATEMENT = "INSERT INTO user (id, role, username, email, email_verified, password, profile_image, date_joined) VALUES (%(id)s, %(role)s, %(username)s, %(email)s, 1, %(password)s, %(profilePic)s, SGT_NOW())"
                     try:

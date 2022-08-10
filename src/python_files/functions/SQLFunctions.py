@@ -450,8 +450,6 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
         if (matched is None):
             return False
         userID, emailVerified = matched
-        print("UserID:", userID)
-        print("EmailVerified:", emailVerified)
 
         # If the user is logged in and is verifying their email
         # Note: This happens when the user is logged in and changes their email address
@@ -476,7 +474,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             return None
 
         cur.execute(
-            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Inactive'", 
             {"token": token}
         )
         matched = cur.fetchone()
@@ -490,7 +488,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID,
             decode=False
         )
-        cur.execute("DELETE FROM reset_password WHERE token = %(token)s", {"token": token})
+        cur.execute("DELETE FROM expirable_token WHERE token = %(token)s", {"token": token})
         connection.commit()
 
     elif (mode == "delete_token"):
@@ -499,15 +497,15 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
         connection.commit()
 
     elif (mode == "delete_token_by_user_id"):
-        cur.execute("DELETE FROM reset_password WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
+        cur.execute("DELETE FROM expirable_token WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
         connection.commit()
 
     elif (mode == "delete_all_expired_tokens"):
-        cur.execute("DELETE FROM reset_password WHERE expiry_date < SGT_NOW()")
+        cur.execute("DELETE FROM expirable_token WHERE expiry_date < SGT_NOW()")
         connection.commit()
 
     else:
-        raise ValueError("Invalid mode in reset_password_sql_operation function!")
+        raise ValueError("Invalid mode in expirable_token_sql_operation function!")
 
 def cart_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -596,6 +594,10 @@ def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=N
             {"token": token, "userID": userID, "oldUserEmail": oldUserEmail}
         )
         connection.commit()
+
+    elif (mode == "check_if_recovering"):
+        cur.execute("SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s", {"userID": kwargs["userID"]})
+        return (cur.fetchone() is not None)
 
     elif (mode == "revoke_token"):
         userID = kwargs["userID"]
@@ -1605,6 +1607,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
+            print(data[1:])
             userInfo = format_user_info(data[1:])
             if (paginationRole != "Admin"):
                 isInRecovery = acc_recovery_token_sql_operation(

@@ -119,7 +119,7 @@ def main() -> None:
                 while (1):
                     emailInput = enter_email()
 
-                     # check for duplicates
+                    # check for duplicates
                     cur.execute("SELECT * FROM user WHERE email = %(email)s", {"email": emailInput})
                     if (cur.fetchone() is not None):
                         print("Error: Email already exists!", end="\n\n")

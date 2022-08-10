@@ -471,7 +471,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -498,7 +498,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -527,7 +527,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -555,7 +555,8 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined, u.status, t.token AS has_two_fa, @total_user
+                u.profile_image, u.date_joined, NULL as cart, u.status, 
+                t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
                 INNER JOIN role AS r ON u.role=r.role_id
@@ -583,7 +584,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -611,7 +612,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -640,7 +641,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user 
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
@@ -668,7 +669,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             user_info.* FROM (
                 SELECT u.id, r.role_name, u.username, 
                 u.email, u.email_verified, u.password, 
-                u.profile_image, u.date_joined,
+                u.profile_image, u.date_joined, NULL as cart,
                 u.status, t.token AS has_two_fa, @total_user 
                 FROM user AS u
                 LEFT OUTER JOIN twofa_token AS t ON u.id=t.user_id
