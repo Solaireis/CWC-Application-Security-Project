@@ -83,3 +83,25 @@ if (inacitivityModalEl) {
 }
 
 /* --------------- End of Inactivity Modal Javascript --------------- */
+
+/* --------------- Start of Console Warning Javascript --------------- */
+
+console.log("\n\
+   ___                            ___ _       _ _         \n\
+  / __\\___  _   _ _ __ ___  ___  / __(_)_ __ (_) |_ _   _ \n\
+ / /  / _ \\| | | | '__/ __|/ _ \\/ _\\ | | '_ \\| | __| | | |\n\
+/ /__| (_) | |_| | |  \\__ \\  __/ /   | | | | | | |_| |_| |\n\
+\\____/\\___/ \\__,_|_|  |___/\\___\\/    |_|_| |_|_|\\__|\\__, |\n\
+                                                    |___/ \n\
+") // I love escape characters.
+
+console.warn(
+"%cCareful. This might not be what you think.\n\
+%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a CourseFinity feature or \"hack\" someone's account,\
+%c it is probably a scam and will give them access to your CourseFinity account.",
+"color:red; font-size:30px; font-weight: bold;",
+"",
+"font-weight: bold;"
+)
+
+/* --------------- End of Console Warning Javascript --------------- */

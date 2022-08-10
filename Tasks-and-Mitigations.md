@@ -378,11 +378,6 @@
   - Upload in chunks
 - contact us form for issues (review)
 
-Add to cart validation
-- Own course
-- Purchased course
-- Already in cart
-
 - Stripe
   - Images (last thing lol)
   - Double Charge
@@ -393,6 +388,14 @@ Add to cart validation
 ### Implemented
 - Stripe with token
 - mpd video player, randomised blob url
+- Console warning
+Add to cart validation
+- Own course
+- Purchased course
+- Already in cart
+Policies
+- File type policies (3 sentences lol)
+- Max content length policy
 
 #### Plan:
 - Fix errors
