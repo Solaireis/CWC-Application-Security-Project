@@ -1,6 +1,7 @@
 # import third party libraries
 import requests
 from flask import request as flaskRequest
+from time import time
 
 # import local python files
 from .NormalFunctions import generate_id, write_log_entry
