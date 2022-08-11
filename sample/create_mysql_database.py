@@ -390,6 +390,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         BEGIN
             SET @total_course_num := (SELECT COUNT(*) FROM draft_course WHERE teacher_id=teacherID);
             SET @page_offset := (page_number - 1) * 10;
+            SET @page_limit := @page_offset + 10;
             SET @count := 0;
             SELECT (@count := @count + 1) AS row_num, 
             teacher_course_info.* FROM (
