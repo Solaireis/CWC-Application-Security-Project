@@ -92,6 +92,7 @@ def clientPayload(jwtToken):
     courseID = payload.get("courseID")
 
     clientPayload = get_upload_credentials(courseID, teacherID)
+    edit_video_tag(payload["videoPath"])
 
     if clientPayload is None:
         abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
@@ -122,7 +123,8 @@ def uploadSuccess(jwtToken):
     if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
         #TODO: Delete video
         abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-
+    
+    edit_video_tag(payload["videoPath"])
     sql_operation(
         table="course",
         mode="insert_draft",

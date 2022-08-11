@@ -1,9 +1,10 @@
 # import third party libraries
 import requests
 from flask import request as flaskRequest
+from time import time
 
 # import local python files
-from .NormalFunctions import generate_id
+from .NormalFunctions import generate_id, write_log_entry
 from python_files.classes.Constants import SECRET_CONSTANTS
 
 # import python standard libraries
@@ -39,7 +40,6 @@ def get_video(videoID:str) -> Optional[dict]:
             "whitelisthref": flaskRequest.headers["Host"],    # Whitelist sites
         })
     ).text)
-    print(data)
 
     # Course cannot be acquired for reasons
     if data.get("message") is not None:
@@ -98,13 +98,12 @@ def check_video(videoID:str) -> Optional[dict]:
             "Accept": "application/json"
         }
     ).text)
-    print(data)
+    
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
         print(data.get("message"))
         #TODO: Log error
         return None
-    print(data)
     return data #.get("status")
 
 # Testing
@@ -120,7 +119,7 @@ def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
 
     Outputs:
     - count (int)
-    - videoIDs (tuple)
+    - videoData (dict)
     """
     data = json.loads(requests.get(
         url="https://dev.vdocipher.com/api/videos",
@@ -130,10 +129,11 @@ def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
         },
         params={"tags": tagName}
     ).text)
+    
     if data["count"] > 0:
-        return data["count"], tuple(row["id"] for row in data["rows"])
+        return data["count"], data["rows"]
     else:
-        return 0, () # Empty tuple
+        return 0, {} # Empty dictionary
 
 """ End of Get Video Data """
 
@@ -217,10 +217,11 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> int:
         },
         params={"videos": videoIDs}
     ).text)
+    
     # {'code': 200, 'message': 'Successfully deleted 0 videos'}
-    return int(data["message"].split(" ")[-2])
+    return data["message"]
 
-def add_tag(videoID:str, tagName:str) -> str:
+def add_video_tag(videoID:str, tagName:str) -> str:
     """
     Adds a given tag to a video.
 
@@ -249,7 +250,7 @@ def add_tag(videoID:str, tagName:str) -> str:
     ).text)
     return data.get("message")
 
-def edit_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
+def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
     """
     Replace tags in a video. Leave empty to remove tags.
 
@@ -278,4 +279,27 @@ def edit_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
     ).text)
     return data.get("message")
 
+def delete_unuploaded_video() -> None:
+    """
+    Videos are tagged "PRE-Upload" when 'get_upload_credentials()' is called.
+    Tag is removed once upload is complete.
+
+    Function checks for videos with tag "PRE-Upload" (to a maximum of 40), and deletes them.
+    """
+    count, videos = check_video_list("PRE-Upload")
+    if count != 0:
+        videoIDs = tuple(row["id"] for row in videos if row["upload_time"] > 86400)
+    if videoIDs: # There are videos to be deleted.
+        delete_video(videoIDs)
+    
+    if count == 40:
+        try:
+            delete_unuploaded_video()
+        except RecursionError:
+            # Check userID of most tagged videos?
+            write_log_entry(
+                logMessage = "Extreme amount of unuploaded videos. Please perform manual checking of vdocipher website.",
+                severity = "WARNING"
+            )
+delete_unuploaded_video()
 """ End of Video Upload/Edit """

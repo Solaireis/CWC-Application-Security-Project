@@ -3,6 +3,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # import flask libraries (Third-party libraries)
 from flask import Flask
+from time import time
 from flask.sessions import SecureCookieSessionInterface
 from flask_talisman import Talisman
 
@@ -13,6 +14,7 @@ from google.cloud import logging as gcp_logging
 from python_files.classes.Constants import SECRET_CONSTANTS, CONSTANTS
 from python_files.classes.Course import get_readable_category
 from python_files.functions.SQLFunctions import sql_operation
+from python_files.functions.VideoFunctions import delete_unuploaded_video
 
 # import python standard libraries
 from pathlib import Path
@@ -292,6 +294,11 @@ if (__name__ == "__main__"):
     scheduler = BackgroundScheduler() # Uses threading to run the task in a separate thread
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
 
+    # Free up database of videos that never got successfully uploaded
+    scheduler.add_job(
+        delete_unuploaded_video,
+        trigger="cron", hour=23, minute=55, second=0, id="removeUnuploadedVideos"
+    )
     # Free up database of users who have not verified their email for more than 30 days
     scheduler.add_job(
         remove_unverified_users_for_more_than_30_days,

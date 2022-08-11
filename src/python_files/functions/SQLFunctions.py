@@ -31,7 +31,7 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
 from python_files.classes.Constants import CONSTANTS
-from .VideoFunctions import delete_video
+from .VideoFunctions import delete_video, add_video_tag
 
 schema = {
     
@@ -141,8 +141,7 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
             "title": f"Course {courseID}",
             "folderId": "root"
         }
-    )
-    .text)
+    ).text)
 
     if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos. 
                                         # Either remove the previously uploaded videos or 
@@ -152,6 +151,7 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
         return None
 
     payload = data["clientPayload"]
+    add_video_tag(data["videoId"], "PRE-Upload")
 
     expiryInfo = JWTExpiryProperties(activeDuration=300)
     jwtToken = generate_limited_usage_jwt_token(
@@ -168,6 +168,12 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     payload["successUrl"] = url_for("teacherBP.uploadSuccess", jwtToken=jwtToken)
     print(payload)
     return payload
+
+    # encryptedToken = sql_operation(
+    #     table="expirable_token", mode="add_token", 
+    #     userID=userInfo[0], purpose="reset_password",
+    #     expiryDate=ExpiryProperties(activeDuration=1800),
+    # )
 
 def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
     """
@@ -1943,9 +1949,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
-
+        print(f"CALL paginate_draft_courses({teacherID}, {pageNum})")
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
+        print(resultsList)
         if (resultsList is None or len(resultsList) < 1):
             return ([], 1)
 
