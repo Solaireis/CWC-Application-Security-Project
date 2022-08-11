@@ -11,6 +11,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_32x32.png">
     <link rel="shortcut icon" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon.ico">
+    {% block head %}
+    {% endblock %}
 </head>
 <body>
     <a href="/" class="fa fa-arrow-left"></a>
@@ -26,5 +28,7 @@
         <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/redirect.js') }}"></script>
     {% endif %}
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/common.js') }}"></script>
+    {% block extra_js %}
+    {% endblock %}
 </body>
 </html>

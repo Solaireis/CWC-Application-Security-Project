@@ -3,6 +3,16 @@ Routes for error pages
 """
 # import flask libraries (Third-party libraries)
 from flask import Blueprint, render_template, abort
+from werkzeug.exceptions import HTTPException, default_exceptions, _aborter
+
+# Error 402 is currently experimental. 
+# More info here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
+class PaymentRequired(HTTPException):
+    code = 402
+    description = '<p>Payment required.</p>'
+
+default_exceptions[402] = PaymentRequired
+_aborter.mapping[402] = PaymentRequired
 
 errorBP = Blueprint("errorBP", __name__, static_folder="static", template_folder="template")
 
@@ -15,6 +25,11 @@ def error400(e):
 @errorBP.app_errorhandler(401)
 def error401(e):
     return render_template("errors/401.html"), 401
+
+# Payment Required
+@errorBP.app_errorhandler(402)
+def error402(e):
+    return render_template("errors/402.html"), 402
 
 # Forbidden
 @errorBP.app_errorhandler(403)
