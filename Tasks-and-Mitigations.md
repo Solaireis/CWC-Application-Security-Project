@@ -380,10 +380,7 @@
 
 - Stripe
   - Images (last thing lol)
-  - Double Charge
-
-- Draft course
-  - Error sign logic (1 condition in case I forget)
+  - Change JWT
 
 ### Implemented
 Stripe

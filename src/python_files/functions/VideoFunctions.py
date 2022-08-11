@@ -73,12 +73,17 @@ def get_video_thumbnail(videoID:str) -> tuple:
 def check_video(videoID:str) -> Optional[dict]:
     """
     Get data on the video, e.g. thumbnails, status, etc.
-    Possible statuses:
-    - PRE-Upload (VERIFYING UPLOAD)
-    - Queued (Processing)
-    - Ready (READY)
-    - Encoding error (Encoding error) -> gif files (image with frames, but not a proper video)
-    - Not a media file (Not a media file) -> other files
+    Possible statuses (so far): 
+     ┌──────────────────┬──────────────────┬───────────────────────────────────────────────────────┐
+     │ API Format       │ Webpage Format   │ Notes                                                 │
+     ├──────────────────┼──────────────────┼───────────────────────────────────────────────────────┤
+     │ PRE-Upload       │ VERIFYING UPLOAD │ Nothing uploaded, but credentials asked for           │
+     │ Queued           │ Processing       │ v1                                                    │
+     │ Processing       │ Processing       │ v2                                                    │
+     │ ready            │ READY            │ Playable                                              │
+     │ Encoding error   │ Encoding error   │ gif files (image with frames, but not a proper video) │
+     │ Not a media file │ Not a media file │ other files                                           │
+     └──────────────────┴──────────────────┴───────────────────────────────────────────────────────┘
 
     Inputs:
     - videoID, stored in MySQL video_path (str)
@@ -93,6 +98,7 @@ def check_video(videoID:str) -> Optional[dict]:
             "Accept": "application/json"
         }
     ).text)
+    print(data)
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
         print(data.get("message"))
@@ -209,9 +215,7 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> int:
             "Content-Type": "application/json",
             "Accept": "application/json"
         },
-        params={
-            "videos": videoIDs
-        }
+        params={"videos": videoIDs}
     ).text)
     # {'code': 200, 'message': 'Successfully deleted 0 videos'}
     return int(data["message"].split(" ")[-2])

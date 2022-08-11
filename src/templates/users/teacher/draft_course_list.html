@@ -59,13 +59,13 @@
                     <div class="card-body">
                         <h4 class="card-title">
                             DRAFT COURSE
-                            {% if videoStatus not in ("ready", "Queued") %}
+                            {% if videoStatus not in ("ready", "Queued", "Processing") %}
                             <span class="float-end text-danger">&#9888;</span>
                             {% endif %}
                         </h4>
                         {% if videoStatus == "ready" %}
                             <span><a href="{{ url_for('teacherBP.createCourse', courseID=course.courseID ) }}" >Complete Course Creation</a></span>
-                        {% elif videoStatus == "Queued" %}
+                        {% elif videoStatus in ("Queued", "Processing") %}
                             <span class="text-muted">Video Processing...</span>
                         {% else %}
                             <span class="text-warning">{{ videoStatus }}</span>
