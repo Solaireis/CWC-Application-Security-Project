@@ -154,12 +154,12 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
     cur.execute("CREATE INDEX draft_course_teacher_idx ON draft_course(teacher_id)")
     cur.execute("CREATE INDEX draft_course_date_created_idx ON draft_course(date_created)")
+    cur.execute("CREATE INDEX draft_course_date_video_path ON draft_course(video_path)")
 
     cur.execute("""CREATE TABLE stripe_payments (
-        payment_id VARCHAR(32) PRIMARY KEY,
+        stripe_payment_intent VARCHAR(32) PRIMARY KEY, -- actual length 27, but may change in the future; generate_id() has 32
         user_id VARCHAR(32) NOT NULL,
         cart_courses JSON NOT NULL,
-        stripe_payment_intent VARCHAR(32), -- actual length 27, but may change in the future; generate_id() has 32
         created_time DATETIME NOT NULL,
         payment_time DATETIME,
         amount DECIMAL(6,2) NOT NULL, -- up to 6 digits, 2 decimal places (max: $9999.99)

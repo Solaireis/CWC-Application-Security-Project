@@ -613,7 +613,7 @@ def checkout():
     userID = session["user"]
 
     cartCourseIDs = sql_operation(table='user', mode = 'get_user_cart', userID = userID)
-    if cartCourseIDs == []: # Take that, Postman users!
+    if cartCourseIDs is None: # Take that, Postman users!
         return redirect(url_for("userBP.shoppingCart"))
     email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID).email
     print(cartCourseIDs)
@@ -630,28 +630,20 @@ def checkout():
 
     return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
 
-@userBP.route("/purchase/<string:jwtToken>")
-def purchase(jwtToken:str):
-    data = EC_verify(jwtToken, getData = True)
-
-    if not data.get("verified"):
-        abort(400)
-
-    tokenID = data["data"].get("token_id")
-    if (tokenID is None):
+@userBP.route("/purchase/<string:userID>")
+def purchase(userID:str):
+    
+    paymentIntent = sql_operation(table="stripe_payments", mode="get_latest_payment_intent", userID = userID)
+    if paymentIntent is None:
         abort(404)
 
-    if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
-        abort(400)
-
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
-
-    payload = data['data']['payload']
-    tokenCartCourseIDs = payload.get('cartCourseIDs') # The courses paid for,
-    tokenUserID = payload.get('userID')               # To the person who generated the payment.
-    paymentID = payload.get('paymentID')
+    paymentIntent = get_payment_intent(paymentIntent)
+    if paymentIntent.status != "succeeded":
+        abort(402)
     
-    send_checkout_receipt(paymentID)
-    sql_operation(table="user", mode="purchase_courses", userID = tokenUserID, cartCourseIDs = tokenCartCourseIDs)
+    send_checkout_receipt(paymentIntent.id)
+    metadata = paymentIntent.metadata
+    sql_operation(table="user", mode="purchase_courses", userID = metadata["userID"], cartCourseIDs = json.loads(metadata["cartCourseIDs"]))
+    print("Added to database")
 
     return redirect(url_for("userBP.purchaseHistory"))

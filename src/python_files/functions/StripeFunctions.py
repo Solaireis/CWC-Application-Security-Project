@@ -8,14 +8,15 @@ from json import dumps
 # import third-party libraries
 from flask import url_for
 import stripe
-from stripe.error import InvalidRequestError, IdempotencyError
-from stripe.api_resources.checkout.session import Session as StripeCheckoutSession # Conflicts with Flask session
+from stripe.error import InvalidRequestError
+from stripe.api_resources.checkout.session import Session as CheckoutSession # Conflicts with Flask session
+from stripe.api_resources.payment_intent import PaymentIntent
 from css_inline import inline, CSSInliner # Not sure why VSC doesn't register these two
 
 # import local python libraries
 from python_files.classes.Constants import SECRET_CONSTANTS, CONSTANTS
-from .NormalFunctions import JWTExpiryProperties, send_email, generate_id
-from .SQLFunctions import generate_limited_usage_jwt_token, sql_operation
+from .NormalFunctions import send_email
+from .SQLFunctions import sql_operation
 
 stripe.api_key = SECRET_CONSTANTS.STRIPE_SECRET_KEY
 
@@ -117,7 +118,7 @@ def stripe_product_check(courseID:str) -> Optional[str]:
         # print("Creating course in Stripe database.")
         return None
 
-def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Optional[StripeCheckoutSession]:
+def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Optional[CheckoutSession]:
     """
     Create a checkout session in Stripe servers.
     Creates a JWT Token with userID and cartCourseIDs.
@@ -134,19 +135,14 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         - Probably more...
     """
     paymentIntent = sql_operation(table="stripe_payments", mode="pop_previous_session", userID=userID)
-    print("Payment Intent:", paymentIntent)
+    print("Old Payment Intent:", paymentIntent)
     if paymentIntent is not None:
         checkoutID = stripe.PaymentIntent.retrieve(paymentIntent).metadata["checkoutID"]
         expire_checkout(checkoutID)
 
-    paymentID = generate_id()
-    expiryInfo = JWTExpiryProperties(activeDuration=3600)
-    jwtToken = generate_limited_usage_jwt_token(payload={"userID": userID, "cartCourseIDs": cartCourseIDs, "paymentID":paymentID}, expiryInfo=expiryInfo)
-    print("Token generated")
-
     try:
         checkoutSession = stripe.checkout.Session.create(
-            success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', jwtToken = jwtToken)}",
+            success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', userID=userID)}",
             cancel_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.shoppingCart')}",
             customer_email = email,
             expires_at = int(time()) + 3600,
@@ -157,15 +153,19 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         print("Checkout:", str(error))
         # print(type(checkoutSession))
         return None
-
-    # print(checkoutSession)
+    print(cartCourseIDs)
+    print("Checkout Session Created:", checkoutSession.payment_intent)
     paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
-    stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {"checkoutID": checkoutSession.id})
-    print("Session Created")
+    stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {
+        "checkoutID": checkoutSession.id,
+        "userID": userID, 
+        "cartCourseIDs": dumps(cartCourseIDs),
+        "coursesAdded": False
+    })
+    print("Payment Intent Modified")
     sql_operation(
         table="stripe_payments", 
         mode="create_payment_session", 
-        paymentID = paymentID,
         stripePaymentIntent = checkoutSession.payment_intent,
         userID = userID,
         cartCourseIDs = dumps(cartCourseIDs),
@@ -192,8 +192,7 @@ def expire_checkout(checkoutSession:str) -> None:
     except InvalidRequestError:
         print(f"Session already expired: {checkoutSession}")
 
-def send_checkout_receipt(paymentID:str) -> None:
-    paymentIntent = sql_operation(table="stripe_payments", mode="get_payment_intent", paymentID=paymentID)
+def send_checkout_receipt(paymentIntent:str) -> None:
 
     checkoutDetails = stripe.PaymentIntent.retrieve(paymentIntent)["charges"]["data"][0]
     send_email(
@@ -206,11 +205,16 @@ def send_checkout_receipt(paymentID:str) -> None:
     sql_operation(
         table = "stripe_payments", 
         mode = "complete_payment_session", 
-        paymentID = paymentID, 
+        stripePaymentIntent = paymentIntent, 
         paymentTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         receiptEmail = checkoutDetails["receipt_email"]
     )
 
+def get_payment_intent(paymentIntent:str) -> PaymentIntent:
+    return stripe.PaymentIntent.retrieve(paymentIntent)
+    
+
+# print(get_payment_intent("pi_3LPmRrEQ13luXvBj0pCCIO9h"))
 
 """
 Expire session:

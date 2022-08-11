@@ -539,7 +539,6 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
 
     cur = connection.cursor()
     if mode == "create_payment_session":
-        paymentID = kwargs["paymentID"]
         stripePaymentIntent = kwargs["stripePaymentIntent"]
         userID = kwargs["userID"]
         cartcourseIDs = kwargs["cartCourseIDs"]
@@ -547,20 +546,19 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
         amount = kwargs["amount"]
 
         cur.execute(
-            "INSERT INTO stripe_payments (payment_id, user_id, cart_courses, stripe_payment_intent, created_time, amount) VALUES (%(paymentID)s, %(userID)s, %(cartCourseIDs)s, %(stripePaymentIntent)s, %(createdTime)s, %(amount)s)",
-            {"paymentID": paymentID, "userID": userID, "cartCourseIDs": cartcourseIDs, "stripePaymentIntent": stripePaymentIntent, "createdTime": createdTime, "amount": amount}
+            "INSERT INTO stripe_payments (user_id, cart_courses, stripe_payment_intent, created_time, amount) VALUES (%(userID)s, %(cartCourseIDs)s, %(stripePaymentIntent)s, %(createdTime)s, %(amount)s)",
+            {"userID": userID, "cartCourseIDs": cartcourseIDs, "stripePaymentIntent": stripePaymentIntent, "createdTime": createdTime, "amount": amount}
         )
         connection.commit()
-        return paymentID
 
     elif mode == "complete_payment_session":
-        paymentID = kwargs["paymentID"]
+        stripePaymentIntent = kwargs["stripePaymentIntent"]
         paymentTime = kwargs["paymentTime"]
         receiptEmail = kwargs["receiptEmail"]
 
         cur.execute(
-            "UPDATE stripe_payments SET payment_time=%(paymentTime)s, receipt_email=%(receiptEmail)s WHERE payment_id = %(paymentID)s",
-            {"paymentTime": paymentTime, "receiptEmail": receiptEmail, "paymentID": paymentID}
+            "UPDATE stripe_payments SET payment_time=%(paymentTime)s, receipt_email=%(receiptEmail)s WHERE stripe_payment_intent = %(stripePaymentIntent)s",
+            {"paymentTime": paymentTime, "receiptEmail": receiptEmail, "stripePaymentIntent": stripePaymentIntent}
         )
         connection.commit()
 
@@ -581,15 +579,16 @@ def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None
             return stripePaymentIntent[0]
         return stripePaymentIntent
 
-    elif mode == "get_payment_intent":
-        paymentID = kwargs["paymentID"]
+    elif mode == "get_latest_payment_intent":
+        userID = kwargs["userID"]
 
         cur.execute(
-            "SELECT stripe_payment_intent FROM stripe_payments WHERE payment_id = %(paymentID)s",
-            {"paymentID": paymentID}
+            "SELECT stripe_payment_intent FROM stripe_payments WHERE user_id = %(userID)s AND payment_time IS NULL",
+            {"userID": userID}
         )
-        stripePaymentIntent = cur.fetchone()[0]
-        return stripePaymentIntent
+        stripePaymentIntent = cur.fetchone()
+        if stripePaymentIntent is not None:
+            return stripePaymentIntent[0]
 
     elif mode == "delete_expired_payment_sessions":
         cur.execute("DELETE FROM stripe_payments WHERE TIMESTAMPDIFF(hour, created_time, now()) > 1 AND payment_time IS NULL")
@@ -1680,7 +1679,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif mode == "get_user_cart":
         userID = kwargs["userID"]
         cur.execute("SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=%(userID)s", {"userID":userID})
-        return json.loads(cur.fetchone()[0])
+        cart = cur.fetchone()[0]
+        if cart is not None:
+            return json.loads(cart)
 
     elif mode == "add_to_cart":
         userID = kwargs["userID"]
@@ -1727,6 +1728,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 connection.commit()
             except (MySQLErrors.IntegrityError):
                 # Catches if the for any duplicate key error
+                print("Course previously bought by user.")
                 write_log_entry(
                     logMessage=f"User {userID}, has purchased the course, {courseID}, but he/she had already purchased it",
                     severity="WARNING"
