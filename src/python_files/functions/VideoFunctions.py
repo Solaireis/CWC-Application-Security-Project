@@ -1,6 +1,7 @@
 # import third party libraries
 import requests
 from flask import request as flaskRequest
+from time import time
 
 # import local python files
 from .NormalFunctions import generate_id, write_log_entry
@@ -287,7 +288,7 @@ def delete_unuploaded_video() -> None:
     """
     count, videos = check_video_list("PRE-Upload")
     if count != 0:
-        videoIDs = tuple(row["id"] for row in videos if row["upload_time"] > 86400)
+        videoIDs = tuple(row["id"] for row in videos if time() - row["upload_time"] > 86400)
     if videoIDs: # There are videos to be deleted.
         delete_video(videoIDs)
     
