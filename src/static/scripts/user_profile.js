@@ -25,7 +25,7 @@ Dropzone.options.dropper = {
     url: "/upload-profile-picture", // Determines where to reroute after submission
     chunking: true, // Enable chunking
     forceChunking: true, // Force chunking to happen
-    chunkSize: 5000000, // Size of each chunk in bytes (Need to clarify this, default:5mb)
+    chunkSize: 50000, // Size of each chunk in bytes (Need to clarify this, default:5mb)
     retryChunks: true, // Retry chunk uploads
     retryChunksLimit: 3, // Number of times to retry chunk uploads (third times the charm)
     maxFilesize: 100, // Maximum size of each file in MB (current: 1GB)
