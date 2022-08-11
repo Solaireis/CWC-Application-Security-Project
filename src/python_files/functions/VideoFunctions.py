@@ -19,10 +19,10 @@ def get_video(videoID:str) -> Optional[dict]:
     Creates an OTP and playback info for a video.
     Supply to a VdoCipher video player.
 
-    Inputs:
+    Args:
     - videoID, stored in MySQL video_path (str)
 
-    Outputs:
+    Returns:
     - {"otp": ..., "playbackInfo": ...} (dict) -> Video Ready
     - {"message": ...} (dict) -> Video not ready
     """
@@ -54,10 +54,10 @@ def get_video_thumbnail(videoID:str) -> tuple:
     """
     Get thumbnail for a video, for display purposes.
 
-    Inputs:
+    Args:
     - videoID, stored in MySQL video_path (str)
 
-    Outputs:
+    Returns:
     - (thumbnailLink, ...) (tuple)
     """
     data = requests.get(
@@ -73,21 +73,21 @@ def check_video(videoID:str) -> Optional[dict]:
     """
     Get data on the video, e.g. thumbnails, status, etc.
     Possible statuses (so far): 
-     ┌──────────────────┬──────────────────┬───────────────────────────────────────────────────────┐
-     │ API Format       │ Webpage Format   │ Notes                                                 │
-     ├──────────────────┼──────────────────┼───────────────────────────────────────────────────────┤
-     │ PRE-Upload       │ VERIFYING UPLOAD │ Nothing uploaded, but credentials asked for           │
-     │ Queued           │ Processing       │ v1                                                    │
-     │ Processing       │ Processing       │ v2                                                    │
-     │ ready            │ READY            │ Playable                                              │
-     │ Encoding error   │ Encoding error   │ gif files (image with frames, but not a proper video) │
-     │ Not a media file │ Not a media file │ other files                                           │
-     └──────────────────┴──────────────────┴───────────────────────────────────────────────────────┘
+    ┌──────────────────┬──────────────────┬───────────────────────────────────────────────────────┐
+    │ API Format       │ Webpage Format   │ Notes                                                 │
+    ├──────────────────┼──────────────────┼───────────────────────────────────────────────────────┤
+    │ PRE-Upload       │ VERIFYING UPLOAD │ Nothing uploaded, but credentials asked for           │
+    │ Queued           │ Processing       │ v1                                                    │
+    │ Processing       │ Processing       │ v2                                                    │
+    │ ready            │ READY            │ Playable                                              │
+    │ Encoding error   │ Encoding error   │ gif files (image with frames, but not a proper video) │
+    │ Not a media file │ Not a media file │ other files                                           │
+    └──────────────────┴──────────────────┴───────────────────────────────────────────────────────┘
 
-    Inputs:
+    Args:
     - videoID, stored in MySQL video_path (str)
 
-    Outputs:
+    Returns:
     - data (dict)
     """
     data = json.loads(requests.get(
@@ -113,10 +113,10 @@ def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
     Gets a list of videoIDs given a tag, up to 40 at a time.
     Leave empty to get all videos.
 
-    Inputs:
+    Args:
     - tagName (str)
 
-    Outputs:
+    Returns:
     - count (int)
     - videoData (dict)
     """
@@ -143,11 +143,11 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
     Updates the video thumbnail of a video, given its video ID
     Returns the types of thumbnails created (such as different dimensions)
 
-    Inputs:
+    Args:
     - videoID, stored in MySQL video_path (str)
     - thumbnailFilePath (str|Path)
 
-    Outputs:
+    Returns:
     - data, based on dimensions (list)
     [{
         "id": ...,
@@ -195,13 +195,13 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> int:
     """
     Deletes video(s), given 1 or more video IDs. Returns number of videos deleted.
 
-    Inputs:
+    Args:
     - videoID (str)
     - videoID (tuple, list)
     - thumbnailFilePath (str, Path)
     Either str, or tuple/list
 
-    Outputs:
+    Returns:
     - count (int)
     """
     if isinstance(videoIDs, tuple) or isinstance(videoIDs, list):
@@ -224,11 +224,11 @@ def add_video_tag(videoID:str, tagName:str) -> str:
     """
     Adds a given tag to a video.
 
-    Inputs:
+    Args:
     - videoID (str)
     - tagName (str)
 
-    Outputs:
+    Returns:
     - status (str) E.g. Done
     """
 
@@ -253,11 +253,11 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
     """
     Replace tags in a video. Leave empty to remove tags.
 
-    Inputs:
+    Args:
     - videoID (str)
     - tagName (str)
 
-    Outputs:
+    Returns:
     - status (str) E.g. Done
     """
 
