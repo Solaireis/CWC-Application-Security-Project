@@ -18,16 +18,16 @@
     padding:0px 10vw;
 }
 
-.#contactForm button {
+#contactForm button {
     text-align:center;
     display:block;
 }
 
-.#contactForm textarea {
+#contactForm textarea {
     resize:vertical;
 }
 
-.#contactForm label {
+#contactForm label {
     margin-top: 1rem;
 }
 
