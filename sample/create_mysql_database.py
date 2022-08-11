@@ -724,7 +724,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CREATE DEFINER=`{definer}` FUNCTION UUID_V4()
             RETURNS CHAR(36)
         DETERMINISTIC
-        COMMENT 'Returns a random UUID v4 (36 or 32 Characters string).'
+        COMMENT 'Returns a random UUID v4 (36 Characters string).'
         BEGIN
             -- 1th and 2nd block are made of 6 random bytes
             SET @h1 = HEX(RANDOM_BYTES(4));
