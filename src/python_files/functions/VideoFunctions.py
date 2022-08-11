@@ -289,8 +289,8 @@ def delete_unuploaded_video() -> None:
     count, videos = check_video_list("PRE-Upload")
     if count != 0:
         videoIDs = tuple(row["id"] for row in videos if time() - row["upload_time"] > 86400)
-    if videoIDs: # There are videos to be deleted.
-        delete_video(videoIDs)
+        if videoIDs: # There are videos to be deleted.
+            delete_video(videoIDs)
     
     if count == 40:
         try:
@@ -301,5 +301,5 @@ def delete_unuploaded_video() -> None:
                 logMessage = "Extreme amount of unuploaded videos. Please perform manual checking of vdocipher website.",
                 severity = "WARNING"
             )
-delete_unuploaded_video()
+
 """ End of Video Upload/Edit """
