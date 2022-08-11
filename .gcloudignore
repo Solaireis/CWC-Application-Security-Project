@@ -24,6 +24,7 @@ test/**
 *Test*.*/**
 
 # Ignore other folders and files.
+.git
 *.pem
 *.log
 *.bak
