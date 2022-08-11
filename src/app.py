@@ -3,7 +3,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # import flask libraries (Third-party libraries)
 from flask import Flask
-from time import time
 from flask.sessions import SecureCookieSessionInterface
 from flask_talisman import Talisman
 
