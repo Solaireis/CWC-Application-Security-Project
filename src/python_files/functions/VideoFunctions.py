@@ -73,7 +73,7 @@ def get_video_thumbnail(videoID:str) -> tuple:
 def check_video(videoID:str) -> Optional[dict]:
     """
     Get data on the video, e.g. thumbnails, status, etc.
-    Possible statuses (so far): 
+    Possible statuses (so far):
     ┌──────────────────┬──────────────────┬───────────────────────────────────────────────────────┐
     │ API Format       │ Webpage Format   │ Notes                                                 │
     ├──────────────────┼──────────────────┼───────────────────────────────────────────────────────┤
@@ -98,7 +98,7 @@ def check_video(videoID:str) -> Optional[dict]:
             "Accept": "application/json"
         }
     ).text)
-    
+
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
         print(data.get("message"))
@@ -129,7 +129,7 @@ def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
         },
         params={"tags": tagName}
     ).text)
-    
+
     if data["count"] > 0:
         return data["count"], data["rows"]
     else:
@@ -215,24 +215,24 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> int:
         },
         params={"videos": videoIDs}
     ).text)
-    
+
     # {'code': 200, 'message': 'Successfully deleted 0 videos'}
     return data["message"]
 
 def add_video_tag(videoID:str, tagName:str) -> str:
     """
-    Adds a given tag to a video.
+    Adds a set of tags to a video.
 
     Args:
     - videoID (str)
-    - tagName (str)
+    - tagName (dict)
 
     Returns:
     - status (str) E.g. Done
     """
 
     if not isinstance(tagName, str):
-        raise Exception("Tag name must be a string!")
+        raise Exception("Tags must be a string!")
 
     data = json.loads(requests.post(
         url="https://dev.vdocipher.com/api/videos/tags",
@@ -261,7 +261,7 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
     """
 
     if not isinstance(tagName, str):
-        raise Exception("Tag name must be a string!")
+        raise Exception("Tag must be a string!")
 
     data = json.loads(requests.put(
         url="https://dev.vdocipher.com/api/videos/tags",
@@ -272,7 +272,7 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
         },
         data=json.dumps({
             "videos": [videoID],
-            "tags": [] if tagName is None else [tagName]
+            "tags": [tagName] if tagName is not None else []
         })
     ).text)
     return data.get("message")

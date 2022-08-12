@@ -31,7 +31,7 @@ from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwne
                              symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
 from python_files.classes.Constants import CONSTANTS
-from .VideoFunctions import delete_video, add_video_tag
+from .VideoFunctions import delete_video, add_video_tag, check_video
 
 schema = {
     
@@ -150,30 +150,12 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
         #TODO: Log error
         return None
 
-    payload = data["clientPayload"]
-    add_video_tag(data["videoId"], "PRE-Upload")
+    clientPayload = data["clientPayload"]
+    videoID = data["videoId"]
+    add_video_tag(videoID, "PRE-Upload")
 
-    expiryInfo = JWTExpiryProperties(activeDuration=300)
-    jwtToken = generate_limited_usage_jwt_token(
-        payload={
-            "teacherID": teacherID,
-            "courseID": courseID,
-            "videoPath": data["videoId"],
-            "dateCreated":  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        },
-        expiryInfo=expiryInfo,
-        limit=1
-    )
-
-    payload["successUrl"] = url_for("teacherBP.uploadSuccess", jwtToken=jwtToken)
-    print(payload)
-    return payload
-
-    # encryptedToken = sql_operation(
-    #     table="expirable_token", mode="add_token", 
-    #     userID=userInfo[0], purpose="reset_password",
-    #     expiryDate=ExpiryProperties(activeDuration=1800),
-    # )
+    clientPayload["successUrl"] = url_for("teacherBP.uploadSuccess", teacherID = teacherID)
+    return videoID, clientPayload
 
 def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
     """
@@ -1787,13 +1769,54 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         connection.commit()
     
     elif (mode == "insert_draft"):
-        courseID = kwargs["courseID"]
         teacherID = kwargs["teacherID"]
-        videoPath = kwargs["videoPath"]
+
+        # Check if draft exists
+        cur.execute(
+            "SELECT course_id, video_path FROM draft_course WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
+            {"teacherID": teacherID}
+        )
+        response = cur.fetchone()
+
+        if response is not None:
+            # Change draft
+            courseID, videoID = response
+            delete_video(videoID)
+            videoID, clientPayload = get_upload_credentials(courseID, teacherID)
+            cur.execute(
+                "UPDATE draft_course SET video_path=%(videoID)s WHERE course_id=%(courseID)s",
+                {"videoID": videoID, "courseID": courseID}
+            )
+        else:
+            # Create new draft
+            courseID = generate_id()
+            videoID, clientPayload = get_upload_credentials(courseID, teacherID)
+            cur.execute(
+                "INSERT INTO draft_course (video_path, teacher_id, course_id) VALUES (%(videoID)s, %(teacherID)s, %(courseID)s)",
+                {"videoID": videoID, "teacherID": teacherID, "courseID": courseID}
+            )
+
+        connection.commit()
+        return clientPayload
+
+    elif (mode == "complete_draft"):
+        teacherID=kwargs["teacherID"]
+        
+        cur.execute(
+            "SELECT course_id, video_path FROM draft_course WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
+            {"teacherID": teacherID}
+        )
+        courseID, videoID = cur.fetchone()
+        videoData = check_video(videoID)
+        if videoData is None:
+            abort(404)
+
+        if videoData["status"] == "PRE-Upload":
+            abort(400)
 
         cur.execute(
-            "INSERT INTO draft_course VALUES (%(courseID)s, %(teacherID)s, %(videoPath)s, SGT_NOW())", 
-            {"courseID": courseID, "teacherID": teacherID, "videoPath": videoPath}
+                "UPDATE draft_course SET date_created=SGT_NOW() WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
+                {"teacherID": teacherID}
         )
         connection.commit()
 

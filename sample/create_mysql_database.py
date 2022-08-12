@@ -149,7 +149,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         course_id CHAR(32) PRIMARY KEY,
         teacher_id VARCHAR(32) NOT NULL,
         video_path VARCHAR(255) NOT NULL,
-        date_created DATETIME NOT NULL,
+        date_created DATETIME NULL,
         FOREIGN KEY (teacher_id) REFERENCES user(id) ON DELETE CASCADE
     )""")
     cur.execute("CREATE INDEX draft_course_teacher_idx ON draft_course(teacher_id)")

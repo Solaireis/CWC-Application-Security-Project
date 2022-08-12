@@ -380,11 +380,10 @@
 
 - Stripe
   - Images (last thing lol)
-  - Change JWT
 
 ### Implemented
 Stripe
-- JWT token
+- Error 402 check (Previously JWT, unreliable)
 - Double charge check
 - mpd video player, randomised blob url
 - Console warning

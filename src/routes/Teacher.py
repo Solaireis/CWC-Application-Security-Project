@@ -34,7 +34,7 @@ def courseList():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
     print(courseList)
-    
+
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
@@ -68,74 +68,33 @@ def draftCourseList():
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
     return render_template(
-        "users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), 
+        "users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList),
         accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,
         paginationArr=paginationArr, videoStatusList=videoStatusList
     )
 
 """ Start of Course Creation API Calls """
 
-@teacherBP.route("/client-payload/<string:jwtToken>")
-def clientPayload(jwtToken):
-    print(request.data)
-    data = EC_verify(jwtToken, getData=True)
-    if not data.get("verified"):
-        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
+@teacherBP.route("/client-payload/<string:teacherID>")
+def clientPayload(teacherID):
+    # Manipulating other userIDs?
+    if session["user"] != teacherID:
+        abort(401)
 
-    tokenID = data["data"]["token_id"]
-    if (tokenID is None):
-        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-
-    if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
-        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
-
-    payload = data['data']['payload']
-    teacherID = payload.get("teacherID")
-    courseID = payload.get("courseID")
-
-    clientPayload = get_upload_credentials(courseID, teacherID)
-    edit_video_tag(payload["videoPath"])
+    clientPayload = sql_operation(table="course", mode="insert_draft", teacherID=teacherID)
 
     if clientPayload is None:
-        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
+        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
 
     return clientPayload
 
-@teacherBP.route("/video-uploaded/<string:jwtToken>")
-def uploadSuccess(jwtToken):
-    data = EC_verify(jwtToken, getData=True)
-    if not data.get("verified"):
-        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-    print("Token valid")
-
-    tokenID = data["data"].get("token_id")
-
-    if (tokenID is None):
-        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-    print("Token has no token ID")
-
-    if not sql_operation(table="limited_use_jwt", mode="jwt_is_valid", tokenID=tokenID):
-        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-    print("Token in database")
-
-    sql_operation(table="limited_use_jwt", mode="decrement_limit_after_use", tokenID=tokenID)
-
-    # Check video really has been uploaded
-    payload = data["data"]["payload"]
-    if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
-        #TODO: Delete video
-        abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-
-    edit_video_tag(payload["videoPath"])
-    sql_operation(
-        table="course",
-        mode="insert_draft",
-        courseID=payload["courseID"],
-        teacherID=payload["teacherID"],
-        videoPath=payload["videoPath"]
-    )
+@teacherBP.route("/video-uploaded/<string:teacherID>")
+def uploadSuccess(teacherID):
+    # Manipulating other userIDs?
+    if session["user"] != teacherID:
+        abort(401)
+    
+    sql_operation(table="course", mode="complete_draft", teacherID=teacherID)
     return redirect(url_for("teacherBP.draftCourseList"))
 
 """ End of Course Creation API Calls """
@@ -145,20 +104,7 @@ def uploadSuccess(jwtToken):
 @teacherBP.route("/upload-video", methods=["GET", "POST"])
 def videoUpload():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
-    print(userInfo)
-
-    expiryInfo = JWTExpiryProperties(activeDuration=300)
-    jwtToken = generate_limited_usage_jwt_token(
-        payload={
-            "teacherID": userInfo.uid,
-            "courseID": generate_id(),
-            "dateCreated":  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }, 
-        expiryInfo=expiryInfo,
-        limit=1
-    )
-    payloadUrl = url_for("teacherBP.clientPayload", jwtToken=jwtToken)
-
+    payloadUrl = url_for('teacherBP.clientPayload', teacherID = userInfo.uid)
     return render_template("users/teacher/video_upload.html",imageSrcPath=userInfo.profileImage, accType=userInfo.role, payloadUrl=payloadUrl)
 
 @teacherBP.route("/create-course/<string:courseID>", methods=["GET","POST"])
@@ -401,15 +347,15 @@ def courseUpdate():
     courseDescription = Markup(
         markdown.markdown(
             html.escape(courseFound.courseDescription),
-            extensions=[AnchorTagExtension()], 
+            extensions=[AnchorTagExtension()],
         )
     )
 
     return render_template(
-        "users/teacher/course_video_edit.html", 
-        form=courseForm, imageSrcPath=userInfo.profileImage, 
-        accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName, 
-        courseDescription=courseDescription, courseDescription2 = courseFound.courseDescription, coursePrice=courseFound.coursePrice, 
+        "users/teacher/course_video_edit.html",
+        form=courseForm, imageSrcPath=userInfo.profileImage,
+        accType=userInfo.role, imagePath=courseFound.courseImagePath, courseName=courseFound.courseName,
+        courseDescription=courseDescription, courseDescription2 = courseFound.courseDescription, coursePrice=courseFound.coursePrice,
         courseTag=courseFound.courseCategory, videoData=get_video(courseFound.videoPath)
     )
 
