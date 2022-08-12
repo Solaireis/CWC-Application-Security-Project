@@ -67,7 +67,11 @@ def draftCourseList():
     if (len(courseList) != 0) :
         paginationArr = get_pagination_arr(pageNum=page, maxPage=maxPage)
 
-    return render_template("users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,paginationArr=paginationArr, videoStatusList=videoStatusList)
+    return render_template(
+        "users/teacher/draft_course_list.html", imageSrcPath=userInfo.profileImage, courseListLen=len(courseList), 
+        accType=userInfo.role, currentPage=page, maxPage=maxPage, courseList=courseList,
+        paginationArr=paginationArr, videoStatusList=videoStatusList
+    )
 
 """ Start of Course Creation API Calls """
 
@@ -123,7 +127,7 @@ def uploadSuccess(jwtToken):
     if check_video(payload["videoPath"])["status"] not in ("PRE-Upload", "Queued"):
         #TODO: Delete video
         abort(400) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
-    
+
     edit_video_tag(payload["videoPath"])
     sql_operation(
         table="course",
@@ -145,13 +149,13 @@ def videoUpload():
 
     expiryInfo = JWTExpiryProperties(activeDuration=300)
     jwtToken = generate_limited_usage_jwt_token(
-        payload = {
+        payload={
             "teacherID": userInfo.uid,
             "courseID": generate_id(),
             "dateCreated":  datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }, 
         expiryInfo=expiryInfo,
-        limit = 1
+        limit=1
     )
     payloadUrl = url_for("teacherBP.clientPayload", jwtToken=jwtToken)
 
@@ -400,7 +404,7 @@ def courseUpdate():
             extensions=[AnchorTagExtension()], 
         )
     )
-    
+
     return render_template(
         "users/teacher/course_video_edit.html", 
         form=courseForm, imageSrcPath=userInfo.profileImage, 

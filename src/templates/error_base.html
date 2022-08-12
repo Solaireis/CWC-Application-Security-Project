@@ -5,20 +5,21 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
-    <title>{% block title %}{% endblock %}</title>
+    <title>{{ title }} | CourseFinity</title>
     <link nonce="{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/error_document.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="apple-touch-icon" sizes="180x180" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon_32x32.png">
     <link rel="shortcut icon" href="https://storage.googleapis.com/coursefinity/web-assets/common/favicon.ico">
-    {% block head %}
-    {% endblock %}
+    {% for tag in head %}
+        {{ tag }}
+    {% endfor %}
 </head>
 <body>
     <a href="/" class="fa fa-arrow-left"></a>
     <div class="error">
-        {% block content %}
-        {% endblock %}
+        <h1>{{ errorNo }}</h1>
+        <p>{{ description }}</p>
         <form action="{{ url_for('generalBP.search') }}" method="GET">
             <input type="text" name="q" placeholder="Try searching for courses you were looking for..." required></input><button type="submit"><i class="fa fa-search"></i></button>
         </form>

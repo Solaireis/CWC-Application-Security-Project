@@ -173,18 +173,16 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
                 "Accept": "application/json"
             },
             data=f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: image/webp\r\n\r\n{PoolManager().request('GET', thumbnailFilePath).data.decode('latin-1')}\r\n--{boundary}--",
-            timeout=(2, 5) # If file cannot be processed, server refuses to respond
-                             # until 504-Gateway Timeout Error (which takes forever)
+            timeout=(2, 5)  # If file cannot be processed, server refuses to respond
+                            # until 504-Gateway Timeout Error (which takes forever)
         ).text)
     except requests.ReadTimeout:
         return None
 
     if isinstance(data, dict) and data.get("message") is not None:
-        """
-        E.g.
-        {"message":"Bad formatting of Authorization header"}
-        {"message":"Internal server error: jtngxq0pptokpbxaa4hgi"}
-        """
+        # E.g.
+        # {"message":"Bad formatting of Authorization header"}
+        # {"message":"Internal server error: jtngxq0pptokpbxaa4hgi"}
         print(data.get("message"))
         #TODO: Log error
         return None
@@ -235,15 +233,15 @@ def add_video_tag(videoID:str, tagName:str) -> str:
 
     if not isinstance(tagName, str):
         raise Exception("Tag name must be a string!")
-    
+
     data = json.loads(requests.post(
-        url = "https://dev.vdocipher.com/api/videos/tags",
+        url="https://dev.vdocipher.com/api/videos/tags",
         headers={
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         },
-        data = json.dumps({
+        data=json.dumps({
             "videos": [videoID],
             "tags": [tagName]
         })
@@ -266,13 +264,13 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
         raise Exception("Tag name must be a string!")
 
     data = json.loads(requests.put(
-        url = "https://dev.vdocipher.com/api/videos/tags",
+        url="https://dev.vdocipher.com/api/videos/tags",
         headers={
             "Authorization": f"Apisecret {SECRET_CONSTANTS.VDOCIPHER_SECRET}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         },
-        data = json.dumps({
+        data=json.dumps({
             "videos": [videoID],
             "tags": [] if tagName is None else [tagName]
         })
@@ -291,15 +289,15 @@ def delete_unuploaded_video() -> None:
         videoIDs = tuple(row["id"] for row in videos if time() - row["upload_time"] > 86400)
         if videoIDs: # There are videos to be deleted.
             delete_video(videoIDs)
-    
+
     if count == 40:
         try:
             delete_unuploaded_video()
         except RecursionError:
             # Check userID of most tagged videos?
             write_log_entry(
-                logMessage = "Extreme amount of unuploaded videos. Please perform manual checking of vdocipher website.",
-                severity = "WARNING"
+                logMessage="Extreme amount of unuploaded videos. Please perform manual checking of vdocipher website.",
+                severity="WARNING"
             )
 
 """ End of Video Upload/Edit """

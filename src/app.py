@@ -5,6 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from flask.sessions import SecureCookieSessionInterface
 from flask_talisman import Talisman
+from werkzeug.exceptions import HTTPException, default_exceptions
 
 # import Google Cloud Logging API (third-party library)
 from google.cloud import logging as gcp_logging
@@ -21,6 +22,14 @@ from os import environ
 import logging, hashlib
 
 """------------------------------------- START OF WEB APP CONFIGS -------------------------------------"""
+
+# Adding custom code to the exception handler that are not recognised by default
+class PaymentRequired(HTTPException):
+    # Error 402 is currently experimental. 
+    # More info here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/402
+    code = 402
+    description = "<p>Payment required.</p>"
+default_exceptions[402] = PaymentRequired
 
 app = Flask(__name__)
 
@@ -226,13 +235,13 @@ def remove_unverified_users_for_more_than_30_days() -> None:
     """
     sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
 
-def remove_expired_jwt() -> None:
+def remove_expired_tokens() -> None:
     """
-    Remove expired jwt from the database
+    Remove expired tokens from the database
 
-    >>> sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    >>> sql_operation(table="expirable_token", mode="delete_all_expired_tokens")
     """
-    sql_operation(table="limited_use_jwt", mode="delete_expired_jwt")
+    sql_operation(table="expirable_token", mode="delete_all_expired_tokens")
 
 def remove_expired_sessions() -> None:
     """
@@ -303,10 +312,10 @@ if (__name__ == "__main__"):
         remove_unverified_users_for_more_than_30_days,
         trigger="cron", hour=23, minute=56, second=0, id="removeUnverifiedUsers"
     )
-    # Free up the database of expired JWT
+    # Free up the database of expired Tokens
     scheduler.add_job(
-        remove_expired_jwt,
-        trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredJWT"
+        remove_expired_tokens,
+        trigger="cron", hour=23, minute=57, second=0, id="deleteExpiredTokens"
     )
     # Free up the database of expired sessions
     scheduler.add_job(

@@ -39,16 +39,16 @@ def stripe_product_create(
     """
     try:
         courseData = stripe.Product.create(
-            id = courseID,
-            name = courseName,
-            description = courseDescription,
+            id=courseID,
+            name=courseName,
+            description=courseDescription,
 
-            default_price_data = {
+            default_price_data={
                 "currency" : "USD",
                 "unit_amount_decimal" : coursePrice * 100
             },
-            images = [] if courseImagePath is None else [courseImagePath],
-            url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.coursePage', courseID = courseID)}"
+            images=[] if courseImagePath is None else [courseImagePath],
+            url=f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.coursePage', courseID = courseID)}"
         )
 
         # print(courseData)
@@ -68,17 +68,17 @@ def stripe_product_update(**kwargs) -> None:
         if (courseName):
             stripe.Product.modify(
                 courseID,
-                name = courseName,
+                name=courseName,
             )
         if (courseDescription):
             stripe.Product.modify(
                 courseID,
-                description = courseDescription,
+                description=courseDescription,
             )
         if (coursePrice):
             stripe.Product.modify(
                 courseID,
-                default_price_data = {
+                default_price_data={
                     "currency" : "USD",
                     "unit_amount_decimal" : coursePrice * 100
                 },
@@ -86,7 +86,7 @@ def stripe_product_update(**kwargs) -> None:
         if (courseImagePath):
             stripe.Product.modify(
                 courseID,
-                images = [courseImagePath],
+                images=[courseImagePath],
             )
     
     except:
@@ -142,12 +142,12 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
 
     try:
         checkoutSession = stripe.checkout.Session.create(
-            success_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', userID=userID)}",
-            cancel_url = f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.shoppingCart')}",
-            customer_email = email,
-            expires_at = int(time()) + 3600,
-            line_items = [{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],
-            mode = "payment"
+            success_url=f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.purchase', userID=userID)}",
+            cancel_url=f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.shoppingCart')}",
+            customer_email=email,
+            expires_at=int(time()) + 3600,
+            line_items=[{"price": stripe_product_check(courseID).default_price, "quantity": 1} for courseID in cartCourseIDs],
+            mode="payment"
         )
     except Exception as error:
         print("Checkout:", str(error))
@@ -166,11 +166,11 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     sql_operation(
         table="stripe_payments", 
         mode="create_payment_session", 
-        stripePaymentIntent = checkoutSession.payment_intent,
-        userID = userID,
-        cartCourseIDs = dumps(cartCourseIDs),
-        createdTime = datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
-        amount = round(paymentIntent["amount"]/100, 2)
+        stripePaymentIntent=checkoutSession.payment_intent,
+        userID=userID,
+        cartCourseIDs=dumps(cartCourseIDs),
+        createdTime=datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
+        amount=round(paymentIntent["amount"]/100, 2)
     )
     print("SQL Success")
     return checkoutSession
@@ -196,23 +196,22 @@ def send_checkout_receipt(paymentIntent:str) -> None:
 
     checkoutDetails = stripe.PaymentIntent.retrieve(paymentIntent)["charges"]["data"][0]
     send_email(
-        to = checkoutDetails["receipt_email"], 
-        subject = f"Your CourseFinity receipt [#{checkoutDetails['receipt_number']}]",
-        body = CSSInliner(remove_style_tags=True).inline(requests.get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
-        name = checkoutDetails["billing_details"]["name"]
+        to=checkoutDetails["receipt_email"], 
+        subject=f"Your CourseFinity receipt [#{checkoutDetails['receipt_number']}]",
+        body=CSSInliner(remove_style_tags=True).inline(requests.get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
+        name=checkoutDetails["billing_details"]["name"]
     )
 
     sql_operation(
-        table = "stripe_payments", 
-        mode = "complete_payment_session", 
-        stripePaymentIntent = paymentIntent, 
-        paymentTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        receiptEmail = checkoutDetails["receipt_email"]
+        table="stripe_payments", 
+        mode="complete_payment_session", 
+        stripePaymentIntent=paymentIntent, 
+        paymentTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        receiptEmail=checkoutDetails["receipt_email"]
     )
 
 def get_payment_intent(paymentIntent:str) -> PaymentIntent:
     return stripe.PaymentIntent.retrieve(paymentIntent)
-    
 
 # print(get_payment_intent("pi_3LPmRrEQ13luXvBj0pCCIO9h"))
 
