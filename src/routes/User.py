@@ -379,7 +379,12 @@ def uploadPic():
 # def uploadPic():
 #     if ("image_saving" not in session):
 #         imageID = generate_id(sixteenBytesTimes=2)
-#         session["image_saving"] = [imageID, None] # Saving started; interruption = restart from scratch
+#         session["image_saving"] = [imageID, None] 
+#         try:
+#             resp = request.json
+#             session["image_saving"] = [imageID, resp["hash"]]
+#         except Exception as e:
+#             pass
 #     else:
 #         imageID = session["image_saving"][0]
 #         try:
@@ -391,12 +396,6 @@ def uploadPic():
 #     userID = session["user"]
 #     if ("profilePic" not in request.files):
 #         print("No File Sent")
-#         try:
-#             resp = request.json
-#             session["image_saving"] = [imageID, resp["hash"]]
-#         except Exception as e:
-#             pass
-#         return redirect(url_for("userBP.userProfile"))
         
 #     file = request.files["profilePic"]
 #     filename = secure_filename(file.filename)
