@@ -435,8 +435,11 @@ def purchaseView(courseID:str):
     clientView = request.args.get("client_view", default="0", type=str)
     isClientView = False
     print(clientView)
-    if (clientView == "1" and courses.teacherID == userID and courses.status is True):
+    print(courses.status)
+    if (clientView == "1" and courses.teacherID == userID and courses.status == True):
         isClientView = True
+
+        
     else:
         isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
         if (isInCart):
