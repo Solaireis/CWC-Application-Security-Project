@@ -36,7 +36,6 @@ else:
 import PIL, pymysql
 from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
-from jsonschema import validate
 
 # import Flask libraries
 from flask import url_for, flash, Markup, current_app
@@ -64,9 +63,6 @@ from google.cloud.kms_v1.types import resources
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
-schema = {
-    
-}
 
 def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
@@ -1039,10 +1035,6 @@ def get_gmail_client() -> Resource:
 
     # get the token.json file from Google Cloud Secret Manager API
     GOOGLE_TOKEN = json.loads(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
-    # try:
-    #     validate(instance=GOOGLE_TOKEN, schema=schema)
-    # except:
-    #     print("Error in Json schema")
 
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 
