@@ -140,7 +140,9 @@ def showBackupCodes():
         # if so, redirect to user profile as the authentication security is handled by Google themselves
         return redirect(url_for("userBP.userProfile"))
 
-    if (not sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+    userID = session["user"]
+    userInfo = get_image_path(userID, returnUserInfo=True)
+    if (not userInfo.hasTwoFA):
         return redirect(url_for("userBP.twoFactorAuthSetup"))
 
     backUpCodes = []
@@ -176,8 +178,6 @@ def showBackupCodes():
         if (len(backUpCodes) < 1):
             backUpCodes = sql_operation(table="2fa_token", mode="generate_codes", userID=userID)
 
-    userID = session["user"]
-    userInfo = get_image_path(userID, returnUserInfo=True)
     return render_template("users/user/backup_codes.html", backupCodes=backUpCodes, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.post("/disable-2fa")
@@ -396,7 +396,6 @@ def courseReview(courseID:str):
         return abort(404)
 
     # get user data
-    print("user is logged in")
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
@@ -408,6 +407,7 @@ def courseReview(courseID:str):
     hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 
     if (not hasReviewed and request.method == "POST" and reviewForm.validate()):
+        print("user havent reviewed yet")
         review = reviewForm.reviewDescription.data
         rating = request.form.get("rate")
         sql_operation(
@@ -441,15 +441,19 @@ def purchaseHistory():
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-
+    
     if (not courses): # raise 404 error
         abort(404)
 
     userID = session["user"]
-    clientView = request.args.get("client_view", default=False, type=bool)
+    clientView = request.args.get("client_view", default="0", type=str)
     isClientView = False
-    if (clientView and courses.teacherID == userID):
+    print(clientView)
+    print(courses.status)
+    if (clientView == "1" and courses.teacherID == userID and courses.status == True):
         isClientView = True
+
+        
     else:
         isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
         if (isInCart):
@@ -468,8 +472,7 @@ def purchaseView(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-    if (courses.teacherID == userID):
-        flash("You are viewing this course as a client.", "Client View")
+    
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,

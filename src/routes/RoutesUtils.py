@@ -88,6 +88,21 @@ def before_request() -> None:
         if (isNotStaticEndpoint and requestRoute not in ("userManagement", "adminManagement")):
             session.pop("relative_url", None)
 
+    # Remove 2FA session keys if the user is no longer trying to login
+    if (
+        "ip_details" in session or
+        "username" in session or
+        "password_compromised" in session or 
+        "temp_uid" in session or
+        "token" in session
+    ):
+        if (isNotStaticEndpoint and requestRoute not in ("login", "enter2faTOTP", "enterGuardTOTP")):
+            session.pop("ip_details", None)
+            session.pop("username", None)
+            session.pop("password_compromised", None)
+            session.pop("temp_uid", None)
+            session.pop("token", None)
+
     # check if historyCurPage key is in session
     # Remove if the user is not on the any of the purchase history related pages anymore
     if ("historyCurPage" in session):

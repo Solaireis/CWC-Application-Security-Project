@@ -87,7 +87,7 @@ class Constants:
 
     # Request limit
     DEFAULT_REQUEST_LIMIT: str = "60 per minute"
-    SENSITIVE_PAGE_LIMIT: str = "10 per minute"
+    SENSITIVE_PAGE_LIMIT: str = "9 per minute"
 
     # For lockout policy
     MAX_LOGIN_ATTEMPTS: int = 8

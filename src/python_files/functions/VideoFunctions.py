@@ -260,7 +260,7 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
     - status (str) E.g. Done
     """
 
-    if not isinstance(tagName, str):
+    if tagName is not None and not isinstance(tagName, str):
         raise Exception("Tag must be a string!")
 
     data = json.loads(requests.put(

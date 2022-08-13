@@ -30,7 +30,7 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
 from python_files.classes.Constants import CONSTANTS
-from .VideoFunctions import delete_video, add_video_tag, check_video
+from .VideoFunctions import delete_video, add_video_tag, check_video, edit_video_tag
 
 
 def get_blob_name(url:str="") -> str:
@@ -104,8 +104,8 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
         }
     ).text)
 
-    if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos. 
-                                        # Either remove the previously uploaded videos or 
+    if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos.
+                                        # Either remove the previously uploaded videos or
                                         # subscribe to our premium plans to unlock the video limit.'}
         print(data.get("message"))
         #TODO: Log error
@@ -271,9 +271,9 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
             MySQLErrors.InterfaceError,
             MySQLErrors.DatabaseError,
             MySQLErrors.DataError,
-            MySQLErrors.OperationalError, 
+            MySQLErrors.OperationalError,
             MySQLErrors.IntegrityError,
-            MySQLErrors.InternalError, 
+            MySQLErrors.InternalError,
             MySQLErrors.ProgrammingError,
             MySQLErrors.NotSupportedError,
             KeyError, ValueError
@@ -324,7 +324,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
         expiryDatetime = kwargs["expiryDate"].expiryDate.replace(microsecond=0, tzinfo=None)
         purpose = kwargs["purpose"]
 
-        # Generate a 1536 bits random token and encode it 
+        # Generate a 1536 bits random token and encode it
         # as comparing binary data in MySQL may not work properly
         tokenBytes = b85encode(
             generate_secure_random_bytes(nBytes=192, returnHex=False, base64Encoded=False)
@@ -353,9 +353,9 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
 
         cur.execute(
             """
-            SELECT 
+            SELECT
             e.user_id, u.status, t.token
-            FROM expirable_token AS e 
+            FROM expirable_token AS e
             INNER JOIN user AS u ON e.user_id=u.id
             LEFT OUTER JOIN twofa_token AS t ON e.user_id=t.user_id
             WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW();
@@ -371,7 +371,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             return False
 
         cur.execute(
-            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'",
             {"token": token}
         )
         matched = cur.fetchone()
@@ -390,7 +390,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             return False
 
         cur.execute(
-            "SELECT e.user_id, u.email_verified FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'", 
+            "SELECT e.user_id, u.email_verified FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Active'",
             {"token": token}
         )
         matched = cur.fetchone()
@@ -421,7 +421,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             return None
 
         cur.execute(
-            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Inactive'", 
+            "SELECT e.user_id FROM expirable_token AS e INNER JOIN user AS u ON e.user_id = u.id WHERE e.token = %(token)s AND e.expiry_date >= SGT_NOW() AND u.status = 'Inactive'",
             {"token": token}
         )
         matched = cur.fetchone()
@@ -547,7 +547,7 @@ def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=N
         oldUserEmail = kwargs["oldUserEmail"]
 
         cur.execute(
-            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s", 
+            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s",
             {"userID": userID}
         )
         if (cur.fetchone() is not None):
@@ -567,7 +567,7 @@ def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=N
         userID = kwargs["userID"]
 
         cur.execute(
-            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s", 
+            "SELECT * FROM acc_recovery_token WHERE user_id = %(userID)s",
             {"userID": userID}
         )
         if (cur.fetchone() is not None):
@@ -659,11 +659,11 @@ def generate_backup_codes(encrypt:Optional[bool]=False) -> Union[list, bytes]:
 
     if (encrypt):
         backupCodes = symmetric_encrypt(
-            plaintext=json.dumps(backupCodes), 
+            plaintext=json.dumps(backupCodes),
             keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
         )
 
-    return backupCodes 
+    return backupCodes
 
 def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[bool, str, None]:
     if (mode is None):
@@ -678,7 +678,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         try:
             # Try inserting a new data
             cur.execute(
-                "INSERT INTO twofa_token (token, user_id, backup_codes_json) VALUES (%(token)s, %(userID)s, %(tokenJSON)s)", 
+                "INSERT INTO twofa_token (token, user_id, backup_codes_json) VALUES (%(token)s, %(userID)s, %(tokenJSON)s)",
                 {"token":token, "userID":userID, "tokenJSON": generate_backup_codes(encrypt=True)}
             )
         except (MySQLErrors.IntegrityError):
@@ -740,11 +740,11 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         # Overwrite the old backup codes if it exists
         backupCodes = generate_backup_codes(encrypt=False)
         encryptedBackupCodes = symmetric_encrypt(
-            plaintext=json.dumps(backupCodes), 
+            plaintext=json.dumps(backupCodes),
             keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID
         )
         cur.execute(
-            "UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s", 
+            "UPDATE twofa_token SET backup_codes_json = %(backupCodesJSON)s",
             {"backupCodesJSON": encryptedBackupCodes}
         )
         connection.commit()
@@ -866,7 +866,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
         )).hexdigest()
 
         cur.execute(
-            "INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(interval)s MINUTE, %(fingerprintHash)s)", 
+            "INSERT INTO session VALUES (%(sessionID)s, %(userID)s, SGT_NOW() + INTERVAL %(interval)s MINUTE, %(fingerprintHash)s)",
             {"sessionID":sessionID, "userID":userID, "interval":CONSTANTS.SESSION_EXPIRY_INTERVALS, "fingerprintHash":fingerprintHash}
         )
         connection.commit()
@@ -883,10 +883,10 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
             [kwargs["userIP"].encode("utf-8"), kwargs["userAgent"].encode("utf-8")]
         )).hexdigest()
 
-        # Get the session data from the database 
+        # Get the session data from the database
         # if the session ID exists, the fingerprint hash matches, and is not expired
         cur.execute(
-            "SELECT * FROM session WHERE session_id = %(sessionID)s AND expiry_date > SGT_NOW() AND fingerprint_hash = %(fingerprintHash)s AND user_id = %(userID)s", 
+            "SELECT * FROM session WHERE session_id = %(sessionID)s AND expiry_date > SGT_NOW() AND fingerprint_hash = %(fingerprintHash)s AND user_id = %(userID)s",
             {"sessionID":sessionID, "fingerprintHash":fingerprintHash, "userID":userID}
         )
         if (cur.fetchone() is None):
@@ -904,7 +904,7 @@ def session_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwar
 
         # Session ID is valid, update the expiry date by adding an interval to the current time
         cur.execute(
-            "UPDATE session SET expiry_date=SGT_NOW() + INTERVAL %(interval)s MINUTE WHERE session_id=%(sessionID)s", 
+            "UPDATE session SET expiry_date=SGT_NOW() + INTERVAL %(interval)s MINUTE WHERE session_id=%(sessionID)s",
             {"interval":CONSTANTS.SESSION_EXPIRY_INTERVALS, "sessionID":sessionID}
         )
         connection.commit()
@@ -981,16 +981,16 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         for row in cur.fetchall():
             userID = row[0]
 
-            # Re-encrypt the password hash if the user has signed up 
+            # Re-encrypt the password hash if the user has signed up
             # via CourseFinity and not via Google OAuth2
             currentEncryptedPasswordHash = row[1]
             if (currentEncryptedPasswordHash is not None):
                 try:
                     newEncryptedPasswordHash = symmetric_encrypt(
                         plaintext=symmetric_decrypt(
-                            ciphertext=currentEncryptedPasswordHash, 
+                            ciphertext=currentEncryptedPasswordHash,
                             keyID=CONSTANTS.PEPPER_KEY_ID
-                        ), 
+                        ),
                         keyID=CONSTANTS.PEPPER_KEY_ID
                     )
                 except (DecryptionError) as e:
@@ -1138,7 +1138,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         passwordInput = kwargs["password"]
 
-        cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status 
+        cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status
             FROM user AS u INNER JOIN role AS r ON u.role = r.role_id
             WHERE u.email=%(emailInput)s AND r.role_name NOT IN ('Admin', 'SuperAdmin');""", {"emailInput":emailInput})
         matched = cur.fetchone()
@@ -1222,7 +1222,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "get_user_data"):
         userID = kwargs["userID"]
         cur.execute(
-            "CALL get_user_data(%(userID)s, %(getCart)s)", 
+            "CALL get_user_data(%(userID)s, %(getCart)s)",
             {"userID":userID, "getCart":kwargs.get("getCart", False)}
         )
         matched = cur.fetchone()
@@ -1313,7 +1313,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         if (kwargs.get("isUserAcc", False)):
             # Generate a random token
             encryptedToken, tokenStr = expirable_token_sql_operation(
-                connection=connection, mode="add_token", 
+                connection=connection, mode="add_token",
                 userID=userID, getPlaintextToken=True, purpose="recover_account",
                 expiryDate=ExpiryProperties(
                     datetimeObj=datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore")) + timedelta(days=15)
@@ -1485,10 +1485,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             elif (filterType == "email"):
                 cur.execute("CALL paginate_users_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
             else:
-                # Paginate by username by default in the HTML, 
+                # Paginate by username by default in the HTML,
                 # but this is also a fallback if the user has tampered with the HTML value
                 cur.execute("CALL paginate_users_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
-        else: 
+        else:
             # Admin users pagination
             if (userInput is None):
                 cur.execute("CALL paginate_admins(%(pageNum)s)", {"pageNum":pageNum})
@@ -1497,7 +1497,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             elif (filterType == "email"):
                 cur.execute("CALL paginate_admins_by_email(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
             else:
-                # Paginate by username by default in the HTML, 
+                # Paginate by username by default in the HTML,
                 # but this is also a fallback if the user has tampered with the HTML value
                 cur.execute("CALL paginate_admins_by_username(%(pageNum)s, %(userInput)s)", {"pageNum":pageNum, "userInput":userInput})
 
@@ -1595,7 +1595,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         courseID = kwargs["courseID"]
 
         cur.execute(
-            "DELETE FROM cart WHERE user_id=%(userID)s AND course_id=%(courseID)s", 
+            "DELETE FROM cart WHERE user_id=%(userID)s AND course_id=%(courseID)s",
             {"userID":userID, "courseID":courseID}
         )
         connection.commit()
@@ -1670,7 +1670,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             {"courseID":courseID, "teacherID":teacherID, "courseName":courseName, "courseDescription":courseDescription, "courseImagePath":courseImagePath, "coursePrice":coursePrice, "courseCategory":courseCategory, "videoPath":videoPath}
         )
         connection.commit()
-    
+
     elif (mode == "insert_draft"):
         teacherID = kwargs["teacherID"]
 
@@ -1708,19 +1708,38 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             "SELECT course_id, video_path FROM draft_course WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
             {"teacherID": teacherID}
         )
-        courseID, videoID = cur.fetchone()
+        response = cur.fetchone()
+        if response is None: # Nothing to complete
+            abort(400)
+
+        courseID, videoID = response
+
         videoData = check_video(videoID)
 
         if videoData is None:
             abort(404)
-        if videoData["status"] == "PRE-Upload":
+
+        # Bit too fast this one
+        for attempt in range(10):
+            print(videoData["status"])
+            if videoData["status"] != "PRE-Upload":
+                break
+            videoData = check_video(videoID)
+
+        if attempt == 9:
             abort(400)
 
+        print("Status correct")
+
+        # Confirm added video
         cur.execute(
                 "UPDATE draft_course SET date_created=SGT_NOW() WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
                 {"teacherID": teacherID}
         )
         connection.commit()
+
+        # Remove "PRE-Upload" Status
+        edit_video_tag(videoID)
 
     elif (mode == "check_if_course_owned_by_teacher"):
         courseID = kwargs["courseID"]
@@ -1743,7 +1762,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             return False
         teacherProfile = get_dicebear_image(matched[2]) if matched[3] is None else matched[3]
         return CourseInfo(tupleInfo=matched, profilePic=teacherProfile, truncateData=False, getReadableCategory=True)
-    
+
     elif (mode == "get_draft_course_data"):
         courseID = kwargs["courseID"]
         print("Course ID:", courseID)
@@ -1908,13 +1927,13 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
 
-        # TODO: Fix the query below 
+        # TODO: Fix the query below
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (teacherID is None):
                 cur.execute("""
-                    SELECT 
-                    c.course_id, c.teacher_id, 
+                    SELECT
+                    c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
@@ -1924,15 +1943,15 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.active=1
-                    GROUP BY c.course_id, c.teacher_id, 
+                    GROUP BY c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY c.date_created DESC LIMIT 3;
                 """)
             else:
                 cur.execute("""
-                    SELECT 
-                    c.course_id, c.teacher_id, 
+                    SELECT
+                    c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
@@ -1942,7 +1961,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.teacher_id=%(teacherID)s AND c.active=1
-                    GROUP BY c.course_id, c.teacher_id, 
+                    GROUP BY c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY c.date_created DESC LIMIT 3;
@@ -1951,8 +1970,8 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
             # get top 3 highly rated courses
             if (teacherID is None):
                 cur.execute("""
-                    SELECT 
-                    c.course_id, c.teacher_id, 
+                    SELECT
+                    c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
@@ -1962,15 +1981,15 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.active=1
-                    GROUP BY c.course_id, c.teacher_id, 
+                    GROUP BY c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY avg_rating DESC LIMIT 3;
                 """)
             else:
                 cur.execute("""
-                    SELECT 
-                    c.course_id, c.teacher_id, 
+                    SELECT
+                    c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created,
                     ROUND(SUM(r.course_rating) / COUNT(*), 0) AS avg_rating, c.video_path
@@ -1980,7 +1999,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                     INNER JOIN user AS u
                     ON c.teacher_id=u.id
                     WHERE c.teacher_id=%(teacherID)s AND c.active=1
-                    GROUP BY c.course_id, c.teacher_id, 
+                    GROUP BY c.course_id, c.teacher_id,
                     u.username, u.profile_image, c.course_name, c.course_description,
                     c.course_image_path, c.course_price, c.course_category, c.date_created
                     ORDER BY avg_rating DESC LIMIT 3;
@@ -2176,7 +2195,7 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 def role_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) -> Union[list, None]:
     """
     Do CRUD operations on the review table
-    
+
     """
     if mode is None:
         raise ValueError("You must specify a mode in the role_sql_operation function!")

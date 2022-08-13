@@ -311,12 +311,15 @@ def login():
             # to avoid unexpected behaviour when verifying the TOTP
             # https://github.com/pyauth/pyotp/issues/115
             generatedTOTPSecretToken = pyotp.random_base32(length=128)
-            generatedTOTP = pyotp.TOTP(generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=480).now() # 8 mins
+            tokenInfo = {"token": generatedTOTPSecretToken, "interval": 480}
+            generatedTOTP = pyotp.TOTP(
+                generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=tokenInfo["interval"]
+            ).now() # 8 mins
 
             ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
             # utc+8 time (SGT)
             currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
-            currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
+            currentDatetime = currentDatetime.strftime("%d %B %Y, %H:%M:%S %z")
 
             # format the string location from the ip address details
             locationString = ""
@@ -347,8 +350,6 @@ def login():
                 f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}"
             )
             send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
-
-            session["user_email"] = emailInput
             session["ip_details"] = ipDetails
 
             # Check if password has been compromised using haveibeenpwned's API,
@@ -360,9 +361,8 @@ def login():
                 session["password_compromised"] = passwordCompromised
             session["temp_uid"] = userInfo[0]
             session["username"] = userInfo[2]
-            session["isTeacher"] = isTeacher
             session["token"] = symmetric_encrypt(
-                plaintext=generatedTOTPSecretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
+                plaintext=json.dumps(tokenInfo), keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
             )
             flash("An email has been sent to you with your special access code!", "Success")
             return redirect(url_for("guestBP.enterGuardTOTP"))
@@ -390,10 +390,8 @@ def login():
         elif (successfulLogin and userHasTwoFA):
             # if user has 2fa enabled and is 
             # logged in from a known ip address
-            session["user_email"] = emailInput
             session["password_compromised"] = passwordCompromised
             session["temp_uid"] = userInfo[0]
-            session["isTeacher"] = isTeacher
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
             write_log_entry(
@@ -425,13 +423,11 @@ def enterGuardTOTP():
     This page is only accessible to users who are logging but from a new IP address.
     """
     if (
-        "user_email" not in session or
         "ip_details" not in session or
+        "username" not in session or
         "password_compromised" not in session or 
         "temp_uid" not in session or
-        "username" not in session or
-        "token" not in session or
-        "isTeacher" not in session
+        "token" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -468,12 +464,12 @@ def enterGuardTOTP():
             return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
 
         totpInput = guardAuthForm.twoFATOTP.data
-        totpSecretToken = symmetric_decrypt(
+        tokenInfo = json.loads(symmetric_decrypt(
             ciphertext=session["token"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
-        )
-        if (not pyotp.TOTP(totpSecretToken, name=session["username"], issuer="CourseFinity", interval=900).verify(totpInput)):
+        ))
+        if (not pyotp.TOTP(tokenInfo["token"], name=session["username"], issuer="CourseFinity", interval=tokenInfo["interval"]).verify(totpInput)):
             write_log_entry(
-                logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['user_email']}\", with the following IP address: {get_remote_address()}", 
+                logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_remote_address()}", 
                 severity="NOTICE"
             )
             flash("Please check your entries and try again!", "Danger")
@@ -481,16 +477,17 @@ def enterGuardTOTP():
 
         userID = session["temp_uid"]
         passwordCompromised = session["password_compromised"]
-        userEmail = session["user_email"]
         session.clear()
 
         sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address())
         session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
 
+        userInfo = get_image_path(userID, returnUserInfo=True)
+
         # check if password has been compromised
         # if so, flash a message and send an email to the user
         if (passwordCompromised):
-            send_change_password_alert_email(email=userEmail)
+            send_change_password_alert_email(email=userInfo.email)
 
         session["user"] = userID
         return redirect(url_for("generalBP.home"))
@@ -740,10 +737,8 @@ def enter2faTOTP():
     This page is only accessible to users who have 2FA enabled and is trying to login.
     """
     if (
-        "user_email" not in session or
         "password_compromised" not in session or
-        "temp_uid" not in session or
-        "isTeacher" not in session
+        "temp_uid" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -767,14 +762,14 @@ def enter2faTOTP():
         if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
             session["user"] = userID
             session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
+            userInfo = get_image_path(userID, returnUserInfo=True)
 
             # check if password has been compromised
             # if so, flash a message and send an email to the user
             if (session["password_compromised"]):
-                send_change_password_alert_email(email=session["user_email"])
+                send_change_password_alert_email(email=userInfo.email)
 
-            # clear the temp_uid
-            session.pop("temp_uid", None)
+            session["isTeacher"] = True if (userInfo.role == "Teacher") else False
             return redirect(url_for("generalBP.home"))
         else:
             flash("Invalid 2FA code, please try again!", "Danger")

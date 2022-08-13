@@ -818,7 +818,7 @@ class ExpiryProperties:
 
 def compress_and_resize_image(
     imageData:IOBase=None, imagePath:pathlib.Path=None,
-    dimensions:tuple=None, quality:int=75, optimise:bool=True,
+    dimensions:tuple=None, quality:int=100, optimise:bool=True,
     uploadToGoogleStorage:bool=True, bucketName:str=CONSTANTS.PUBLIC_BUCKET_NAME,
     folderPath:Optional[str]=None, cacheControl:Optional[str]=None
 )-> str:
@@ -834,7 +834,7 @@ def compress_and_resize_image(
         - Must be a tuple of two integers, e.g. (500, 500)
     - quality (int): The quality of the image to resize to
         - Must be an integer between 1 and 100
-        - Defaults to 75
+        - Defaults to 100
     - optimise (bool): Whether to optimise the image or not
         - Defaults to True
     - uploadToGoogleStorage (bool): Whether to upload the image to Google Storage API or not

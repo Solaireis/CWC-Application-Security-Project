@@ -389,7 +389,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
                 u.username, u.profile_image, c.date_created, c.video_path, @total_course_num
                 FROM draft_course AS c
                 INNER JOIN user AS u ON c.teacher_id=u.id
-                WHERE c.teacher_id=teacherID
+                WHERE c.teacher_id=teacherID AND c.date_created IS NOT NULL
                 GROUP BY c.course_id
                 ORDER BY c.date_created DESC -- show most recent courses first
             ) AS teacher_course_info
