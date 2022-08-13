@@ -855,10 +855,13 @@ def compress_and_resize_image(
     Raises:
     - UnidentifiedImageError: If the image at the given path is not a valid image
     """
-    imageData.seek(0) # reset the file pointer to the beginning of the file
     try:
         # open image file
-        image = PillowImage.open(imageData).convert("RGB")
+        if imageData is not None:
+            imageData.seek(0) # reset the file pointer to the beginning of the file
+            image = PillowImage.open(imageData).convert("RGB")
+        else:
+            image = PillowImage.open(imagePath).convert("RGB")
     except (PIL.UnidentifiedImageError) as e:
         print("Error in resizing and compressing image...")
         print("Error message caught:")

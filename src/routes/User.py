@@ -340,6 +340,7 @@ def deletePic():
         flash("Your profile picture has been successfully deleted.", "Profile Picture Deleted!")
     return redirect(url_for("userBP.userProfile"))
 
+# Works but post request does not refresh page
 @userBP.post("/upload-profile-picture")
 @csrf.exempt
 def uploadPic():
@@ -355,12 +356,25 @@ def uploadPic():
         return redirect(url_for("userBP.userProfile"))
 
     filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
-    imageData = BytesIO(file.read())
+    absFilePath = current_app.config["USER_IMAGE_FOLDER"].joinpath(filePath)
+    file.save(absFilePath)
+    
     try:
+        imagehash = request.form.get("fileHash")
+        with open(absFilePath, "rb") as f:
+            print("Running Hash Check")
+            fileHash = hashlib.sha512(f.read()).hexdigest()
+
+        if (fileHash != imagehash):
+            print("File Hash is incorrect")
+            absFilePath.unlink(missing_ok=True)
+            return make_response("Uploaded image is corrupted! Please try again!", 500)
+
         imageUrlToStore = compress_and_resize_image(
-            imageData=imageData, imagePath=filePath, dimensions=(500, 500), 
-            folderPath=f"user-profiles"
+            imagePath=absFilePath, dimensions=(500, 500), 
+            uploadToGoogleStorage=True, folderPath=f"user-profiles"
         )
+        absFilePath.unlink(missing_ok=True)
     except (InvalidProfilePictureError):
         flash("Please upload an image file of .png, .jpeg, .jpg ONLY.", "Failed to Upload Profile Image!")
         return redirect(url_for("userBP.userProfile"))
