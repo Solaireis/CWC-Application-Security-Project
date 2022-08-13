@@ -32,6 +32,12 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video, add_video_tag, check_video, edit_video_tag
 
+"""
+write_log_entry(
+    logMessage="COmmand",
+    severity="NOTICE"
+)
+"""
 
 def get_blob_name(url:str="") -> str:
     """
