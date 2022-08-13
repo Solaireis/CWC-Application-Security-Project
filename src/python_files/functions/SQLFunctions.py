@@ -154,7 +154,7 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     videoID = data["videoId"]
     add_video_tag(videoID, "PRE-Upload")
 
-    clientPayload["successUrl"] = url_for("teacherBP.uploadSuccess", teacherID = teacherID)
+    clientPayload["successUrl"] = url_for("teacherBP.uploadSuccess", teacherID=teacherID)
     return videoID, clientPayload
 
 def send_verification_email(email:str="", username:Optional[str]=None, userID:str="") -> None:
