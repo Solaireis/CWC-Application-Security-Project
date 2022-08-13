@@ -93,7 +93,6 @@ def uploadSuccess(teacherID):
     # Manipulating other userIDs?
     if session["user"] != teacherID:
         abort(401)
-    
     sql_operation(table="course", mode="complete_draft", teacherID=teacherID)
     return redirect(url_for("teacherBP.draftCourseList"))
 
@@ -210,7 +209,7 @@ def createCourse(courseID:str):
         sql_operation(table="course", mode="delete_from_draft", courseID=courseID)
 
         flash("Course Created", "Successful Course Created!")
-        return redirect(url_for("userBP.userProfile"))
+        return redirect(url_for("userBP.courseList"))
     else:
         return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
