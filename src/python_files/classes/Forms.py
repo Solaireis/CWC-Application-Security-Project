@@ -87,7 +87,7 @@ class CreateCourseEdit(Form):
 
 class CreateReview(Form):
     reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-    reviewTitle = TextAreaField("Title: ", [validators.DataRequired(), validators.Length(min=1, max=100)])
+
 
 class UpdateRoles(Form):
     roleName = StringField("Role Name: ", [validators.DataRequired(), validators.Length(min=3, max=100)])

@@ -50,6 +50,7 @@ var myDropzone = new Dropzone("#dropper", {
             }
             else {
                 console.log("Payload exists");
+                myDropzone.processQueue();
             }
             console.log(this.options.url);
         });

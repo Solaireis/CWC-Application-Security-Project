@@ -382,7 +382,6 @@ def courseReview(courseID:str):
         return abort(404)
 
     # get user data
-    print("user is logged in")
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
@@ -394,6 +393,7 @@ def courseReview(courseID:str):
     hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 
     if (not hasReviewed and request.method == "POST" and reviewForm.validate()):
+        print("user havent reviewed yet")
         review = reviewForm.reviewDescription.data
         rating = request.form.get("rate")
         sql_operation(
@@ -435,8 +435,11 @@ def purchaseView(courseID:str):
     clientView = request.args.get("client_view", default="0", type=str)
     isClientView = False
     print(clientView)
-    if (clientView == "1" and courses.teacherID == userID and courses.status is True):
+    print(courses.status)
+    if (clientView == "1" and courses.teacherID == userID and courses.status == True):
         isClientView = True
+
+        
     else:
         isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
         if (isInCart):
@@ -455,8 +458,7 @@ def purchaseView(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-    if (courses.teacherID == userID):
-        flash("You are viewing this course as a client.", "Client View")
+    
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
