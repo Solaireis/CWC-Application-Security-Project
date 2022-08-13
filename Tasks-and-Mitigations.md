@@ -371,12 +371,9 @@
 
 ### Plan
 - DRM (Maybe https://www.vdocipher.com)
-  - Delete videos if not used (e.g. in 24 hours)
-    - More info why: (not more work lol)
-      Retry upload without breaking thing
-      What happens if request for credentials, error, then stop uploading?
   - Upload in chunks
-- contact us form for issues (review)
+  - Fail, try upload again (doesm't upload)
+- contact us form for issues (add word limit)
 
 - Stripe
   - Images (last thing lol)
@@ -394,10 +391,6 @@ Add to cart validation
 Policies
 - File type policies (3 sentences lol)
 - Max content length policy
-
-#### Plan:
-- Fix errors
-    - For example, fixing a bug that allowed user to buy a course multiple times instead of only once
 
 #### Implemented:
 - Added [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) on the signup page
