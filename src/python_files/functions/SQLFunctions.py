@@ -20,7 +20,6 @@ from argon2.exceptions import VerificationError, VerifyMismatchError, InvalidHas
 import pymysql.err as MySQLErrors
 from pymysql.connections import Connection as MySQLConnection
 import requests
-from jsonschema import validate
 
 # import local python files
 from python_files.classes.Course import CourseInfo
@@ -33,9 +32,6 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video, add_video_tag, check_video
 
-schema = {
-    
-}
 
 def get_blob_name(url:str="") -> str:
     """
@@ -773,10 +769,6 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
         validFlag, idx = False, 0
         backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
-        # try:
-        #     validate(instance=backupCodes, schema=schema)
-        # except:
-        #     print("Error in Json schema")
         for idx, codeTuple in enumerate(backupCodes):
             if (codeTuple[0] == kwargs["backupCode"] and codeTuple[1] == "Active"):
                 validFlag = True
@@ -1711,17 +1703,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         return clientPayload
 
     elif (mode == "complete_draft"):
-        teacherID=kwargs["teacherID"]
-        
+        teacherID = kwargs["teacherID"]
         cur.execute(
             "SELECT course_id, video_path FROM draft_course WHERE teacher_id=%(teacherID)s AND date_created IS NULL",
             {"teacherID": teacherID}
         )
         courseID, videoID = cur.fetchone()
         videoData = check_video(videoID)
+
         if videoData is None:
             abort(404)
-
         if videoData["status"] == "PRE-Upload":
             abort(400)
 
