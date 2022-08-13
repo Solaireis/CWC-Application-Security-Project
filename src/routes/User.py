@@ -458,8 +458,7 @@ def purchaseView(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-    if (courses.teacherID == userID):
-        flash("You are viewing this course as a client.", "Client View")
+    
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
