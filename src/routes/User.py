@@ -427,14 +427,15 @@ def purchaseHistory():
 @userBP.route("/purchase-view/<string:courseID>")
 def purchaseView(courseID:str):
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-
+    
     if (not courses): # raise 404 error
         abort(404)
 
     userID = session["user"]
-    clientView = request.args.get("client_view", default=False, type=bool)
+    clientView = request.args.get("client_view", default="0", type=str)
     isClientView = False
-    if (clientView and courses.teacherID == userID):
+    print(clientView)
+    if (clientView == "1" and courses.teacherID == userID and courses.status is True):
         isClientView = True
     else:
         isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
