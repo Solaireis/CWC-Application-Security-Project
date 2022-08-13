@@ -8,7 +8,7 @@ import markdown
 from flask import render_template, request, session, abort, Blueprint, Markup, redirect, flash, current_app
 
 # import local python libraries
-from python_files.functions.NormalFunctions import get_pagination_arr, EC_verify, create_assessment, score_within_acceptable_threshold
+from python_files.functions.NormalFunctions import get_pagination_arr, create_assessment, score_within_acceptable_threshold
 from python_files.functions.SQLFunctions import *
 from python_files.classes.Course import get_readable_category
 from python_files.classes.Forms import ContactUsForm

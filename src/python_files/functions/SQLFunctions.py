@@ -27,8 +27,8 @@ from python_files.classes.Course import CourseInfo
 from python_files.classes.User import UserInfo
 from python_files.classes.Errors import *
 from python_files.classes.Reviews import ReviewInfo, Reviews
-from .NormalFunctions import JWTExpiryProperties, generate_id, pwd_has_been_pwned, pwd_is_strong, \
-                             symmetric_encrypt, symmetric_decrypt, EC_sign, get_dicebear_image, \
+from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
+                             symmetric_encrypt, symmetric_decrypt, get_dicebear_image, \
                              send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video, add_video_tag, check_video
@@ -70,41 +70,6 @@ def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
 
     sql_operation(table="session", mode="create_session", sessionID=sessionID, userID=userID, userIP=userIP, userAgent=userAgent)
     return sessionID
-
-def generate_limited_usage_jwt_token(
-    payload:Union[str, list, dict]="", expiryInfo:Optional[JWTExpiryProperties]=None, 
-    limit:Optional[int]=None, encodeTokenFlag:Optional[bool]=True,
-    getTokenIDFlag:Optional[bool]=False
-) -> Union[str, tuple]:
-    """
-    Generate a limited usage token and add it to the MySQL database.
-
-    Args:
-    - payload (Union[str, list, dict]): The payload of the token.
-    - expiryInfo (JWTExpiryProperties, Optional): The expiry information of the token.
-    - limit (int, Optional): The usage limit of the token.
-    - encodeTokenFlag (bool, Optional): Whether to encode the token or not from this function.
-        - Default: True, will return a urlsafe base64 encoded token.
-    - getTokenIDFlag (bool, Optional): Whether to get the token ID or not from this function.
-        - Default: False, will not get the token ID.
-    """
-    if (expiryInfo is None and limit is None):
-        raise ValueError("Either expiryInfo OR limit must be specified.")
-
-    if (expiryInfo is not None and not isinstance(expiryInfo, JWTExpiryProperties)):
-        raise ValueError("Defined expiry information must be a JWTExpiryProperties object.")\
-
-    expiryInfoToStore = None
-    if (expiryInfo is not None):
-        expiryInfoToStore = expiryInfo.expiryDate.replace(microsecond=0, tzinfo=None)
-
-    tokenID = generate_secure_random_bytes(nBytes=32, generateFromHSM=False, returnHex=True)
-    token = EC_sign(payload=payload, b64EncodeData=encodeTokenFlag, expiry=expiryInfo, tokenID=tokenID)
-    sql_operation(
-        table="limited_use_jwt", mode="add_jwt", tokenID=tokenID,
-        expiryDate=expiryInfoToStore, limit=limit
-    )
-    return token if (not getTokenIDFlag) else (token, tokenID)
 
 def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     """
@@ -293,8 +258,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "expirable_token"):
                 returnValue = expirable_token_sql_operation(connection=con, mode=mode, **kwargs)
-            elif (table == "limited_use_jwt"):
-                returnValue = limited_use_jwt_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "role"):
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "acc_recovery_token"):
@@ -625,66 +588,6 @@ def acc_recovery_token_sql_operation(connection:MySQLConnection=None, mode:str=N
 
     else:
         raise ValueError("Invalid mode in the acc_recovery_token_sql_operation function!")
-
-def limited_use_jwt_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
-    if (mode is None):
-        raise ValueError("You must specify a mode in the limited_use_jwt_sql_operation function!")
-
-    cur = connection.cursor()
-    if (mode == "add_jwt"):
-        tokenID = kwargs["tokenID"]
-        expiryDate = kwargs.get("expiryDate")
-        limit = kwargs.get("limit")
-        print(limit)
-        cur.execute(
-            "INSERT INTO limited_use_jwt (id, expiry_date, token_limit) VALUES (%(tokenID)s, %(expiryDate)s, %(tokenLimit)s)",
-            {"tokenID": tokenID, "expiryDate": expiryDate, "tokenLimit": limit}
-        )
-        connection.commit()
-
-    elif (mode == "decrement_limit_after_use"):
-        tokenID = kwargs["tokenID"]
-        cur.execute(
-            "UPDATE limited_use_jwt SET token_limit = token_limit - 1 WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit > 0",
-            {"tokenID": tokenID}
-        )
-        connection.commit()
-        cur.execute(
-            "DELETE FROM limited_use_jwt WHERE id = %(tokenID)s AND token_limit IS NOT NULL AND token_limit <= 0",
-            {"tokenID": tokenID}
-        )
-        connection.commit()
-
-    elif (mode == "jwt_is_valid"):
-        tokenID = kwargs["tokenID"]
-        print("token", tokenID)
-        cur.execute(
-            "SELECT token_limit FROM limited_use_jwt WHERE id = %(tokenID)s",
-            {"tokenID": tokenID}
-        )
-        matched = cur.fetchone()
-        if (matched is None):
-            return False
-
-        # Check if the JWT is valid by checking the limit
-        # Note: Since if the JWT is limited by the expiry date, it already has an expiry date set in the JWT and 
-        # will be checked during the verification of the JWT signature. Hence, we will only check the limit here.
-        limit = matched[0]
-        # if the limit is defined and is more than 0, then the jwt token is valid
-        # if the limit is not defined, then the jwt token is valid 
-        # as long as it exists (unlimited usage)
-        if (limit is None or limit > 0):
-            return True
-        return False
-
-    elif (mode == "delete_expired_jwt"):
-        # to free up the database if the user did not use the token at all
-        # to avoid pilling up the database table with redundant data
-        cur.execute("DELETE FROM limited_use_jwt WHERE expiry_date < SGT_NOW() OR token_limit <= 0")
-        connection.commit()
-
-    else:
-        raise ValueError("Invalid mode in the limited_use_jwt_sql_operation function!")
 
 def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[list, None]:
     if (mode is None):

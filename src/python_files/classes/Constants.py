@@ -203,12 +203,9 @@ class Constants:
     PEPPER_KEY_ID: str = "pepper-key"
     SENSITIVE_DATA_KEY_ID: str = "sensitive-data-key"
 
-    # For encrypting data that will be shared with the client (e.g. the JWT signature)
+    # For encrypting data that will be shared with the client (e.g. the reset password token in the url)
     COOKIE_ENCRYPTION_KEY_ID: str = "cookie-key"
     TOKEN_ENCRYPTION_KEY_ID: str = "token-key"
-    EC_SIGNING_KEY_ID: str = "signing-key"
-    SIGNATURE_VERSION_NAME: str = "ec-signature-version"
-    AVAILABLE_KEY_IDS: tuple = ("cookie-key", "signing-key")
 
     # For Google MySQL Cloud API
     SQL_INSTANCE_LOCATION: str = "coursefinity-339412:asia-southeast1:coursefinity-mysql"
