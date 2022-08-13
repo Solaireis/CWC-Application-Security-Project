@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 # import third party libraries
 from argon2 import PasswordHasher, Type as Argon2Type
 from dicebear import DOptions
-from jsonschema import validate, ValidationError
 
 # For ipinfo.io to get details about a user's IP address
 import ipinfo
@@ -32,10 +31,6 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-# TODO: Ask what the secret payload json returns
-schema = {
-    
-}
 
 # TODO: Change the debug mode below accordingly
 DEBUG_MODE = True
@@ -342,10 +337,6 @@ class SecretConstants:
 
         # For Google Cloud Logging API
         self.__LOGGING_CLIENT = gcp_logging.Client.from_service_account_info(json.loads(self.get_secret_payload(secretID="google-logging")))
-        # try:
-        #     validate(instance=self.__LOGGING_CLIENT, schema=schema)
-        # except ValidationError as e:
-        #     print("Schema Error")
         self.__GOOGLE_LOGGING_HANDLER = CloudLoggingHandler(self.__LOGGING_CLIENT, name=CONSTANTS.LOGGING_NAME)
 
         # For Google Gmail API
@@ -355,19 +346,11 @@ class SecretConstants:
         self.__RECAPTCHA_CLIENT = recaptchaenterprise_v1.RecaptchaEnterpriseServiceClient.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-recaptcha"))
         )
-        # try:
-        #     validate(instance=self.__RECAPTCHA_CLIENT, schema=schema)
-        # except ValidationError as e:
-        #     print("Schema Error")
 
         # For Google Key Management Service API
         self.__KMS_CLIENT = kms.KeyManagementServiceClient.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-kms"))
         )
-        # try:
-        #     validate(instance=self.__KMS_CLIENT, schema=schema)
-        # except ValidationError as e:
-        #     print("Schema Error")
 
         # For Google MySQL Cloud API
         self.__SQL_CLIENT = MySQLConnector(
@@ -375,19 +358,11 @@ class SecretConstants:
                 json.loads(self.get_secret_payload(secretID="google-mysql"))
             )
         )
-        # try:
-        #     validate(instance=self.__LOGGING_CLIENT, schema=schema)
-        # except ValidationError as e:
-        #     print("Schema Error")
 
         # For Google Cloud Storage API
         self.__GOOGLE_STORAGE_CLIENT = storage.Client.from_service_account_info(
             json.loads(self.get_secret_payload(secretID="google-storage"))
         )
-        # try:
-        #     validate(instance=self.__GOOGLE_STORAGE_CLIENT, schema=schema)
-        # except ValidationError as e:
-        #     print("Schema Error")
 
     """----------------------------------------- END OF DEFINING CONSTANTS -----------------------------------------"""
 

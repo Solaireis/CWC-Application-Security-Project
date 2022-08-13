@@ -1,7 +1,6 @@
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, session, abort, current_app, redirect, wrappers, url_for
 from flask_limiter.util import get_remote_address
-from jsonschema import validate
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
@@ -11,9 +10,6 @@ from python_files.classes.Roles import RoleInfo
 # import python standard libraries
 import json, re
 
-schema = {
-    
-}
 
 def update_secret_key() -> None:
     """
@@ -134,10 +130,6 @@ def before_request() -> None:
             adminWhitelistedIP = tuple(json.loads(
                 current_app.config["SECRET_CONSTANTS"].get_secret_payload(secretID="ip-address-whitelist")
             ))
-            # try:
-            #     validate(instance=adminWhitelistedIP, schema=schema)
-            # except:
-            #     print("Error in JSON Schema")
         else:
             adminWhitelistedIP = ("127.0.0.1",)
 

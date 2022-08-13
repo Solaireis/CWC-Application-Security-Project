@@ -6,7 +6,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import RefreshError
 from google.api_core.exceptions import FailedPrecondition
-from jsonschema import validate
 
 # import python standard libraries
 from sys import exit as sysExit
@@ -34,10 +33,6 @@ SECRET_CONSTANTS = NormalFunctions.SECRET_CONSTANTS
 # Scopes details: https://developers.google.com/gmail/api/auth/scopes
 SCOPES = ["https://www.googleapis.com/auth/gmail.send"]
 
-#TODO: Find the Google Token Schema
-schema = {
-    
-}
 
 def shutdown() -> None:
     """
@@ -64,13 +59,6 @@ def create_token() -> None:
         )
     )
     GOOGLE_CREDENTIALS = SECRET_CONSTANTS.GOOGLE_CREDENTIALS
-
-    # Unsure if breaks
-    # try:
-    #     validate(instance=GOOGLE_TOKEN, schema=schema)
-    # except Exception as e:
-    #     print("Google Token Schema Validation Error:", e)
-    #     sysExit(1)
 
     # The file google-token.json stores the user's access and refresh tokens,
     # and is stored in Google Secret Manager API.
