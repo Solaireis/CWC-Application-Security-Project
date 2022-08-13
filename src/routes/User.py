@@ -382,7 +382,6 @@ def courseReview(courseID:str):
         return abort(404)
 
     # get user data
-    print("user is logged in")
     userID = session["user"]
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)[1]
@@ -394,6 +393,7 @@ def courseReview(courseID:str):
     hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 
     if (not hasReviewed and request.method == "POST" and reviewForm.validate()):
+        print("user havent reviewed yet")
         review = reviewForm.reviewDescription.data
         rating = request.form.get("rate")
         sql_operation(
