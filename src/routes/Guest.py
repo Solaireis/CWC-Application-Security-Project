@@ -319,7 +319,7 @@ def login():
             ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
             # utc+8 time (SGT)
             currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
-            currentDatetime = currentDatetime.strftime("%d %B %Y %H:%M:%S %Z")
+            currentDatetime = currentDatetime.strftime("%d %B %Y, %H:%M:%S %z")
 
             # format the string location from the ip address details
             locationString = ""
