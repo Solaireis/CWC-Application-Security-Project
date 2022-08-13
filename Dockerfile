@@ -13,9 +13,9 @@ COPY requirements.txt .
 COPY sample/download_dependencies.py .
 
 # Install the dependencies using the copied python script with integrity checks
-# RUN python3 download_dependencies.py
-RUN pip install -r requirements.txt
-RUN pip install -U gunicorn
+RUN python3 download_dependencies.py
+# RUN pip install -r requirements.txt
+# RUN pip install -U gunicorn
 
 # Remove the python script and the requirements file
 # after the dependencies are installed
