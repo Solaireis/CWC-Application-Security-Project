@@ -113,4 +113,4 @@ class ContactUsForm(Form):
             ("Others", "Others")
         ]
     )
-    enquiry = TextAreaField("Enquiry:", [validators.DataRequired()])
+    enquiry = TextAreaField("Enquiry:", [validators.DataRequired(), validators.Length(min=100, max=10000)])
