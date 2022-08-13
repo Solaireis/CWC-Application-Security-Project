@@ -140,7 +140,9 @@ def showBackupCodes():
         # if so, redirect to user profile as the authentication security is handled by Google themselves
         return redirect(url_for("userBP.userProfile"))
 
-    if (not sql_operation(table="2fa_token", mode="check_if_user_has_2fa", userID=userID)):
+    userID = session["user"]
+    userInfo = get_image_path(userID, returnUserInfo=True)
+    if (not userInfo.hasTwoFA):
         return redirect(url_for("userBP.twoFactorAuthSetup"))
 
     backUpCodes = []
@@ -176,8 +178,6 @@ def showBackupCodes():
         if (len(backUpCodes) < 1):
             backUpCodes = sql_operation(table="2fa_token", mode="generate_codes", userID=userID)
 
-    userID = session["user"]
-    userInfo = get_image_path(userID, returnUserInfo=True)
     return render_template("users/user/backup_codes.html", backupCodes=backUpCodes, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
 @userBP.post("/disable-2fa")
