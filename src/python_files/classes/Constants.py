@@ -263,9 +263,9 @@ class Constants:
         "Other_Academics": "Academics - Other Academics"
     })
 
-    GUARDTOTPSCHEMA: dict[str, Union(str, int)] = {
-    "type": "object",
-    "properties": {
+    GUARDTOTPSCHEMA: dict[str, Union[str, int]] = field(default_factory=lambda: {
+        "type": "object",
+        "properties": {
         "token": {
             "type": "string",
             "minLength": 1
@@ -275,7 +275,7 @@ class Constants:
             "minimum": 1
             }
         }   
-    }
+    })
 
     def __post_init__(self) -> None:
         """Called after the dataclass is initialised."""
