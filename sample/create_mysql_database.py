@@ -191,15 +191,6 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX expirable_token_user_idx ON expirable_token(user_id)")
     cur.execute("CREATE INDEX expirable_token_expiry_date_idx ON expirable_token(expiry_date)")
 
-    cur.execute("""CREATE TABLE limited_use_jwt (
-        id CHAR(64) PRIMARY KEY,
-        token_limit TINYINT, -- Min: -128, Max: 127
-        expiry_date DATETIME,
-        CONSTRAINT check_null CHECK (token_limit IS NOT NULL OR expiry_date IS NOT NULL) -- Both cannot be null
-    )""")
-    cur.execute("CREATE INDEX limited_use_jwt_token_limit_idx ON limited_use_jwt(token_limit)")
-    cur.execute("CREATE INDEX limited_use_jwt_expiry_date_idx ON limited_use_jwt(expiry_date)")
-
     cur.execute("""CREATE TABLE acc_recovery_token ( 
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
         token CHAR(240) NOT NULL,
