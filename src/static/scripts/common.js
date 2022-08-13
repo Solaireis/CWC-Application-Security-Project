@@ -87,7 +87,7 @@ if (inacitivityModalEl)
 
 /* --------------- Start of Console Warning Javascript --------------- */
 
-console.log("\n\
+console.log("\
    ___                            ___ _       _ _         \n\
   / __\\___  _   _ _ __ ___  ___  / __(_)_ __ (_) |_ _   _ \n\
  / /  / _ \\| | | | '__/ __|/ _ \\/ _\\ | | '_ \\| | __| | | |\n\

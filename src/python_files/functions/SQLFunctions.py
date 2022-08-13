@@ -13,7 +13,7 @@ from base64 import b85encode, urlsafe_b64decode, urlsafe_b64encode
 from binascii import Error as BinasciiError
 
 # import Flask web application configs
-from flask import url_for, current_app, abort
+from flask import url_for, current_app, abort, session
 
 # import third party libraries
 from argon2.exceptions import VerificationError, VerifyMismatchError, InvalidHash
@@ -32,12 +32,6 @@ from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video, add_video_tag, check_video, edit_video_tag
 
-"""
-write_log_entry(
-    logMessage="COmmand",
-    severity="NOTICE"
-)
-"""
 
 def get_blob_name(url:str="") -> str:
     """
@@ -476,9 +470,6 @@ def cart_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         isPurchased = (cur.fetchone() is not None)
 
         return (isInCart, isPurchased)
-
-    else:
-        raise ValueError("Invalid mode in cart_sql_operation function!")
 
 def stripe_payments_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[bool, None]:
     if (mode is None):
@@ -1592,9 +1583,32 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         )
         isPurchased = True if (cur.fetchone() is not None) else False
 
-        if (isActiveCourse and not isInCart and not isSameTeacher and not isPurchased):
+        cur.execute(
+            "SELECT COUNT(*) FROM cart WHERE user_id=%(userID)s", 
+            {"userID": userID}
+        )
+        cartAmount = cur.fetchone()[0]
+        
+        courseInfo = course_sql_operation(connection=connection, mode="get_course_data", courseID=courseID)
+        if not courseInfo:
+            abort(404)
+        
+        courseAddedStatus = {"name": courseInfo.courseName}
+        if isInCart:
+            courseAddedStatus["status"] = "In Cart"
+        elif isPurchased:
+            courseAddedStatus["status"] = "Purchased"
+        elif isSameTeacher:
+            courseAddedStatus["status"] = "Own Course"
+        elif cartAmount >= 10:
+            courseAddedStatus["status"] = "Full"
+        elif not isActiveCourse:
+            courseAddedStatus["status"] = "Inactive"
+        else:
             cur.execute("INSERT INTO cart (user_id, course_id) VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
             connection.commit()
+            courseAddedStatus["status"] = "Success"
+        session["courseAddedStatus"] = courseAddedStatus
 
     elif mode == "remove_from_cart":
         userID = kwargs["userID"]

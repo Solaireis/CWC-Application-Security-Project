@@ -482,21 +482,7 @@ def purchaseView(courseID:str):
 
 @userBP.post("/add-to-cart/<string:courseID>")
 def addToCart(courseID:str):
-    courseInfo = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    courseAddedStatus = {"name": courseInfo.courseName}
-    isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
-    if isInCart:
-        courseAddedStatus["status"] = "In Cart"
-    elif purchased:
-        courseAddedStatus["status"] = "Purchased"
-    else:
-        if courseInfo.teacherID == session["user"]:
-            print(courseInfo.teacherID, session["user"])
-            courseAddedStatus["status"] = "Own Course"
-        else:
-            sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
-            courseAddedStatus["status"] = "Success"
-    session["courseAddedStatus"] = courseAddedStatus
+    sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
     return redirect(url_for("userBP.shoppingCart"))
 
 @userBP.route("/shopping-cart", methods=["GET", "POST"])

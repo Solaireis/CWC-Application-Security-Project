@@ -370,13 +370,7 @@
 ### Insecure Design
 
 ### Plan
-- DRM (Maybe https://www.vdocipher.com)
-  - Upload in chunks
-  - Fail, try upload again (doesm't upload)
-- contact us form for issues (add word limit)
-
-- Stripe
-  - Images (last thing lol)
+Stripe Images (last thing lol)
 
 ### Implemented
 Stripe
@@ -387,7 +381,9 @@ Stripe
 Add to cart validation
 - Own course
 - Purchased course
+- Inactive course
 - Already in cart
+- Full cart
 Policies
 - File type policies (3 sentences lol)
 - Max content length policy
