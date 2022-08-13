@@ -748,6 +748,14 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
             {"backupCodesJSON": encryptedBackupCodes}
         )
         connection.commit()
+
+        cur.execute("SELECT email FROM user WHERE id = %(userID)s", {"userID":userID})
+        email = cur.fetchone()[0]
+        htmlBody = (
+            f"Your CourseFinity account, {email}, has generated a new set of 2FA backup codes.",
+            f"If this action is not recognised by you, please change your password immediately by clicking the link below.<br>Change password:<br>{CONSTANTS.CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}"
+        )
+        send_email(to=email, subject="New 2FA Backup Codes Generated Notice", body="<br><br>".join(htmlBody))
         return backupCodes
 
     elif (mode == "disable_2fa_with_backup_code"):
