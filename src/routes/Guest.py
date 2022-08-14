@@ -526,7 +526,6 @@ def loginViaGoogle():
     session["state"] = symmetric_encrypt(
         plaintext=state, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
     )
-    print("google oauth redirect url:", authorisationUrl)
     return redirect(authorisationUrl)
 
 @guestBP.route("/login-callback")
@@ -546,7 +545,6 @@ def loginCallback():
             },
             severity="NOTICE"
         )
-        print("Error with Google OAuth2 token:", e)
         flash("An error occurred while trying to login via Google!", "Danger")
         return redirect(url_for("guestBP.login"))
 
@@ -730,7 +728,6 @@ def sendVerifyEmail():
             send_verification_email(email=email, username=username, userID=userID)
             flash(f"An email has bent sent to you to verify your email!", "Success")
         except (Exception) as e:
-            print("Error sending email:", e)
             write_log_entry(
                 logMessage=f"Error sending verification email: {e}",
                 severity="ERROR",

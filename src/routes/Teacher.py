@@ -33,8 +33,6 @@ def courseList():
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_courses_by_teacher", teacherID=userInfo.uid, pageNum=page)
-    print(courseList)
-
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.courseList") + f"?p={maxPage}")
@@ -58,7 +56,6 @@ def draftCourseList():
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseList, maxPage = sql_operation(table="course", mode="get_all_draft_courses", teacherID=userInfo.uid, pageNum=page)
     videoStatusList = tuple(check_video(course.videoPath)["status"] for course in courseList)
-    print(videoStatusList)
 
     if (page > maxPage):
         return redirect(url_for("teacherBP.draftCourseList") + f"?p={maxPage}")
@@ -180,13 +177,6 @@ def createCourse(courseID:str):
             flash(Markup("Sorry, there was an error uploading your course thumbnail...<br>Please try again later!"), "Failed to Upload Course Thumbnail!")
             return render_template("users/teacher/create_course.html", imageSrcPath=userInfo.profileImage, form=courseForm, accType=userInfo.role, courseID=courseID, videoData=videoData)
 
-        # videoPath = upload_file_from_path(
-        #     bucketName=current_app.config["CONSTANTS"].COURSE_VIDEOS_BUCKET_NAME,
-        #     localFilePath=absFilePath,
-        #     uploadDestination=f"videos"
-        #     # uploadDestination=f"videos/{videoFilename}" # folder created
-        # )
-        # Delete video from storage (relying on mpd file)
         sql_operation(
             table="course",
             mode="insert",
@@ -217,37 +207,12 @@ def createCourse(courseID:str):
 
 """ Start Of Course Management """
 
-"""
-@teacherBP.route("/static/course_videos/<string:courseID>/<string:videoName>")
-def rawVideo(courseID:str, videoName:str):
-    if (sql_operation(table="course", mode="check_if_course_owned_by_teacher", teacherID=session["user"], courseID=courseID)):
-        pass # allow access to the video for the teacher user if they own the course
-    elif (sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)):
-        pass # allow access to the video if the teacher user is in the midst of creating the course
-    else:
-        abort(404)
-
-    # TODO: Fix SQL query to get the video path (Index out of error)
-    courseTuple = sql_operation(table="course", mode="get_draft_course_data", courseID=courseID)
-    # Allow the teacher to see the video if the teacher is in the midst of creating the course
-    if (courseTuple):
-        filePathArr = courseTuple[2].rsplit("/", 2)[-2:]
-        return send_from_directory(
-            str(current_app.config["COURSE_VIDEO_FOLDER"].joinpath(filePathArr[0])),
-            filePathArr[1],
-            as_attachment=False,
-            max_age=31536000
-        )
-    else:
-        abort(404)
-"""
-
 @teacherBP.route("/delete-course", methods=["GET", "POST"])
 def courseDelete():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if (not courseFound) or (not courseFound.status):
-        abort(404) #TODO Test the error code and see what could be redirected instead of 404 for better user experience
+    if (not courseFound or not courseFound.status):
+        abort(404)
 
     sql_operation(table="course", mode="delete", courseID=courseID)
     print("Course Deleted")
@@ -269,8 +234,8 @@ def draftCourseDelete():
 def courseUpdate():
     courseID = request.args.get("cid", default="test", type=str)
     courseFound = sql_operation(table="course", mode="get_course_data", courseID=courseID)
-    if (not courseFound) or (not courseFound.status):
-        abort(404)#TODO Test the error code and see what could be redirected instead of 404 for better user experience
+    if (not courseFound or not courseFound.status):
+        abort(404)
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     courseForm = CreateCourseEdit(request.form)

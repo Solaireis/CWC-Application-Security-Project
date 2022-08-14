@@ -1512,7 +1512,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         courseArr = []
         for data in matched:
-            print(data[1:])
             userInfo = format_user_info(data[1:])
             if (paginationRole != "Admin"):
                 isInRecovery = acc_recovery_token_sql_operation(
@@ -1633,7 +1632,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 connection.commit()
             except (MySQLErrors.IntegrityError):
                 # Catches if the for any duplicate key error
-                print("Course previously bought by user.")
                 write_log_entry(
                     logMessage=f"User {userID}, has purchased the course, {courseID}, but he/she had already purchased it",
                     severity="WARNING"
@@ -1741,15 +1739,12 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         # Bit too fast this one
         for attempt in range(10):
-            print(videoData["status"])
             if videoData["status"] != "PRE-Upload":
                 break
             videoData = check_video(videoID)
 
         if attempt == 9:
             abort(400)
-
-        print("Status correct")
 
         # Confirm added video
         cur.execute(
@@ -1775,7 +1770,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "get_course_data"):
         courseID = kwargs["courseID"]
-        print("Course ID:", courseID)
+
         cur.execute("CALL get_course_data(%(courseID)s)", {"courseID":courseID})
         matched = cur.fetchone()
         if (matched is None):
@@ -1785,7 +1780,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
     elif (mode == "get_draft_course_data"):
         courseID = kwargs["courseID"]
-        print("Course ID:", courseID)
+
         cur.execute("SELECT * FROM draft_course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
         if (matched is None):
@@ -1913,10 +1908,10 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         pageNum = kwargs["pageNum"]
         if (pageNum > 2147483647):
             pageNum = 2147483647
-        print(f"CALL paginate_draft_courses({teacherID}, {pageNum})")
+
         cur.execute("CALL paginate_draft_courses(%(teacherID)s, %(pageNum)s)", {"teacherID":teacherID, "pageNum":pageNum})
         resultsList = cur.fetchall()
-        print(resultsList)
+
         if (resultsList is None or len(resultsList) < 1):
             return ([], 1)
 
@@ -1937,7 +1932,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 delete_video(foundResultsTuple[-2])
                 connection.commit()
             else:
-                print(foundResultsTuple)
                 courseList.append(
                     CourseInfo(foundResultsTuple, profilePic=teacherProfile, truncateData=True, draftStatus=True)
                 )
@@ -2144,7 +2138,6 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         courseRating = kwargs["courseRating"]
         courseReview = kwargs["courseReview"]
-        print(userID, courseID, courseRating, courseReview)
         cur.execute("INSERT INTO review (user_id, course_id, course_rating, course_review, review_date) VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         connection.commit()
 
@@ -2165,7 +2158,6 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         if (matchedReview is None):
             return (False, None)
 
-        print("Review:", matchedReview)
         return (True, ReviewInfo(matchedReview))
 
     elif (mode == "get_3_latest_user_review"):

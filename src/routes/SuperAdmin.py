@@ -40,7 +40,7 @@ def adminManagement():
         if (userInfo.role == "SuperAdmin"):
             flash("An error occurred while processing your request.", "Sorry!")
             return redirect(session["relative_url"])
-        
+
         elif (formType == "deleteUser"):
             sql_operation(table="user", mode="delete_user", userID=userID)
             flash(f"The user, {userID}, has been deleted.", "User Deleted!")
@@ -109,12 +109,8 @@ def roleManagement():
         roleList.append(RoleInfo(role))
 
     count = len(roleList)
-    for role in roleList:
-        print(role.roleName)
-
     form = UpdateRoles(request.form)
-    if (request.method == "POST" ):
-
+    if (request.method == "POST"):
         roleName = form.roleName.data
         guestBP = request.form.get("guestBP1", default="off", type=str)
         generalBP = request.form.get("generalBP1", default="off", type=str)
@@ -122,22 +118,20 @@ def roleManagement():
         teacherBP = request.form.get("teacherBP1", default="off", type=str)
         userBP = request.form.get("userBP1", default="off", type=str)
 
-        # TODO: create input validations for the form
-
         guestBP = True if (guestBP.lower() == "on") else False
         generalBP = True if (generalBP.lower() == "on") else False
         loggedInBP = True if (loggedInBP.lower() == "on") else False
         teacherBP = True if (teacherBP.lower() == "on") else False
         userBP = True if (userBP.lower() == "on") else False
-        
+
         sql_operation(
-            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, generalBP=generalBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
+            table="role", mode="update_role", roleName=roleName, guestBP=guestBP, 
+            generalBP=generalBP, loggedInBP=loggedInBP, teacherBP=teacherBP, 
             userBP=userBP
         )
         flash(f"The role, {roleName}, has been updated.", "Role Updated!")
         return redirect(url_for("superAdminBP.roleManagement"))
 
-    # TODO: Role Management do not need pagination and relative url session
     return render_template("users/superadmin/admin_rbac.html", roleList=roleList, count=count,form=form)
 
 @superAdminBP.route("/admin-create", methods=["GET","POST"])
@@ -146,7 +140,6 @@ def createAdmin():
     if (request.method == "POST" and form.validate()):
         username = form.username.data
         email = form.email.data
-        print("success")
         sql_operation(table="user", mode="create_admin", username=username, email=email)
         flash(f"Admin created", "Role Updated!")
         return redirect(url_for("superAdminBP.adminManagement"))

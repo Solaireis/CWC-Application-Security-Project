@@ -71,7 +71,7 @@ class CourseInfo:
             self.__dateCreated = tupleInfo[9]
             self.__averageRating = int(tupleInfo[10]) if (tupleInfo[10] is not None) else 0
             self.__videoPath = tupleInfo[11]
-            self.__status = tupleInfo[-1]
+            self.__status = bool(tupleInfo[-1])
 
     @property
     def courseID(self) -> str:
@@ -110,7 +110,7 @@ class CourseInfo:
     def videoPath(self) -> str:
         return self.__videoPath
     @property
-    def status(self) -> str:
+    def status(self) -> bool:
         return self.__status
 
     def __repr__(self) -> str:

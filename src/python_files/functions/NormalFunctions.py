@@ -428,7 +428,6 @@ def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToke
 
     # send to Google reCAPTCHA API
     response = SECRET_CONSTANTS.RECAPTCHA_CLIENT.create_assessment(request)
-
     # check if the response is valid
     if (not response.token_properties.valid):
         print("invalid due to", response.token_properties.invalid_reason)
@@ -442,10 +441,18 @@ def create_assessment(siteKey:str=CONSTANTS.COURSEFINITY_SITE_KEY, recaptchaToke
     # get the risk score and the reason(s)
     # For more information on interpreting the assessment,
     # see: https://cloud.google.com/recaptcha-enterprise/docs/interpret-assessment
-    # might wanna log this btw
-    for reason in response.risk_analysis.reasons:
-        print(reason)
-    print("Risk score:", response.risk_analysis.score)
+    reasons = [reason for reason in response.risk_analysis.reasons]
+    write_log_entry(
+        logMessage={
+            "reCAPTCHA information": {
+                "token": recaptchaToken,
+                "action": recaptchaAction,
+                "score": response.risk_analysis.score,
+                "reasons": json.dumps(reasons)
+            }
+        },
+        severity="INFO"
+    )
     return response
 
 def score_within_acceptable_threshold(riskScore:int, threshold:float=0.5) -> bool:

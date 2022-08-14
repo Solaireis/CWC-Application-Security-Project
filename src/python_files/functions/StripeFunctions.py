@@ -50,7 +50,6 @@ def stripe_product_create(
             images=[] if courseImagePath is None else [courseImagePath],
             url=f"{CONSTANTS.CUSTOM_DOMAIN}{url_for('generalBP.coursePage', courseID = courseID)}"
         )
-
         # print(courseData)
 
     except InvalidRequestError as error:
@@ -88,7 +87,6 @@ def stripe_product_update(**kwargs) -> None:
                 courseID,
                 images=[courseImagePath],
             )
-    
     except:
         print("There was an Error in updating")
 
@@ -135,7 +133,6 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         - Probably more...
     """
     paymentIntent = sql_operation(table="stripe_payments", mode="pop_previous_session", userID=userID)
-    print("Old Payment Intent:", paymentIntent)
     if paymentIntent is not None:
         checkoutID = stripe.PaymentIntent.retrieve(paymentIntent).metadata["checkoutID"]
         expire_checkout(checkoutID)
@@ -153,8 +150,6 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         print("Checkout:", str(error))
         # print(type(checkoutSession))
         return None
-    print(cartCourseIDs)
-    print("Checkout Session Created:", checkoutSession.payment_intent)
     paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
     stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {
         "checkoutID": checkoutSession.id,
@@ -162,7 +157,7 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         "cartCourseIDs": dumps(cartCourseIDs),
         "coursesAdded": False
     })
-    print("Payment Intent Modified")
+
     sql_operation(
         table="stripe_payments", 
         mode="create_payment_session", 
@@ -172,7 +167,7 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
         createdTime=datetime.fromtimestamp(paymentIntent["created"]).strftime('%Y-%m-%d %H:%M:%S'),
         amount=round(paymentIntent["amount"]/100, 2)
     )
-    print("SQL Success")
+
     return checkoutSession
 
 def expire_checkout(checkoutSession:str) -> None:
@@ -212,21 +207,3 @@ def send_checkout_receipt(paymentIntent:str) -> None:
 
 def get_payment_intent(paymentIntent:str) -> PaymentIntent:
     return stripe.PaymentIntent.retrieve(paymentIntent)
-
-# print(get_payment_intent("pi_3LPmRrEQ13luXvBj0pCCIO9h"))
-
-"""
-Expire session:
-# print(expire_checkout('cs_test_b17DWUoKPuzeXE5h7Y4Ubd0aMPhO4K7CiDjqTxVXddouKueDfNtqoFYx5z'))
-
-Create courses if they don't exist:
-# for num in range(1, 6):
-#    if stripe_product_check(courseID = f"Test_Course_ID_{num}_v2") is None:
-#        stripe_product_create(f"Test_Course_ID_{num}_v2", f"Test Course Name {num}", f"Test Course Description {num}", num*100, None, debug = True)
-
-Create checkout session (and print returned data):
-# print(stripe_checkout(userID = "Test_User", cartCourseIDs = [f"Test_Course_ID_{num}_v2" for num in range(1, 6)], email = "test@email.com", debug = True))
-
-Send receipt:
-send_checkout_receipt("pi_3LPmRrEQ13luXvBj0pCCIO9h")
-"""

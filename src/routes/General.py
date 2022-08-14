@@ -169,7 +169,6 @@ def reviewPage(courseID:str):
 
 @generalBP.route("/course/<string:courseID>")
 def coursePage(courseID:str):
-    # print(courseID)
     courses = sql_operation(table="course", mode="get_course_data", courseID=courseID)
     if (not courses): #raise exception
         abort(404)

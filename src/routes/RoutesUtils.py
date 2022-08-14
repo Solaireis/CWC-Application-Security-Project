@@ -49,25 +49,21 @@ def before_request() -> None:
 
     # RBAC Check if the user is allowed to access the pages that they are allowed to access
     if (request.endpoint is None):
-        print("Route Error: Route does not exist...")
         abort(404)
 
     # Check if the route has a blueprint
     hasBlueprint = False
     requestBlueprint = requestRoute = None
     if (isNotStaticEndpoint):
-        print("Request Endpoint:", request.endpoint)
         if (re.fullmatch(current_app.config["CONSTANTS"].BLUEPRINT_ENDPOINT_REGEX, request.endpoint)):
             splittedRequestEndpoint = request.endpoint.split(sep=".", maxsplit=1)
             requestBlueprint = splittedRequestEndpoint[0]
             requestRoute = splittedRequestEndpoint[1]
             hasBlueprint = True
-            print("Request Blueprint:", requestBlueprint)
 
     if (isNotStaticEndpoint and not hasBlueprint):
         # Since all routes except static endpoint have a blueprint, 
         # abort(404) if the request does not have a blueprint
-        print("Route Error: Route does not have a blueprint...")
         abort(404)
 
     # check if state key is in session
@@ -117,7 +113,6 @@ def before_request() -> None:
 
     # Validate the user's session for every request that is not to the static files
     if (isNotStaticEndpoint):
-        print(f"Session cookie: {session}")
         if (("user" in session) ^ ("admin" in session)):
             # if either user or admin is in the session cookie value (but not both)
             userID = session.get("user") or session.get("admin")

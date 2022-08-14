@@ -358,7 +358,7 @@ def uploadPic():
     filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
     absFilePath = current_app.config["USER_IMAGE_FOLDER"].joinpath(filePath)
     file.save(absFilePath)
-    
+
     try:
         imagehash = request.form.get("fileHash")
         with open(absFilePath, "rb") as f:
@@ -407,7 +407,6 @@ def courseReview(courseID:str):
     hasReviewed, reviewObj = sql_operation(table="review", mode="get_user_review", courseID=courseID, userID=userID)
 
     if (not hasReviewed and request.method == "POST" and reviewForm.validate()):
-        print("user havent reviewed yet")
         review = reviewForm.reviewDescription.data
         rating = request.form.get("rate")
         sql_operation(
@@ -448,12 +447,9 @@ def purchaseView(courseID:str):
     userID = session["user"]
     clientView = request.args.get("client_view", default="0", type=str)
     isClientView = False
-    print(clientView)
-    print(courses.status)
+
     if (clientView == "1" and courses.teacherID == userID and courses.status == True):
         isClientView = True
-
-        
     else:
         isInCart, purchased = sql_operation(table="cart", mode="check_if_purchased_or_in_cart", userID=session["user"], courseID=courseID)
         if (isInCart):
@@ -472,7 +468,7 @@ def purchaseView(courseID:str):
 
     userInfo = get_image_path(session["user"], returnUserInfo=True)
     imageSrcPath = userInfo.profileImage
-    
+
     return render_template("users/user/purchase_view.html",
         imageSrcPath=imageSrcPath, teacherName=teacherRecords.username,
         teacherProfilePath=teacherRecords.profileImage, courseDescription=courseDescription,
@@ -519,27 +515,21 @@ def shoppingCart():
 def checkout():
     userID = session["user"]
 
-    cartCourseIDs = sql_operation(table='user', mode = 'get_user_cart', userID = userID)
+    cartCourseIDs = sql_operation(table='user', mode='get_user_cart', userID=userID)
     if cartCourseIDs is None: # Take that, Postman users!
         return redirect(url_for("userBP.shoppingCart"))
-    email = sql_operation(table = 'user', mode = 'get_user_data', userID = userID).email
-    print(cartCourseIDs)
-    print(email)
+    email = sql_operation(table='user', mode='get_user_data', userID=userID).email
 
     try:
-        checkout_session = stripe_checkout(userID = userID, cartCourseIDs = cartCourseIDs, email = email)
+        checkout_session = stripe_checkout(userID=userID, cartCourseIDs=cartCourseIDs, email=email)
     except Exception as error:
         print(str(error))
         return redirect(url_for('userBP.addToCart', courseID=cartCourseIDs[0]))
-
-    print(checkout_session)
-    print(type(checkout_session))
 
     return redirect(checkout_session.url, code = 303) # Stripe says use 303, we shall stick to 303
 
 @userBP.route("/purchase/<string:userID>")
 def purchase(userID:str):
-    
     paymentIntent = sql_operation(table="stripe_payments", mode="get_latest_payment_intent", userID = userID)
     if paymentIntent is None:
         abort(404)
@@ -547,10 +537,9 @@ def purchase(userID:str):
     paymentIntent = get_payment_intent(paymentIntent)
     if paymentIntent.status != "succeeded":
         abort(402)
-    
+
     send_checkout_receipt(paymentIntent.id)
     metadata = paymentIntent.metadata
     sql_operation(table="user", mode="purchase_courses", userID = metadata["userID"], cartCourseIDs = json.loads(metadata["cartCourseIDs"]))
-    print("Added to database")
 
     return redirect(url_for("userBP.purchaseHistory"))
