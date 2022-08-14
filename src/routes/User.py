@@ -357,6 +357,7 @@ def uploadPic():
 
     filePath = Path(generate_id(sixteenBytesTimes=2) + Path(filename).suffix)
     absFilePath = current_app.config["USER_IMAGE_FOLDER"].joinpath(filePath)
+    absFilePath.parent.mkdir(parents=True, exist_ok=True)
     file.save(absFilePath)
 
     try:
