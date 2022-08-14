@@ -4,7 +4,7 @@ Routes for users who are not logged in (Guests)
 # import third party libraries
 import requests as req, pyotp
 from argon2.exceptions import HashingError
-from jsonschema import validate
+from jsonschema import validate as jsonValidate, ValidationError as jsonValidationError, SchemaError as jsonSchemaError
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -470,10 +470,8 @@ def enterGuardTOTP():
         ))
         schema = current_app.config["CONSTANTS"].GUARDTOTPSCHEMA
         try:
-            validate(
-                instance=tokenInfo, schema=schema
-                )
-        except:
+            jsonValidate(instance=tokenInfo, schema=schema)
+        except (jsonValidationError, jsonSchemaError):
             write_log_entry(
                 logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_remote_address()} : JSON did not match the Schema", 
                 severity="WARNING"
