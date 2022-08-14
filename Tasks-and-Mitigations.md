@@ -100,13 +100,12 @@
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
   - Encrypted the Argon2 hash of the password as pepper
 
-- Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway
+- Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway by Wei Ren
 
-- Implemented JWT for authorising sensitive actions such as reset password
-  - Not following some of the JWT's RFC standards as to account for Google Cloud Platform KMS API as it is not possible to retrieve the private key from Google Cloud Platform KMS API
-  - Digitally signed using Elliptic Curve P-384 key SHA384 Digest 
-    - Using Google Cloud Platform KMS (Key Management Service) API
-    - 192 bits of security
+- Implemented tokens for authorising sensitive actions such as reset password using Python's secrets module
+  - The token is in plaintext in the database but encrypted in the URL
+    - Acts as a layer of security through obscurity
+  - This means that the attacker will have to find the key used in the encryption of the token ID in order to encrypt it and use it in the URL
 
 - Integrated Cloudflare to the custom domain, [coursefinity.social](https://coursefinity.social/)
   - Configured Cloudflare to redirect HTTP requests to use HTTPS
@@ -118,14 +117,11 @@
 - Enabled HSTS for the Flask web application to be hosted using [Flask-Talisman](https://pypi.org/project/flask-talisman/)
   - Flask-Talisman was originally created by Google but has not been maintained, hence, using a forked repository that is being maintained by [Winterbloom](https://github.com/wntrblm) and supported by other developers.
   - Since the web application will be hosted using [gunicorn](https://gunicorn.org/), I have configured the HTTP redirects to HTTPS and enabled HSTS to prevent MITM attacks.
-    - Although we have already enabled it on Cloudflare, it would be a layered security as we have the two default firebase domains provided by Google and the user can visit the website using those domain urls
-      - Firebase's default domains that cannot be disabled:
-        - [https://coursefinity-339412.firebaseapp.com/](https://coursefinity-339412.firebaseapp.com/)
-        - [https://coursefinity-339412.web.app/](https://coursefinity-339412.web.app/)
-    - Additionally, since we are using Google Cloud Run to host the container, we have to configure the HSTS on the Cloud Run docker image url which does not have HSTS enabled. 
-      - Hence, acting as a layered security instead of just relying on Cloudflare's HSTS configuration on our custom domain.
+    - Although we have already enabled it on Cloudflare, it would be a layered security as we are using Google Cloud Run to host the container which Google will provide a default URL.
+      - Hence, I have to configure the HSTS on the Cloud Run docker image URL which is not protected by Cloudflare as anyone can access it
+        - However, the user will be redirected (client-side) to our custom domain if the URL does not match our custom domain [coursefinity.social](https://coursefinity.social/)
       - URL example:
-        - https://(service-id)-(random-id)-(region).run.app
+        - [https://(service-id)-(random-id)-(region).run.app](https://coursefinity-o3rc5pl4fa-as.a.run.app)
 
 ---
 
@@ -135,7 +131,8 @@
 - IP address based authentication (Guard TOTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
   - Checks against known IP addresses of users against the login request
-  - If the IP address is not known, the user will be asked to authenticate himself/herself using a generated 6 digit TOTP code that is sent to the user's email
+  - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 15 characters code that is sent to the user's email
+    - The 15 characters code is 12 bytes and is generated from Google Cloud Platform KMS Cloud HSM
   - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
