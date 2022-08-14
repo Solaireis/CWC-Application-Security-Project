@@ -153,7 +153,7 @@ def resetPasswordRequest():
         userInfo = sql_operation(table="user", mode="find_user_for_reset_password", email=emailInput)
         if (userInfo is None):
             # if the user does not exist
-            sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
+            sleep(random.uniform(2, 4)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             flash("Reset password instructions has been sent to your email if it's in our database!", "Success")
             return redirect(url_for("guestBP.login"))
 
@@ -394,7 +394,7 @@ def login():
                 logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", 
                 severity="NOTICE"
             )
-            sleep(random.uniform(1, 3)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
+            sleep(random.uniform(2, 4)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
             return render_template("users/guest/login.html", form=loginForm)
     else:
         return render_template("users/guest/login.html", form = loginForm)
