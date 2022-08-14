@@ -1048,7 +1048,10 @@ def get_gmail_client() -> Resource:
 
     # get the token.json file from Google Cloud Secret Manager API
     GOOGLE_TOKEN = json.loads(SECRET_CONSTANTS.get_secret_payload(secretID=CONSTANTS.GOOGLE_TOKEN_NAME))
-
+    write_log_entry(
+        logMessage=f"Deserialisation : Get Gmail Client Token",
+        severity="NOTICE"
+    )
     creds = Credentials.from_authorized_user_info(GOOGLE_TOKEN, SCOPES)
 
     # Build the Gmail service from the credentials and return it
