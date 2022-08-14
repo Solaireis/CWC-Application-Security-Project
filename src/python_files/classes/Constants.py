@@ -45,7 +45,7 @@ class Constants:
     PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"p=\d+")
 
     # custom domain
-    CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if ( DEBUG_MODE) else "https://coursefinity.social"
+    CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if (DEBUG_MODE) else "https://coursefinity.social"
 
     # For RBAC checks (Follows the sequence of the MySQL columns in the database)
     BLUEPRINT_ENDPOINT_REGEX: re.Pattern[str] = re.compile(r"^[\w]+(.)[\w]+$")
@@ -58,12 +58,14 @@ class Constants:
     # This is just a general wide area redirection, DO NOT rely on this for good user experience, youll still require to fine tune the individual approutes to ensure safe redirection
     GUEST_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "userBP": "guestBP.login",
-        "teacherBP": "guestBP.login"
+        "teacherBP": "guestBP.login",
+        "loggedInBP": "guestBP.login"
 
     })
     USER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "teacherBP": "userBP.userProfile",
         "guestBP": "generalBP.home"
+        
         
     })
     TEACHER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {

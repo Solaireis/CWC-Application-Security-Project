@@ -1,8 +1,10 @@
 # import flask libraries (Third-party libraries)
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask import current_app
+
+# import local python libraries
+from .RoutesUtils import get_user_ip
 
 """
 For creating a SeaSurf object to customise the csrf protection without initialising the web app.
@@ -36,4 +38,4 @@ limiter.limit(limit_value=current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT)
 def routeFn():
     ...
 """
-limiter = Limiter(key_func=get_remote_address, default_limits=[current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT])
+limiter = Limiter(key_func=get_user_ip, default_limits=[current_app.config["CONSTANTS"].DEFAULT_REQUEST_LIMIT])
