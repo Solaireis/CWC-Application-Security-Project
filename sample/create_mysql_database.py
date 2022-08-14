@@ -200,7 +200,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     )""")
 
     cur.execute("""CREATE TABLE guard_token (
-        token CHAR(15), -- base85 encoded token instead of hex to decrease length of token
+        token CHAR(16), -- URL-safe base64 encoded token instead of hex to decrease length of token
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME,
         PRIMARY KEY (token, user_id),

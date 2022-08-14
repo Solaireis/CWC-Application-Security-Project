@@ -72,7 +72,7 @@ class twoFAForm(Form):
     twoFATOTP = StringField("Enter the 6 digit code:", [validators.Length(min=6, max=6), validators.DataRequired()])
 
 class guardTokenForm(Form):
-    guardToken = StringField("Enter the 15 characters code:", [validators.Length(min=15, max=15), validators.DataRequired()])
+    guardToken = StringField("Enter the 16 characters code:", [validators.Length(min=16, max=16), validators.DataRequired()])
 
 class CreateCourse(Form):
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])

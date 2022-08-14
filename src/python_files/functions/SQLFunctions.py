@@ -333,7 +333,9 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
     cur = connection.cursor()
     if (mode == "add_token"):
         # generate a 12 bytes token from GCP KMS Cloud HSM that is valid for 6 mins
-        generatedToken = b85encode(generate_secure_random_bytes(nBytes=12, generateFromHSM=True)).decode("utf-8")
+        generatedToken = urlsafe_b64encode(
+            generate_secure_random_bytes(nBytes=12, generateFromHSM=True)
+        ).decode("utf-8")
 
         expiryDate = ExpiryProperties(activeDuration=360).expiryDate.replace(tzinfo=None, microsecond=0)
         cur.execute(
