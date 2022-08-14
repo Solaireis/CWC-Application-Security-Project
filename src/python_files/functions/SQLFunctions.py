@@ -828,7 +828,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         userID = kwargs["userID"]
         cur.execute(
             "SELECT backup_codes_json FROM twofa_token WHERE user_id = %(userID)s",
-            {"userID": userID]}
+            {"userID": userID}
         )
         matched = cur.fetchone()
         if (matched is None):
