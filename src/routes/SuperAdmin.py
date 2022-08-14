@@ -137,7 +137,7 @@ def createAdmin():
         username = form.username.data
         email = form.email.data
         sql_operation(table="user", mode="create_admin", username=username, email=email)
-        flash(f"Admin created", "Role Updated!")
+        flash(f"Admin created!, {username}", "Admin Created!")
         return redirect(url_for("superAdminBP.adminManagement"))
 
     return render_template("users/superadmin/admin_create.html", form=form)
