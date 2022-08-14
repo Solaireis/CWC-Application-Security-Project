@@ -38,7 +38,7 @@ from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 
 # import Flask libraries
-from flask import url_for, flash, Markup, current_app
+from flask import url_for, flash, Markup
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
@@ -518,7 +518,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
     else:
         raise ValueError("severity must be a str or a valid severity!")
 
-    app_root = Path(current_app.root_path).parent
+    app_root = Path(CONSTANTS.ROOT_FOLDER_PATH).parent
     stackLevel = 0
     stackTraceback = []
 

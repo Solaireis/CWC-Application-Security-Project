@@ -267,14 +267,6 @@ def remove_last_accessed_more_than_10_days() -> None:
     """
     sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
 
-def re_encrypt_data_in_db() -> None:
-    """
-    Re-encrypt data in the database
-
-    >>> sql_operation(table="user", mode="re-encrypt_data_in_database")
-    """
-    sql_operation(table="user", mode="re-encrypt_data_in_database")
-
 def check_for_new_session_configs() -> None:
     """
     Check for any value updates in Google Cloud Platform Secret Manager API
@@ -331,11 +323,6 @@ if (__name__ == "__main__"):
     scheduler.add_job(
         remove_last_accessed_more_than_10_days,
         trigger="interval", hours=1, id="removeUnusedIPAddresses"
-    )
-    # Re-encrypt all the encrypted data in the database due to the monthly key rotations
-    scheduler.add_job(
-        re_encrypt_data_in_db,
-        trigger="cron", day="last", hour=3, minute=0, second=0, id="reEncryptDataInDatabase"
     )
     # For key rotation of the secret key for digitally signing the session cookie
     scheduler.add_job(
