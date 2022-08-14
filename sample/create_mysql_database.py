@@ -199,6 +199,15 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         FOREIGN KEY (token) REFERENCES expirable_token(token) ON DELETE CASCADE
     )""")
 
+    cur.execute("""CREATE TABLE guard_token (
+        token CHAR(15), -- base85 encoded token instead of hex to decrease length of token
+        user_id VARCHAR(32) NOT NULL,
+        expiry_date DATETIME,
+        PRIMARY KEY (token, user_id),
+        FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+    )""")
+    cur.execute("CREATE INDEX guard_token_expiry_date_idx ON guard_token(expiry_date)")
+
     cur.execute("""CREATE TABLE twofa_token (
         user_id VARCHAR(32) PRIMARY KEY,
         token VARBINARY(1024),
@@ -264,6 +273,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
             DELETE FROM twofa_token WHERE user_id = user_id_input;
             DELETE FROM login_attempts WHERE user_id = user_id_input;
             DELETE FROM session WHERE user_id = user_id_input;
+            DELETE FROM guard_token WHERE user_id = user_id_input;
             DELETE FROM acc_recovery_token WHERE user_id = user_id_input;
             DELETE FROM expirable_token WHERE user_id = user_id_input;
         END

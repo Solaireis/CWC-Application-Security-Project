@@ -4,7 +4,6 @@ Routes for users who are not logged in (Guests)
 # import third party libraries
 import requests as req, pyotp
 from argon2.exceptions import HashingError
-from jsonschema import validate as jsonValidate, ValidationError as jsonValidationError, SchemaError as jsonSchemaError
 
 # for Google OAuth 2.0 login (Third-party libraries)
 from cachecontrol import CacheControl
@@ -304,20 +303,19 @@ def login():
         except (UserIsUsingOauth2Error, EmailNotVerifiedError):
             flash("Please check your entries or check if you have verified your email and try again!", "Danger")
         except (LoginFromNewIpAddressError):
-            # sends an email with a generated TOTP code 
+            # sends an email with a generated 12 bytes token which is valid for 6 mins 
             # to authenticate the user if login was successful.
-            # 640 bits/128 characters in length (5 bits per base32 character).
-            # Chose the length of the code to be 824 characters
-            # as it must be a multiple of 8 for the length
-            # to avoid unexpected behaviour when verifying the TOTP
-            # https://github.com/pyauth/pyotp/issues/115
-            generatedTOTPSecretToken = pyotp.random_base32(length=128)
-            tokenInfo = {"token": generatedTOTPSecretToken, "interval": 480}
-            generatedTOTP = pyotp.TOTP(
-                generatedTOTPSecretToken, name=userInfo[2], issuer="CourseFinity", interval=tokenInfo["interval"]
-            ).now() # 8 mins
+            generatedSecretToken = sql_operation(table="guard_token", mode="add_token", userID=userInfo[0])
 
-            ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
+            try:
+                ipDetails = current_app.config["SECRET_CONSTANTS"].IPINFO_HANDLER.getDetails(requestIPAddress).all
+            except (req.exceptions.ConnectionError, req.exceptions.ReadTimeout) as e:
+                write_log_entry(
+                    logMessage=f"Error while getting IP details from ipinfo.io: {e}",
+                    severity="INFO"
+                )
+                ipDetails = {}
+
             # utc+8 time (SGT)
             currentDatetime = datetime.now().astimezone(tz=ZoneInfo("Asia/Singapore"))
             currentDatetime = currentDatetime.strftime("%d %B %Y, %H:%M:%S %z")
@@ -347,7 +345,7 @@ def login():
                 f"Your CourseFinity account, {emailInput}, was logged in to from a new IP address.", 
                 f"Time: {currentDatetime} (SGT)<br>Location*: {locationString}<br>New IP Address: {requestIPAddress}",
                 "* Location is approximate based on the login's IP address.",
-                f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 15 minutes!):<br><strong>{generatedTOTP}</strong>", 
+                f"Please enter the generated code below to authenticate yourself.<br>Generated Code (will expire in 8 minutes!):<br><strong>{generatedSecretToken}</strong>", 
                 f"If this was not you, we recommend that you <strong>change your password immediately</strong> by clicking the link below.<br>Change password:<br>{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}"
             )
             send_email(to=emailInput, subject="Unfamiliar Login Attempt", body="<br><br>".join(messagePartList))
@@ -360,11 +358,8 @@ def login():
                 session["password_compromised"] = False
             else:
                 session["password_compromised"] = passwordCompromised
+
             session["temp_uid"] = userInfo[0]
-            session["username"] = userInfo[2]
-            session["token"] = symmetric_encrypt(
-                plaintext=json.dumps(tokenInfo), keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
-            )
             flash("An email has been sent to you with your special access code!", "Success")
             return redirect(url_for("guestBP.enterGuardTOTP"))
 
@@ -425,10 +420,8 @@ def enterGuardTOTP():
     """
     if (
         "ip_details" not in session or
-        "username" not in session or
         "password_compromised" not in session or 
-        "temp_uid" not in session or
-        "token" not in session
+        "temp_uid" not in session
     ):
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -438,62 +431,45 @@ def enterGuardTOTP():
         session.clear()
         return redirect(url_for("guestBP.login"))
 
-    guardAuthForm = twoFAForm(request.form)
-    htmlTitle = "Verify Login"
-    formHeader = "Verify That It's You!"
-    formBody = "You are seeing this as our system have detected that you are logging in from a new IP address. Please enter the generated code that was sent to your email below to authenticate yourself."
+    guardAuthForm = guardTokenForm(request.form)
     if (request.method == "GET"):
-        return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+        return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
     if (request.method == "POST" and guardAuthForm.validate()):
         recaptchaToken = request.form.get("g-recaptcha-response")
         if (recaptchaToken is None):
-            flash("Please verify that you are not a bot.")
-            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
+            return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
         try:
-            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_two_fA")
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_guard_token")
         except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
-            flash("Verification error with reCAPTCHA, please try again!")
-            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
+            return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
         if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
             # if the score is not within the acceptable threshold
             # then the user is likely a bot
             # hence, we will flash an error message
-            flash("Verification error with reCAPTCHA, please try again!")
-            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+            flash("Verification error with reCAPTCHA, please try again!", "Danger")
+            return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
-        totpInput = guardAuthForm.twoFATOTP.data
-        tokenInfo = json.loads(symmetric_decrypt(
-            ciphertext=session["token"], keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
-        ))
-        schema = current_app.config["CONSTANTS"].GUARDTOTPSCHEMA
-        try:
-            jsonValidate(instance=tokenInfo, schema=schema)
-        except (jsonValidationError, jsonSchemaError):
-            write_log_entry(
-                logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_remote_address()} : JSON did not match the Schema", 
-                severity="WARNING"
-            )
-            flash("Please check your entries and try again!", "Danger")
-            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
-
-        if (not pyotp.TOTP(tokenInfo["token"], name=session["username"], issuer="CourseFinity", interval=tokenInfo["interval"]).verify(totpInput)):
+        userID = session["temp_uid"]
+        tokenInput = guardAuthForm.guardToken.data
+        if (not sql_operation(
+            table="guard_token", mode="verify_token", token=tokenInput, ipAddress=get_remote_address(), userID=userID)
+        ):
             write_log_entry(
                 logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_remote_address()}", 
                 severity="NOTICE"
             )
             flash("Please check your entries and try again!", "Danger")
-            return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+            return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
-        userID = session["temp_uid"]
         passwordCompromised = session["password_compromised"]
         session.clear()
 
-        sql_operation(table="user_ip_addresses", mode="add_ip_address", userID=userID, ipAddress=get_remote_address())
         session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
-
         userInfo = get_image_path(userID, returnUserInfo=True)
 
         # check if password has been compromised
@@ -505,7 +481,7 @@ def enterGuardTOTP():
         return redirect(url_for("generalBP.home"))
 
     # post request with invalid form values
-    return render_template("users/guest/enter_totp.html", title=htmlTitle, form=guardAuthForm, formHeader=formHeader, formBody=formBody)
+    return render_template("users/guest/guard_token.html", form=guardAuthForm)
 
 @guestBP.route("/login-google")
 def loginViaGoogle():
@@ -752,14 +728,29 @@ def enter2faTOTP():
         session.clear()
         return redirect(url_for("guestBP.login"))
 
-    htmlTitle = "Enter 2FA TOTP"
-    formHeader = "Enter your 2FA TOTP"
-    formBody = "You are seeing this as you have enabled 2FA on your account. Please enter the 6 digit code on the Google Authenticator app installed on your phone to authenticate yourself."
     twoFactorAuthForm = twoFAForm(request.form)
     if (request.method == "GET"):
-        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, formHeader=formHeader, formBody=formBody, title=htmlTitle)
+        return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)
 
     if (request.method == "POST" and twoFactorAuthForm.validate()):
+        recaptchaToken = request.form.get("g-recaptcha-response")
+        if (recaptchaToken is None):
+            flash("Verification error with reCAPTCHA, please try again!")
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)
+
+        try:
+            recaptchaResponse = create_assessment(recaptchaToken=recaptchaToken, recaptchaAction="enter_two_fA")
+        except (InvalidRecaptchaTokenError, InvalidRecaptchaActionError):
+            flash("Verification error with reCAPTCHA, please try again!")
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)
+
+        if (not score_within_acceptable_threshold(recaptchaResponse.risk_analysis.score, threshold=0.7)):
+            # if the score is not within the acceptable threshold
+            # then the user is likely a bot
+            # hence, we will flash an error message
+            flash("Verification error with reCAPTCHA, please try again!")
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)
+
         twoFAInput = twoFactorAuthForm.twoFATOTP.data
         userID = session["temp_uid"]
         try:
@@ -781,8 +772,8 @@ def enter2faTOTP():
             session["isTeacher"] = True if (userInfo.role == "Teacher") else False
             return redirect(url_for("generalBP.home"))
         else:
-            flash("Invalid 2FA code, please try again!", "Danger")
-            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader, formBody=formBody)
+            flash("Invalid 2FA code, please try again!")
+            return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)
 
     # post request but form inputs are not valid
-    return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm, title=htmlTitle, formHeader=formHeader, formBody=formBody)
+    return render_template("users/guest/enter_totp.html", form=twoFactorAuthForm)

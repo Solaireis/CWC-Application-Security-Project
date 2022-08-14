@@ -31,7 +31,6 @@ from google.cloud import recaptchaenterprise_v1
 # For Google Cloud Storage API (Third-party libraries)
 from google.cloud import storage
 
-
 # TODO: Change the debug mode below accordingly
 DEBUG_MODE = True
 
@@ -263,20 +262,6 @@ class Constants:
         "Other_Academics": "Academics - Other Academics"
     })
 
-    GUARDTOTPSCHEMA: dict[str, Union[str, int]] = field(default_factory=lambda: {
-        "type": "object",
-        "properties": {
-        "token": {
-            "type": "string",
-            "minLength": 1
-            },
-        "interval": {
-            "type": "number",
-            "minimum": 1
-            }
-        }   
-    })
-
     def __post_init__(self) -> None:
         """Called after the dataclass is initialised."""
         # Create the config files folder
@@ -340,7 +325,8 @@ class SecretConstants:
 
         # For ipinfo.io to get details of a IP address
         self.__IPINFO_HANDLER = ipinfo.getHandler(
-            access_token=self.get_secret_payload(secretID="ipinfo-access-token")
+            access_token=self.get_secret_payload(secretID="ipinfo-access-token"),
+            timeout=5
         )
 
         # For Stripe API

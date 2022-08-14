@@ -254,6 +254,8 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
                 returnValue = review_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "expirable_token"):
                 returnValue = expirable_token_sql_operation(connection=con, mode=mode, **kwargs)
+            elif (table == "guard_token"):
+                returnValue = guard_token_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "role"):
                 returnValue = role_sql_operation(connection=con, mode=mode, **kwargs)
             elif (table == "acc_recovery_token"):
@@ -314,6 +316,49 @@ def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
             severity="NOTICE"
         )
         return None
+
+def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, bool, None]:
+    if (mode is None):
+        raise ValueError("You must specify a mode in the guard_token_sql_operation function!")
+
+    cur = connection.cursor()
+    if (mode == "add_token"):
+        # generate a 12 bytes token from GCP KMS Cloud HSM that is valid for 6 mins
+        generatedToken = b85encode(generate_secure_random_bytes(nBytes=12, generateFromHSM=True)).decode("utf-8")
+
+        expiryDate = ExpiryProperties(activeDuration=360).expiryDate.replace(tzinfo=None, microsecond=0)
+        cur.execute(
+            "INSERT INTO guard_token (token, user_id, expiry_date) VALUES (%(token)s, %(userID)s, %(expiryDate)s)",
+            {"token": generatedToken, "userID": kwargs["userID"], "expiryDate": expiryDate}
+        )
+        connection.commit()
+        return generatedToken
+
+    elif (mode == "verify_token"):
+        tokenInput = kwargs["token"]
+        userID = kwargs["userID"]
+        cur.execute(
+            "SELECT * FROM guard_token WHERE token = %(token)s AND user_id = %(userID)s AND expiry_date >= SGT_NOW()",
+            {"token": tokenInput, "userID": userID}
+        )
+        isValid = (cur.fetchone() is not None)
+        if (isValid):
+            cur.execute(
+                "DELETE FROM guard_token WHERE token = %(token)s AND user_id = %(userID)s",
+                {"token": tokenInput, "userID": userID}
+            )
+            connection.commit()
+            user_ip_addresses_sql_operation(
+                connection=connection, mode="add_ip_address", userID=userID, ipAddress=kwargs["ipAddress"]
+            )
+        return isValid
+
+    elif (mode == "remove_expired_tokens"):
+        cur.execute("DELETE FROM guard_token WHERE expiry_date < SGT_NOW()")
+        connection.commit()
+
+    else:
+        raise ValueError("Invalid mode specified in guard_token_sql_operation function!")
 
 def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, bytes, bool, None]:
     if (mode is None):
@@ -599,13 +644,24 @@ def user_ip_addresses_sql_operation(connection:MySQLConnection=None, mode:str=No
             isIpv4 = False
             ipAddress = inet_pton(AF_INET6, ipAddress).hex()
 
-        cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "isIpv4":isIpv4})
+        cur.execute("SELECT * FROM user_ip_addresses WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s", {"userID": userID, "ipAddress": ipAddress})
+        matched = cur.fetchone()
+
+        if (matched is not None):
+            # If the user IP address is already in the database, update the last_accessed datetime
+            cur.execute("UPDATE user_ip_addresses SET last_accessed = SGT_NOW() WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s", {"userID": userID, "ipAddress": ipAddress})
+        else:
+            # If the user IP address is not in the database, add it
+            cur.execute("INSERT INTO user_ip_addresses (user_id, ip_address, last_accessed, is_ipv4) VALUES (%(userID)s, %(ipAddress)s, SGT_NOW(), %(isIpv4)s)", {"userID":userID, "ipAddress":ipAddress, "isIpv4":isIpv4})
         connection.commit()
 
     elif (mode == "get_ip_addresses"):
         userID = kwargs["userID"]
 
-        cur.execute("SELECT ip_address FROM user_ip_addresses WHERE user_id = %(userID)s", {"userID":userID})
+        cur.execute(
+            "SELECT ip_address FROM user_ip_addresses WHERE user_id = %(userID)s AND DATEDIFF(SGT_NOW(), last_accessed) <= 10",
+            {"userID":userID}
+        )
         returnValue = cur.fetchall()
         ipAddressList = [ipAddress[0] for ipAddress in returnValue]
         return ipAddressList
@@ -1108,6 +1164,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 # check if the login request is from the same IP address as the one that made the request
                 if (requestIPAddressHex not in ipAddressList):
                     newIpAddress = True
+                else:
+                    # Update last accessed upon successful login
+                    cur.execute("UPDATE user_ip_addresses SET last_accessed = SGT_NOW() WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s", {"userID": userID, "ipAddress": requestIPAddressHex})
+                    connection.commit()
 
                 # convert the role id to a readable format
                 cur.execute("CALL get_role_name(%(roleID)s)", {"roleID":roleID})

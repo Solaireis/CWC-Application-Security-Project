@@ -228,44 +228,46 @@ with app.app_context():
 # next run at: 2022-07-11 23:57:00 +08)" (scheduled at 2022-07-10 23:57:00+08:00)
 
 def remove_unverified_users_for_more_than_30_days() -> None:
-    """
-    Remove unverified users from the database
+    """Remove unverified users from the database
 
     >>> sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
     """
     sql_operation(table="user", mode="remove_unverified_users_more_than_30_days")
 
 def remove_expired_tokens() -> None:
-    """
-    Remove expired tokens from the database
+    """Remove expired tokens from the database
 
     >>> sql_operation(table="expirable_token", mode="delete_all_expired_tokens")
     """
     sql_operation(table="expirable_token", mode="delete_all_expired_tokens")
 
 def remove_expired_sessions() -> None:
-    """
-    Remove expired sessions from the database
+    """Remove expired sessions from the database
 
     >>> sql_operation(table="session", mode="delete_expired_sessions")
     """
     sql_operation(table="session", mode="delete_expired_sessions")
 
 def reset_expired_login_attempts() -> None:
-    """
-    Reset expired login attempts for users
+    """Reset expired login attempts for users
 
     >>> sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
     """
     sql_operation(table="login_attempts", mode="reset_attempts_past_reset_date")
 
 def remove_last_accessed_more_than_10_days() -> None:
-    """
-    Remove last accessed more than 10 days from the database
+    """Remove last accessed more than 10 days from the database
 
     >>> sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
     """
     sql_operation(table="user_ip_addresses", mode="remove_last_accessed_more_than_10_days")
+
+def remove_expired_guard_tokens() -> None:
+    """Remove expired guard tokens from the database
+
+    >>> sql_operation(table="guard_token", mode="remove_expired_tokens")
+    """
+    sql_operation(table="guard_token", mode="remove_expired_tokens")
 
 def check_for_new_session_configs() -> None:
     """
@@ -294,6 +296,11 @@ if (__name__ == "__main__"):
     scheduler = BackgroundScheduler() # Uses threading to run the task in a separate thread
     scheduler.configure(timezone="Asia/Singapore") # configure timezone to always follow Singapore's timezone
 
+    # Free up the database of expired guard tokens
+    scheduler.add_job(
+        remove_expired_guard_tokens,
+        trigger="cron", hour=23, minute=54, second=0, id="deleteExpiredGuardTokens"
+    )
     # Free up database of videos that never got successfully uploaded
     scheduler.add_job(
         delete_unuploaded_video,

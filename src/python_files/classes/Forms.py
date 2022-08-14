@@ -69,7 +69,10 @@ class AdminRecoverForm(Form):
     email = EmailField("Enter user's new email:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
 
 class twoFAForm(Form):
-    twoFATOTP = StringField("Enter the 6 Digit Code:", [validators.Length(min=6, max=6), validators.DataRequired()])
+    twoFATOTP = StringField("Enter the 6 digit code:", [validators.Length(min=6, max=6), validators.DataRequired()])
+
+class guardTokenForm(Form):
+    guardToken = StringField("Enter the 15 characters code:", [validators.Length(min=15, max=15), validators.DataRequired()])
 
 class CreateCourse(Form):
     courseTitle = StringField("Course Title: ", [validators.DataRequired(), validators.Length(min=3, max=100)])
@@ -87,7 +90,6 @@ class CreateCourseEdit(Form):
 
 class CreateReview(Form):
     reviewDescription = TextAreaField("Description: ", [validators.DataRequired(), validators.Length(min=1, max=5000)])
-
 
 class UpdateRoles(Form):
     roleName = StringField("Role Name: ", [validators.DataRequired(), validators.Length(min=3, max=100)])

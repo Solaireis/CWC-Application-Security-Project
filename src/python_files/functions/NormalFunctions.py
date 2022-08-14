@@ -1102,7 +1102,7 @@ def pwd_is_strong(password:str, strict:bool=False) -> bool:
 
     return (strength >= 3)
 
-def pwd_has_been_pwned(password:str) -> bool:
+def pwd_has_been_pwned(password:str) -> Union[bool, tuple]:
     """
     Checks if the password is in the haveibeenpwned database.
     If it is found, it means that the password is weak and has been
@@ -1113,6 +1113,7 @@ def pwd_has_been_pwned(password:str) -> bool:
 
     Returns:
     - True if the password is in the database, False otherwise.
+    - In the event that the API is down, it will return a tuple.
     """
     # hash the password (plaintext) using sha1 to check
     # against haveibeenpwned's database
