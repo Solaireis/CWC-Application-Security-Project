@@ -36,33 +36,18 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="updateRoleLabel{{ role.roleName }}">Update role</h5>
+                        <h5 class="modal-title" id="updateRoleLabel{{ role.roleName }}">Update Role Permissions</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <h5>
-                            Update the roles permission
-                            
-                        </h5>
-                        <div class="text-warning">
-                            <h6>
-                                NOTE:
-                            </h6>
+                        <div class="text-danger">
+                            <h6>NOTE:</h6>
                             <ul>
-                                <li>
-                                    Error Routes
-                                </li>
-                                <li>
-                                    Admin Routes
-                                </li>
-                                <li>
-                                    Super Admin Routes
-                                </li>
+                                <li>Error Routes</li>
+                                <li>Admin Routes</li>
+                                <li>Super Admin Routes</li>
                             </ul>
-                            
-                            <h6>
-                                Are the routes which cannot be changed in the admin console
-                            </h6>
+                            <h6>Are the routes which cannot be changed in the admin console</h6>
                         </div>
                             {% if role.guestBP == 1 %} 
                                 <div class="form-check form-switch">
@@ -76,7 +61,6 @@
                                 </div>
                             {% endif %}
 
-
                             {% if role.generalBP == 1 %} 
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="flexSwitchCheck2" checked name="generalBP1">
@@ -88,8 +72,6 @@
                                     <label class="form-check-label" for="flexSwitchCheck2">General BluePrints Access Control</label>
                                 </div>
                             {% endif %}
-
-
 
                             {% if role.loggedInBP == 1 %} 
                                 <div class="form-check form-switch">
@@ -126,11 +108,10 @@
                                     <label class="form-check-label" for="flexSwitchCheck7">User BluePrints Access Control</label>
                                 </div>
                             {% endif %}
-                            
-                                
-
-                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Update</button>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success">Update</button>
                         </div>
                     </div>
                 </div>

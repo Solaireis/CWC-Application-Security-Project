@@ -107,8 +107,14 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos.
                                         # Either remove the previously uploaded videos or
                                         # subscribe to our premium plans to unlock the video limit.'}
-        print(data.get("message"))
-        #TODO: Log error
+        print(data["message"])
+        write_log_entry(
+            logMessage={
+                "VdoCipher Credentials Error": data["message"],
+                "userID": teacherID,
+            }, 
+            severity="ERROR"
+        )
         return None
 
     clientPayload = data["clientPayload"]
