@@ -136,7 +136,6 @@
 							<li><a class="dropdown-item" href="{{ url_for('superAdminBP.createAdmin') }}"><i class="fas fa-chalkboard-teacher"></i> Create new Admins</a></li>
 						{% else %}
 							<li><a class="dropdown-item" href="{{ url_for('adminBP.userManagement') }}"><i class="fas fa-chalkboard-teacher"></i> User Management</a></li>
-							<li><a class="dropdown-item" href="/support_ticket_management/1"><i class="fas fa-ticket-alt"></i> Support Tickets</a></li>
 						{% endif %}
 						<li>
 							<a class="dropdown-item text-danger" href="{{ url_for('loggedInBP.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
