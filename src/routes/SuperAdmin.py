@@ -34,7 +34,7 @@ def adminManagement():
 
         userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
         if (userInfo is None):
-            flash("No user account was found with the provided ID.", "No Such User!")
+            flash("No Admin account was found with the provided ID.", "No Such Admin!")
             return redirect(session["relative_url"])
 
         if (userInfo.role == "SuperAdmin"):
@@ -43,7 +43,7 @@ def adminManagement():
 
         elif (formType == "deleteUser"):
             sql_operation(table="user", mode="delete_user", userID=userID)
-            flash(f"The user, {userID}, has been deleted.", "User Deleted!")
+            flash(f"The Admin, {userID}, has been deleted.", "Admin Deleted!")
 
         elif (formType == "changeUsername"):
             newUsername = request.form.get("newUsername", default=None, type=str)
@@ -52,21 +52,17 @@ def adminManagement():
             else:
                 try:
                     sql_operation(table="user", mode="change_username", userID=userID, username=newUsername)
-                    flash(f"The user, {userID}, has its username changed to {newUsername}.", "User's Account Details Updated!")
+                    flash(f"The Admin, {userID}, has its username changed to {newUsername}.", "Admin's Account Details Updated!")
                 except (ReusedUsernameError):
-                    flash("The new username entered is already in use...", "Error changing user's username!")
-
-        elif (formType == "resetProfileImage" and userInfo.hasProfilePic and "https://storage.googleapis.com/coursefinity" in userInfo.profileImage):
-            sql_operation(table="user", mode="delete_profile_picture", userID=userID)
-            flash(f"The user, {userID}, has its profile picture reset.", "User's Account Details Updated!")
+                    flash("The new username entered is already in use...", "Error changing Admin's username!")
 
         elif (formType == "banUser" and userInfo.status != "Banned"):
             sql_operation(table="user", mode="ban_user", userID=userID)
-            flash(f"The user, {userID}, has been banned.", "User's Account Details Updated!")
+            flash(f"The Admin, {userID}, has been banned.", "Admin's Account Details Updated!")
 
         elif (formType == "unbanUser" and userInfo.status == "Banned"):
             sql_operation(table="user", mode="unban_user", userID=userID)
-            flash(f"The user, {userID}, has been unbanned.", "User's Account Details Updated!")
+            flash(f"The Admin, {userID}, has been unbanned.", "User's Account Details Updated!")
 
         else:
             flash("An error occurred while processing your request.", "Sorry!")

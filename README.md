@@ -12,6 +12,8 @@ CourseFinity Web Application using Flask
 
 This project consists of us making a SECURE web application using Flask as its framework.
 
+This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.social](https://coursefinity.social/)
+
 **Group Members:**
 >1. Eden (Group Leader)
 >2. Jason
