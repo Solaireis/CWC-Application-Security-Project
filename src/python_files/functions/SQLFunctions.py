@@ -107,8 +107,14 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
     if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos.
                                         # Either remove the previously uploaded videos or
                                         # subscribe to our premium plans to unlock the video limit.'}
-        print(data.get("message"))
-        #TODO: Log error
+        print(data["message"])
+        write_log_entry(
+            logMessage={
+                "VdoCipher Credentials Error": data["message"],
+                "userID": teacherID,
+            }, 
+            severity="ERROR"
+        )
         return None
 
     clientPayload = data["clientPayload"]
@@ -340,6 +346,10 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         cur.execute(
             "SELECT * FROM guard_token WHERE token = %(token)s AND user_id = %(userID)s AND expiry_date >= SGT_NOW()",
             {"token": tokenInput, "userID": userID}
+        )
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {tokenInput}",
+            severity="NOTICE"
         )
         isValid = (cur.fetchone() is not None)
         if (isValid):
@@ -1791,23 +1801,39 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         courseTitle = kwargs["courseTitle"]
         cur.execute("UPDATE course SET course_name=%(courseTitle)s WHERE course_id=%(courseID)s", {"courseTitle":courseTitle, "courseID":courseID})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {courseTitle}",
+            severity="NOTICE"
+        )
         connection.commit()
 
     elif (mode == "update_course_description"):
         courseID = kwargs["courseID"]
         courseDescription = kwargs["courseDescription"]
         cur.execute("UPDATE course SET course_description=%(courseDescription)s WHERE course_id=%(courseID)s", {"courseDescription":courseDescription, "courseID":courseID})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {courseDescription}",
+            severity="NOTICE"
+        )
         connection.commit()
 
     elif (mode == "update_course_category"):
         courseID = kwargs["courseID"]
         courseCategory = kwargs["courseCategory"]
         cur.execute("UPDATE course SET course_category=%(courseCategory)s WHERE course_id=%(courseID)s", {"courseCategory":courseCategory, "courseID":courseID})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {courseCategory}",
+            severity="NOTICE"
+        )
         connection.commit()
 
     elif (mode == "update_course_price"):
         courseID = kwargs["courseID"]
         coursePrice = kwargs.get("coursePrice")
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {coursePrice}",
+            severity="NOTICE"
+        )
         cur.execute("UPDATE course SET course_price=%(coursePrice)s WHERE course_id=%(courseID)s", {"coursePrice":coursePrice, "courseID":courseID})
         connection.commit()
 
@@ -1826,12 +1852,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
                 pass
 
         cur.execute("UPDATE course SET course_image_path=%(courseImagePath)s WHERE course_id=%(courseID)s", {"courseImagePath":courseImagePath, "courseID":courseID})
-        connection.commit()
-
-    elif (mode == "update_course_video"):
-        courseID = kwargs["courseID"]
-        videoPath = kwargs["videoPath"]
-        cur.execute("UPDATE course SET video_path=%(videoPath)s WHERE course_id=%(courseID)s", {"videoPath":videoPath, "courseID":courseID})
         connection.commit()
 
     elif (mode == "delete_from_draft"):
@@ -2088,8 +2108,16 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
 
         resultsList = []
         if (mode == "search"):
+            write_log_entry(
+                logMessage=f"Input for {mode} SQL Command : {searchInput}",
+                severity="NOTICE"
+            )
             cur.execute("CALL search_course_paginate(%(pageNum)s, %(searchInput)s)", {"pageNum":pageNum,"searchInput":searchInput})
         else:
+            write_log_entry(
+                logMessage=f"Input for {mode} SQL Command : {courseTag}",
+                severity="NOTICE"
+            )
             cur.execute("CALL explore_course_paginate(%(pageNum)s, %(courseTag)s)", {"pageNum":pageNum,"courseTag":courseTag})
 
         foundResults = cur.fetchall()
@@ -2137,6 +2165,10 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseRating = kwargs["courseRating"]
         courseReview = kwargs["courseReview"]
         cur.execute("INSERT INTO review (user_id, course_id, course_rating, course_review, review_date) VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command :{courseReview}",
+            severity="NOTICE"
+        )
         connection.commit()
 
     elif mode == "retrieve_all":

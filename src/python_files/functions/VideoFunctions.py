@@ -43,10 +43,15 @@ def get_video(videoID:str) -> Optional[dict]:
 
     # Course cannot be acquired for reasons
     if data.get("message") is not None:
-    # E.g. # {'message': 'You have reached the trial limit of 4 videos. Either remove the previously uploaded
-    # videos or subscribe to our premium plans to unlock the video limit.'}
+        # E.g. {'message': 'Video not found'}
+        write_log_entry(
+            logMessage={
+                "VdoCipher Video Check Error": data["message"],
+                "videoID": videoID
+                },
+            severity="ERROR"
+        )
         print(data.get("message"))
-        #TODO: Log error
         return None
 
     return data
@@ -68,6 +73,18 @@ def get_video_thumbnail(videoID:str) -> tuple:
             "Accept": "application/json"
         }
     )
+
+    if data.get("message") is not None:
+    # E.g. {'message': 'Video not found'}
+        write_log_entry(
+            logMessage={
+                "VdoCipher Get Thumbnail Error": data["message"],
+                "videoID": videoID
+                },
+            severity="WARNING"
+        )
+        print(data.get("message"))
+        return None
     return tuple(thumbnail.get("url") for thumbnail in json.loads(data.text).get("posters"))
 
 def check_video(videoID:str) -> Optional[dict]:
@@ -101,8 +118,14 @@ def check_video(videoID:str) -> Optional[dict]:
 
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
+        write_log_entry(
+            logMessage={
+                "VdoCipher Video Check Error": data["message"],
+                "videoID": videoID
+                },
+            severity="WARNING"
+        )
         print(data.get("message"))
-        #TODO: Log error
         return None
     return data #.get("status")
 
@@ -183,8 +206,11 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
         # E.g.
         # {"message":"Bad formatting of Authorization header"}
         # {"message":"Internal server error: jtngxq0pptokpbxaa4hgi"}
+        write_log_entry(
+            logMessage={"VdoCipher Thumbnail Update Error": data["message"]},
+            severity="ERROR"
+        )
         print(data.get("message"))
-        #TODO: Log error
         return None
 
     return data

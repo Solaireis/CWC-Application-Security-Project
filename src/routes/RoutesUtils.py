@@ -19,7 +19,7 @@ def update_secret_key() -> None:
     Used for setting and rotating the secret key for the session cookie.
     """
     # Generate a new key using the secrets module from Python standard library
-    # as recommended by OWASP to ensure higher entropy: 
+    # as recommended by OWASP to ensure higher entropy:
     # https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
     current_app.config["SECRET_KEY"] = generate_secure_random_bytes(
         nBytes=current_app.config["CONSTANTS"].SESSION_NUM_OF_BYTES, generateFromHSM=True
@@ -62,7 +62,7 @@ def before_request() -> None:
             hasBlueprint = True
 
     if (isNotStaticEndpoint and not hasBlueprint):
-        # Since all routes except static endpoint have a blueprint, 
+        # Since all routes except static endpoint have a blueprint,
         # abort(404) if the request does not have a blueprint
         abort(404)
 
@@ -93,13 +93,17 @@ def before_request() -> None:
     # Remove 2FA session keys if the user is no longer trying to login
     if (
         "ip_details" in session or
-        "password_compromised" in session or 
-        "temp_uid" in session
+        "password_compromised" in session or
+        "temp_uid" in session or
+        "token" in session or
+        "courseAddedStatus" in session
     ):
         if (isNotStaticEndpoint and requestRoute not in ("login", "enter2faTOTP", "enterGuardTOTP")):
             session.pop("ip_details", None)
             session.pop("password_compromised", None)
             session.pop("temp_uid", None)
+            session.pop("token", None)
+            session.pop("courseAddedStatus", None)
 
     # check if historyCurPage key is in session
     # Remove if the user is not on the any of the purchase history related pages anymore
@@ -115,13 +119,13 @@ def before_request() -> None:
             sessionID = session.get("sid")
 
             if (
-                sessionID is not None and 
+                sessionID is not None and
                 sql_operation(
                     table="session",
-                    mode="check_if_valid", 
-                    sessionID=sessionID, 
-                    userID=userID, 
-                    userIP=get_remote_address(), 
+                    mode="check_if_valid",
+                    sessionID=sessionID,
+                    userID=userID,
+                    userIP=get_remote_address(),
                     userAgent=request.user_agent.string
                 )
             ):
