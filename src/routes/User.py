@@ -3,7 +3,6 @@ Routes for logged in normal users (Students or Teachers)
 """
 # import third party libraries
 from werkzeug.utils import secure_filename
-from flask_limiter.util import get_remote_address
 import markdown, pyotp, qrcode
 from argon2.exceptions import HashingError
 
@@ -109,7 +108,7 @@ def twoFactorAuthSetup():
             session.pop("2fa_token", None)
             flash("Invalid 2FA setup key, please try again!", "Danger")
             write_log_entry(
-                logMessage=f"User: {userID}, IP address: {get_remote_address()}, 2FA token matches session token but is not base32.",
+                logMessage=f"User: {userID}, IP address: {get_user_ip()}, 2FA token matches session token but is not base32.",
                 severity="ALERT"
             )
             return redirect(url_for("userBP.twoFactorAuthSetup"))

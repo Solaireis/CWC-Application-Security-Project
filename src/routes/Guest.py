@@ -13,7 +13,6 @@ from google.auth.exceptions import GoogleAuthError
 
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, redirect, url_for, session, flash, abort, Blueprint, current_app
-from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import *
@@ -272,7 +271,7 @@ def login():
             flash("Verification error with reCAPTCHA, please try again!", "Danger")
             return render_template("users/guest/login.html", form=loginForm)
 
-        requestIPAddress = get_remote_address()
+        requestIPAddress = get_user_ip()
         emailInput = loginForm.email.data
         passwordInput = loginForm.password.data
         userInfo = successfulLogin = isTeacher = userHasTwoFA = False
@@ -375,7 +374,7 @@ def login():
                 passwordCompromised = False
 
         if (successfulLogin and not userHasTwoFA):
-            session["sid"] = add_session(userInfo[0], userIP=get_remote_address(), userAgent=request.user_agent.string)
+            session["sid"] = add_session(userInfo[0], userIP=get_user_ip(), userAgent=request.user_agent.string)
             session["user"] = userInfo[0]
             session["isTeacher"] = isTeacher
 
@@ -391,7 +390,7 @@ def login():
             return redirect(url_for("guestBP.enter2faTOTP"))
         else:
             write_log_entry(
-                logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_remote_address()}", 
+                logMessage=f"Failed login attempt for user: \"{emailInput}\", with the following IP address: {get_user_ip()}", 
                 severity="NOTICE"
             )
             sleep(random.uniform(2, 4)) # Artificial delay to prevent attacks such as enumeration attacks, etc.
@@ -426,7 +425,7 @@ def enterGuardTOTP():
         session.clear()
         return redirect(url_for("guestBP.login"))
 
-    if (session["ip_details"]["ip"] != get_remote_address()):
+    if (session["ip_details"]["ip"] != get_user_ip()):
         flash("IP address does not match login request, please try again!", "Danger")
         session.clear()
         return redirect(url_for("guestBP.login"))
@@ -457,10 +456,10 @@ def enterGuardTOTP():
         userID = session["temp_uid"]
         tokenInput = guardAuthForm.guardToken.data
         if (not sql_operation(
-            table="guard_token", mode="verify_token", token=tokenInput, ipAddress=get_remote_address(), userID=userID)
+            table="guard_token", mode="verify_token", token=tokenInput, ipAddress=get_user_ip(), userID=userID)
         ):
             write_log_entry(
-                logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_remote_address()}", 
+                logMessage=f"Failed guard 2FA login verification attempt for user: \"{session['temp_uid']}\", with the following IP address: {get_user_ip()}", 
                 severity="NOTICE"
             )
             flash("Please check your entries and try again!", "Danger")
@@ -469,7 +468,7 @@ def enterGuardTOTP():
         passwordCompromised = session["password_compromised"]
         session.clear()
 
-        session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
+        session["sid"] = add_session(userID, userIP=get_user_ip(), userAgent=request.user_agent.string)
         userInfo = get_image_path(userID, returnUserInfo=True)
 
         # check if password has been compromised
@@ -515,7 +514,7 @@ def loginCallback():
             logMessage={
                 "Google OAuth2 login error": str(e),
                 "Google OAuth2 request url": request.url,
-                "User's IP address": get_remote_address()
+                "User's IP address": get_user_ip()
             },
             severity="NOTICE"
         )
@@ -582,7 +581,7 @@ def loginCallback():
         session["user"] = userID
         session["isTeacher"] = True if (returnedRole == "Teacher") else False
 
-    session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
+    session["sid"] = add_session(userID, userIP=get_user_ip(), userAgent=request.user_agent.string)
     return redirect(url_for("generalBP.home"))
 
 @guestBP.route("/signup", methods=["GET", "POST"])
@@ -653,8 +652,7 @@ def signup():
             flash("Sorry! Something went wrong, please try again!")
             return render_template("users/guest/signup.html", form=signupForm)
 
-        ipAddress = get_remote_address()
-
+        ipAddress = get_user_ip()
         returnedVal = sql_operation(table="user", mode="signup", email=emailInput, username=usernameInput, password=passwordInput, ipAddress=ipAddress)
 
         if (isinstance(returnedVal, tuple)):
@@ -761,7 +759,7 @@ def enter2faTOTP():
 
         if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
             session["user"] = userID
-            session["sid"] = add_session(userID, userIP=get_remote_address(), userAgent=request.user_agent.string)
+            session["sid"] = add_session(userID, userIP=get_user_ip(), userAgent=request.user_agent.string)
             userInfo = get_image_path(userID, returnUserInfo=True)
 
             # check if password has been compromised

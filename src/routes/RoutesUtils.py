@@ -1,10 +1,9 @@
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, session, abort, current_app, redirect, wrappers, url_for
-from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes
+from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, get_user_ip
 from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
@@ -125,7 +124,7 @@ def before_request() -> None:
                     mode="check_if_valid",
                     sessionID=sessionID,
                     userID=userID,
-                    userIP=get_remote_address(),
+                    userIP=get_user_ip(),
                     userAgent=request.user_agent.string
                 )
             ):
@@ -149,7 +148,7 @@ def before_request() -> None:
         else:
             adminWhitelistedIP = ("127.0.0.1",)
 
-        if (get_remote_address() not in adminWhitelistedIP):
+        if (get_user_ip() not in adminWhitelistedIP):
             session.clear()
             abort(403)
 

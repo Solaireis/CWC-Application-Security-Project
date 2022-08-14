@@ -38,7 +38,8 @@ from PIL import Image as PillowImage
 from dicebear import DAvatar, DStyle
 
 # import Flask libraries
-from flask import url_for, flash, Markup
+from flask import url_for, flash, Markup, request
+from flask_limiter.util import get_remote_address
 
 # For Google Cloud API Errors (Third-party libraries)
 import google.api_core.exceptions as GoogleErrors
@@ -63,6 +64,15 @@ from google.cloud.kms_v1.types import resources
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
+def get_user_ip() -> str:
+    """Get the user's IP address"""
+    if (CONSTANTS.DEBUG_MODE):
+        return get_remote_address()
+    else:
+        # get the user's IP address from the request
+        # For cloudflare proxy, we need to get from the request headers
+        # https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/
+        return request.headers.get("CF-Connecting-IP") or get_remote_address()
 
 def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
