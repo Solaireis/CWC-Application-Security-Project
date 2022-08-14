@@ -58,12 +58,14 @@ class Constants:
     # This is just a general wide area redirection, DO NOT rely on this for good user experience, youll still require to fine tune the individual approutes to ensure safe redirection
     GUEST_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "userBP": "guestBP.login",
-        "teacherBP": "guestBP.login"
+        "teacherBP": "guestBP.login",
+        "loggedInBP": "guestBP.login"
 
     })
     USER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "teacherBP": "userBP.userProfile",
         "guestBP": "generalBP.home"
+        
         
     })
     TEACHER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
