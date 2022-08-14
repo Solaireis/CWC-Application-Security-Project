@@ -1026,7 +1026,10 @@ def send_email(to:str="", subject:str="", body:str="", name:Optional[str]=None) 
         print(f"Email sent!")
     except HttpError as e:
         print("Failed to send email...")
-        print(f"Error:\n{e}\n")
+        write_log_entry(
+            logMessage=f"Email titled {subject} cannot be sent: {e}",
+            severity="ERROR"
+        )
 
     return sentMessage
 

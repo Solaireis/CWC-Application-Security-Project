@@ -15,7 +15,7 @@ from css_inline import inline, CSSInliner # Not sure why VSC doesn't register th
 
 # import local python libraries
 from python_files.classes.Constants import SECRET_CONSTANTS, CONSTANTS
-from .NormalFunctions import send_email
+from .NormalFunctions import send_email, write_log_entry
 from .SQLFunctions import sql_operation
 
 stripe.api_key = SECRET_CONSTANTS.STRIPE_SECRET_KEY
@@ -24,7 +24,7 @@ def stripe_product_create(
     courseID:str, courseName:str, courseDescription:str, coursePrice: float, courseImagePath:str=None
 ) -> None:
     """
-    Create a product to add to Stripe database. 
+    Create a product to add to Stripe database.
     Provide matching details to what is saved in MySQL.
 
     Args:
@@ -53,8 +53,10 @@ def stripe_product_create(
         # print(courseData)
 
     except InvalidRequestError as error:
-        print(error)
-        print(f"Course: {courseID} already exists in Stripe database.")
+        write_log_entry(
+            logMessage=f"Course {courseID} cannot be created:\n{error}",
+            severity="ERROR"
+        )
 
 def stripe_product_update(**kwargs) -> None:
     courseID = kwargs.get('courseID')
@@ -87,14 +89,20 @@ def stripe_product_update(**kwargs) -> None:
                 courseID,
                 images=[courseImagePath],
             )
-    except:
-        print("There was an Error in updating")
+    except InvalidRequestError as error:
+        write_log_entry(
+            logMessage=f"Course {courseID} cannot be edited:\n{error}",
+            severity="ERROR"
+        )
 
 def stripe_product_deactivate(courseID:str) -> None:
     try:
         stripe.Product.modify(courseID, active = False)
     except InvalidRequestError as error:
-        print(error)
+        write_log_entry(
+            logMessage=f"Course {courseID} cannot be deactivated:\n{error}",
+            severity="ERROR"
+        )
 
 def stripe_product_check(courseID:str) -> Optional[str]:
     """
@@ -111,9 +119,10 @@ def stripe_product_check(courseID:str) -> Optional[str]:
         # print(courseData)
         return courseData
     except InvalidRequestError as error:
-        print("Product Check: " + str(error))
-        # print(f"Course {courseID} does not exist in Stripe database.")
-        # print("Creating course in Stripe database.")
+        write_log_entry(
+            logMessage=f"Course {courseID} cannot be checked:\n{error}",
+            severity="ERROR"
+        )
         return None
 
 def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Optional[CheckoutSession]:
@@ -134,7 +143,13 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
     """
     paymentIntent = sql_operation(table="stripe_payments", mode="pop_previous_session", userID=userID)
     if paymentIntent is not None:
-        checkoutID = stripe.PaymentIntent.retrieve(paymentIntent).metadata["checkoutID"]
+        try:
+            checkoutID = stripe.PaymentIntent.retrieve(paymentIntent).metadata["checkoutID"]
+        except InvalidRequestError as error:
+            write_log_entry(
+                logMessage=f"Old payment intent ({paymentIntent}) cannot be retrieved: {error}",
+                severity="ERROR"
+            )
         expire_checkout(checkoutID)
 
     try:
@@ -147,20 +162,27 @@ def stripe_checkout(userID: str, cartCourseIDs: list, email: str = None) -> Opti
             mode="payment"
         )
     except Exception as error:
-        print("Checkout:", str(error))
-        # print(type(checkoutSession))
+        write_log_entry(
+            logMessage=f"User ID: {userID}\nCart Courses: {cartCourseIDs}\nCheckout session cannot be created:\n{error}",
+            severity="ERROR"
+        )
         return None
     paymentIntent = stripe.PaymentIntent.retrieve(checkoutSession.payment_intent)
-    stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {
-        "checkoutID": checkoutSession.id,
-        "userID": userID, 
-        "cartCourseIDs": dumps(cartCourseIDs),
-        "coursesAdded": False
-    })
-
+    try:
+        stripe.PaymentIntent.modify(checkoutSession.payment_intent, metadata = {
+            "checkoutID": checkoutSession.id,
+            "userID": userID,
+            "cartCourseIDs": dumps(cartCourseIDs),
+            "coursesAdded": False
+        })
+    except InvalidRequestError as error:
+        write_log_entry(
+            logMessage=f"Payment intent ({paymentIntent}) for checkout session ({checkoutSession.id}) cannot be edited:\n{error}",
+            severity="ERROR"
+        )
     sql_operation(
-        table="stripe_payments", 
-        mode="create_payment_session", 
+        table="stripe_payments",
+        mode="create_payment_session",
         stripePaymentIntent=checkoutSession.payment_intent,
         userID=userID,
         cartCourseIDs=dumps(cartCourseIDs),
@@ -176,34 +198,44 @@ def expire_checkout(checkoutSession:str) -> None:
     (e.g. shopping cart is altered while checkout is still active.)
 
     Args:
-    - 
+    -
 
     Returns:
     - None
     """
     try:
         stripe.checkout.Session.expire(checkoutSession)
-        print(f"Session expired: {checkoutSession}")
     except InvalidRequestError:
-        print(f"Session already expired: {checkoutSession}")
+        write_log_entry(
+            logMessage=f"Session {checkoutSession} cannot be expired.",
+            severity="ERROR"
+        )
 
 def send_checkout_receipt(paymentIntent:str) -> None:
 
     checkoutDetails = stripe.PaymentIntent.retrieve(paymentIntent)["charges"]["data"][0]
     send_email(
-        to=checkoutDetails["receipt_email"], 
+        to=checkoutDetails["receipt_email"],
         subject=f"Your CourseFinity receipt [#{checkoutDetails['receipt_number']}]",
         body=CSSInliner(remove_style_tags=True).inline(requests.get(checkoutDetails["receipt_url"]).text).split("</head>", 1)[1][:-7],
         name=checkoutDetails["billing_details"]["name"]
     )
 
     sql_operation(
-        table="stripe_payments", 
-        mode="complete_payment_session", 
-        stripePaymentIntent=paymentIntent, 
+        table="stripe_payments",
+        mode="complete_payment_session",
+        stripePaymentIntent=paymentIntent,
         paymentTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         receiptEmail=checkoutDetails["receipt_email"]
     )
 
 def get_payment_intent(paymentIntent:str) -> PaymentIntent:
-    return stripe.PaymentIntent.retrieve(paymentIntent)
+    try:
+        paymentIntent = stripe.PaymentIntent.retrieve(paymentIntent)
+        return paymentIntent
+    except InvalidRequestError:
+        write_log_entry(
+            logMessage=f"Payment Intent {paymentIntent} cannot be retrieved.",
+            severity="ERROR"
+        )
+        return None
