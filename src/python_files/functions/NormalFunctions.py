@@ -63,7 +63,6 @@ from google.cloud.kms_v1.types import resources
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
-
 def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
     Returns an array of pagination button integers.

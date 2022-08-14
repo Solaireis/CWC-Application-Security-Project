@@ -10,6 +10,15 @@ from python_files.classes.Roles import RoleInfo
 # import python standard libraries
 import json, re
 
+def get_user_ip() -> str:
+    """Get the user's IP address"""
+    if (current_app.config["CONSTANTS"].DEBUG_MODE):
+        return get_remote_address()
+    else:
+        # Get the user's IP address from the request.
+        # For cloudflare proxy, we need to get from the request headers
+        # https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/
+        return request.headers.get("CF-Connecting-IP") or get_remote_address()
 
 def update_secret_key() -> None:
     """
@@ -125,7 +134,7 @@ def before_request() -> None:
                     mode="check_if_valid",
                     sessionID=sessionID,
                     userID=userID,
-                    userIP=get_remote_address(),
+                    userIP=get_user_ip(),
                     userAgent=request.user_agent.string
                 )
             ):
@@ -149,7 +158,7 @@ def before_request() -> None:
         else:
             adminWhitelistedIP = ("127.0.0.1",)
 
-        if (get_remote_address() not in adminWhitelistedIP):
+        if (get_user_ip() not in adminWhitelistedIP):
             session.clear()
             abort(403)
 
