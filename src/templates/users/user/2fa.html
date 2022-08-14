@@ -36,11 +36,11 @@
                             <li>If you chose setup key method, enter your username and secret key below</li>
                             <li>Select time-based authentication</li>
                             <li>Submit the time-based one time password (OTP) in the form.</li>
+                            <li><strong>NEVER</strong> share your setup key with anyone!</li>
                         </ol>
-                        <h6 class="text-break">Setup Key: <a href="javascript:copyToClipBoard('OTP')" onmouseout="tooltipMouseOut('OTP')" data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard" id="tooltipElementOTP">{{ secretToken }}</a></h6>
-                        <span id="tooltipValueOTP" hidden>{{ secretToken }}</span>
+                        <h6 class="text-break">Setup Key: <button type="button" class="btn btn-link p-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to copy to clipboard!" id="secretToken">{{ secretToken }}</button></h6>
                         <div class="QRCode_wrapper">
-                            <img src="data:image/png;base64,{{ qrCodeEncodedBase64 }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode">
+                            <img src="data:image/png;base64,{{ qrCodeEncodedBase64 }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode" title="Scan this QR code to setup 2FA on your phone!">
                         </div>
                     </div>
                     <div class="col-12 text-white">
@@ -60,5 +60,5 @@
 
 {% block extra_js %}
     <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
-    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/copy_to_clipboard.js') }}"></script>
+    <script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/2fa.js') }}"></script>
 {% endblock %}

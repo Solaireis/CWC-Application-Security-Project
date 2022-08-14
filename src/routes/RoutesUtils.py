@@ -88,6 +88,12 @@ def before_request() -> None:
         if (isNotStaticEndpoint and requestRoute not in ("userManagement", "adminManagement")):
             session.pop("relative_url", None)
 
+    # check if courseAddedStatus in session
+    # Remove if the user did not go to the cart page by intercepting the response
+    if ("courseAddedStatus" in session):
+        if (isNotStaticEndpoint and requestRoute not in ("addToCart", "shoppingCart")):
+            session.pop("courseAddedStatus", None)
+
     # Remove 2FA session keys if the user is no longer trying to login
     if (
         "ip_details" in session or

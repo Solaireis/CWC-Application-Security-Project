@@ -487,7 +487,6 @@ def addToCart(courseID:str):
 
 @userBP.route("/shopping-cart", methods=["GET", "POST"])
 def shoppingCart():
-    print(str(session))
     userID = session["user"]
     if "courseAddedStatus" in session:
         courseAddedStatus = session.get("courseAddedStatus")
