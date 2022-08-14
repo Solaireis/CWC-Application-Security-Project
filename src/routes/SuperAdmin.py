@@ -34,7 +34,7 @@ def adminManagement():
 
         userInfo = sql_operation(table="user", mode="get_user_data", userID=userID)
         if (userInfo is None):
-            flash("No Admin account was found with the provided ID.", "No Such User!")
+            flash("No Admin account was found with the provided ID.", "No Such Admin!")
             return redirect(session["relative_url"])
 
         if (userInfo.role == "SuperAdmin"):
