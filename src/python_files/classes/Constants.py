@@ -45,7 +45,7 @@ class Constants:
     PAGE_NUM_REGEX: re.Pattern[str] = re.compile(r"p=\d+")
 
     # custom domain
-    CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if ( DEBUG_MODE) else "https://coursefinity.social"
+    CUSTOM_DOMAIN: str = "https://127.0.0.1:8080" if (DEBUG_MODE) else "https://coursefinity.social"
 
     # For RBAC checks (Follows the sequence of the MySQL columns in the database)
     BLUEPRINT_ENDPOINT_REGEX: re.Pattern[str] = re.compile(r"^[\w]+(.)[\w]+$")
