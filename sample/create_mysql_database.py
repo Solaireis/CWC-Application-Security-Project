@@ -272,7 +272,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
         CREATE DEFINER=`{definer}` PROCEDURE `delete_acc_recovery_token`(IN user_id_input VARCHAR(32))
         BEGIN
             DELETE FROM acc_recovery_token WHERE user_id = user_id_input;
-            DELETE FROM expirable_token WHERE id = user_id_input;
+            DELETE FROM expirable_token WHERE user_id = user_id_input;
         END
     """)
     """Functions to get Data"""

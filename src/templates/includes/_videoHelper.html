@@ -1,44 +1,22 @@
-{% macro video_styles() %}
-<!--
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video-js.min.css" >
-<link rel="stylesheet" href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css">
-<link nonce= "{{ csp_nonce() }}" rel="stylesheet" href="{{ url_for('static', filename='styles/video_player.css') }}">
--->
-{% endmacro %}
-
 {% macro video_player(videoData) %}
-<!--
-<video-js id="video-player" class="vjs-theme-forest vjs-matrix" poster="{{ courseThumbnail }}">
-    <p class="vjs-no-js">
-      To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank" rel="noopener noreferrer">supports HTML5 video</a>
-    </p>
-</video-js>
--->
-<div class="ratio ratio-16x9">
-  {% if videoData == None %}
-  <div class="d-flex justify-content-center align-items-center bg-light fs-5">
-    Video in processing...
-  </div>
-  {% else %}
-  <iframe src="https://player.vdocipher.com/v2/?otp={{ videoData['otp'] }}&playbackInfo={{ videoData['playbackInfo'] }}" allow="encrypted-media" allowfullscreen></iframe>
-  {% endif %}
-</div>
+    <div class="ratio ratio-16x9">
+    {% if videoData == None %}
+        <div class="d-flex justify-content-center align-items-center bg-light fs-5">
+            Video in processing...
+        </div>
+    {% else %}
+        <iframe src="https://player.vdocipher.com/v2/?otp={{ videoData['otp'] }}&playbackInfo={{ videoData['playbackInfo'] }}" allow="encrypted-media" allowfullscreen></iframe>
+    {% endif %}
+    </div>
 {% endmacro %}
 
 {% macro video_scripts() %}
-<!--<script nonce="{{ csp_nonce() }}" src="https://cdnjs.cloudflare.com/ajax/libs/video.js/7.19.2/video.min.js"></script>
-<script src="https://cdn.dashjs.org/v4.4.0/dash.all.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/videojs-contrib-dash@5.1.1/dist/videojs-dash.cjs.min.js"></script>
-<script nonce="{{ csp_nonce() }}" src="{{ url_for('static', filename='scripts/video_player.js') }}"></script>
-<script nonce="{{ csp_nonce() }}">
-  add_source("{{ videoPath }}")
-</script>-->
-<script src="https://player.vdocipher.com/v2/api.js"></script>
-<script nonce="{{ csp_nonce() }}">
-  const iframe = document.querySelector("iframe");
-  const player = VdoPlayer.getInstance(iframe);
-  player.video.addEventListener("play", function () {
-      console.log("Video is playing");
-  });
-</script>
+    <script src="https://player.vdocipher.com/v2/api.js"></script>
+    <script nonce="{{ csp_nonce() }}">
+        const iframe = document.querySelector("iframe");
+        const player = VdoPlayer.getInstance(iframe);
+        player.video.addEventListener("play", function () {
+            console.log("Video is playing");
+        });
+    </script>
 {% endmacro %}

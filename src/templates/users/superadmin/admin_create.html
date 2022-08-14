@@ -7,79 +7,49 @@
 
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-            {% for category, message in messages %}
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <h6>{{ message }}</h6>
-            </div>
-            {% endfor %}
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
-            </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    {% endwith %}
-    <form action="" method="POST" class="modalForm">
-        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-        <div class="modal fade" id="createAdmin" tabindex="-1" aria-labelledby="createAdmin" aria-hidden="true">
+        <div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
+                {% for category, message in messages %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="createAdmin">Update role</h5>
+                        <h5 class="modal-title" id="alertModalLabel">{{ category }}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <h6>
-                            You are creating an administrator role
-                        </h6>
-                        
-                            {{ render_field(form.username,  class="form-control") }}
-                            {{ render_field(form.email,  class="form-control") }}
-                            <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-success">Create</button>
-                        </div>
-                        <!-- Add forms to change the roles-->
+                        <h6>{{ message }}</h6>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Create</button>
-                    </div>
+                {% endfor %}
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Confirm</button>
+                </div>
                 </div>
             </div>
         </div>
-    </form>
-
-    <div class="container container_margin">
-        <div class="row">
-            {% include "includes/_admin_sidebar.html" %}
-            <div class="col-lg-9 merge-boxes">
-                <div id="right-user">
-                    <div class="container">
-                        <div class="row">
-                            <form action="" method="POST" >
-                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-                                <h6>
-                                    You are creating an administrator account
-                                </h6>
-                                {{ render_field(form.username,  class="form-control") }}
-                                {{ render_field(form.email,  class="form-control") }}
+    {% endif %}
+{% endwith %}
+<div class="container container_margin">
+    <div class="row">
+        {% include "includes/_admin_sidebar.html" %}
+        <div class="col-lg-9 merge-boxes">
+            <div id="right-user">
+                <div class="container">
+                    <div class="row">
+                        <form action="" method="POST" >
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                            <h6>You are creating an administrator account</h6>
+                            {{ render_field(form.username,  class="form-control") }}
+                            {{ render_field(form.email,  class="form-control") }}
+                            <div class="float-end pt-2">
                                 <button type="reset" class="btn btn-danger" >Cancel</button>
                                 <button type="submit" class="btn btn-success">Create</button>
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -91,5 +61,4 @@
         </script>
         {% endif %}
     {% endwith %}
-    <script src="{{ url_for('static', filename='scripts/bootstrap_util.js') }}"></script>
 {% endblock %}
