@@ -17,11 +17,11 @@ from python_files.functions.VideoFunctions import *
 from python_files.classes.Forms import *
 from python_files.classes.MarkdownExtensions import AnchorTagExtension
 from .RoutesSecurity import csrf
+from .RoutesUtils import get_user_ip
 
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
-# import io
 from base64 import b64encode
 import html
 import hashlib

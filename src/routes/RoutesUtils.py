@@ -1,14 +1,24 @@
 # import flask libraries (Third-party libraries)
 from flask import render_template, request, session, abort, current_app, redirect, wrappers, url_for
+from flask_limiter.util import get_remote_address
 
 # import local python libraries
 from python_files.functions.SQLFunctions import sql_operation
-from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes, get_user_ip
+from python_files.functions.NormalFunctions import upload_new_secret_version, generate_secure_random_bytes
 from python_files.classes.Roles import RoleInfo
 
 # import python standard libraries
 import json, re
 
+def get_user_ip() -> str:
+    """Get the user's IP address"""
+    if (current_app.config["CONSTANTS"].DEBUG_MODE):
+        return get_remote_address()
+    else:
+        # Get the user's IP address from the request.
+        # For cloudflare proxy, we need to get from the request headers
+        # https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/
+        return request.headers.get("CF-Connecting-IP") or get_remote_address()
 
 def update_secret_key() -> None:
     """
