@@ -1037,6 +1037,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
         usernameDupes = bool(cur.fetchone())
 
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {emailInput}, {usernameInput}",
+            severity="NOTICE"
+        )
+
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
 
@@ -1111,6 +1116,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status
             FROM user AS u INNER JOIN role AS r ON u.role = r.role_id
             WHERE u.email=%(emailInput)s AND r.role_name NOT IN ('Admin', 'SuperAdmin');""", {"emailInput":emailInput})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {emailInput}",
+            severity="NOTICE"
+        )
         matched = cur.fetchone()
 
         if (matched is None):
@@ -1190,6 +1199,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
     elif (mode == "find_user_for_reset_password"):
         email = kwargs["email"]
         cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {email}",
+            severity="NOTICE"
+        )
         matched = cur.fetchone()
         return matched
 
@@ -1241,6 +1254,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         usernameInput = kwargs.get("username")
         cur.execute("SELECT * FROM user WHERE username=%(username)s", {"username":usernameInput})
         reusedUsername = bool(cur.fetchone())
+
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {usernameInput}",
+            severity="NOTICE"
+        )
 
         if (reusedUsername):
             raise ReusedUsernameError(f"The username {usernameInput} is already in use!")
@@ -1315,7 +1333,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         userID = kwargs["userID"]
         currentPasswordInput = kwargs.get("currentPassword")
         emailInput = kwargs["email"]
-
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {emailInput}",
+            severity="NOTICE"
+        )
         # check if the email is already in use
         cur.execute("SELECT id, password FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         reusedEmail = cur.fetchone()
