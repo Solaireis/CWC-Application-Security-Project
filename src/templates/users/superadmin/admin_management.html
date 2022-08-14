@@ -286,8 +286,8 @@
                             </table>
                             <nav aria-label="Page navigation">
                                 <ul class="pagination flex-wrap justify-content-center">
-                                    {% with urlPath = url_for('superAdminBP.adminManagement') %}
-                                        {% if request.args.get('user', default=None) != None %}
+                                    {% with urlPath = url_for("superAdminBP.adminManagement") %}
+                                        {% if request.args.get("user", default=None) != None %}
                                             {% set urlPath = urlPath + "?user=" + request.args.get("user") + "&filter=" + request.args.get("filter", default="username") + "&p=" %}
                                         {% else %}
                                             {% set urlPath = urlPath + "?p=" %}
@@ -334,6 +334,15 @@
                                     {% endwith %}
                                 </ul>
                             </nav>
+                            {% if request.args.get("user") != None %}
+                                <div class="col-12">
+                                    {% with urlPath = url_for("superAdminBP.adminManagement") + "?p=" %}
+                                        <a href="{{ urlPath }}{{ request.args.get('p', default=1) }}">
+                                            <i class="fas fa-arrow-left"></i> Clear Search Filters
+                                        </a>
+                                    {% endwith %}
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
