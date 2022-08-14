@@ -104,7 +104,7 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
         }
     ).text)
     write_log_entry(
-        logMessage=f"Deserialisation : Upload Credentials",
+        logMessage=f"TeacherID : {teacherID} - Deserialisation : Upload Credentials",
         severity="NOTICE"
     )
     if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos.
@@ -353,7 +353,7 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
             {"token": tokenInput, "userID": userID}
         )
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {tokenInput}",
+            logMessage=f"UserID : {userID} - Input for {mode} SQL Command : {tokenInput}",
             severity="NOTICE"
         )
         isValid = (cur.fetchone() is not None)
@@ -827,9 +827,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         return backupCodes
 
     elif (mode == "disable_2fa_with_backup_code"):
+        userID = kwargs["userID"]
         cur.execute(
             "SELECT backup_codes_json FROM twofa_token WHERE user_id = %(userID)s",
-            {"userID": kwargs["userID"]}
+            {"userID": userID}
         )
         matched = cur.fetchone()
         if (matched is None):
@@ -838,7 +839,7 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         validFlag, idx = False, 0
         backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
         write_log_entry(
-            logMessage=f"Deserialisation : Backup Codes",
+            logMessage=f"UserID : {userID} - Deserialisation : Backup Codes",
             severity="NOTICE"
         )
         for idx, codeTuple in enumerate(backupCodes):
@@ -1050,16 +1051,17 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         usernameInput = kwargs["username"]
 
+        write_log_entry(
+            logMessage=f"Input for {mode} SQL Command : {emailInput}, {usernameInput}",
+            severity="NOTICE"
+        )
+
         cur.execute("SELECT * FROM user WHERE email=%(emailInput)s", {"emailInput":emailInput})
         emailDupe = bool(cur.fetchone())
 
         cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
         usernameDupes = bool(cur.fetchone())
 
-        write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {emailInput}, {usernameInput}",
-            severity="NOTICE"
-        )
 
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
@@ -1132,13 +1134,14 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         emailInput = kwargs["email"]
         passwordInput = kwargs["password"]
 
-        cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status
-            FROM user AS u INNER JOIN role AS r ON u.role = r.role_id
-            WHERE u.email=%(emailInput)s AND r.role_name NOT IN ('Admin', 'SuperAdmin');""", {"emailInput":emailInput})
         write_log_entry(
             logMessage=f"Input for {mode} SQL Command : {emailInput}",
             severity="NOTICE"
         )
+
+        cur.execute("""SELECT u.id, u.password, u.username, u.role, u.email_verified, u.status
+            FROM user AS u INNER JOIN role AS r ON u.role = r.role_id
+            WHERE u.email=%(emailInput)s AND r.role_name NOT IN ('Admin', 'SuperAdmin');""", {"emailInput":emailInput})
         matched = cur.fetchone()
 
         if (matched is None):
@@ -1217,11 +1220,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
     elif (mode == "find_user_for_reset_password"):
         email = kwargs["email"]
-        cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
         write_log_entry(
             logMessage=f"Input for {mode} SQL Command : {email}",
             severity="NOTICE"
         )
+        cur.execute("SELECT id, password FROM user WHERE email=%(email)s", {"email":email})
         matched = cur.fetchone()
         return matched
 
@@ -1275,7 +1278,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         reusedUsername = bool(cur.fetchone())
 
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {usernameInput}",
+            logMessage=f"UserID : {userID} - Input for {mode} SQL Command : {usernameInput}",
             severity="NOTICE"
         )
 
@@ -1353,7 +1356,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         currentPasswordInput = kwargs.get("currentPassword")
         emailInput = kwargs["email"]
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {emailInput}",
+            logMessage=f"UserID : {userID} - Input for {mode} SQL Command : {emailInput}",
             severity="NOTICE"
         )
         # check if the email is already in use
@@ -1580,7 +1583,7 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cart = cur.fetchone()[0]
         if cart is not None:
             write_log_entry(
-                logMessage=f"Deserialisation : Cart",
+                logMessage=f"UserID : {userID} - Deserialisation : Cart",
                 severity="NOTICE"
             )
             return json.loads(cart)
@@ -1815,7 +1818,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseTitle = kwargs["courseTitle"]
         cur.execute("UPDATE course SET course_name=%(courseTitle)s WHERE course_id=%(courseID)s", {"courseTitle":courseTitle, "courseID":courseID})
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {courseTitle}",
+            logMessage=f"CourseID : {courseID} - Input for {mode} SQL Command : {courseTitle}",
             severity="NOTICE"
         )
         connection.commit()
@@ -1825,7 +1828,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseDescription = kwargs["courseDescription"]
         cur.execute("UPDATE course SET course_description=%(courseDescription)s WHERE course_id=%(courseID)s", {"courseDescription":courseDescription, "courseID":courseID})
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {courseDescription}",
+            logMessage=f"CourseID : {courseID} - Input for {mode} SQL Command : {courseDescription}",
             severity="NOTICE"
         )
         connection.commit()
@@ -1835,7 +1838,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseCategory = kwargs["courseCategory"]
         cur.execute("UPDATE course SET course_category=%(courseCategory)s WHERE course_id=%(courseID)s", {"courseCategory":courseCategory, "courseID":courseID})
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {courseCategory}",
+            logMessage=f"CourseID : {courseID} - Input for {mode} SQL Command : {courseCategory}",
             severity="NOTICE"
         )
         connection.commit()
@@ -1844,7 +1847,7 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseID = kwargs["courseID"]
         coursePrice = kwargs.get("coursePrice")
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command : {coursePrice}",
+            logMessage=f"CourseID : {courseID} - Input for {mode} SQL Command : {coursePrice}",
             severity="NOTICE"
         )
         cur.execute("UPDATE course SET course_price=%(coursePrice)s WHERE course_id=%(courseID)s", {"coursePrice":coursePrice, "courseID":courseID})
@@ -2179,7 +2182,7 @@ def review_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         courseReview = kwargs["courseReview"]
         cur.execute("INSERT INTO review (user_id, course_id, course_rating, course_review, review_date) VALUES (%(userID)s, %(courseID)s, %(courseRating)s, %(courseReview)s, SGT_NOW())", {"userID":userID, "courseID":courseID, "courseRating":courseRating, "courseReview":courseReview})
         write_log_entry(
-            logMessage=f"Input for {mode} SQL Command :{courseReview}",
+            logMessage=f"UserID : {userID} - Input for {mode} SQL Command :{courseReview}",
             severity="NOTICE"
         )
         connection.commit()

@@ -575,11 +575,7 @@ Policies
   - Comparing Hashes of Packages, before pip installing them
     - Ensures that there was no tampering between the files when it was being taken from the source
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
-  - Digest Authentication
-    - Authenticating the user and server so that it is sent to the correct person
-  
-  Requires Approval:
-  - Data Integrity For Profile Pictures (Code Done, Untested)
+  - Data Integrity For Profile Pictures
   
   Removed:
     - Check Hash of Video File, before saving it
@@ -589,5 +585,7 @@ Policies
   - Digital Signatures
     - Not really necessary due to HTTPS & HSTS to ensure request is sent across HTTPS will already provide encryption
     - Redundant and may incur more errors
+  - Digest Authentication
+    - No use
 
 ---
