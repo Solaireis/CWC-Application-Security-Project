@@ -103,7 +103,10 @@ def get_upload_credentials(courseID:str, teacherID:str) -> Optional[dict]:
             "folderId": "root"
         }
     ).text)
-
+    write_log_entry(
+        logMessage=f"Deserialisation : Upload Credentials",
+        severity="NOTICE"
+    )
     if data.get("message") is not None: # E.g. {'message': 'You have reached the trial limit of 4 videos.
                                         # Either remove the previously uploaded videos or
                                         # subscribe to our premium plans to unlock the video limit.'}
@@ -832,6 +835,10 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
         validFlag, idx = False, 0
         backupCodes = json.loads(symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.SENSITIVE_DATA_KEY_ID))
+        write_log_entry(
+            logMessage=f"Deserialisation : Backup Codes",
+            severity="NOTICE"
+        )
         for idx, codeTuple in enumerate(backupCodes):
             if (codeTuple[0] == kwargs["backupCode"] and codeTuple[1] == "Active"):
                 validFlag = True
@@ -1570,6 +1577,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT JSON_ARRAYAGG(course_id) FROM cart WHERE user_id=%(userID)s", {"userID":userID})
         cart = cur.fetchone()[0]
         if cart is not None:
+            write_log_entry(
+                logMessage=f"Deserialisation : Cart",
+                severity="NOTICE"
+            )
             return json.loads(cart)
 
     elif mode == "add_to_cart":

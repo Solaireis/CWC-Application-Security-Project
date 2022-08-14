@@ -58,6 +58,10 @@ def create_token() -> None:
             secretID=CONSTANTS.GOOGLE_TOKEN_NAME
         )
     )
+    NormalFunctions.write_log_entry(
+        logMessage=f"Deserialisation : Google Token",
+        severity="NOTICE"
+    )
     GOOGLE_CREDENTIALS = SECRET_CONSTANTS.GOOGLE_CREDENTIALS
 
     # The file google-token.json stores the user's access and refresh tokens,

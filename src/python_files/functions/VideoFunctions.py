@@ -40,7 +40,10 @@ def get_video(videoID:str) -> Optional[dict]:
             "whitelisthref": flaskRequest.headers["Host"],    # Whitelist sites
         })
     ).text)
-
+    write_log_entry(
+        logMessage=f"Deserialisation : Get Video",
+        severity="NOTICE"
+    )
     # Course cannot be acquired for reasons
     if data.get("message") is not None:
         # E.g. {'message': 'Video not found'}
@@ -116,6 +119,10 @@ def check_video(videoID:str) -> Optional[dict]:
         }
     ).text)
 
+    write_log_entry(
+        logMessage=f"Deserialisation : Check Video",
+        severity="NOTICE"
+    )
     if data.get("message") is not None:
     # E.g. {'message': 'Video not found'}
         write_log_entry(
@@ -152,6 +159,10 @@ def check_video_list(tagName:Optional[str]=None) -> Union[int, tuple, None]:
         },
         params={"tags": tagName}
     ).text)
+    write_log_entry(
+        logMessage=f"Deserialisation : Video List",
+        severity="NOTICE"
+    )
 
     if data["count"] > 0:
         return data["count"], data["rows"]
@@ -199,6 +210,10 @@ def update_video_thumbnail(videoID:str, thumbnailFilePath:Union[str,Path]) -> Op
             timeout=(2, 5)  # If file cannot be processed, server refuses to respond
                             # until 504-Gateway Timeout Error (which takes forever)
         ).text)
+        write_log_entry(
+            logMessage=f"Deserialisation : Update Video Thumbnail",
+            severity="NOTICE"
+        )
     except requests.ReadTimeout:
         return None
 
@@ -241,7 +256,10 @@ def delete_video(videoIDs:Union[tuple, list, str]) -> int:
         },
         params={"videos": videoIDs}
     ).text)
-
+    write_log_entry(
+        logMessage=f"Deserialisation : Delete Video",
+        severity="NOTICE"
+    )
     # {'code': 200, 'message': 'Successfully deleted 0 videos'}
     return data["message"]
 
@@ -272,6 +290,11 @@ def add_video_tag(videoID:str, tagName:str) -> str:
             "tags": [tagName]
         })
     ).text)
+    write_log_entry(
+        logMessage=f"Deserialisation : Add Video Tag",
+        severity="NOTICE"
+    )
+
     return data.get("message")
 
 def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
@@ -301,6 +324,11 @@ def edit_video_tag(videoID:str, tagName:Optional[str]=None) -> Optional[dict]:
             "tags": [tagName] if tagName is not None else []
         })
     ).text)
+    write_log_entry(
+        logMessage=f"Deserialisation : Edit Video Tag",
+        severity="NOTICE"
+    )
+
     return data.get("message")
 
 def delete_unuploaded_video() -> None:
