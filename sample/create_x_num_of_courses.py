@@ -232,7 +232,7 @@ if (res is None):
     userID = STUDENT_ID2
     username = "Ciel"
     email = "test2@student.com"
-    password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User1234!"), keyID=CONSTANTS.PEPPER_KEY_ID)
+    password = NormalFunctions.symmetric_encrypt(plaintext=CONSTANTS.PH.hash("User123!"), keyID=CONSTANTS.PEPPER_KEY_ID)
 
     cur.execute("INSERT INTO user (id, role, username, email, email_verified, password, date_joined) VALUES (%s, %s, %s, %s, 1, %s, SGT_NOW())", (userID, STUDENT_ROLE_ID, username, email, password))
     con.commit()
