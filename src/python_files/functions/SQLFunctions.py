@@ -354,7 +354,7 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
         # if the guard token is more than 16 characters,
         # return False because it is not a valid token
-        if (len(tokenInput) > 16):
+        if (len(tokenInput) != 16):
             return False
 
         cur.execute(
