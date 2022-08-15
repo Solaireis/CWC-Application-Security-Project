@@ -316,7 +316,7 @@ def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
             keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID
         )
 
-        # if the token is more or less than 240 characters,
+        # if the token is not equal to 240 characters,
         # return None because it is not a valid token
         return token if (len(token) == 240) else None
     except (DecryptionError, BinasciiError, ValueError, TypeError):
@@ -352,7 +352,7 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
         tokenInput = kwargs["token"]
         userID = kwargs["userID"]
 
-        # if the guard token is more than 16 characters,
+        # if the guard token is not equal to 16 characters,
         # return False because it is not a valid token
         if (len(tokenInput) != 16):
             return False
