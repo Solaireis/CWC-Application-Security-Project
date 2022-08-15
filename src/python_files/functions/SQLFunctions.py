@@ -315,7 +315,10 @@ def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
             ciphertext=urlsafe_b64decode(tokenInput),
             keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID
         )
-        return token
+
+        # if the token is more or less than 240 characters,
+        # return None because it is not a valid token
+        return token if (len(token) == 240) else None
     except (DecryptionError, BinasciiError, ValueError, TypeError):
         # If the user tampers with the token in the url
         return None
@@ -348,6 +351,12 @@ def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
     elif (mode == "verify_token"):
         tokenInput = kwargs["token"]
         userID = kwargs["userID"]
+
+        # if the guard token is more than 16 characters,
+        # return False because it is not a valid token
+        if (len(tokenInput) > 16):
+            return False
+
         cur.execute(
             "SELECT * FROM guard_token WHERE token = %(token)s AND user_id = %(userID)s AND expiry_date >= SGT_NOW()",
             {"token": tokenInput, "userID": userID}
