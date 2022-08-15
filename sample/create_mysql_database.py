@@ -182,7 +182,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
     cur.execute("CREATE INDEX user_ip_addresses_user_id_idx ON user_ip_addresses(user_id)")
 
     cur.execute("""CREATE TABLE expirable_token (
-        token VARCHAR(255) PRIMARY KEY, -- base85 encoded token since a hexadecimal token would be too long for a PK
+        token CHAR(240) PRIMARY KEY, -- base85 encoded token since a hexadecimal token would be too long for a PK
         user_id VARCHAR(32) NOT NULL,
         expiry_date DATETIME,
         purpose VARCHAR(30) NOT NULL,
@@ -193,7 +193,7 @@ def mysql_init_tables(debug:bool=False) -> pymysql.connections.Connection:
 
     cur.execute("""CREATE TABLE acc_recovery_token ( 
         user_id VARCHAR(32) PRIMARY KEY, -- will only allow CREATION and DELETION of tokens for this table
-        token VARCHAR(255) NOT NULL,
+        token CHAR(240) NOT NULL,
         old_user_email VARCHAR(255) NOT NULL,
         FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
         FOREIGN KEY (token) REFERENCES expirable_token(token) ON DELETE CASCADE
