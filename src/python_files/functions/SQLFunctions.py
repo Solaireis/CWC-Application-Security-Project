@@ -399,6 +399,8 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             generate_secure_random_bytes(nBytes=192, returnHex=False, base64Encoded=False)
         )
         tokenStr = tokenBytes.decode("utf-8")
+        if len(tokenStr) > 255:
+            return False
 
         # Note: The token in the database is not encrypted
         cur.execute(

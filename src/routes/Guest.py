@@ -179,6 +179,10 @@ def resetPasswordRequest():
             expiryDate=ExpiryProperties(activeDuration=1800),
         )
 
+        if not encryptedToken:
+            flash("Error with the token, please try again!", "Danger")
+            return redirect(url_for("guestBP.login"))
+
         # send the token to the user's email
         htmlBody = (
             "You are receiving this email due to a request to reset your password on your CourseFinity account.<br>If you did not make this request, please ignore this email.",
