@@ -34,16 +34,17 @@ def shutdown() -> None:
     input("Please press ENTER to exit...")
     sysExit(0)
 
-def print_menu(adminCount:int=0) -> None:
+def print_menu(adminCount:int=0, debug:bool=True) -> None:
     """
     Prints the menu
     
     Args
     - adminCount (int): Number of admin accounts in the database.
+    - debug (bool): True if debug mode is enabled.
     """
-    MENU = f"""----------- Menu (Debug Mode) -------------
+    MENU = f"""----------- Menu ({'Debug' if (debug) else 'LIVE'} Mode) -------------
 
-> Note: This is only for DEBUG purposes.
+> Note: This is only for TESTING purposes.
 > Super Admin Count: {adminCount}
 
 1. Create a super admin
@@ -103,7 +104,7 @@ def main() -> None:
         # count number of existing admin accounts
         cur.execute("SELECT COUNT(*) FROM user WHERE role = %(roleID)s", {"roleID": SUPER_ADMIN_ROLE_ID})
         existingAdminCount = cur.fetchone()[0]
-        print_menu(adminCount=existingAdminCount)
+        print_menu(adminCount=existingAdminCount, debug=debugFlag)
 
         cmdOption = input("Enter option: ").lower().strip()
         if (cmdOption not in AVAILABLE_OPTIONS):
