@@ -42,7 +42,7 @@
   - Configured the Flask session's default HMAC algorithm from HMAC-SHA1 to HMAC-SHA512.
     - Since SHA1 has been "broken" and is no longer considered secure, it is now recommended to use SHA256 or SHA512
     - References:
-      - [SHATTERED](https://shattered.it/)
+      - [SHAttered](https://shattered.it/)
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
     - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
       - Ensures high entropy
