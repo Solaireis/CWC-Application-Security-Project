@@ -80,11 +80,8 @@ class RecoverAccountMFAForm(Form):
 
 class RequestResetPasswordForm(Form):
     email = EmailField(
-        "Enter your email:", [
-            validators.Email(), 
-            validators.Length(min=3, max=254), 
-            validators.DataRequired()
-        ]
+        "Enter your email:", 
+        [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()]
     )
 
 class CreateResetPasswordForm(Form):
