@@ -54,10 +54,10 @@
             - No effect on the entropy of the key.
           - If the key size is equal to 4093 bits, the key will be used as is.
             - No effect on the entropy of the key.
-      - Unlikely to be guessed ($2^{4096}$ possible keys)
+      - $2^{4096}$ possible keys (Unlikely to be guessed)
       - Prevent session cookie from being tampered with
       - Automatically rotated at the end of each month
-      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)1
+      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
   - Changing the default salt from "cookie-session" to something more secure using Google Cloud Platform KMS API RNG in the Cloud HSM
     - The randomly generated 64 bytes salt will be stored in Google Cloud Platform Secret Manager API.
 
