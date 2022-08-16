@@ -264,6 +264,11 @@ def updatePassword():
     if (request.method == "POST" and create_update_password_form.validate()):
         currentPassword = create_update_password_form.currentPassword.data
         updatedPassword = create_update_password_form.password.data
+        confirmPassword = create_update_password_form.cfmPassword.data
+
+        if (updatedPassword != confirmPassword):
+            flash("Entered passwords do not match!")
+            return render_template("users/user/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 
         changed = False
         try:
