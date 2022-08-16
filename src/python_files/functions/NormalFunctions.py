@@ -8,7 +8,8 @@ This is to allow this file to be run as a standalone script.
 import requests as req, uuid, re, json, pathlib
 from six import ensure_binary
 from typing import Union, Optional
-from base64 import urlsafe_b64encode
+from binascii import Error as BinasciiError
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from time import sleep
 from hashlib import sha1
 from datetime import datetime, timedelta
@@ -63,6 +64,35 @@ from google.cloud.kms_v1.types import resources
 from google.cloud import recaptchaenterprise_v1
 from google.cloud.recaptchaenterprise_v1 import Assessment
 
+def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
+    """
+    Decodes the URL-safe base64 encoded token and decrypts it using the token-key in GCP KMS.
+
+    Args:
+    - tokenInput (str): The token to decode and decrypt.
+
+    Returns:
+    - The decrypted token (str) if successful, None if not.
+    """
+    try:
+        token = symmetric_decrypt(
+            ciphertext=urlsafe_b64decode(tokenInput),
+            keyID=CONSTANTS.TOKEN_ENCRYPTION_KEY_ID
+        )
+
+        # if the token is not equal to 240 characters,
+        # return None because it is not a valid token
+        return token if (len(token) == 240) else None
+    except (DecryptionError, BinasciiError, ValueError, TypeError):
+        # If the user tampers with the token in the url
+        return None
+    except (Exception) as e:
+        write_log_entry(
+            logMessage=f"Error caught when decoding and decrypting reset password token: {e}",
+            severity="NOTICE"
+        )
+        return None
+
 def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
     """
     Returns an array of pagination button integers.
@@ -114,81 +144,6 @@ def get_pagination_arr(pageNum:int=1, maxPage:int=1) -> list:
         # then the array will be: [5, 6, 7, 8, 9]
         return list(range(pageNum-2, pageNum+3))
 
-def download_to_path(
-    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
-    blobName:str="",
-    downloadPath:pathlib.Path=None,
-) -> None:
-    """
-    Downloads a file from Google Cloud Storage to a local path.
-
-    Args:
-    - bucketName (str): The name of the bucket to download from
-    - blobName (str): The name of the blob to download
-        - e.g. "user-profiles/default.png"
-    - downloadPath (pathlib.Path): The folder path to download the file to
-        - Defaults to a temp folder created in the running python script directory
-    """
-    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
-
-    blob = bucket.blob(blobName)
-    if (isinstance(downloadPath, str)):
-        print("Warning: downloadPath is a string, will be converted to a pathlib.Path object.")
-        downloadPath = pathlib.Path(downloadPath)
-
-    if (downloadPath is None):
-        downloadPath = pathlib.Path(__file__).parent.absolute().joinpath("temp")
-    downloadPath.mkdir(parents=True, exist_ok=True)
-
-    downloadPath = downloadPath.joinpath(blobName.rsplit("/", 1)[-1])
-    blob.download_to_filename(downloadPath)
-
-def upload_file_from_path(
-    bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
-    localFilePath:pathlib.Path=None,
-    uploadDestination:str="",
-    cacheControl:Optional[str]=CONSTANTS.DEFAULT_CACHE_CONTROL
-) -> str:
-    """
-    Uploads a file to Google Cloud Platform Storage API.
-
-    Args:
-    - bucketName (str, Optional): Name of the bucket.
-        - Default: PUBLIC_BUCKET_NAME defined in Constants.py
-    - localFilePath (Path): A pathlib Path object to the local file.
-        - E.g. Path("/path/to/file.png")
-    - uploadDestination (str): Path to the destination in the bucket to upload to.
-        - E.g. "user-profiles/file.png" to upload to the user's profile folder in the bucket
-        - E.g. "file.png" to upload to the root of the bucket
-    - cacheControl (str, Optional): The cache control header to set on the uploaded file.
-        - E.g. "public, max-age=60" for a 1 minute cache
-        - Default: DEFAULT_CACHE_CONTROL defined in Constants.py
-
-    Returns:
-    - str: The public URL of the uploaded file.
-    """
-    bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
-
-    uploadDestination = "/".join([uploadDestination, localFilePath.name])
-
-    blob = bucket.blob(uploadDestination)
-    try:
-        blob.upload_from_filename(localFilePath, checksum="crc32c")
-
-        blob.reload()
-        blob.cache_control = cacheControl
-        blob.patch()
-    except (UploadDataCorruption):
-        write_log_entry(
-            logMessage="UploadDataCorruption: The data uploaded to Google Cloud Storage is corrupted.",
-            severity="INFO"
-        )
-        raise UploadFailedError("Data corruption detected!")
-    except (InvalidResponse):
-        raise UploadFailedError("Invalid response from Google Cloud Storage!")
-
-    return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
-
 def upload_from_stream(
     bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME,
     fileObj:IOBase=None,
@@ -236,22 +191,56 @@ def upload_from_stream(
 
     return "/".join(["https://storage.googleapis.com", bucketName, uploadDestination])
 
-def delete_blob(bucketName:Optional[str]=CONSTANTS.PUBLIC_BUCKET_NAME, destinationURL:str="") -> None:
+def get_blob_path(url:str="") -> str:
+    """
+    Get the blob path from the Google Storage API URL.
+
+    Args:
+    - url (str): The URL of the blob.
+        - E.g. https://storage.cloud.google.com/coursefinity-videos/videos/watame.mp4
+            - Will return "videos/watame.mp4"
+
+    Returns:
+    - The blob path (str): will return the blob path or an empty string if the url is not a valid Google Storage URL.
+    """
+    # "/" must be in the url as there must be 
+    # a bucket name and a blob path in the URL.
+    # E.g. <bucket>/<blob> as the url path
+    if ("/" not in url):
+        return ""
+
+    # Check if the url matches the Google Storage API URL pattern.
+    matchedRegex = re.fullmatch(CONSTANTS.GOOGLE_STORAGE_URL_REGEX, url)
+    if (matchedRegex is None):
+        return ""
+
+    # Return the blob path.
+    try:
+        blobPath = matchedRegex.group(4)
+        return blobPath if (blobPath is not None) else ""
+    except (IndexError):
+        return ""
+
+def delete_blob(url:str="") -> None:
     """
     Deletes a file from Google Cloud Platform Storage API.
 
     Args:
-    - bucketName (str, Optional): Name of the bucket.
-        - Default: PUBLIC_BUCKET_NAME defined in Constants.py
-    - destinationPath (str): Uploaded destination of the file to delete.
-        - E.g. "filepath.png"
-        - E.g. "folder/filepath.png"
+    - url (str): The URL of the file/blob to delete from.
+        - E.g. "https://storage.googleapis.com/coursefinity/example.webp"
 
     Raises:
     - FileNotFoundError: If the file to delete does not exist in the bucket.
+    - ValueError: If the url is not a valid Google Storage URL.
     """
+    blobPath = get_blob_path(url)
+    if (blobPath == ""):
+        # If the url is not a valid Google Cloud Storage URL
+        raise ValueError("File not found!")
+
+    bucketName, blobPath = blobPath.split(sep="/", maxsplit=1)
     bucket = SECRET_CONSTANTS.GOOGLE_STORAGE_CLIENT.bucket(bucketName)
-    blob = bucket.blob(destinationURL)
+    blob = bucket.blob(blobPath)
     try:
         blob.delete()
     except (GoogleErrors.NotFound):
@@ -688,7 +677,9 @@ def symmetric_encrypt(plaintext:Union[str, bytes]="", keyRingID:str=CONSTANTS.AP
     plaintextCRC32C = crc32c(plaintext)
 
     # Construct the key version name
-    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(
+        CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID
+    )
 
     # construct and send the request to Google Cloud KMS API to encrypt the plaintext
     response = SECRET_CONSTANTS.KMS_CLIENT.encrypt(request={"name": keyVersionName, "plaintext": plaintext, "plaintext_crc32c": plaintextCRC32C})
@@ -736,7 +727,9 @@ def symmetric_decrypt(
         raise CiphertextIsNotBytesError(f"The ciphertext, {ciphertext} is in \"{type(ciphertext)}\" format. Please pass in a bytes type variable.")
 
     # Construct the key version name
-    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID)
+    keyVersionName = SECRET_CONSTANTS.KMS_CLIENT.crypto_key_path(
+        CONSTANTS.GOOGLE_PROJECT_ID, CONSTANTS.LOCATION_ID, keyRingID, keyID
+    )
 
     # compute the ciphertext's CRC32C checksum before sending it to Google Cloud KMS API
     cipherTextCRC32C = crc32c(ciphertext)
@@ -745,8 +738,17 @@ def symmetric_decrypt(
     try:
         response = SECRET_CONSTANTS.KMS_CLIENT.decrypt(request={"name": keyVersionName, "ciphertext": ciphertext, "ciphertext_crc32c": cipherTextCRC32C})
     except (GoogleErrors.InvalidArgument) as e:
-        print("Error caught while decrypting (symmetric):")
-        print(e)
+        try:
+            ciphertextToLog = urlsafe_b64encode(ciphertext).decode("utf-8")
+        except:
+            ciphertextToLog = "Could not url-safe base64 encode the ciphertext..."
+        write_log_entry(
+            logMessage={
+                "Decryption Error": str(e),
+                "URL-base64 Encoded Ciphertext": ciphertextToLog
+            },
+            severity="INFO"
+        )
         raise DecryptionError("Symmetric Decryption failed.")
 
     # Perform a integrity check on the decrypted data that Google Cloud KMS API returned

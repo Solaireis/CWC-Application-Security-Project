@@ -213,7 +213,7 @@ class Constants:
     PUBLIC_BUCKET_NAME: str = "coursefinity"
     COURSE_VIDEOS_BUCKET_NAME: str = "coursefinity-videos"
     GOOGLE_STORAGE_URL_REGEX: re.Pattern[str] = re.compile(
-        r"^https:\/\/storage\.cloud\.google\.com\/[a-zA-Z0-9-_ ]+\/.+$"
+        r"^((https:\/\/storage\.googleapis\.com)|(https:\/\/storage\.cloud\.google\.com))\/([a-zA-Z0-9-\/.%_]+)?.*$"
     )
     DEFAULT_CACHE_CONTROL: str = "public, max-age=31536000" # 1 year
 

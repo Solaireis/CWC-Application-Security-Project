@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 from hashlib import sha512
 from math import ceil
 from base64 import b85encode, urlsafe_b64decode, urlsafe_b64encode
-from binascii import Error as BinasciiError
 
 # import Flask web application configs
 from flask import url_for, current_app, abort, session
@@ -28,25 +27,9 @@ from python_files.classes.Errors import *
 from python_files.classes.Reviews import ReviewInfo, Reviews
 from .NormalFunctions import generate_id, pwd_has_been_pwned, pwd_is_strong, \
                              symmetric_encrypt, symmetric_decrypt, get_dicebear_image, \
-                             send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties
+                             send_email, write_log_entry, get_mysql_connection, delete_blob, generate_secure_random_bytes, ExpiryProperties, decode_and_decrypt_token
 from python_files.classes.Constants import CONSTANTS
 from .VideoFunctions import delete_video, add_video_tag, check_video, edit_video_tag
-
-
-def get_blob_name(url:str="") -> str:
-    """
-    Get the blob name from the Google Storage API URL.
-
-    Args:
-    - url (str): The URL of the blob.
-        - E.g. https://storage.cloud.google.com/coursefinity-videos/videos/watame.mp4
-            - Will return "videos/watame.mp4"
-
-    Returns:
-    - The blob name (str) or a empty string if the url is not a valid Google Storage URL.
-    """
-    # if (re.fullmatch(CONSTANTS.GOOGLE_STORAGE_URL_REGEX, url)) else ""
-    return "/".join(url.split("/")[4:])
 
 def add_session(userID:str, userIP:str="", userAgent:str="") -> str:
     """
@@ -300,35 +283,6 @@ def sql_operation(table:str=None, mode:str=None, **kwargs) -> Union[str, list, t
 
     return returnValue
 
-def decode_and_decrypt_token(tokenInput:str) ->Union[str, None]:
-    """
-    Decodes the URL-safe base64 encoded token and decrypts it using the token-key in GCP KMS.
-
-    Args:
-    - tokenInput (str): The token to decode and decrypt.
-
-    Returns:
-    - The decrypted token (str) if successful, None if not.
-    """
-    try:
-        token = symmetric_decrypt(
-            ciphertext=urlsafe_b64decode(tokenInput),
-            keyID=current_app.config["CONSTANTS"].TOKEN_ENCRYPTION_KEY_ID
-        )
-
-        # if the token is not equal to 240 characters,
-        # return None because it is not a valid token
-        return token if (len(token) == 240) else None
-    except (DecryptionError, BinasciiError, ValueError, TypeError):
-        # If the user tampers with the token in the url
-        return None
-    except (Exception) as e:
-        write_log_entry(
-            logMessage=f"Error caught when decoding and decrypting reset password token: {e}",
-            severity="NOTICE"
-        )
-        return None
-
 def guard_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs) ->  Union[str, bool, None]:
     if (mode is None):
         raise ValueError("You must specify a mode in the guard_token_sql_operation function!")
@@ -399,8 +353,6 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
             generate_secure_random_bytes(nBytes=192, returnHex=False, base64Encoded=False)
         )
         tokenStr = tokenBytes.decode("utf-8")
-        if len(tokenStr) > 255:
-            return False
 
         # Note: The token in the database is not encrypted
         cur.execute(
@@ -1255,13 +1207,19 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         # Delete old profile picture from Google Cloud Storage API
         cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
-        profileImage = cur.fetchone()[0]
-        if (profileImage is not None):
-            oldUrlToDelete = get_blob_name(url=profileImage)
+        oldProfileImage = cur.fetchone()[0]
+        if (oldProfileImage is not None):
             try:
-                delete_blob(destinationURL=oldUrlToDelete)
-            except (FileNotFoundError):
-                pass
+                delete_blob(url=oldProfileImage)
+            except (FileNotFoundError, ValueError) as e:
+                write_log_entry(
+                    logMessage={
+                        "User ID": userID,
+                        "Purpose": "Change Profile Picture",
+                        "Error": str(e)
+                    },
+                    severity="INFO"
+                )
 
         # Change profile picture in the database
         profileImagePath = kwargs["profileImagePath"]
@@ -1275,11 +1233,17 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT profile_image FROM user WHERE id=%(userID)s", {"userID":userID})
         matched = cur.fetchone()
         if (matched is not None and matched[0] is not None):
-            oldUrlToDelete = get_blob_name(url=matched[0])
             try:
-                delete_blob(destinationURL=oldUrlToDelete)
-            except (FileNotFoundError):
-                pass
+                delete_blob(url=matched[0])
+            except (FileNotFoundError, ValueError) as e:
+                write_log_entry(
+                    logMessage={
+                        "User ID": userID,
+                        "Purpose": "Delete Profile Picture",
+                        "Error": str(e)
+                    },
+                    severity="INFO"
+                )
 
         cur.execute("UPDATE user SET profile_image=%(profile_image)s WHERE id=%(userID)s", {"profile_image":None, "userID":userID})
         connection.commit()
@@ -1872,11 +1836,17 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
         cur.execute("SELECT course_image_path FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
         if (matched is not None):
-            oldUrlToDelete = get_blob_name(url=matched[0])
             try:
-                delete_blob(destinationURL=oldUrlToDelete)
-            except (FileNotFoundError):
-                pass
+                delete_blob(url=matched[0])
+            except (FileNotFoundError, ValueError) as e:
+                write_log_entry(
+                    logMessage={
+                        "Course ID": courseID,
+                        "Purpose": "Delete Old Course Thumbnail",
+                        "Error": str(e)
+                    },
+                    severity="INFO"
+                )
 
         cur.execute("UPDATE course SET course_image_path=%(courseImagePath)s WHERE course_id=%(courseID)s", {"courseImagePath":courseImagePath, "courseID":courseID})
         connection.commit()
