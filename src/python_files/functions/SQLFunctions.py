@@ -1214,6 +1214,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 roleName = cur.fetchone()[0]
 
                 return (userID, newIpAddress, username, roleName)
+            else:
+                raise IncorrectPwdError("Incorrect password!")
         except (VerifyMismatchError):
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:
@@ -1384,6 +1386,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 cur.execute("UPDATE user SET email=%(emailInput)s, email_verified=FALSE WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
                 connection.commit()
                 send_verification_email(email=emailInput, userID=userID)
+            else:
+                raise IncorrectPwdError("Incorrect password!")
         except (VerifyMismatchError):
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:
@@ -1427,6 +1431,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                     {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
                 )
                 connection.commit()
+            else:
+                raise IncorrectPwdError("Incorrect password!")
         except (VerifyMismatchError):
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:

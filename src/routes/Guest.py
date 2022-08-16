@@ -213,7 +213,10 @@ def resetPassword(token:str):
         if (twoFAEnabled):
             # if 2FA is enabled, check if the 2FA token is valid
             twoFAInput = request.form.get("totpInput", default="", type=str)
-            if (re.fullmatch(current_app.config["CONSTANTS"].TWO_FA_CODE_REGEX, twoFAInput) is None or not pyotp.TOTP(twoFAToken).verify(twoFAInput)):
+            if (
+                re.fullmatch(current_app.config["CONSTANTS"].TWO_FA_CODE_REGEX, twoFAInput) is None 
+                or not pyotp.TOTP(twoFAToken).verify(twoFAInput)
+            ):
                 # if the 2FA token is invalid
                 flash("Entered 2FA OTP is invalid or has expired!")
                 return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
@@ -528,8 +531,8 @@ def loginCallback():
     try:
         # clock_skew_in_seconds=10 seconds as it might take some time to retreive the token from Google API
         idInfo = id_token.verify_oauth2_token(
-            credentials.id_token,
-            tokenRequest, 
+            id_token=credentials.id_token,
+            request=tokenRequest, 
             audience=current_app.config["SECRET_CONSTANTS"].GOOGLE_CREDENTIALS["web"]["client_id"],
             clock_skew_in_seconds=10
         )
