@@ -264,55 +264,50 @@ def updatePassword():
     if (request.method == "POST" and create_update_password_form.validate()):
         currentPassword = create_update_password_form.currentPassword.data
         updatedPassword = create_update_password_form.password.data
-        confirmPassword = create_update_password_form.cfmPassword.data
 
-        if (updatedPassword != confirmPassword):
-            flash("Passwords Do Not Match!")
-            return render_template("users/user/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+        changed = False
+        try:
+            sql_operation(table="user", mode="change_password", userID=userID, password=updatedPassword, oldPassword=currentPassword)
+            changed = True
+        except (ChangePwdError):
+            flash("Entered current password is incorrect. Please try again!")
+        except (PwdTooShortError, PwdTooLongError):
+            flash(f"Password must be between {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} and {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long.")
+        except (PwdTooWeakError):
+            flash("Password is too weak, please enter a stronger password!")
+        except (PwdCompromisedError):
+            flash("Your password has been compromised, please use a different password!")
+        except (haveibeenpwnedAPIDownError):
+            flash(
+                Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!")
+            )
+        except (HashingError) as e:
+            write_log_entry(
+                logMessage={
+                    "User ID": userID,
+                    "Purpose": "Change Password",
+                    "Argon2 Error": str(e)
+                },
+                severity="ERROR"
+            )
+            flash("An error occurred while changing your password! Please try again later.")
+
+        if (changed):
+            emailBody = (
+                "Your password has been changed recently.<br>"
+                "If you did not update your password recently, it is likely your account has been compromised.",
+                f"please <a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPasswordRequest')}' target='_blank'>reset your password</a> immediately.<br>",
+                f"If you require further assistance with recovering your account, please either contact us on the <a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('generalBP.contactUs')}' target='_blank'>contact us page</a> or email us at coursefinity123@gmail.com"
+            )
+            send_email(
+                to=userInfo.email,
+                subject="Change of Password Notice",
+                body="<br>".join(emailBody)
+            )
+            flash("Your password has been successfully changed.", "Account Details Updated!")
+            return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
         else:
-            changed = False
-            try:
-                sql_operation(table="user", mode="change_password", userID=userID, password=updatedPassword, oldPassword=currentPassword)
-                changed = True
-            except (ChangePwdError):
-                flash("Entered current password is incorrect. Please try again!")
-            except (PwdTooShortError, PwdTooLongError):
-                flash(f"Password must be between {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} and {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long.")
-            except (PwdTooWeakError):
-                flash("Password is too weak, please enter a stronger password!")
-            except (PwdCompromisedError):
-                flash("Your password has been compromised, please use a different password!")
-            except (haveibeenpwnedAPIDownError):
-                flash(
-                    Markup("Sorry! <a href='https://haveibeenpwned.com/API/v3' target='_blank' rel='noreferrer noopener'>haveibeenpwned's API</a> is down, please match all the password requirements for the time being!")
-                )
-            except (HashingError) as e:
-                write_log_entry(
-                    logMessage={
-                        "User ID": userID,
-                        "Purpose": "Change Password",
-                        "Argon2 Error": str(e)
-                    },
-                    severity="ERROR"
-                )
-                flash("An error occurred while changing your password! Please try again later.")
-
-            if (changed):
-                emailBody = (
-                    "Your password has been changed recently.<br>"
-                    "If you did not update your password recently, it is likely your account has been compromised.",
-                    f"please <a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPasswordRequest')}' target='_blank'>reset your password</a> immediately.<br>",
-                    f"If you require further assistance with recovering your account, please either contact us on the <a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('generalBP.contactUs')}' target='_blank'>contact us page</a> or email us at coursefinity123@gmail.com"
-                )
-                send_email(
-                    to=userInfo.email,
-                    subject="Change of Password Notice",
-                    body="<br>".join(emailBody)
-                )
-                flash("Your password has been successfully changed.", "Account Details Updated!")
-                return redirect(url_for("userBP.userProfile")) if ("user" in session) else redirect(url_for("adminBP.adminProfile"))
-            else:
-                return render_template("users/user/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
+            return render_template("users/user/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
     else:
         return render_template("users/user/change_password.html", form=create_update_password_form, imageSrcPath=userInfo.profileImage, accType=userInfo.role)
 

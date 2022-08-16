@@ -1,12 +1,18 @@
 # import third party libraries
-from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, BooleanField, DecimalField, SelectField
+from wtforms import Form, validators, StringField, TextAreaField, EmailField, PasswordField, \
+                    BooleanField, DecimalField, SelectField
 
 # import local python libraries
 from .Constants import CONSTANTS
 
 class CreateLoginForm(Form):
     email = EmailField("Email:", [validators.Email(), validators.Length(min=5, max=254), validators.DataRequired()])
-    password = PasswordField("Password:", [validators.DataRequired()])
+    password = PasswordField(
+        "Password:", [
+            validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH),
+            validators.DataRequired()
+        ]
+    )
 
 class CreateSignUpForm(Form):
     username = StringField("Username:", [validators.Length(min=1, max=30), validators.DataRequired()])
@@ -20,7 +26,8 @@ class CreateSignUpForm(Form):
     cfmPassword = PasswordField(
         "Confirm Password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
-            validators.DataRequired()
+            validators.DataRequired(),
+            validators.EqualTo("password", message="Entered passwords do not match!")
         ]
     )
 
@@ -48,7 +55,12 @@ class CreateChangePasswordForm(Form):
             validators.DataRequired()
         ]
     )
-    cfmPassword = PasswordField("Confirm password:", [validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), validators.DataRequired()])
+    cfmPassword = PasswordField("Confirm password:", [
+            validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
+            validators.DataRequired(),
+            validators.EqualTo("password", message="Entered passwords do not match!")
+        ]
+    )
 
 class RecoverAccountMFAForm(Form):
     email = EmailField("Enter your email address:", [validators.Email(), validators.Length(min=3, max=254), validators.DataRequired()])
@@ -65,7 +77,8 @@ class CreateResetPasswordForm(Form):
     )
     cfmPassword = PasswordField("Confirm password:", [
             validators.Length(min=CONSTANTS.MIN_PASSWORD_LENGTH, max=CONSTANTS.MAX_PASSWORD_LENGTH), 
-            validators.DataRequired()
+            validators.DataRequired(),
+            validators.EqualTo("password", message="Entered passwords do not match!")
         ]
     )
 

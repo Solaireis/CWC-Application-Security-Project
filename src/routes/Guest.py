@@ -45,10 +45,6 @@ def recoverAccount(token:str):
     if (request.method == "POST" and resetPasswordForm.validate()):
         # check if password input and confirm password are the same
         passwordInput = resetPasswordForm.password.data
-        confirmPasswordInput = resetPasswordForm.cfmPassword.data
-        if (passwordInput != confirmPasswordInput):
-            flash("Entered passwords do not match!")
-            return render_template("users/guest/reset_password.html", form=resetPasswordForm)
 
         pwnedPassword = pwd_has_been_pwned(passwordInput)
         if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):
@@ -213,10 +209,6 @@ def resetPassword(token:str):
     if (request.method == "POST" and resetPasswordForm.validate()):
         # check if password input and confirm password are the same
         passwordInput = resetPasswordForm.password.data
-        confirmPasswordInput = resetPasswordForm.cfmPassword.data
-        if (passwordInput != confirmPasswordInput):
-            flash("Entered passwords do not match!")
-            return render_template("users/guest/reset_password.html", form=resetPasswordForm, twoFAEnabled=twoFAEnabled)
 
         if (twoFAEnabled):
             # if 2FA is enabled, check if the 2FA token is valid
@@ -615,18 +607,6 @@ def signup():
         emailInput = signupForm.email.data
         usernameInput = signupForm.username.data
         passwordInput = signupForm.password.data
-        confirmPasswordInput = signupForm.cfmPassword.data
-
-        # some checks on the password input
-        if (passwordInput != confirmPasswordInput):
-            flash("Entered passwords do not match!")
-            return render_template("users/guest/signup.html", form=signupForm)
-        if (len(passwordInput) < current_app.config["CONSTANTS"].MIN_PASSWORD_LENGTH):
-            flash(f"Password must be at least {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} characters long!")
-            return render_template("users/guest/signup.html", form=signupForm)
-        if (len(passwordInput) > current_app.config["CONSTANTS"].MAX_PASSWORD_LENGTH):
-            flash(f"Password cannot be more than {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long!")
-            return render_template("users/guest/signup.html", form=signupForm)
 
         pwnedPassword = pwd_has_been_pwned(passwordInput)
         if (isinstance(pwnedPassword, tuple) and not pwnedPassword[0]):

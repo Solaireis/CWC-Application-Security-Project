@@ -1071,7 +1071,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT * FROM user WHERE username=%(usernameInput)s", {"usernameInput":usernameInput})
         usernameDupes = bool(cur.fetchone())
 
-
         if (emailDupe or usernameDupes):
             return (emailDupe, usernameDupes)
 
@@ -1093,8 +1092,9 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         )
         connection.commit()
 
-        user_ip_addresses_sql_operation(connection=connection, mode="add_ip_address", userID=userID, ipAddress=kwargs["ipAddress"])
-
+        user_ip_addresses_sql_operation(
+            connection=connection, mode="add_ip_address", userID=userID, ipAddress=kwargs["ipAddress"]
+        )
         return userID
 
     elif (mode == "check_if_using_google_oauth2"):
