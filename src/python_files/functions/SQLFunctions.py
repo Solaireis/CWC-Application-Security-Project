@@ -1409,12 +1409,6 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         try:
             # check if the supplied old password matches the current password
             if (CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)):
-                if (len(passwordInput) < CONSTANTS.MIN_PASSWORD_LENGTH):
-                    raise PwdTooShortError(f"The password must be at least {CONSTANTS.MIN_PASSWORD_LENGTH} characters long!")
-
-                if (len(passwordInput) > CONSTANTS.MAX_PASSWORD_LENGTH):
-                    raise PwdTooLongError(f"The password must be less than {CONSTANTS.MAX_PASSWORD_LENGTH} characters long!")
-
                 passwordCompromised = pwd_has_been_pwned(passwordInput)
                 if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
                     write_log_entry(

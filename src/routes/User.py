@@ -271,8 +271,6 @@ def updatePassword():
             changed = True
         except (ChangePwdError):
             flash("Entered current password is incorrect. Please try again!")
-        except (PwdTooShortError, PwdTooLongError):
-            flash(f"Password must be between {current_app.config['CONSTANTS'].MIN_PASSWORD_LENGTH} and {current_app.config['CONSTANTS'].MAX_PASSWORD_LENGTH} characters long.")
         except (PwdTooWeakError):
             flash("Password is too weak, please enter a stronger password!")
         except (PwdCompromisedError):

@@ -55,25 +55,6 @@ class ChangePwdError(Exception):
     Raised if the user tries to change their password but provided an incorrect old password.
     """
 
-class PwdTooShortError(Exception):
-    """
-    Raised if the password is too short (less than 8 characters).
-    
-    As recommended by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls), the password should be at least 8 characters long.
-    """
-
-class PwdTooLongError(Exception):
-    """
-    Raised if the password is too long.
-    
-    Reason: 
-        - Due to limitations of the password hashing algorithm, the password cannot be too long.
-        - Set the limit to 64 characters as defined in Constantst.py
-    
-    More details:
-        https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html#implement-proper-password-strength-controls
-    """
-
 class PwdTooWeakError(Exception):
     """
     Raised if the password does not meet the minimum complexity requirements.
