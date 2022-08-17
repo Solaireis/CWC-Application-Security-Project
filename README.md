@@ -10,7 +10,7 @@ CourseFinity Web Application using Flask
 
 ## Forked Project for IT2555 App Security Project [4 members]
 
-This project consists of us making a SECURE web application using Flask as its framework.
+This project consists of us making a SECURE web application using Flask as its framework and is based off a [GitHub repository](https://github.com/KJHJason/App-Development-Project).
 
 This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.social](https://coursefinity.social/)
 
@@ -34,7 +34,7 @@ This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.
 >
 >The web application is for students and teachers to connect together from all over the world and share their skills.
 >
->The teachers can either upload videos and sell the courses to earn extra money for themselves.
+>The teachers can upload videos and sell the courses to earn extra money for themselves.
 >
 >The students can then buy the courses and start learning! 
 
@@ -45,6 +45,12 @@ This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.
 ```
 pip install -r requirements.txt
 ```
+
+---
+
+**How can I run the web application?**
+
+Unfortunately, you cannot run the application as our web application infrastructure mostly use [Google Cloud Platform (GCP)](https://cloud.google.com/) APIs which requires you to have the necessary GCP service accounts json files.
 
 ---
 

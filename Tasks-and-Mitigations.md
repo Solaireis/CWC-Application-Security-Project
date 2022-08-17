@@ -9,13 +9,17 @@
 #### Implemented:
 - Home
 - Login
+  - User Login
+  - Admin Login
+  - Super Admin Login
 - Signup
-- Admin Login
 - Admin Profile
-- Super Admin Login
 - Teacher Page
 - User Management System
 - Improvement of Calvin's pagination
+- Integrating Cloudflare to the [hosted web application](https://coursefinity.social/)
+- Integrating [Google Cloud Platform GCP](https://cloud.google.com/) APIs
+- Deployment of the Web Application on [Google Cloud Run](https://cloud.google.com/run)
 
 ---
 
@@ -24,6 +28,11 @@
 ### Cryptographic Failures
 
 #### Implemented:
+- Using [Google Cloud Platform Key Management Service (KMS)](https://cloud.google.com/security-key-management) for cryptographic operations
+  - Generated keys are stored and replicated globally in Google's servers
+  - The generated keys are protected by using Google's [Hardware Security Module (HSM)](https://cloud.google.com/kms/docs/hsm)
+  - Generated symmetric keys are also configured to rotate every 30 days
+
 - When generating something random such as for session IDs, use a cryptographically secure random number generator (RNG).
   - Reasons:
     - RNG in computers can be a problem for sensitive actions such as for session identifier, cryptography operations, etc. as they can be very predictable. 
@@ -44,22 +53,25 @@
     - References:
       - [SHAttered](https://shattered.it/)
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
-    - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
-      - Ensures high entropy
-        - Generated key will have a high entropy as it is generated using a cryptographically secure random number generator (RNG) in the Cloud HSM.
-        - Since the max cookie size is 4093 bits, specified in Flask's default configuration, a key size must be at least 4093 bits will be needed to ensure high entropy as the key size must match the message size.
-          - If the key size is less than 4093 bits, the key will be padded with zeros to match the message size.
-            - Wil reduce the entropy of the key.
-          - If the key size is greater than 4093 bits, the key will be truncated to match the message size.
-            - No effect on the entropy of the key.
-          - If the key size is equal to 4093 bits, the key will be used as is.
-            - No effect on the entropy of the key.
-      - $2^{4096}$ possible keys (Unlikely to be guessed)
-      - Prevent session cookie from being tampered with
-      - Automatically rotated at the end of each month
-      - In the event that the key is leaked, the key can be simply rotated using [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
   - Changing the default salt from "cookie-session" to something more secure using Google Cloud Platform KMS API RNG in the Cloud HSM
     - The randomly generated 64 bytes salt will be stored in Google Cloud Platform Secret Manager API.
+  - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
+    - Ensures high entropy
+      - Generated key will have a high entropy as it is generated using a cryptographically secure random number generator (RNG) in the Cloud HSM.
+      - Since the max cookie size is 4093 bits, specified in Flask's default configuration, a key size must be at least 4093 bits will be needed to ensure high entropy as the key size must match the message size.
+        - If the key size is less than 4093 bits, the key will be padded with zeros to match the message size.
+          - Wil reduce the entropy of the key.
+        - If the key size is greater than 4093 bits, the key will be truncated to match the message size.
+          - No effect on the entropy of the key.
+        - If the key size is equal to 4093 bits, the key will be used as is.
+          - No effect on the entropy of the key.
+    - $2^{4096}$ possible keys (Unlikely to be guessed)
+    - Prevent session cookie from being tampered with
+    - Automatically rotated at the end of each month
+    - In the event that the Flask session secret key is leaked, the key can be simply rotated.
+      - Can be rotated by:
+        - Running [flask_session_console.py](/sample/flask_session_console.py) which will store the newly generated secret key in [Google Cloud Platform Secret Manager API](https://cloud.google.com/secret-manager)
+        - Manually added a new secret version on the [Google Cloud Platform Secret Manager Console](https://cloud.google.com/secret-manager).
 
 - [Argon2](https://pypi.org/project/argon2-cffi/) for hashing passwords
   - Argon2 will generate a random salt using `os.urandom(nBytes)` which is more secure than setting your own salt
@@ -89,23 +101,26 @@
       - Not too resource intensive as to avoid server resource exhaustion.
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 
-- Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
-  - For layered security on top of HTTPS.
-  - Using Google Cloud Platform KMS.
+- Encrypting the sensitive data to be exposed in the public domain/internet using Google Cloud Platform KMS symmetric encryption service
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
-  - Preventing sensitive data from being sniffed and exposed such as the session identifier
+  - A total of 2 AES-256 GCM keys are used:
+    - Encrypting the (temporarily stored) sensitive data in the session cookie such as the state for Google OAuth2 logins
+      - For layered security on top of HTTPS
+      - Preventing sensitive data from being sniffed and exposed from the session cookie
+    - Implemented tokens for authorising sensitive actions such as reset password using Python's secrets module
+      - The token is in plaintext in the database but encrypted in the URL
+        - Acts as a layer of security through obscurity
+      - This means that the attacker will have to find the key used in the encryption of the token ID in order to encrypt it and use it in the URL
 
 - Encrypting the sensitive data in the database using Google Cloud Platform KMS symmetric encryption service
-  - Using Google Cloud Platform KMS (Key Management Service) API
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
+  - In total there is 2 AES-256 GCM keys for the database:
+    - One for the user's sensitive data
+    - One to use as pepper for the user's password Argon2 hash
+  - Using Google Cloud Platform KMS (Key Management Service) API
   - Encrypted the Argon2 hash of the password as pepper
 
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway by Wei Ren
-
-- Implemented tokens for authorising sensitive actions such as reset password using Python's secrets module
-  - The token is in plaintext in the database but encrypted in the URL
-    - Acts as a layer of security through obscurity
-  - This means that the attacker will have to find the key used in the encryption of the token ID in order to encrypt it and use it in the URL
 
 - Integrated Cloudflare to the custom domain, [coursefinity.social](https://coursefinity.social/)
   - Configured Cloudflare to redirect HTTP requests to use HTTPS
@@ -131,8 +146,8 @@
 - IP address based authentication (Guard TOTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
   - Checks against known IP addresses of users against the login request
-  - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 15 characters code that is sent to the user's email
-    - The 15 characters code is 12 bytes and is generated from Google Cloud Platform KMS Cloud HSM
+  - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 16 characters code that is sent to the user's email
+    - The 16 characters code is a randomly generated 12 bytes from Google Cloud Platform KMS Cloud HSM
   - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
@@ -172,8 +187,7 @@
 
 - Maximum of 8 failed login attempts per account (will reset after 1 hour)
   - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
-    - An email will be sent to the user's email with a one-time link to unlock the account
-    - Link uses a digitally signed token to prevent tampering
+    - An email will be sent to the user's email with a one-time link that contains a token to unlock the account
 
 - Session Management Implementation (Mainly using Flask session):
   - Session identifier of 32 bytes (Unlikely to be guessed) stored in the database.
