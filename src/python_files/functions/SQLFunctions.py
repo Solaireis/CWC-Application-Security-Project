@@ -350,7 +350,7 @@ def expirable_token_sql_operation(connection:MySQLConnection=None, mode:str=None
         # Generate a 1536 bits random token and encode it
         # as comparing binary data in MySQL may not work properly
         tokenBytes = b85encode(
-            generate_secure_random_bytes(nBytes=192, returnHex=False, base64Encoded=False)
+            generate_secure_random_bytes(nBytes=192, returnHex=False)
         )
         tokenStr = tokenBytes.decode("utf-8")
 

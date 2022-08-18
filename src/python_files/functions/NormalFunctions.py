@@ -540,9 +540,7 @@ def write_log_entry(logName:str=CONSTANTS.LOGGING_NAME, logMessage:Union[str, di
     else:
         raise ValueError("logMessage must be a str or dict")
 
-def generate_secure_random_bytes(
-    nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False, base64Encoded:bool=False
-) -> Union[bytes, str]:
+def generate_secure_random_bytes(nBytes:int=512, generateFromHSM:bool=False, returnHex:bool=False) -> Union[bytes, str]:
     """
     Generate a random byte/hex string of length nBytes that is cryptographicy secure.
 
@@ -559,7 +557,6 @@ def generate_secure_random_bytes(
             - Recommended by OWASP to use secrets library to ensure higher entropy
             - More details: https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation
     - returnHex (bool): Whether to return the random bytes as a hex string.
-    - base64Encoded (bool): Whether to return the random bytes as a URL-safe base64 encoded string.
 
     Returns:
     - A random byte string of length nBytes if returnHex is False.
@@ -567,16 +564,12 @@ def generate_secure_random_bytes(
     """
     if (nBytes < 1):
         raise ValueError("nBytes must be greater than 0!")
-    if (returnHex and base64Encoded):
-        raise ValueError("returnHex and base64Encoded cannot both be True!")
 
     # Since GCP KMS RNG Cloud HSM's minimum length is 8 bytes, 
     # fallback to secrets library if nBytes is less than 8
     if (not generateFromHSM or nBytes < 8):
         if (returnHex):
             return token_hex(nBytes)
-        elif (base64Encoded):
-            return token_urlsafe(nBytes)
         else:
             return token_bytes(nBytes)
 
@@ -621,8 +614,6 @@ def generate_secure_random_bytes(
 
     if (returnHex):
         return randomBytes.hex()
-    elif (base64Encoded):
-        return urlsafe_b64encode(randomBytes).decode("utf-8")
     else:
         return randomBytes
 
