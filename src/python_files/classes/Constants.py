@@ -65,8 +65,6 @@ class Constants:
     USER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "teacherBP": "userBP.userProfile",
         "guestBP": "generalBP.home"
-        
-        
     })
     TEACHER_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "guestBP": "guestBP.home",
@@ -75,7 +73,6 @@ class Constants:
     ADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "guestBP": "generalBP.home",
         "teacherBP": "generalBP.home"
-        
     })
     SUPERADMIN_REDIRECT_TABLE: dict[str, str] = field(default_factory=lambda: {
         "guestBP": "generalBP.home",

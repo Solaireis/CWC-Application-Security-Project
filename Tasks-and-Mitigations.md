@@ -143,7 +143,7 @@
 ### Identification and Authentication Failures
 
 #### Implemented:
-- IP address based authentication (Guard TOTP)
+- IP address based authentication (Guard OTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 16 characters code that is sent to the user's email
@@ -156,14 +156,19 @@
     - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
       - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption
 
-- Implemented [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) onto the web application
-  - Added on:
-    - Login page
-    - Reset password request page
-    - IP address based authentication (Guard TOTP) page
-  - Prevent automated attacks such as
-    - Credential stuffing attacks
-    - Brute force attacks
+- Implemented mitigations to deter/prevent automated attacks
+  - [Flask limiter](https://flask-limiter.readthedocs.io/en/stable/)
+    - Rate limiting for routes that deals with identification and authentication in the web application to prevent brute-force attacks
+      - Sensitive Pages: 9 requests/min 
+        - This configuration was also checked by Eden as part of his security misconfiguration OWASP
+  - [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise)
+    - Added on:
+      - Login page
+      - Reset password request page
+      - IP address based authentication (Guard OTP) page
+    - Prevent automated attacks such as
+      - Credential stuffing attacks
+      - Brute force attacks
 
 - Password Complexity Policy
   - Requires user to match at least 3 of the criteria stated below:
