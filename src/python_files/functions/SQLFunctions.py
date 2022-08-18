@@ -1154,23 +1154,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         newIpAddress = False
         decryptedPasswordHash = symmetric_decrypt(ciphertext=encryptedPasswordHash, keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
-            if (CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)):
-                # check if the login request is from the same IP address as the one that made the request
-                if (requestIPAddressHex not in ipAddressList):
-                    newIpAddress = True
-                else:
-                    # Update last accessed upon successful login
-                    cur.execute("UPDATE user_ip_addresses SET last_accessed = SGT_NOW() WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s", {"userID": userID, "ipAddress": requestIPAddressHex})
-                    connection.commit()
-
-                # convert the role id to a readable format
-                cur.execute("CALL get_role_name(%(roleID)s)", {"roleID":roleID})
-                roleName = cur.fetchone()[0]
-
-                return (userID, newIpAddress, username, roleName)
-            else:
-                raise IncorrectPwdError("Incorrect password!")
+            # verify if the password input matches the password hash in the database 
+            CONSTANTS.PH.verify(decryptedPasswordHash, passwordInput)
         except (VerifyMismatchError):
+            # if the hash does not match
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:
             write_log_entry(
@@ -1182,6 +1169,20 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 severity="ERROR"
             )
             raise IncorrectPwdError("Incorrect password!")
+
+        # check if the login request is from the same IP address as the one that made the request
+        if (requestIPAddressHex not in ipAddressList):
+            newIpAddress = True
+        else:
+            # Update last accessed upon successful login
+            cur.execute("UPDATE user_ip_addresses SET last_accessed = SGT_NOW() WHERE user_id = %(userID)s AND ip_address = %(ipAddress)s", {"userID": userID, "ipAddress": requestIPAddressHex})
+            connection.commit()
+
+        # convert the role id to a readable format
+        cur.execute("CALL get_role_name(%(roleID)s)", {"roleID":roleID})
+        roleName = cur.fetchone()[0]
+
+        return (userID, newIpAddress, username, roleName)
 
     elif (mode == "find_user_for_reset_password"):
         email = kwargs["email"]
@@ -1348,13 +1349,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         cur.execute("SELECT password FROM user WHERE id=%(userID)s", {"userID":userID})
         currentPassword = symmetric_decrypt(ciphertext=cur.fetchone()[0], keyID=CONSTANTS.PEPPER_KEY_ID)
         try:
-            if (CONSTANTS.PH.verify(currentPassword, currentPasswordInput)):
-                cur.execute("UPDATE user SET email=%(emailInput)s, email_verified=FALSE WHERE id=%(userID)s", {"emailInput": emailInput, "userID":userID})
-                connection.commit()
-                send_verification_email(email=emailInput, userID=userID)
-            else:
-                raise IncorrectPwdError("Incorrect password!")
+            # verify if the password input matches the password hash in the database 
+            CONSTANTS.PH.verify(currentPassword, currentPasswordInput)
         except (VerifyMismatchError):
+            # if the hash does not match
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:
             write_log_entry(
@@ -1367,6 +1365,13 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             )
             raise IncorrectPwdError("Incorrect password!")
 
+        cur.execute(
+            "UPDATE user SET email=%(emailInput)s, email_verified=FALSE WHERE id=%(userID)s", 
+            {"emailInput": emailInput, "userID":userID}
+        )
+        connection.commit()
+        send_verification_email(email=emailInput, userID=userID)
+
     elif (mode == "change_password"):
         userID = kwargs["userID"]
         oldPasswordInput = kwargs["oldPassword"] # to authenticate the changes
@@ -1377,29 +1382,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         currentPasswordHash = symmetric_decrypt(ciphertext=matched[0], keyID=CONSTANTS.PEPPER_KEY_ID)
 
         try:
-            # check if the supplied old password matches the current password
-            if (CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)):
-                passwordCompromised = pwd_has_been_pwned(passwordInput)
-                if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
-                    write_log_entry(
-                        logMessage="haveibeenpwned's API is down, will fall back to strict password checking!",
-                        severity="NOTICE"
-                    )
-                    raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
-
-                if (passwordCompromised):
-                    raise PwdCompromisedError(f"The password has been compromised!")
-                if (not pwd_is_strong(passwordInput)):
-                    raise PwdTooWeakError("The password is too weak!")
-
-                cur.execute(
-                    "UPDATE user SET password=%(password)s WHERE id=%(userID)s",
-                    {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
-                )
-                connection.commit()
-            else:
-                raise IncorrectPwdError("Incorrect password!")
+            # verify if the supplied old password matches the current password hash in the database
+            CONSTANTS.PH.verify(currentPasswordHash, oldPasswordInput)
         except (VerifyMismatchError):
+            # if the the supplied old password does not match the current password hash in the database
             raise IncorrectPwdError("Incorrect password!")
         except (VerificationError, InvalidHash) as e:
             write_log_entry(
@@ -1411,6 +1397,25 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
                 severity="ERROR"
             )
             raise IncorrectPwdError("Incorrect password!")
+
+        passwordCompromised = pwd_has_been_pwned(passwordInput)
+        if (isinstance(passwordCompromised, tuple) and not passwordCompromised[0]):
+            write_log_entry(
+                logMessage="haveibeenpwned's API is down, will fall back to strict password checking!",
+                severity="NOTICE"
+            )
+            raise haveibeenpwnedAPIDownError(f"The API is down and does not match all the password complexity requirements!")
+
+        if (passwordCompromised):
+            raise PwdCompromisedError(f"The password has been compromised!")
+        if (not pwd_is_strong(passwordInput)):
+            raise PwdTooWeakError("The password is too weak!")
+
+        cur.execute(
+            "UPDATE user SET password=%(password)s WHERE id=%(userID)s",
+            {"password": symmetric_encrypt(plaintext=CONSTANTS.PH.hash(passwordInput), keyID=CONSTANTS.PEPPER_KEY_ID), "userID": userID}
+        )
+        connection.commit()
 
     elif (mode == "reset_password"):
         userID = kwargs["userID"]
