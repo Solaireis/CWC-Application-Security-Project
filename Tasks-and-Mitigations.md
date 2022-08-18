@@ -108,6 +108,7 @@
     - Argon2id
     - On average, the time taken to hash a password is about 0.06+- seconds.
       - Not too resource intensive as to avoid server resource exhaustion.
+
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for login/signup (removed the need for storing passwords)
 
 - Encrypting the sensitive data to be exposed in the public domain/internet using Google Cloud Platform KMS symmetric encryption service
