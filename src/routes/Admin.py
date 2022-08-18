@@ -90,6 +90,27 @@ def userManagement():
             else:
                 flash("The email provided was invalid when recovering the user's account.", "Error recovering user's account!")
 
+        elif (formType == "disableTwoFA" and userInfo.hasTwoFA):
+            disabledTwoFA = False
+            try:
+                sql_operation(table="2fa_token", mode="delete_token_and_backup_codes", userID=userID)
+                disabledTwoFA = True
+            except (No2FATokenError):
+                flash(f"The user, {userID}, does not have two-factor authentication enabled on their account.", "Error disabling 2FA!")
+
+            if (disabledTwoFA):
+                htmlBody = (
+                    "Great news! An administrator has disabled two-factor authentication on your account.",
+                    "Please contact an administrator if you have any questions or if you think this is a mistake."
+                )
+                send_email(
+                    to=userInfo.email, subject="Two-Factor Authentication Disabled", body="<br><br>".join(htmlBody)
+                )
+                flash(
+                    Markup(f"The user, {userID}, has its 2 Factor Authentication <span class='text-danger'>disabled</span>!"), 
+                    "Two-Factor Authentication Disabled!"
+                )
+
         elif (formType == "revokeRecoveryProcess" and not userInfo.googleOAuth):
             try:
                 sql_operation(table="acc_recovery_token", mode="revoke_token", userID=userID)

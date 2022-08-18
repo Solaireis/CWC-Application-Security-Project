@@ -16,6 +16,13 @@
 - Admin Profile
 - Teacher Page
 - User Management System
+  - Which allows the admin to:
+    - Edit username
+    - Recover a user's account
+    - Reset profile image
+    - Disable a user's 2FA if enabled
+    - Ban/Unban a user
+    - Delete a user
 - Improvement of Calvin's pagination
 - 2FA pages
 - Account Recovery pages

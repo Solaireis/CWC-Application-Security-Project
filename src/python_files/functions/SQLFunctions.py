@@ -753,6 +753,11 @@ def twofa_token_sql_operation(connection:MySQLConnection=None, mode:str=None, **
 
     elif (mode == "delete_token_and_backup_codes"):
         userID = kwargs["userID"]
+        cur.execute("SELECT token FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
+        matchedToken = cur.fetchone()
+        if (matchedToken is None):
+            raise No2FATokenError("No 2FA OTP found for this user!")
+
         cur.execute("DELETE FROM twofa_token WHERE user_id = %(userID)s", {"userID":userID})
         connection.commit()
 

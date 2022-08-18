@@ -101,7 +101,8 @@ class UserAccountIsRecoveringError(Exception):
 
 class No2FATokenError(Exception):
     """
-    Raised if the user tries to login but they have not enabled 2FA.
+    Raised if the user tries to login or when an admin tries
+    to disable 2FA for a user but the user has not enabled 2FA.
     """
 
 class CRC32ChecksumError(Exception):
