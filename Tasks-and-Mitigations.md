@@ -155,7 +155,7 @@
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
   - Backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
-    - Recommended by [OWASP Multifactor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
+    - Recommended by [OWASP Multi-factor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
     - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
       - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption
 
@@ -267,18 +267,18 @@
 #### Implemented:
 - Role based Access Control which groups the app routes via Blueprints, access control is granted only to the specific blueprints group
 - Role Based Access Control for the MySQL Server
-  - Removal of complex group in MySQLSQL based on teachers recommendations
+  - Removal of complex group in MySQL based on teachers recommendations
   - This is due to the complexities of the group role functionality
   - Reduce the permissions of the MySQL server to CRUD and Execute for calling stored procedures and functions, keeping security simple 
   - Security of MySQL server depends on the web application to have proper Access Control
-- Implemented simple IDOR prevention agaisnt attackers guessing for AdminID on teacher page
-  - Page will abort 404 if id doesnt exists
+- Implemented simple IDOR prevention against attackers guessing for AdminID on teacher page
+  - Page will abort 404 if id doesn't exists
   - page will abort 404 if the id exist but role is not a teacher
 - RBAC will make Different roles  see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
 - RBAC Console 
-  - super admin can change the approute group based access controls
+  - super admin can change the app route group based access controls
   - Super admin can create google accounts
   - Super admin can edit and modify the admin users
 
@@ -295,11 +295,11 @@
 - Ensure the web application has security in depth 
 - Security features have to be layered 
 - secure coding is practiced
-- seperation of privileges
+- separation of privileges
 - application should fail safely
 - Ensure RBAC are not hardcoded security constants
 - ensure the configuration of cache-control is secure 
-- ensure the policies inplaced are of good security requirements
+- ensure the policies in-placed are of good security requirements
   - password policy
   - session policy 
   - auto scheduler Policy
@@ -310,27 +310,26 @@
 - https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-123.pdf
 
 #### Implemented:
-- Currently we are using these thirdparty resources:
+- Currently we are using these third-party resources:
   - Docker Container 
   - Google Cloud Storage 
-  - Fire base
   - Amazon Web Services (unused)
   - Cloudflare Dos protection
 
-- Seperation of user roles connecting to the mysql server
-- Seperation of user role privileges in the mysql database
+- Separation of user roles connecting to the mysql server
+- Separation of user role privileges in the mysql database
 - Checked if Flask App.py uses default configuration
   - Currently we have set the cookies to be ONLY HTTPS
     - Settings in the app ensures that cookies can only be send through HTTPS
-    - Our website uses HTTPS through mkcert and when hosted on firebase and googlecloud it uses HTTPS by default
+    - Our website uses HTTPS through mkcert for localhost development and when hosted on Google Cloud Run it uses HTTPS by default
     - supported by the configuration of CSRF Cookie settings which are set to TRUE for HTTPS 
     - Cookies are set to lax because setting it to STRICT comes with too much restriction to obtaining "more" security
     - https://stackoverflow.com/questions/41841880/what-is-the-benefit-of-blocking-cookie-for-clicked-link-samesite-strict
-    - We may only implement cookies strict if we are securing agaisnt CSRF via get request and timing attacks but these are low chances as the tradeoffs for the user experience is significantly much worse
+    - We may only implement cookies strict if we are securing against CSRF via get request and timing attacks but these are low chances as the tradeoffs for the user experience is significantly much worse
   - Debug Mode must be disabled when application is set to Production
 
 - Removal of any unused ports if any
-  - Currently we are using port 8080 for the web application when hosted on Google Cloud Platform Cloud Run via gunicorn as specificied by Google Cloud Platform Cloud Run documentation
+  - Currently we are using port 8080 for the web application when hosted on Google Cloud Platform Cloud Run via gunicorn as specified by Google Cloud Platform Cloud Run documentation
   - The hosted server will listen on port 80 and port 443 for HTTP and HTTPS respectively
 
 - List of Files/Folders that must be disabled during production (due to possible attack surface)
@@ -360,13 +359,13 @@
   - Only guest pages are indexed
 
 - Checked Google Cloud Platform SQL configuration settings
-  - ensure that only whitelisted users can connect to the googlecloudplatform as an administrator
-  - Only ensure the minimum amount of users connected to the server which is root and coursefinity
+  - ensure that only whitelisted users can connect to the Google Cloud Platform as an administrator
+  - Only ensure the minimum amount of users connected to the server which is root and CourseFinity
   - Ensure no unused databases are in the google cloud platform
 
 - Use of static code analysis to check for potential misconfiguration
   - bandit for python code analysis
-  - synk for dockerfile 
+  - Synk for dockerfile 
 
 - DockerFile configuration has no medium-critical severity in the configuration file
   - currently the configuration has no available fixes for the Dockerfile
@@ -471,12 +470,12 @@ Policies
 
   - SQL Injection
     - Remove & Avoid Using Dynamic SQL (String Concatenation)
-      - If used string concat, it will accept malicious code as CODE instead of data. Because the command being run is fully made before passing into a function
+      - If used string concatenation, it will accept malicious code as CODE instead of data. Because the command being run is fully made before passing into a function
 
   - Server Side Template Injection
     - Remove & Avoid using render_template_string(template)
       - render_template() is safer because users are unable to modify the template
-    - Python templates engine API mechanisms enforce the seperation between code and data (e.g. Jinja)
+    - Python templates engine API mechanisms enforce the separation between code and data (e.g. Jinja)
 
   - Code Injection
     - Remove & Avoid using:
@@ -526,10 +525,10 @@ Policies
   - Cross Site Scripting
     - Implemented Flask Talisman
       - Set CSP, Perms Policy
-      - Though some already done on Cloudfare,
+      - Though some already done on Cloudflare,
         - Set for XSS Protection
         - HTTPS configuration to redirect HTTP requests to HTTPS
-        - HSTS to ensure that HTTPS is used (Done On Cloudfare)
+        - HSTS to ensure that HTTPS is used (Done On Cloudflare)
     - Implemented CSP
       - tell the browser to never execute inline JavaScript, and to lock down which domains can host JavaScript for a page. So if attacker manages to inject a script in. It still cannot run
         - Nonce-in only for inline scripts, those inline scripts without the nonce tags will not run properly
@@ -549,9 +548,9 @@ Policies
       - Using Constants to specify the path instead of taking it from host headers et cetera for absolute paths
       - Using relative urls where Possible
   
-  - Regex Injection : Yes this exists
+  - Regex Injection
     - Defined in Codebase, not generated directly from untrusted input
-      - Attackers cannot take advantage of inefficient regexes. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
+      - Attackers cannot take advantage of inefficient regular expressions. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
 - Dropped Features (& Why):
   - Implement DDL Triggers (?)

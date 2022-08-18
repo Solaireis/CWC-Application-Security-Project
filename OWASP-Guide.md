@@ -159,8 +159,8 @@ OWASP Top 10 (Web Application) 2021
      - Allow attackers to brute force/automated attacks at the login page
        - No flask limiter by IP Addresses, etc.
      - Allows [credential stuffing attacks](https://www.imperva.com/learn/application-security/credential-stuffing/) where attackers have a list of valid usernames and passwords and the attacker can use them to login.
-       - Prompt user to authenticate everytime when the user is logged via a new IP Address (if user do not have 2FA setup).
-       - Implement 2FA Authnetication.
+       - Prompt user to authenticate every time when the user is logged via a new IP Address (if user do not have 2FA setup).
+       - Implement 2FA Authentication.
        - Use reCaptcha/CAPTCHA!
      - 2FA Authentication is not implemented or implemented ineffectively.
        - Currently, the QR code for the setup key is stored in the server for 15mins, might want a solution where the QR code will not be stored but still sent to the user's browser.
