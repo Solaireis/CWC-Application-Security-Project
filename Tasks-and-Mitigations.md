@@ -64,7 +64,7 @@
       - [OWASP](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/#how-to-prevent)
   - Changing the default salt from "cookie-session" to something more secure using Google Cloud Platform KMS API RNG in the Cloud HSM
     - The randomly generated 64 bytes salt will be stored in Google Cloud Platform Secret Manager API.
-  - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm.
+  - Using Google Cloud Platform KMS API RNG in the Cloud HSM for the symmetric key (4096 bits) used in the HMAC algorithm as Flask session's secret key.
     - Ensures high entropy
       - Generated key will have a high entropy as it is generated using a cryptographically secure random number generator (RNG) in the Cloud HSM.
       - Since the max cookie size is 4093 bits, specified in Flask's default configuration, a key size must be at least 4093 bits will be needed to ensure high entropy as the key size must match the message size.
@@ -126,9 +126,7 @@
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
   - In total there is 2 AES-256 GCM keys for the database:
     - One for the user's sensitive data
-    - One to use as pepper for the user's password Argon2 hash
-  - Using Google Cloud Platform KMS (Key Management Service) API
-  - Encrypted the Argon2 hash of the password as pepper
+    - One to use as pepper for encrypting the Argon2 password hash of users
 
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway by Wei Ren
 
