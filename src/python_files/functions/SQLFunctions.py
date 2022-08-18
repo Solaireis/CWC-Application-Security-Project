@@ -1966,7 +1966,6 @@ def course_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwarg
     elif (mode == "get_3_latest_courses" or mode == "get_3_highly_rated_courses"):
         teacherID = kwargs.get("teacherID")
 
-        # TODO: Fix the query below
         if (mode == "get_3_latest_courses"):
             # get the latest 3 courses
             if (teacherID is None):

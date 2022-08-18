@@ -669,7 +669,6 @@ def signup():
             send_verification_email(email=emailInput, username=usernameInput, userID=returnedVal)
             flash("A link to verify your email has been emailed to the address provided!", "Success")
         except (Exception) as e:
-            #TODO: Fix it anyways but can't be XSSed i believed
             write_log_entry(
                 logMessage=f"Error sending verification email: {e}",
                 severity="ERROR",

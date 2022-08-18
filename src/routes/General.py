@@ -217,8 +217,6 @@ def search():
     E.g. 
     - https://github.com/search?q=test&type=Repositories
     - https://github.com/search?p=2&q=test&type=Repositories
-
-    TODO: Must handle all sorts of situation such as manually tampering with the url
     """
     page = request.args.get("p", default=1, type=int)
     if (page < 1):

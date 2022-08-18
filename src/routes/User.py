@@ -36,9 +36,7 @@ def userProfile():
     email = userInfo.email
     loginViaGoogle = userInfo.googleOAuth
     twoFAEnabled = userInfo.hasTwoFA
-    """
-    Updates to teacher but page does not change, requires refresh
-    """
+
     return render_template("users/user/user_profile.html", username=username, email=email, imageSrcPath=userInfo.profileImage, twoFAEnabled=twoFAEnabled, loginViaGoogle=loginViaGoogle, accType=userInfo.role)
 
 @userBP.route("/setup-2fa", methods=["GET", "POST"])
@@ -502,8 +500,6 @@ def shoppingCart():
         courseList = []
         subtotal = 0
 
-        # TODO: Could have used Course.py's class instead of
-        # TODO: manually retrieving the data from the tuple
         for courseID in cartCourseIDs:
             course = sql_operation(table='course', mode = "get_course_data", courseID = courseID)
             courseList.append(course)
