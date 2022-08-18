@@ -22,9 +22,9 @@ from .RoutesUtils import get_user_ip
 # import python standard libraries
 from pathlib import Path
 from io import BytesIO
-from base64 import b64encode
-import html
+from base64 import b64encode, b32encode
 from hashlib import sha512
+import html
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -60,7 +60,8 @@ def twoFactorAuthSetup():
     if (request.method == "GET"):
         # for google authenticator setup key (20 byte)
         if ("2fa_token" not in session):
-            secretToken = pyotp.random_base32() # MUST be kept secret
+            # 20 bytes shared secret token to be generated from Python's secrets library and MUST be kept secret
+            secretToken = b32encode(generate_secure_random_bytes(nBytes=20, generateFromHSM=False)).decode("utf-8")
             session["2fa_token"] = symmetric_encrypt(
                 plaintext=secretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
             )

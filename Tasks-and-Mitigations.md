@@ -54,6 +54,10 @@
       - Recommended by [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html#secure-random-number-generation) to ensure higher entropy
     - Using Google Cloud Platform Key Management Service's Cloud Hardware Security Module RNG API.
 
+- Configured the 2 Factor Authentication verification to use HMAC-SHA512 instead of the default HMAC-SHA1
+  - To avoid the use of SHA1 which is a deprecated hash function
+  - With reference to [pyotp](https://github.com/pyauth/pyotp)'s [TOTP source code](https://github.com/pyauth/pyotp/blob/6568c1a83af8e0229f3c4b28d03552d601e2b7fe/src/pyotp/totp.py#L15) which uses the SHA1 as the default digest method
+
 - Securing Flask Session Cookie
   - The Flask session cookie is digitally signed using HMAC-SHA512 algorithm.
     - Although HMAC cannot be used for digital signature, in this context, it is possible as only the web application knows the secret/symmetric key used in the HMAC algorithm.
