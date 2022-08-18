@@ -42,7 +42,7 @@
   - The generated keys are protected by using Google's [Hardware Security Module (HSM)](https://cloud.google.com/kms/docs/hsm)
   - Generated symmetric keys are also configured to rotate every 30 days
 
-- When generating something random such as for session IDs, use a cryptographically secure random number generator (RNG).
+- When generating something random such as for session IDs, I used a cryptographically secure random number generator (RNG).
   - Reasons:
     - RNG in computers can be a problem for sensitive actions such as for session identifier, cryptography operations, etc. as they can be very predictable. 
       - Hence, RNG in computers are commonly referred to as pseudo-RNG.
@@ -155,7 +155,7 @@
 ### Identification and Authentication Failures
 
 #### Implemented:
-- IP address based authentication (Guard OTP)
+- IP address-based authentication (Guard OTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 16 characters code that is sent to the user's email
@@ -164,7 +164,8 @@
   - After a successful authentication, the new IP address will be saved in the database such that the web application will not do this verification again unless the IP address has not been accessed for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
-  - User will be required to scan the QR code or enter the 20 bytes/32 characters setup key into Google Authenticator on their phone.
+  - A base32 encoded 20 bytes secret token (32 characters) will be generated using Python's secrets module and will be shared with the user
+  - The user will be required to scan the QR code or enter the 20 bytes/32 characters setup key into Google Authenticator on their phone.
   - There will be backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
     - Recommended by [OWASP Multi-factor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
     - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
@@ -179,7 +180,7 @@
     - Added on:
       - Login page
       - Reset password request page
-      - IP address based authentication (Guard OTP) page
+      - IP address-based authentication (Guard OTP) page
     - Prevent automated attacks such as
       - Credential stuffing attacks
       - Brute force attacks
@@ -193,7 +194,7 @@
     - At least 8 characters
     - Not more than 2 repeated characters
   - Password strength meter to help users meet the password complexity policy
-  - Verification of passwords if the passwords has been compromised using [haveibeenpwned's api](https://haveibeenpwned.com/API/)
+  - Verification of passwords if the passwords has been compromised using [haveibeenpwned's API](https://haveibeenpwned.com/API/)
     - Verified when:
       - After a successful login
       - Sign up
@@ -205,7 +206,8 @@
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
 - Maximum of 8 failed login attempts per account (will reset after 1 hour)
-  - In the event that the attacker tries to do a denial of service attack knowing that one could lock out authentic user:
+  - To prevent brute force attacks
+  - If the attacker tries to do a denial-of-service attack knowing that one could lock out authentic users:
     - An email will be sent to the user's email with a one-time link that contains a token to unlock the account
 
 - Session Management Implementation (Mainly using Flask session):
@@ -230,7 +232,7 @@
 
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
-  - Security of the login process will be handled by Google as the user has to sign in with Google
+  - Security of the login process will be handled by Google as the user has to sign in with their Google account
 
 - Different method for logging in as an Admin (Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server))
   - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
