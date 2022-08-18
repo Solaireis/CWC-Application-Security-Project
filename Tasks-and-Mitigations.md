@@ -126,7 +126,7 @@
   - 256-bit Advanced Encryption Standard (AES-256) keys in Galois Counter Mode (GCM), padded with Cloud KMS-internal metadata
   - In total there is 2 AES-256 GCM keys for the database:
     - One for the user's sensitive data
-    - One to use as pepper for encrypting the Argon2 password hash of users
+    - One to use as pepper for encrypting the user's Argon2 password hash
 
 - Removed the need of storing credit/debit card information with the implementation of stripe as the payment gateway by Wei Ren
 
