@@ -33,15 +33,20 @@
                         <ol>
                             <li>Download Google Authenticator on <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=en&gl=US" target="_blank" rel="noopener noreferrer">Android</a> or <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_blank" rel="noopener noreferrer">iOS</a>.</li>
                             <li>Create a new account with setup key method or scan the QR code</li>
-                            <li>If you chose setup key method, enter your username and secret key below</li>
+                            <li>If you chose the setup key method, enter your username and the setup key below</li>
                             <li>Select time-based authentication</li>
                             <li>Submit the time-based one time password (OTP) in the form.</li>
                             <li><strong>NEVER</strong> share your setup key with anyone!</li>
                         </ol>
-                        <h6 class="text-break">Setup Key: <button type="button" class="btn btn-link p-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to copy to clipboard!" id="secretToken">{{ secretToken }}</button></h6>
                         <div class="QRCode_wrapper">
                             <img src="data:image/png;base64,{{ qrCodeEncodedBase64 }}" id="QRCode_Image" alt="Google Authenticator OTP QR Code" class="QRCode" title="Scan this QR code to setup 2FA on your phone!">
                         </div>
+                        <h6 class="text-center mt-3">
+                            <button type="button" class="btn btn-primary" id="secretTokenBtn">View Setup Key</button>
+                            <div id="secretTokenDiv" class="d-none mt-2 text-break" secret-token-action="hide">
+                                <button type="button" class="btn btn-link p-0" data-bs-toggle="tooltip" data-bs-placement="top" title="Click to copy to clipboard!" id="secretToken">{{ secretToken }}</button>
+                            </div>
+                        </h6>
                     </div>
                     <div class="col-12 text-white">
                         <input type="hidden" name="secretToken" value="{{ secretToken }}">
