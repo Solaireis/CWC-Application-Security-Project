@@ -164,7 +164,7 @@
   - After a successful authentication, the new IP address will be saved in the database such that the web application will not do this verification again unless the IP address has not been accessed for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
-  - A base32 encoded 20 bytes secret token (32 characters) will be generated using Python's secrets module and will be shared with the user
+  - A base32 encoded 20 bytes secret token (32 characters) will be generated using GCP KMS Cloud HSM and will be shared with the user
   - The user will be required to scan the QR code or enter the 20 bytes/32 characters setup key into Google Authenticator on their phone.
   - There will be backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
     - Recommended by [OWASP Multi-factor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)

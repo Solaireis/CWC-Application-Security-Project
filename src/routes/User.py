@@ -60,8 +60,8 @@ def twoFactorAuthSetup():
     if (request.method == "GET"):
         # for google authenticator setup key (20 byte)
         if ("2fa_token" not in session):
-            # 20 bytes shared secret token to be generated from Python's secrets library and MUST be kept secret
-            secretToken = b32encode(generate_secure_random_bytes(nBytes=20, generateFromHSM=False)).decode("utf-8")
+            # 20 bytes shared secret token to be generated from GCP KMS Cloud HSM and MUST be kept secret
+            secretToken = b32encode(generate_secure_random_bytes(nBytes=20, generateFromHSM=True)).decode("utf-8")
             session["2fa_token"] = symmetric_encrypt(
                 plaintext=secretToken, keyID=current_app.config["CONSTANTS"].COOKIE_ENCRYPTION_KEY_ID
             )

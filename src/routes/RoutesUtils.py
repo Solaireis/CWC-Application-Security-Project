@@ -82,9 +82,9 @@ def before_request() -> None:
             session.pop("state", None)
 
     # check if 2fa_token key is in session
-    # remove if the user is no longer on the setup 2FA page anymore
+    # remove if the user is no longer on the setup 2FA or the user profile page anymore
     if ("2fa_token" in session):
-        if (isNotStaticEndpoint and requestRoute != "twoFactorAuthSetup"):
+        if (isNotStaticEndpoint and requestRoute not in ("twoFactorAuthSetup", "userProfile")):
             session.pop("2fa_token", None)
 
     # check if relative_url key is in session
