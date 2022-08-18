@@ -450,27 +450,6 @@ Policies
 
 ### Injection
 
-#### Plan:
-- Avoid Bad Coding Practices that lead to Injection Attacks
-- Remember to use multithreading for writing account info to the SQL database (?)
-- jsonschema to limit the JSON format
-- Sanitisation for All input (Kind of Done, but should double check)
-  - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
-  - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
-    - Check that supplied fields like email addresses match a regular expression.
-    - Ensure that numeric or alphanumeric fields do not contain symbol characters.
-    - Reject (or strip) out whitespace and new line characters where they are not appropriate.
-  - List Validation (?)
-  - Whitelist Values(?)
-    - only permit known good values, so that user cannot try to input any malicious inputs (Sanitize HTML)
-  - Filter CRLF (?)
-    - I can prevent Logging's crlf injection
-- Escaping all input (?)
-  - Some areas already escape need to double check and find all that are required
-  - Encoding it all
-  - Output Encoding
-- Logging Of SQL Commands
-
 #### Implemented:
 - Best Practices Followed
   - Using Development Tools Like Snyk to detect Unsafe code
@@ -521,8 +500,6 @@ Policies
     - Implement Stored Procedures
       - Similar logic to Parameterised queries, by creating parameterised stored procedures. The interpreter will treat the data as DATA instead of Code
 
-  - Server Side Template Injection
-
   - Command Injection
     - shell = False in subprocess_run()
     - Restrict Permitted Commands - Construct shell commands using string literals, rather than user input.
@@ -559,16 +536,21 @@ Policies
     - Defined in Codebase, not generated directly from untrusted input
       - Attackers cannot take advantage of inefficient regular expressions. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
+  - Avoid Bad Coding Practices that lead to Injection Attacks
+  - Sanitisation for All input
+    - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
+    - May also reference [this](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
+  - Escaping all input
+    - Encoding it all
+    - Output Encoding
+  - Logging Of SQL Commands
+
 - Dropped Features (& Why):
   - Implement DDL Triggers (?)
     - It drops but immediately rollbacks. (Need deal with concurrency)
 ---
 
 ### Software and Data Integrity Failures
-
-#### Plan:
-- Use Checksums to check for integrity (?)
-- Logging of Deserialization (?)
 
 #### Implemented:
 - Best Practices Followed
@@ -603,7 +585,8 @@ Policies
   - Comparing Hashes of Packages, before pip installing them
     - Ensures that there was no tampering between the files when it was being taken from the source
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
-  - Data Integrity For Profile Pictures
+  - Data Integrity For Profile Pictures\
+  - Logging of Deserialization
   
   Removed:
     - Check Hash of Video File, before saving it
