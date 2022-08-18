@@ -17,8 +17,10 @@
 - Teacher Page
 - User Management System
 - Improvement of Calvin's pagination
+- 2FA pages
+- Account Recovery pages
 - Integrating Cloudflare to the [hosted web application](https://coursefinity.social/)
-- Integrating [Google Cloud Platform GCP](https://cloud.google.com/) APIs
+- Integrating [Google Cloud Platform (GCP)](https://cloud.google.com/) APIs
 - Deployment of the Web Application on [Google Cloud Run](https://cloud.google.com/run)
 
 ---
@@ -148,6 +150,7 @@
   - Checks against known IP addresses of users against the login request
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 16 characters code that is sent to the user's email
     - The 16 characters code is a randomly generated 12 bytes from Google Cloud Platform KMS Cloud HSM
+    - The 16 characters code will also only be valid for 8 minutes
   - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
@@ -160,7 +163,7 @@
   - [Flask limiter](https://flask-limiter.readthedocs.io/en/stable/)
     - Rate limiting for routes that deals with identification and authentication in the web application to prevent brute-force attacks
       - Sensitive Pages: 9 requests/min 
-        - This configuration was also checked by Eden as part of his security misconfiguration OWASP
+        - This configuration was also checked and refined by Eden as part of his security misconfiguration OWASP
   - [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise)
     - Added on:
       - Login page
