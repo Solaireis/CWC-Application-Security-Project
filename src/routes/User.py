@@ -24,7 +24,7 @@ from pathlib import Path
 from io import BytesIO
 from base64 import b64encode
 import html
-import hashlib
+from hashlib import sha512
 
 userBP = Blueprint("userBP", __name__, static_folder="static", template_folder="template")
 
@@ -70,7 +70,7 @@ def twoFactorAuthSetup():
             )
 
         # generate a QR code for the user to scan
-        totp = pyotp.totp.TOTP(s=secretToken, digits=6).provisioning_uri(name=userInfo.username, issuer_name="CourseFinity")
+        totp = pyotp.totp.TOTP(s=secretToken, digits=6, digest=sha512).provisioning_uri(name=userInfo.username, issuer_name="CourseFinity")
 
         # to save the image in the memory buffer
         # instead of saving the qrcode png as a file in the web server
@@ -114,7 +114,7 @@ def twoFactorAuthSetup():
             return redirect(url_for("userBP.twoFactorAuthSetup"))
 
         # check if the TOTP is valid
-        if (pyotp.TOTP(secretToken).verify(twoFATOTP)):
+        if (pyotp.TOTP(s=secretToken, digest=sha512).verify(twoFATOTP)):
             # update the user's 2FA status to True
             sql_operation(table="2fa_token", mode="add_token", userID=userInfo.uid, token=secretToken)
             flash(Markup("2FA has been <span class='text-success'>enabled</span> successfully!<br>You will now be prompted to key in your time-based OTP whenever you login now!"), "2FA has been enabled!")
@@ -361,7 +361,7 @@ def uploadPic():
         imagehash = request.form.get("fileHash")
         with open(absFilePath, "rb") as f:
             print("Running Hash Check")
-            fileHash = hashlib.sha512(f.read()).hexdigest()
+            fileHash = sha512(f.read()).hexdigest()
 
         if (fileHash != imagehash):
             print("File Hash is incorrect")

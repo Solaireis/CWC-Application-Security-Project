@@ -157,10 +157,11 @@
   - If the IP address is not known, the user will be asked to authenticate himself/herself using a randomly generated 16 characters code that is sent to the user's email
     - The 16 characters code is a randomly generated 12 bytes from Google Cloud Platform KMS Cloud HSM
     - The 16 characters code will also only be valid for 8 minutes
-  - The saved IP address will stay in the database until it has not been accessed on that IP address for more than 10 days
+  - After a successful authentication, the new IP address will be saved in the database such that the web application will not do this verification again unless the IP address has not been accessed for more than 10 days
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
-  - Backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
+  - User will be required to scan the QR code or enter the 20 bytes/32 characters setup key into Google Authenticator on their phone.
+  - There will be backup codes for the user to use to recover his/her account in the event his/her device is lost and is unable to retrieve the 2FA codes.
     - Recommended by [OWASP Multi-factor Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html#resetting-mfa)
     - Will generate 8 sets of 8 bytes hexadecimal single-use codes and save them in the database
       - The stored codes in the database are encrypted using Google Cloud Platform KMS Symmetric Encryption/Decryption

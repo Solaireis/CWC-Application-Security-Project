@@ -26,6 +26,7 @@ from .RoutesUtils import get_user_ip
 from zoneinfo import ZoneInfo
 from datetime import datetime
 from time import sleep
+from hashlib import sha512
 import random, html
 
 guestBP = Blueprint("guestBP", __name__, static_folder="static", template_folder="template")
@@ -223,7 +224,7 @@ def resetPassword(token:str):
             twoFAInput = request.form.get("totpInput", default="", type=str)
             if (
                 re.fullmatch(current_app.config["CONSTANTS"].TWO_FA_CODE_REGEX, twoFAInput) is None 
-                or not pyotp.TOTP(twoFAToken).verify(twoFAInput)
+                or not pyotp.TOTP(s=twoFAToken, digest=sha512).verify(twoFAInput)
             ):
                 # if the 2FA token is invalid
                 flash("Entered 2FA OTP is invalid or has expired!")
@@ -755,7 +756,7 @@ def enter2faTOTP():
             # if for whatever reasons, the user has no 2FA token (which shouldn't happen), redirect to login
             return redirect(url_for("guestBP.login"))
 
-        if (pyotp.TOTP(getSecretToken).verify(twoFAInput)):
+        if (pyotp.TOTP(s=getSecretToken, digest=sha512).verify(twoFAInput)):
             session["user"] = userID
             session["sid"] = add_session(userID, userIP=get_user_ip(), userAgent=request.user_agent.string)
             userInfo = get_image_path(userID, returnUserInfo=True)
