@@ -327,7 +327,7 @@
   - Docker Container 
   - Google Cloud Storage 
   - Cloudflare Dos protection
-  - Vdo cipher for video storage
+  - VdoCipher for video storage
 
 - Separation of user roles connecting to the mysql server
 - Separation of user role privileges in the mysql database
