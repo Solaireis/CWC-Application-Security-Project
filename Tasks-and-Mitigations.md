@@ -294,6 +294,24 @@
 - show different UI based on the RBAC
 
 #### Implemented:
+- Roles:
+  - Super Admin
+  - Admin
+  - Teacher
+  - Student
+  - Guest
+> These are the roles implemented. Super Admins have limited functionalities and only 1 super admin can be created at a time.
+> 
+> Super Admins are to manage the administrators,Roles,Creation of admin. Super Admins do not do the tasks of the admins.
+> 
+> Admins Can manage teachers and students, Admins can ban students, modify student behaviours.
+> 
+> Teachers have other functionalities such as creating courses, managing courses.
+> 
+> Students can view and purchase courses, a teacher can also do the roles a student has.
+> 
+> Guest requires an account to do any activities such as purchasing a course.
+
 - Role based Access Control which groups the app routes via Blueprints, access control is granted only to the specific blueprints group
 - Role Based Access Control for the MySQL Server
   - Removal of complex group in MySQL based on teachers recommendations
@@ -306,7 +324,7 @@
 - RBAC will make Different roles see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
-<img src="res/mitigations_demo/Broken-Access-Control/super-admin-console" alt="SAConsole" style="width: 70%;">
+<img src="res/mitigations_demo/Broken-Access-Control/super-admin-console.png" alt="SAConsole" style="width: 70%;">
 
 - RBAC Console 
   - super admin can change the app route group based access controls
