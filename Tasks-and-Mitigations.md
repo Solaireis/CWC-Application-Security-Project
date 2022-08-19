@@ -558,6 +558,8 @@
     - Implement Stored Procedures
       - Similar logic to Parameterised queries, by creating parameterised stored procedures. The interpreter will treat the data as DATA instead of Code
 
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries.gif" alt="parameterised queries" style="width: 70%;">
+
   - Command Injection
     - shell = False in subprocess_run()
     - Restrict Permitted Commands - Construct shell commands using string literals, rather than user input.
@@ -580,6 +582,10 @@
     - Escaping Dynamic Content for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
       - This is to let the browser know it is to be treated as the contents of HTML tags, as opposed to raw HTML.
 
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/CSP_scripts.png" alt="csp" style="width: 70%;"> <br/>
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/internal_scripts_csp.png" alt="csp nonce" style="width: 70%;"> <br/>
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/CSP.gif" alt="CSP restriction" style="width: 70%;">
+
   - Cross Site Request Injection(?)
     - Implemented CSRF
       - Prevents victims from being tricked into sending a malicious request. Each request has a unique csrf token.
@@ -594,6 +600,8 @@
     - Defined in Codebase, not generated directly from untrusted input
       - Attackers cannot take advantage of inefficient regular expressions. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/regex_constants.png" alt="regex" style="width: 70%;"> <br/>
+
   - Avoid Bad Coding Practices that lead to Injection Attacks
   - Sanitisation for All input
     - Follow [this](https://owasp.org/www-project-application-security-verification-standard/)
@@ -602,6 +610,7 @@
     - Encoding it all
     - Output Encoding
   - Logging Of SQL Commands
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/sql_logging_proof.png" alt="sql logging" style="width: 70%;">
 
 - Dropped Features (& Why):
   - Implement DDL Triggers (?)
@@ -642,10 +651,17 @@
     - Fix deserialization vulnerability with pickle (shelve) by changing to SQL
   - Comparing Hashes of Packages, before pip installing them
     - Ensures that there was no tampering between the files when it was being taken from the source
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/hashcomparison_package.gif" alt="hash comparison package" style="width: 70%;">
+
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
-  - Data Integrity For Profile Pictures\
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/storageinbucket.png" alt="google cloud bucket" style="width: 70%;">
+
+  - Data Integrity For Profile Pictures
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/hashcomparison_pfp.gif" alt="hash comparison profile picture" style="width: 70%;">
+
   - Logging of Deserialization
-  
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/deserialisation_logging.png" alt="deserialisation logging" style="width: 70%;">
+
   Removed:
     - Check Hash of Video File, before saving it
       - Ensures that there was no tampering between the files when it was being taken from the source
