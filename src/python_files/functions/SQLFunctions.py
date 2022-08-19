@@ -149,13 +149,13 @@ def send_unlock_locked_acc_email(email:str="", userID:str="") -> None:
     encryptedToken = sql_operation(table="expirable_token", mode="add_token", userID=userID, expiryDate=expiryInfo, purpose="unlock_account")
     htmlBody = (
         "Your account has been locked due to too many failed login attempts.<br>",
-        "Just in case that it was you, you can unlock your account by clicking the button below.",
+        "Just in case that it was you, you can unlock your account by clicking the button below and consider resetting your password instead.",
         "Otherwise, we suggest that you consider changing your password after unlocking your account and logging in.<br>",
-        "To change password:",
-        f"{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('userBP.updatePassword')}<br>",
+        "To reset your password:",
+        f"{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.resetPasswordRequest')}<br>",
         "Please click the link below to unlock your account:",
         f"<a href='{current_app.config['CONSTANTS'].CUSTOM_DOMAIN}{url_for('guestBP.unlockAccount', token=encryptedToken)}' style='{current_app.config['CONSTANTS'].EMAIL_BUTTON_STYLE}' target='_blank'>Unlock Account</a>",
-        "Note: This link will expire in 30 minutes as the account locked timeout will last for 30 minutes."
+        "Note: This link will expire in 30 minutes."
     )
     send_email(to=email, subject="Unlock your account!", body="<br>".join(htmlBody))
 
@@ -868,7 +868,10 @@ def login_attempts_sql_operation(connection:MySQLConnection, mode:str=None, **kw
                 # if reached max attempts per account
                 raise AccountLockedError("User have exceeded the maximum number of password attempts!")
 
-            cur.execute("UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",{"currentAttempts":currentAttempts+1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION, "userID":userID})
+            cur.execute(
+                "UPDATE login_attempts SET attempts = %(currentAttempts)s, reset_date = SGT_NOW() + INTERVAL %(intervalMins)s MINUTE WHERE user_id = %(userID)s",
+                {"currentAttempts":currentAttempts+1, "intervalMins":CONSTANTS.LOCKED_ACCOUNT_DURATION, "userID":userID}
+            )
         connection.commit()
 
     elif (mode == "reset_user_attempts_for_user"):
@@ -1142,8 +1145,10 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
         ipAddressList = user_ip_addresses_sql_operation(connection=connection, mode="get_ip_addresses", userID=userID)
 
         # send an email to the authentic user if their account got locked
-        if (loginAttempts and loginAttempts[0] > CONSTANTS.MAX_LOGIN_ATTEMPTS):
-            resetAttempts = login_attempts_sql_operation(connection=connection, mode="reset_attempts_past_reset_date_for_user", userID=userID)
+        if (loginAttempts and loginAttempts[0] >= CONSTANTS.MAX_LOGIN_ATTEMPTS):
+            resetAttempts = login_attempts_sql_operation(
+                connection=connection, mode="reset_attempts_past_reset_date_for_user", userID=userID
+            )
 
             # If the user has exceeded the maximum number of login attempts,
             # but the timeout is not up yet...

@@ -86,7 +86,7 @@ class AccountLockedError(Exception):
     Raised if the user tries to login but their account is locked.
 
     Reasons for locked account: 
-        - Too many failed login attempts. (> 10 attempts)
+        - Too many failed login attempts. (> 8 attempts)
     """
 
 class UserAccountNotRecoveringError(Exception):
