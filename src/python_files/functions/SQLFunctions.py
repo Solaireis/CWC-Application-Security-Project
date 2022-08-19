@@ -12,7 +12,7 @@ from math import ceil
 from base64 import b85encode, urlsafe_b64decode, urlsafe_b64encode
 
 # import Flask web application configs
-from flask import url_for, current_app, abort, session
+from flask import url_for, current_app, abort
 
 # import third party libraries
 from argon2.exceptions import VerificationError, VerifyMismatchError, InvalidHash
@@ -1623,7 +1623,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             cur.execute("INSERT INTO cart (user_id, course_id) VALUES (%(userID)s, %(courseID)s)", {"userID":userID, "courseID":courseID})
             connection.commit()
             courseAddedStatus["status"] = "Success"
-        session["courseAddedStatus"] = courseAddedStatus
+
+        return courseAddedStatus
 
     elif mode == "remove_from_cart":
         userID = kwargs["userID"]

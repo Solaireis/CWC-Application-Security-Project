@@ -104,15 +104,13 @@ def before_request() -> None:
         "ip_details" in session or
         "password_compromised" in session or
         "temp_uid" in session or
-        "token" in session or
-        "courseAddedStatus" in session
+        "token" in session
     ):
         if (isNotStaticEndpoint and requestRoute not in ("login", "enter2faTOTP", "enterGuardTOTP")):
             session.pop("ip_details", None)
             session.pop("password_compromised", None)
             session.pop("temp_uid", None)
             session.pop("token", None)
-            session.pop("courseAddedStatus", None)
 
     # check if historyCurPage key is in session
     # Remove if the user is not on the any of the purchase history related pages anymore

@@ -475,7 +475,9 @@ def purchaseView(courseID:str):
 
 @userBP.post("/add-to-cart/<string:courseID>")
 def addToCart(courseID:str):
-    sql_operation(table="user", mode="add_to_cart", userID=session["user"], courseID=courseID)
+    session["courseAddedStatus"] = sql_operation(
+        table="user", mode="add_to_cart", userID=session["user"], courseID=courseID
+    )
     return redirect(url_for("userBP.shoppingCart"))
 
 @userBP.route("/shopping-cart", methods=["GET", "POST"])
