@@ -183,14 +183,7 @@ class Constants:
 
     # For Google Key Management Service API
     LOCATION_ID: str = "global"
-
-    # During development, we will use software protected keys
-    # which are cheaper ($0.06 per month) than keys stored in HSM ($1.00-$2.50 per month).
-    # Lastly, cryptographic operations will be cheaper 
-    # ($0.03 per 10k operations vs $0.03-$0.15 per 10k operations)
-    # More details: https://cloud.google.com/kms/pricing
     APP_KEY_RING_ID: str = "coursefinity-global"
-    AVAILABLE_KEY_RINGS: tuple = ("coursefinity-global",)
 
     # For encrypting data in the database
     PEPPER_KEY_ID: str = "pepper-key"
