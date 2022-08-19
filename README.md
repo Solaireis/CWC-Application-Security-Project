@@ -69,3 +69,6 @@ Wei Ren
 Calvin
 > 1. [A03:2021 – Injection](https://owasp.org/Top10/A03_2021-Injection/)
 > 2. [A08:2021 – Software and Data Integrity Failures](https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/)
+
+**Mitigations Done by each member can be seen here!**
+> [Mitigations and Tasks](https://github.com/Solaireis/CWC-App-Sec/blob/main/Tasks-and-Mitigations.md)
