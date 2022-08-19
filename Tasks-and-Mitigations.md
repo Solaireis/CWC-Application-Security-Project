@@ -318,18 +318,28 @@
   - This is due to the complexities of the group role functionality
   - Reduce the permissions of the MySQL server to CRUD and Execute for calling stored procedures and functions, keeping security simple 
   - Security of MySQL server depends on the web application to have proper Access Control
-- Implemented simple IDOR prevention against attackers guessing for AdminID on teacher page
+ 
+ 
+ <img src="res/mitigations_demo/Broken-Access-Control/IDOR.gif" alt="SAConsole" style="width: 80%;">
+ 
+- Implemented IDOR prevention against attackers guessing for AdminID on teacher page
   - Page will abort 404 if id doesn't exists
   - page will abort 404 if the id exist but role is not a teacher
 - RBAC will make Different roles see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
+  
 <img src="res/mitigations_demo/Broken-Access-Control/super-admin-console.png" alt="SAConsole" style="width: 70%;">
 
 - RBAC Console 
   - super admin can change the app route group based access controls
   - Super admin can create google accounts
   - Super admin can edit and modify the admin users
+
+<img src="res/mitigations_demo/Broken-Access-Control/Manage-Roles.gif" alt="SAConsole" style="width: 80%;">
+  
+<img src="res/mitigations_demo/Broken-Access-Control/Create-Admin.gif" alt="SAConsole" style="width: 80%;">
+
 
 ---
 
@@ -420,6 +430,8 @@
   - currently the configuration has no available fixes for the Dockerfile
 - Error Pages are informative to users, does not reveal excessive information 
 - Redirection confirmation when clicking outside links, ensures user take responsibility of checking the links before continuing 
+
+<img src="res/mitigations_demo/Security-Misconfiguration/redirection.gif" alt="Redirection" style="width: 80%;">
 
 ---
 
