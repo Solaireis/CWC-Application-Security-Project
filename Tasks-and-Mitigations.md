@@ -306,6 +306,8 @@
 - RBAC will make Different roles see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
+<img src="res/mitigations_demo/Broken-Access-Control/super-admin-console" alt="SAConsole" style="width: 70%;">
+
 - RBAC Console 
   - super admin can change the app route group based access controls
   - Super admin can create google accounts
@@ -398,7 +400,6 @@
 
 - DockerFile configuration has no medium-critical severity in the configuration file
   - currently the configuration has no available fixes for the Dockerfile
-- No SEO Web Crawler index on web pages such as admins, users as we do not want it to be index on the web page
 - Error Pages are informative to users, does not reveal excessive information 
 - Redirection confirmation when clicking outside links, ensures user take responsibility of checking the links before continuing 
 
