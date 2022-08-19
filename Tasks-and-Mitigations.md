@@ -326,8 +326,8 @@
 - Currently we are using these third-party resources:
   - Docker Container 
   - Google Cloud Storage 
-  - Amazon Web Services (unused)
   - Cloudflare Dos protection
+  - Vdo cipher for video storage
 
 - Separation of user roles connecting to the mysql server
 - Separation of user role privileges in the mysql database
@@ -382,6 +382,10 @@
 
 - DockerFile configuration has no medium-critical severity in the configuration file
   - currently the configuration has no available fixes for the Dockerfile
+- No SEO Web Crawler index on web pages such as admins, users as we do not want it to be index on the web page
+- Error Pages are informative to users, does not reveal excessive information 
+- Redirection confirmation when clicking outside links, ensures user take responsibility of checking the links before continuing 
+
 ---
 
 ## Wei Ren:
