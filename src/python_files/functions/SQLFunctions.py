@@ -1603,11 +1603,11 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
             {"userID": userID}
         )
         cartAmount = cur.fetchone()[0]
-        
+
         courseInfo = course_sql_operation(connection=connection, mode="get_course_data", courseID=courseID)
         if not courseInfo:
             abort(404)
-        
+
         courseAddedStatus = {"name": courseInfo.courseName}
         if isInCart:
             courseAddedStatus["status"] = "In Cart"
