@@ -205,7 +205,7 @@
     - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
-- Maximum of 8 failed login attempts per account (will reset after 1 hour)
+- Maximum of 8 failed login attempts per account (will reset after 30 mins)
   - To prevent brute force attacks
   - If the attacker tries to do a denial-of-service attack knowing that one could lock out authentic users:
     - An email will be sent to the user's email with a one-time link that contains a token to unlock the account
@@ -287,7 +287,7 @@
 - Implemented simple IDOR prevention against attackers guessing for AdminID on teacher page
   - Page will abort 404 if id doesn't exists
   - page will abort 404 if the id exist but role is not a teacher
-- RBAC will make Different roles  see different content
+- RBAC will make Different roles see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
 - RBAC Console 
@@ -326,8 +326,8 @@
 - Currently we are using these third-party resources:
   - Docker Container 
   - Google Cloud Storage 
-  - Amazon Web Services (unused)
   - Cloudflare Dos protection
+  - VdoCipher for video storage
 
 - Separation of user roles connecting to the mysql server
 - Separation of user role privileges in the mysql database
@@ -382,6 +382,10 @@
 
 - DockerFile configuration has no medium-critical severity in the configuration file
   - currently the configuration has no available fixes for the Dockerfile
+- No SEO Web Crawler index on web pages such as admins, users as we do not want it to be index on the web page
+- Error Pages are informative to users, does not reveal excessive information 
+- Redirection confirmation when clicking outside links, ensures user take responsibility of checking the links before continuing 
+
 ---
 
 ## Wei Ren:
