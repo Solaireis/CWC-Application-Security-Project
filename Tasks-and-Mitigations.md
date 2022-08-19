@@ -37,6 +37,9 @@
 ### Cryptographic Failures
 
 #### Implemented:
+
+<img src="https://github.com/Solaireis/CWC-App-Sec/tree/main/res/mitigations_demo/cryptography/gcp-kms.jpg" alt="gcp-kms" style="width: 60%;">
+
 - Using [Google Cloud Platform Key Management Service (KMS)](https://cloud.google.com/security-key-management) for cryptographic operations
   - Generated keys are stored and replicated globally in Google's servers
   - The generated keys are protected by using Google's [Hardware Security Module (HSM)](https://cloud.google.com/kms/docs/hsm)
