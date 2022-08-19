@@ -609,7 +609,7 @@
   - Escaping all input
     - Encoding it all
     - Output Encoding
-  - Logging Of SQL Commands
+  - Logging Of SQL Commands <br/>
     <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/sql_logging_proof.png" alt="sql logging" style="width: 70%;">
 
 - Dropped Features (& Why):
@@ -659,7 +659,7 @@
   - Data Integrity For Profile Pictures
     <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/hashcomparison_pfp.gif" alt="hash comparison profile picture" style="width: 70%;">
 
-  - Logging of Deserialization
+  - Logging of Deserialization <br/>
     <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/deserialisation_logging.png" alt="deserialisation logging" style="width: 70%;">
 
   Removed:
