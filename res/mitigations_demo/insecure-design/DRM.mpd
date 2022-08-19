@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Generated with https://github.com/google/shaka-packager version v1.6.2-6b98f0d-release-->
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="urn:mpeg:dash:schema:mpd:2011 DASH-MPD.xsd" xmlns:cenc="urn:mpeg:cenc:2013" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011" minBufferTime="PT2S" type="static" mediaPresentationDuration="PT39.9167S">
+  <Period id="0">
+    <AdaptationSet id="0" contentType="audio" lang="en" subsegmentAlignment="true">
+      <ContentProtection value="cenc" schemeIdUri="urn:mpeg:dash:mp4protection:2011" cenc:default_KID="eb34e388-879e-5720-b6d3-fdfea38bfd2e"/>
+      <ContentProtection schemeIdUri="urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed">
+        <cenc:pssh>AAAAt3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAAJcSEJmgYLHp811vg3RKuMaYQDoSEKQ8MSEGMFoCo6cVGjYXmpASEI4Ikuxpf1xmt/EPBRRz/YsSEHM03TKRNV7noqP5BwQh6aYSEOs044iHnlcgttP9/qOL/S4aCXZkb2NpcGhlciIqdmRvY2lwaGVyOmM2MWQ1MjhkMDhkMTQzMWM5ODVlMjQyNWZmZTNjMjFjSOPclZsG</cenc:pssh>
+      </ContentProtection>
+      <Representation id="0" bandwidth="98896" codecs="mp4a.40.2" mimeType="audio/mp4" audioSamplingRate="48000">
+        <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2"/>
+        <BaseURL>audio_6562_0_96.mp4</BaseURL>
+        <SegmentBase indexRange="1015-1094" timescale="48000">
+          <Initialization range="0-1014"/>
+        </SegmentBase>
+      </Representation>
+    </AdaptationSet>
+    <AdaptationSet id="1" contentType="video" width="1920" height="800" frameRate="12288/512" subsegmentAlignment="true" par="12:5">
+      <ContentProtection value="cenc" schemeIdUri="urn:mpeg:dash:mp4protection:2011" cenc:default_KID="a43c3121-0630-5a02-a3a7-151a36179a90"/>
+      <ContentProtection schemeIdUri="urn:uuid:edef8ba9-79d6-4ace-a3c8-27dcd51d21ed">
+        <cenc:pssh>AAAAt3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAAJcSEJmgYLHp811vg3RKuMaYQDoSEKQ8MSEGMFoCo6cVGjYXmpASEI4Ikuxpf1xmt/EPBRRz/YsSEHM03TKRNV7noqP5BwQh6aYSEOs044iHnlcgttP9/qOL/S4aCXZkb2NpcGhlciIqdmRvY2lwaGVyOmM2MWQ1MjhkMDhkMTQzMWM5ODVlMjQyNWZmZTNjMjFjSOPclZsG</cenc:pssh>
+      </ContentProtection>
+      <Representation id="1" bandwidth="712518" codecs="avc1.640028" mimeType="video/mp4" sar="1:1">
+        <BaseURL>video_2586_800_700.mp4</BaseURL>
+        <SegmentBase indexRange="1081-1160" timescale="12288">
+          <Initialization range="0-1080"/>
+        </SegmentBase>
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>
