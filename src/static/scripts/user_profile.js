@@ -37,6 +37,3 @@ document.getElementById("submitPfp").addEventListener("click", function(event){
     reader.readAsArrayBuffer(file);
     setInterval(redirectUser, 1500);
 });
-
-
-

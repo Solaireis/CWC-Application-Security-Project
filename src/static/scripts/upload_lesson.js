@@ -85,8 +85,3 @@ Dropzone.options.dropper = {
         /* End of Progress bar */
     }
 };
-
-
-        
-        
-
