@@ -558,7 +558,8 @@
     - Implement Stored Procedures
       - Similar logic to Parameterised queries, by creating parameterised stored procedures. The interpreter will treat the data as DATA instead of Code
 
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries.gif" alt="parameterised queries" style="width: 70%;">
+    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries.gif" alt="parameterised queries" style="width: 70%;"> <br/>
+      <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries3.gif" alt="parameterised queries 3" style="width: 70%;">
 
   - Command Injection
     - shell = False in subprocess_run()
