@@ -38,7 +38,7 @@
 
 #### Implemented:
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/cryptography/gcp-kms.jpg" alt="gcp-kms" style="width: 70%;">
+<img src="res/mitigations_demo/cryptography/gcp-kms.jpg" alt="gcp-kms" style="width: 70%;">
 
 - Using [Google Cloud Platform Key Management Service (KMS)](https://cloud.google.com/security-key-management) for cryptographic operations
   - Generated keys are stored and replicated globally in Google's servers
@@ -159,7 +159,7 @@
 
 #### Implemented:
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/guard-otp.gif" alt="guard otp demo gif" style="width: 50%;">
+<img src="res/mitigations_demo/identification-and-authentication/guard-otp.gif" alt="guard otp demo gif" style="width: 50%;">
 
 - IP address-based authentication (Guard OTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
@@ -169,7 +169,7 @@
     - The 16 characters code will also only be valid for 8 minutes
   - After a successful authentication, the new IP address will be saved in the database such that the web application will not do this verification again unless the IP address has not been accessed for more than 10 days
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/setup-2fa.gif" alt="setup 2fa demo gif" style="width: 80%;">
+<img src="res/mitigations_demo/identification-and-authentication/setup-2fa.gif" alt="setup 2fa demo gif" style="width: 80%;">
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
   - A base32 encoded 20 bytes secret token (32 characters) will be generated using GCP KMS Cloud HSM and will be shared with the user
@@ -193,7 +193,7 @@
       - Credential stuffing attacks
       - Brute force attacks
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/password-complexity.gif" alt="password complexity demo gif" style="width: 80%;">
+<img src="res/mitigations_demo/identification-and-authentication/password-complexity.gif" alt="password complexity demo gif" style="width: 80%;">
 
 - Password Complexity Policy
   - Requires user to match at least 3 of the criteria stated below:
@@ -215,14 +215,14 @@
     - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/login-too-many-attempts.gif" alt="too many login attempts demo gif" style="width: 80%;">
+<img src="res/mitigations_demo/identification-and-authentication/login-too-many-attempts.gif" alt="too many login attempts demo gif" style="width: 80%;">
 
 - Maximum of 8 failed login attempts per account (will reset after 30 mins)
   - To prevent brute force attacks
   - If the attacker tries to do a denial-of-service attack knowing that one could lock out authentic users:
     - An email will be sent to the user's email with a one-time link that contains a token to unlock the account
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/session-validations.png" alt="session validations diagram" style="width: 60%;">
+<img src="res/mitigations_demo/identification-and-authentication/session-validations.png" alt="session validations diagram" style="width: 60%;">
 
 - Session Management Implementation (Mainly using Flask session):
   - Session identifier of 32 bytes (Unlikely to be guessed) stored in the database.
@@ -244,7 +244,7 @@
         - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 
-<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/google-oauth2.gif" alt="Google OAuth2 login demo gif" style="width: 80%;">
+<img src="res/mitigations_demo/identification-and-authentication/google-oauth2.gif" alt="Google OAuth2 login demo gif" style="width: 80%;">
 
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
@@ -525,13 +525,12 @@
     - Remove & Avoid using:
       - exec() & eval()
         - The former expects a string representing a (single) valid Python expression, while the later can execute multiple expressions - making it able to create new module, class, and function definitions. Both functions have access to the global and local state at the point of invocation
-  
+
   - Command Injection
     -  Remove & Avoid using:
       - os.system()
       - os.popen()
       - They allow users to run commands to gain information of it
-
 
   - Cross Site Scripting
     - Remove & Avoid using render_template_string(template) [(Example)](https://semgrep.dev/r?q=python.flask.security.unescaped-template-extension.unescaped-template-extension)
@@ -558,8 +557,8 @@
     - Implement Stored Procedures
       - Similar logic to Parameterised queries, by creating parameterised stored procedures. The interpreter will treat the data as DATA instead of Code
 
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries.gif" alt="parameterised queries" style="width: 70%;"> <br/>
-      <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/parameterisedqueries3.gif" alt="parameterised queries 3" style="width: 70%;">
+    <img src="res/mitigations_demo/injection/parameterisedqueries.gif" alt="parameterised queries" style="width: 70%;"> <br>
+      <img src="res/mitigations_demo/injection/parameterisedqueries3.gif" alt="parameterised queries 3" style="width: 70%;">
 
   - Command Injection
     - shell = False in subprocess_run()
@@ -583,25 +582,25 @@
     - Escaping Dynamic Content for Markdown (HOWEVER, now unable to use list items et cetera, need to find a fix)
       - This is to let the browser know it is to be treated as the contents of HTML tags, as opposed to raw HTML.
 
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/CSP_scripts.png" alt="csp" style="width: 70%;"> <br/>
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/internal_scripts_csp.png" alt="csp nonce" style="width: 70%;"> <br/>
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/CSP.gif" alt="CSP restriction" style="width: 70%;">
+    <img src="res/mitigations_demo/injection/CSP_scripts.png" alt="csp" style="width: 70%;"> <br>
+    <img src="res/mitigations_demo/injection/internal_scripts_csp.png" alt="csp nonce" style="width: 70%;"> <br>
+    <img src="res/mitigations_demo/injection/CSP.gif" alt="CSP restriction" style="width: 70%;">
 
   - Cross Site Request Injection(?)
     - Implemented CSRF
       - Prevents victims from being tricked into sending a malicious request. Each request has a unique csrf token.
-  
+
   - Host Header Injection
     - Generating Paths SAFELY
       - Attackers can manipulate data in their headers and poison the URL.
       - Using Constants to specify the path instead of taking it from host headers et cetera for absolute paths
       - Using relative urls where Possible
-  
+
   - Regex Injection
     - Defined in Codebase, not generated directly from untrusted input
       - Attackers cannot take advantage of inefficient regular expressions. If generated directly, possibility of slow-running validation expressions causing them to DOS the server
 
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/regex_constants.png" alt="regex" style="width: 70%;"> <br/>
+    <img src="res/mitigations_demo/injection/regex_constants.png" alt="regex" style="width: 70%;"> <br/>
 
   - Avoid Bad Coding Practices that lead to Injection Attacks
   - Sanitisation for All input
@@ -610,8 +609,8 @@
   - Escaping all input
     - Encoding it all
     - Output Encoding
-  - Logging Of SQL Commands <br/>
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/injection/sql_logging_proof.png" alt="sql logging" style="width: 70%;">
+  - Logging Of SQL Commands <br>
+    <img src="res/mitigations_demo/injection/sql_logging_proof.png" alt="sql logging" style="width: 70%;">
 
 - Dropped Features (& Why):
   - Implement DDL Triggers (?)
@@ -652,16 +651,16 @@
     - Fix deserialization vulnerability with pickle (shelve) by changing to SQL
   - Comparing Hashes of Packages, before pip installing them
     - Ensures that there was no tampering between the files when it was being taken from the source
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/hashcomparison_package.gif" alt="hash comparison package" style="width: 70%;">
+    <img src="res/mitigations_demo/software-and-data-integrity/hashcomparison_package.gif" alt="hash comparison package" style="width: 70%;">
 
   - Storing of files in a cloud-based storage. Helps in isolation if file does contain malicious input
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/storageinbucket.png" alt="google cloud bucket" style="width: 70%;">
+    <img src="res/mitigations_demo/software-and-data-integrity/storageinbucket.png" alt="google cloud bucket" style="width: 70%;">
 
   - Data Integrity For Profile Pictures
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/hashcomparison_pfp.gif" alt="hash comparison profile picture" style="width: 70%;">
+    <img src="res/mitigations_demo/software-and-data-integrity/hashcomparison_pfp.gif" alt="hash comparison profile picture" style="width: 70%;">
 
   - Logging of Deserialization <br/>
-    <img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/software-and-data-integrity/deserialisation_logging.png" alt="deserialisation logging" style="width: 70%;">
+    <img src="res/mitigations_demo/software-and-data-integrity/deserialisation_logging.png" alt="deserialisation logging" style="width: 70%;">
 
   Removed:
     - Check Hash of Video File, before saving it
