@@ -1582,6 +1582,8 @@ def user_sql_operation(connection:MySQLConnection=None, mode:str=None, **kwargs)
 
         cur.execute("SELECT teacher_id, active FROM course WHERE course_id=%(courseID)s", {"courseID":courseID})
         matched = cur.fetchone()
+        if matched is None:
+            abort(404)
         isSameTeacher = (matched[0] == userID)
         isActiveCourse = bool(matched[1])
 
