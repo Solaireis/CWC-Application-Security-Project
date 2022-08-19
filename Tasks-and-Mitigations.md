@@ -38,7 +38,7 @@
 
 #### Implemented:
 
-<img src="https://github.com/Solaireis/CWC-App-Sec/tree/main/res/mitigations_demo/cryptography/gcp-kms.jpg" alt="gcp-kms" style="width: 60%;">
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/cryptography/gcp-kms.jpg" alt="gcp-kms" style="width: 70%;">
 
 - Using [Google Cloud Platform Key Management Service (KMS)](https://cloud.google.com/security-key-management) for cryptographic operations
   - Generated keys are stored and replicated globally in Google's servers
@@ -158,6 +158,9 @@
 ### Identification and Authentication Failures
 
 #### Implemented:
+
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/guard-otp.gif" alt="guard otp demo gif" style="height: 80%;">
+
 - IP address-based authentication (Guard OTP)
   - Idea inspired by [Steam Guard](https://help.steampowered.com/en/faqs/view/06B0-26E6-2CF8-254C)
   - Checks against known IP addresses of users against the login request
@@ -165,6 +168,8 @@
     - The 16 characters code is a randomly generated 12 bytes from Google Cloud Platform KMS Cloud HSM
     - The 16 characters code will also only be valid for 8 minutes
   - After a successful authentication, the new IP address will be saved in the database such that the web application will not do this verification again unless the IP address has not been accessed for more than 10 days
+
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/setup-2fa.gif" alt="setup 2fa demo gif" style="height: 80%;">
 
 - 2 Factor Authentication using Google Authenticator Time-based OTP (TOTP)
   - A base32 encoded 20 bytes secret token (32 characters) will be generated using GCP KMS Cloud HSM and will be shared with the user
@@ -188,6 +193,8 @@
       - Credential stuffing attacks
       - Brute force attacks
 
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/password-complexity.gif" alt="password complexity demo gif" style="height: 80%;">
+
 - Password Complexity Policy
   - Requires user to match at least 3 of the criteria stated below:
     - At least 1 uppercase letter
@@ -208,10 +215,14 @@
     - [OWASP Authentication Cheatsheet](https://owasp.deteact.com/cheat/cheatsheets/Authentication_Cheat_Sheet.html#password-complexity)
     - [NIST 800-63b](https://pages.nist.gov/800-63-3/sp800-63b.html#-51-requirements-by-authenticator-type)
 
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/login-too-many-attempts.gif" alt="too many login attempts demo gif" style="height: 80%;">
+
 - Maximum of 8 failed login attempts per account (will reset after 30 mins)
   - To prevent brute force attacks
   - If the attacker tries to do a denial-of-service attack knowing that one could lock out authentic users:
     - An email will be sent to the user's email with a one-time link that contains a token to unlock the account
+
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/session-validations.png" alt="session validations diagram" style="width: 60%;">
 
 - Session Management Implementation (Mainly using Flask session):
   - Session identifier of 32 bytes (Unlikely to be guessed) stored in the database.
@@ -232,6 +243,8 @@
       - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
         - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
+
+<img src="https://raw.githubusercontent.com/Solaireis/CWC-App-Sec/main/res/mitigations_demo/identification-and-authentication/google-oauth2.gif" alt="Google OAuth2 login demo gif" style="height: 80%;">
 
 - Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server) for authenticating users 
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
