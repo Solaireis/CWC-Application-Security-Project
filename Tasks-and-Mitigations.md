@@ -389,52 +389,84 @@
 ## Functionality Of Web Application
 
 #### Implemented:
-- Purchase History
-- Purchase details page
-  - With video player for the user to watch the purchased course video
-- Shopping Cart
-- Checkout
-- Stripe API
+1) Purchase History
+2) Purchase Details
+    - Video Player [[VdoCipher API](https://www.vdocipher.com/docs/server)]
+3) Upload Video
+    - Client-Side  [[Dropzone.js](https://www.dropzone.dev/js), [JS Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)]
+    - Server-Side  [[VdoCipher API](https://www.vdocipher.com/page/features)]
+4) Shopping Cart
+    - Checkout     [[Stripe API](https://stripe.com/docs/api)]
 
 ## Selected OWASP Mitigations
 
 ### Insecure Design
 
-### Plan
-Stripe Images (last thing lol)
-
 ### Implemented
-Stripe
-- Error 402 check (Previously JWT, unreliable)
-- Double charge check
-- mpd video player, randomised blob url
-- Console warning
-Add to cart validation
-- Own course
-- Purchased course
-- Inactive course
-- Already in cart
-- Full cart
-Policies
-- File type policies (3 sentences lol)
-- Max content length policy
+- Stripe API
+  - Error 402 (Payment Required) check
+  - Double charge check
+  - Checkout session expiry (when new session created)
+  - Confirmation
+    - Send receipt (Client side)
+    - Record transaction (Server side)
 
-#### Implemented:
-- Added [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise) on the signup page
-- Configured Cloudflare to protect against DDoS attacks
+- VdoCipher Video Storage, Processing
+  - Mpeg-DASH Video Player with randomised 'blob' (or byte/raw data) URL
+  - DRM (Digital Rights Management) with CENC (Common Excryption) and EME (Encrypted Media Extension)
+  - URL Whitelist to only play on the web app's domain
+  - WARNING: Trial period lasts 30 days, and only allows up to 4 videos stored at any time.
+  - Standardised error messages; processing, else success or failed
+
+- Console self-XSS warning
+  - <span style="color:red; font-size:30px; font-weight: bold;">"Careful. This might not be what you think.</span>
+<span>This is a browser feature intended for developers. If someone told you to copy-paste something here to enable a CourseFinity feature or "hack" someone's account,</span>
+<span style="font-weight:bold;">it is probably a scam and will give them access to your CourseFinity account."</span>
+
+- Add to cart validation
+  - Own course
+  - Purchased course
+  - Inactive course
+  - Already in cart
+  - Full cart
+
+- Policies (Teacher's Handbook)
+  - Video, thumbnail type accepted
+  - Video, thumbnail size accepted
+
+- Contact Us Form
+  - False positive reports must be rectified
 
 ---
 
 ### Security Logging and Monitoring Failures
 
-#### Plan:
-- Logging stack (app.py)
-- Log all logins (successful and failed logins), access controls (when user tries to access a folder, etc.), server-side input failures (SQL query, etc.)
-- Implement an algorithm to detect malicious accounts (created in same IP, etc.)
-- Alert the security teams and/or admins in an event of a live attack (DDoS) ??????
-
 #### Implemented:
--
+- Google Cloud Logging (All logs sent to Google Cloud Logs)
+  - Logging stack (app.py)
+  - Log all logins (successful and failed logins)and server-side input failures (SQL query, etc.)
+  - Alert the security teams and/or admins in the event of issues that cannot be fixed automatically.
+  - Make use of built-in functions
+    - Search logs by query (severity, timing, id)
+    - View frequency of query (and types) over periods of time
+
+
+## Dropped Features
+- JWT Token
+  - CourseCartIDs, UserID, for checkout
+  - Video ID/Path, Teacher ID for video upload
+- Video Player
+  - Video.JS
+  - Shaka Player (Incomplete)
+  - Video JS-Shaka Player
+- Video Conversion
+  - Shaka Packager
+  - Python ffmpeg_streaming package (Incomplete)
+  - ffmpeg
+  - mp4.to
+- Splunk Enterprise Logging
+  - Python Backup File Collection (Automatic Collection Incomplete)
+  - Failsafe: Temporary Local Storage if error
 
 ---
 
