@@ -23,7 +23,7 @@
     - Disable a user's 2FA if enabled
     - Ban/Unban a user
     - Delete a user
-- Improvement of Calvin's pagination
+- Improvement in Calvin's pagination
 - 2FA pages
 - Account Recovery pages
 - Integrating Cloudflare to the [hosted web application](https://coursefinity.social/)
@@ -181,7 +181,7 @@
 
 - Implemented mitigations to deter/prevent automated attacks
   - [Flask limiter](https://flask-limiter.readthedocs.io/en/stable/)
-    - Rate limiting for routes that deals with identification and authentication in the web application to prevent brute-force attacks
+    - Rate limiting for routes that deal with identification and authentication in the web application to prevent brute-force attacks
       - Sensitive Pages: 9 requests/min 
         - This configuration was also checked and refined by Eden as part of his security misconfiguration OWASP
   - [reCAPTCHA Enterprise](https://cloud.google.com/recaptcha-enterprise)
@@ -204,7 +204,7 @@
     - At least 8 characters
     - Not more than 2 repeated characters
   - Password strength meter to help users meet the password complexity policy
-  - Verification of passwords if the passwords has been compromised using [haveibeenpwned's API](https://haveibeenpwned.com/API/)
+  - Verification of passwords if the passwords have been compromised using [haveibeenpwned's API](https://haveibeenpwned.com/API/)
     - Verified when:
       - After a successful login
       - Sign up
@@ -232,15 +232,15 @@
     - To invalidate the session identifier.
     - To free up space in the database.
     - Chose 1.5 hours as a video can last from several minutes to several hours for this web application.
-      - Improve usability to avoid legitimate user from being logged out after watching a video.
+      - Improve usability to avoid the legitimate user from being logged out after watching a video.
       - After an hour of inactivity, a modal message will appear to check if the user is active in order to extend the session expiry datetime.
   - Session validations upon each request to a web page:
-    - Checks the session identifier and the userID in the database and compare with the values in the cookie
+    - Checks the session identifier and the userID in the database and compare them with the values in the cookie
     - Checks the user's digital fingerprint against the digital fingerprint in the database
       - Computes the SHA512 hash of the user's IP Address and user agent for the user's digital fingerprint for each request to the web application
         - If the user's digital fingerprint hash does not match the one in the database of the same session identifier, the user's session cookie will be cleared from their browser
       - Helps to prevent session hijacking via cookie theft
-      - Idea inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
+      - The idea was inspired by [flask-paranoid](https://github.com/miguelgrinberg/flask-paranoid)
         - I did not use this library because it is not consistently maintained and it was easy to implement on top of my session management implementation
   - All mitigations above are aimed at mitigating the risk of session hijacking
 
@@ -250,7 +250,7 @@
   - [More info on OAuth](https://owasp.org/www-pdf-archive/OWASP-NL_Chapter_Meeting201501015_OAuth_Jim_Manico.pdf)
   - Security of the login process will be handled by Google as the user has to sign in with their Google account
 
-- Different method for logging in as an Admin (Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server))
+- A different method for logging in as an Admin (Using [Google OAuth2](https://developers.google.com/identity/protocols/oauth2/web-server))
   - Requires Google OAuth2 logins as identification and authentication will be handled by Google themselves which is more secure.
   - More secure as the admin does not use the same method of logging as normal users of the web application.
   - The admin routes are also IP address protected via a whitelist for extra security
@@ -259,7 +259,7 @@
 - Securing the session cookie by setting the correct attributes such as HttpOnly, Secure, etc.
   - Secure:
     - Only allow the cookie to be transmitted via HTTPS
-      - Prevent cookie from being sniffed and exposed
+      - Prevent the session cookie from being sniffed and exposed
   - HttpOnly:
     - Prevent client-side scripts from accessing the cookie
       - Prevent cookie theft

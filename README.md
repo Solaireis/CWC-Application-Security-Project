@@ -30,13 +30,11 @@ This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.
 
 **Project Description:**
 
->Our web application is based off the fictional company CourseFinity, which is part of the tutoring industry.
+>Our web application is based on a fictional company CourseFinity, which is part of the tutoring industry.
 >
 >The web application is for students and teachers to connect together from all over the world and share their skills.
 >
->The teachers can upload videos and sell the courses to earn extra money for themselves.
->
->The students can then buy the courses and start learning! 
+>The teachers can upload videos and sell the courses to earn extra money for themselves while students can then buy the courses and start learning! 
 
 ---
 
