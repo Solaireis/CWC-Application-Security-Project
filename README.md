@@ -16,7 +16,7 @@ This project is also hosted on Google Cloud Platform Cloud Run at [coursefinity.
 
 **Group Members:**
 >1. Eden (Group Leader)
->2. Jason
+>2. Jason (Tech Lead)
 >3. Wei Ren
 >4. Calvin
 
