@@ -287,7 +287,7 @@
 - Implemented simple IDOR prevention against attackers guessing for AdminID on teacher page
   - Page will abort 404 if id doesn't exists
   - page will abort 404 if the id exist but role is not a teacher
-- RBAC will make Different roles  see different content
+- RBAC will make Different roles see different content
   - Home page will be different for guest, admins , super admins and other roles
   - Certain UI will be different for each users
 - RBAC Console 
