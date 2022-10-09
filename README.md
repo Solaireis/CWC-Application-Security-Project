@@ -72,3 +72,7 @@ Calvin
 
 **Mitigations Done by each member can be seen here!**
 > [Mitigations and Tasks](https://github.com/Solaireis/CWC-App-Sec/blob/main/Tasks-and-Mitigations.md)
+
+**Tech Stack used!**
+
+>[![My Skills](https://skillicons.dev/icons?i=js,html,css,python,cloudflare,gcp,mysql,flask,bootstrap,docker&theme=light)](https://skillicons.dev)
