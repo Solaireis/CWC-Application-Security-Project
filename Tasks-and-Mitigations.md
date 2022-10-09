@@ -1,7 +1,12 @@
 # Tasks for securing the web application
+## Table of Contents:
+- [Jason](https://github.com/Solaireis/CWC-Application-Security-Project/main/Tasks-and-Mitigations.md#Jason)
+- [Eden]
+- [Wei Ren]
+- [Calvin]
 
 ---
-
+<p id="Jason"> </p>
 ## Jason:
 
 ## Functionality Of Web Application
