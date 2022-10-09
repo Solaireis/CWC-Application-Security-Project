@@ -1,12 +1,13 @@
 # Tasks for securing the web application
 ## Table of Contents:
 - [Jason](https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#Jason)
-- [Eden]
-- [Wei Ren]
-- [Calvin]
+- [Eden]https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#Eden)
+- [Wei Ren]https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#WR)
+- [Calvin]https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#Calvin)
 
 ---
 <p id="Jason"> </p>
+
 ## Jason:
 
 ## Functionality Of Web Application
@@ -270,6 +271,7 @@
       - Prevent cookie theft
 
 ---
+<p id="Eden"> </p>
 
 ## Eden:
 
@@ -439,6 +441,7 @@
 <img src="res/mitigations_demo/security-misconfiguration/redirection.gif" alt="Redirection" style="width: 80%;">
 
 ---
+<p id="WR"> </p>
 
 ## Wei Ren:
 
@@ -525,6 +528,7 @@
   - Failsafe: Temporary Local Storage if error
 
 ---
+<p id="Calvin"> </p>
 
 ## Calvin:
 
