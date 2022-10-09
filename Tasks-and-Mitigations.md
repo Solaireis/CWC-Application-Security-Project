@@ -6,7 +6,7 @@
 - [Calvin](https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#Calvin)
 
 ---
-<p id="Jason"> </p>
+<!-- <p id="Jason"> </p> -->
 
 ## Jason:
 
