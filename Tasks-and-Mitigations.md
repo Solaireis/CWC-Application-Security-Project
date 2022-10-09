@@ -6,7 +6,7 @@
 - [Calvin](https://github.com/Solaireis/CWC-Application-Security-Project/blob/main/Tasks-and-Mitigations.md#Calvin)
 
 ---
-<!-- <p id="Jason"> </p> -->
+
 
 ## Jason:
 
@@ -271,7 +271,7 @@
       - Prevent cookie theft
 
 ---
-<p id="Eden"> </p>
+
 
 ## Eden:
 
@@ -528,7 +528,7 @@
   - Failsafe: Temporary Local Storage if error
 
 ---
-<p id="Calvin"> </p>
+
 
 ## Calvin:
 
